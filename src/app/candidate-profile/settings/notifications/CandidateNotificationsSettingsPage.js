@@ -79,8 +79,8 @@ const CandidateNotificationsSettingsPage = () => {
           {NOTIFICATION_ITEMS.map((item) => (
             <div
               key={item.id}
-              className="d-flex align-items-center justify-content-between py-12 px-10 mb-10"
-              style={{ border: "1px solid #e3e8f5", borderRadius: "10px", gap: "12px" }}
+              className="d-flex align-items-center justify-content-between py-12 px-10 mb-10 candidate-notification-point"
+              style={{ gap: "12px" }}
             >
               <div>
                 <p className="font-sm mb-2" style={{ color: "#05264e", fontWeight: 700 }}>

@@ -89,8 +89,8 @@ export default function LoginPage() {
               <div className="text-center">
                 <p className="font-sm text-brand-2">Sign In</p>
                 <h2 className="mt-10 mb-5 text-brand-1">Access Your Portal</h2>
-                <p className="font-sm text-muted mb-30">
-                  Enter email or mobile → OTP → Sign In<br/>
+                <p className="font-sm color-text-paragraph-2 mb-30">
+                  Enter email or mobile -&gt; OTP -&gt; Sign In<br/>
                   Demo: 1010101010 (Candidate), 2020202020 (Employer)
                 </p>
               </div>
@@ -99,8 +99,8 @@ export default function LoginPage() {
                 {error && <div className="alert alert-danger p-2 mb-3">{error}</div>}
 
                 <div className="form-group mb-4">
-                  <label className="form-label">
-                    Email or Mobile Number <span style={{color: "#E24B4A"}}>*</span>
+                  <label className="font-sm color-text-mutted mb-10">
+                    Email or Mobile Number <span className="color-red">*</span>
                   </label>
                   <input
                     className="form-control"
@@ -111,7 +111,7 @@ export default function LoginPage() {
                     }}
                     placeholder="Email or 10-digit mobile"
                   />
-                  <small className="form-text text-muted">
+                  <small className="form-text font-xs color-text-paragraph-2 d-block mt-5">
                     {input && !isInputValid ? (
                       isEmail ? "Enter valid email" : "Enter 10-digit mobile"
                     ) : isMobile && !isKnownDemoNumber ? (
@@ -135,7 +135,7 @@ export default function LoginPage() {
 
                 {otpSent && (
                   <div className="form-group mb-4">
-                    <label className="form-label">Enter OTP</label>
+                    <label className="font-sm color-text-mutted mb-10">Enter OTP</label>
                     <input
                       className="form-control"
                       type="text"
@@ -161,7 +161,7 @@ export default function LoginPage() {
                 )}
 
                 <div className="text-center">
-                  <Link href="/register" className="text-muted">
+                  <Link href="/register" className="font-sm color-text-paragraph-2">
                     Don't have account? Register
                   </Link>
                 </div>

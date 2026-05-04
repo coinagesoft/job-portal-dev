@@ -76,7 +76,6 @@ const CandidateSettingsPage = () => {
                         className="form-control form-select"
                         value={language}
                         onChange={(e) => setLanguage(e.target.value)}
-                        style={{ height: "44px", fontSize: "13px" }}
                       >
                         {LANGUAGES.map((lang) => (
                           <option key={lang} value={lang}>{lang}</option>
@@ -90,7 +89,6 @@ const CandidateSettingsPage = () => {
                         className="form-control form-select"
                         value={timezone}
                         onChange={(e) => setTimezone(e.target.value)}
-                        style={{ height: "44px", fontSize: "13px" }}
                       >
                         <option value="Asia/Kolkata (IST)">Asia / Kolkata (IST)</option>
                         <option value="Asia/Dubai (GST)">Asia / Dubai (GST)</option>
@@ -106,7 +104,6 @@ const CandidateSettingsPage = () => {
                         className="form-control form-select"
                         value={visibility}
                         onChange={(e) => setVisibility(e.target.value)}
-                        style={{ height: "44px", fontSize: "13px" }}
                       >
                         <option>Recruiters from applied jobs only</option>
                         <option>All verified recruiters</option>
@@ -120,7 +117,6 @@ const CandidateSettingsPage = () => {
                         className="form-control form-select"
                         value={comms}
                         onChange={(e) => setComms(e.target.value)}
-                        style={{ height: "44px", fontSize: "13px" }}
                       >
                         <option>Email + In-app notifications</option>
                         <option>Email only</option>
@@ -182,7 +178,7 @@ const CandidateSettingsPage = () => {
                   </div>
                   <div className="candidate-settings-inline-stat">
                     <span>Profile Visibility</span>
-                    <strong style={{ fontSize: "11px" }}>{visibility}</strong>
+                    <strong>{visibility}</strong>
                   </div>
                 </div>
               </div>

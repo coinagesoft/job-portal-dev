@@ -4,6 +4,12 @@ import Link from 'next/link';
 import { featuredJobs } from '../data.js';
 
 const FeaturedJobs = () => {
+  const formatHourlyPrice = (value) => {
+    const text = String(value || '').trim();
+    if (!text) return '';
+    return text.includes('$') ? text : `$${text}`;
+  };
+
   return (
     <section className="section-box mt-50 mb-50">
       <div className="container">
@@ -56,7 +62,7 @@ const FeaturedJobs = () => {
                         <div className="card-2-bottom mt-30">
                           <div className="row">
                             <div className="col-lg-7 col-7">
-                              <span className="card-text-price">{job.price}</span>
+                              <span className="card-text-price">{formatHourlyPrice(job.price)}</span>
                               <span className="text-muted">/Hour</span>
                             </div>
                             <div className="col-lg-5 col-5 text-end">

@@ -113,7 +113,7 @@ const SupportTicketCenter = ({
 
   return (
     <>
-      <div className="row">
+      <div className="row support-ticket-center">
         <div className="col-xl-7 col-lg-7 col-md-12">
           <div className="candidate-settings-card mb-20">
             <h5 className="mb-5">Raise a Support Ticket</h5>
@@ -211,7 +211,7 @@ const SupportTicketCenter = ({
         <div className="col-xl-5 col-lg-5 col-md-12">
           <div className="candidate-settings-card mb-20">
             <h5 className="mb-5">Support Tickets</h5>
-            <p className="font-xs color-text-paragraph-2 mb-15">
+            <p className="font-sm color-text-paragraph-2 mb-15 support-ticket-count">
               {tickets.length} ticket{tickets.length !== 1 ? "s" : ""} total
             </p>
 
@@ -228,7 +228,7 @@ const SupportTicketCenter = ({
                           <strong>{ticket.subject}</strong>
                           <p>
                             {ticket.id}
-                            {ticket.category ? ` · ${ticket.category}` : ""}
+                            {ticket.category ? ` | ${ticket.category}` : ""}
                           </p>
                         </div>
                         <div className="candidate-ticket-meta">
@@ -247,10 +247,10 @@ const SupportTicketCenter = ({
                             background: "#f8fbff"
                           }}
                         >
-                          <p className="font-xs mb-5" style={{ color: "#185fa5", fontWeight: 600 }}>
+                          <p className="font-sm mb-5 support-ticket-latest-label" style={{ color: "#185fa5", fontWeight: 600 }}>
                             Latest admin reply
                           </p>
-                          <p className="font-xs mb-0" style={{ color: "#3a4559" }}>
+                          <p className="font-sm mb-0 support-ticket-latest-body" style={{ color: "#3a4559" }}>
                             {latestAdminReply.text}
                           </p>
                         </div>
@@ -296,10 +296,10 @@ const SupportTicketCenter = ({
                                   border: message.sender === "admin" ? "1px solid #d4e1f7" : "1px solid #e7eaf2"
                                 }}
                               >
-                                <p className="font-xs mb-5" style={{ fontWeight: 700, color: "#0b2f57" }}>
+                                <p className="font-sm mb-5" style={{ fontWeight: 700, color: "#0b2f57" }}>
                                   {message.senderLabel}
                                 </p>
-                                <p className="font-xs mb-5" style={{ color: "#3a4559" }}>
+                                <p className="font-sm mb-5" style={{ color: "#3a4559" }}>
                                   {message.text}
                                 </p>
                                 <small>{formatDateTime(message.createdOn)}</small>
@@ -333,8 +333,8 @@ const SupportTicketCenter = ({
           <div className="candidate-settings-card">
             <h5 className="mb-15">{title}</h5>
             <div className="p-15" style={{ border: "1px solid #dce2ee", borderRadius: "10px" }}>
-              <p className="font-xs color-text-paragraph-2 mb-5">{description}</p>
-              <a className="font-xs color-brand-1" href="mailto:support@jobportal.com">
+              <p className="font-sm color-text-paragraph-2 mb-5 support-ticket-contact-text">{description}</p>
+              <a className="font-sm color-brand-1 support-ticket-contact-email" href="mailto:support@jobportal.com">
                 support@jobportal.com
               </a>
             </div>
@@ -346,3 +346,4 @@ const SupportTicketCenter = ({
 };
 
 export default SupportTicketCenter;
+

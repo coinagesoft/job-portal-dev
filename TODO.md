@@ -1,8 +1,10 @@
-# TODO: Fix Next.js build - Wrap useSearchParams in Suspense for /jobs-list
+# Console Errors Fix Progress
 
-## Steps:
-1. [x] Create new client component: src/app/jobs-list/JobsListPageClient.js (move all logic from page.js)
-2. [x] Refactor src/app/jobs-list/page.js to server component with Suspense boundary
-3. [x] Test: Run `npm run build` to verify fix
-4. [ ] [Optional] Fix similar issue in src/app/register/page.js if build still fails
-5. [ ] attempt_completion
+## Plan Steps:
+- [x] 1. Create public/font-utils.css (copy from src/app/font-utils.css)
+- [x] 2. Edit src/app/Homepage/components/HeroBanner.js (add multiple to select)
+- [x] 3. Edit src/app/jobs-list/components/HeroSearch.js (add multiple to select)
+- [ ] 4. Edit public/assets/js/main.js (wrap counterUp in check)
+- [ ] 5. Edit src/app/layout.js (add data-scroll-behavior; update font link)
+- [ ] 6. Test: npm run dev, check console on /, /jobs-list, /Homepage
+- [ ] 7. Mark complete

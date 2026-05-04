@@ -361,7 +361,7 @@ const ProfileTabs = ({
           <div style={{ marginBottom: "20px" }}>
             <article className="candidate-profile-v2-doc-card" style={{ border: "2px solid #3B82F6", background: "#f0f6ff" }}>
               <div className="candidate-profile-v2-doc-head">
-                <h6 style={{ color: "#1976D2" }}>ðŸ“„ CV / Resume</h6>
+                <h6 style={{ color: "#1976D2" }}>CV / Resume</h6>
                 <span className={`candidate-profile-v2-badge ${getStatusDetails(profileData.documents.cv?.status || "optional").className}`}>
                   {getStatusDetails(profileData.documents.cv?.status || "optional").label}
                 </span>
@@ -733,7 +733,7 @@ const ProfileTabs = ({
                   {profileName.slice(0, 1).toUpperCase()}
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, color: "#05264E", fontSize: "26px" }}>{profileName}</h3>
+                  <h3 style={{ margin: 0, color: "#05264E", fontSize: "25px" }}>{profileName}</h3>
                   <p style={{ margin: "4px 0 0", color: "#3B82F6", fontWeight: "600", fontSize: "16px" }}>{profileData.trade} Â· {profileData.yearsOfExperience} years experience</p>
                 </div>
               </div>

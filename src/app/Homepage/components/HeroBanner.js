@@ -34,7 +34,7 @@ const HeroBanner = () => {
         <div className="banner-inner">
           <div className="row">
             <div className="col-xl-7 col-lg-12">
-              <div className="block-banner">
+              <div className="block-banner hero-banner-content">
                 <h1 className="heading-banner wow animate__animated animate__fadeInUp">
                   Find Jobs,<br className="d-none d-lg-block" />
                   Hire Skilled Talent

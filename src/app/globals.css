@@ -1,28 +1,32 @@
 :root {
   --background: #ffffff;
-  --foreground: #171717;
-  /* Flutter Job Filter Theme */
-  --primary-navy: #1B3A6B;
-  --primary-blue: #3A7BD5;
-  --border-light: #E2E8F0;
-  --text-dark: #1B3A6B;
-  --text-mid: #474C54;
-  --text-light: #9199A3;
-  --bg-light: #F4F6FB;
-  
-  /* 🔤 FONT SYSTEM - 8 Size Scale */
-  --font-xs: 10px;
-  --font-sm: 12px;
+  --foreground: #05264e;
+  --primary-navy: #05264e;
+  --primary-blue: #3c65f5;
+  --border-light: #e0e6f7;
+  --text-dark: #05264e;
+  --text-mid: #4f5e64;
+  --text-light: #a0abb8;
+  --bg-light: #f8faff;
+  --font-xs: 12px;
+  --font-sm: 14px;
   --font-base: 14px;
   --font-md: 16px;
   --font-lg: 18px;
   --font-xl: 20px;
   --font-h2: 36px;
-  --font-display: 48px;
+  --font-display: 56px;
   --lh-tight: 1.2;
-  --lh-normal: 1.4;
+  --lh-normal: 1.6;
   --lh-loose: 1.6;
-  @import url('/assets2/css/style.css');
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #f8faff;
+  --color-background-tertiary: #eff3fc;
+  --color-border-secondary: #b4c0e0;
+  --color-border-tertiary: #e0e6f7;
+  --color-text-primary: #05264e;
+  --color-text-secondary: #4f5e64;
+  --color-text-tertiary: #66789c;
 }
 
 .job-filter-sheet {
@@ -81,20 +85,13 @@
 }
 
 .job-filter-checkbox.checked::after {
-  content: '✔';
+  content: "\2713";
   color: white;
   font-size: 14px;
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 html {
@@ -129,12 +126,6 @@ body {
 a {
   color: inherit;
   text-decoration: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
 }
 
 @media (min-width: 1200px) {
@@ -268,6 +259,22 @@ textarea.form-control {
   margin-top: auto !important;
 }
 
+.candidate-saved-job-card .card-grid-2-image-left .image-box {
+  width: 52px;
+  min-width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.candidate-saved-job-card .card-grid-2-image-left .image-box .candidate-job-logo {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+}
+
 .pagination-center {
   display: flex;
   justify-content: center;
@@ -361,9 +368,39 @@ textarea.form-control {
   color: #111111;
 }
 
+/* Align homepage hero text block with search bar left edge */
+.hero-banner-content {
+  padding-left: 0 !important;
+}
+
 .apply-job-modal-shell {
   border-radius: 16px;
   border: 1px solid #dce2ee;
+  overflow: hidden;
+}
+
+.apply-job-fullscreen-modal {
+  overflow: hidden !important;
+  padding: 16px;
+}
+
+.apply-job-fullscreen-modal .modal-dialog {
+  margin: 0 auto;
+  width: min(960px, calc(100vw - 32px));
+  max-width: 960px;
+  min-height: calc(100vh - 32px);
+  display: flex;
+  align-items: center;
+}
+
+.apply-job-fullscreen-modal .modal-content.apply-job-modal-shell {
+  width: 100%;
+  min-height: auto;
+  max-height: calc(100vh - 32px);
+  border-radius: 16px;
+}
+
+.apply-job-fullscreen-modal .modal-body {
   overflow: hidden;
 }
 
@@ -410,6 +447,58 @@ textarea.form-control {
   border-radius: 12px;
   padding: 16px;
   background: #f8fbff;
+}
+
+.apply-job-stepper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.apply-job-step {
+  font-size: 12px;
+  font-weight: 700;
+  color: #9aa5b8;
+}
+
+.apply-job-step.is-active {
+  color: #185fa5;
+}
+
+.apply-job-step.is-done {
+  color: #3b6d11;
+}
+
+.apply-job-step-divider {
+  flex: 1;
+  height: 1px;
+  background: #dce2ee;
+}
+
+.apply-job-step-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: calc(100vh - 220px);
+}
+
+.apply-job-step-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.apply-job-footer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e3e8f5;
 }
 
 .employer-applicants-page .employer-applicants-form .form-group {
@@ -508,6 +597,14 @@ textarea.form-control {
   flex-direction: column;
 }
 
+.candidate-notification-point {
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
 .candidate-ticket-item {
   border: 1px solid #dce2ee;
   border-radius: 10px;
@@ -551,6 +648,55 @@ textarea.form-control {
 .candidate-ticket-status.open {
   background: #fff6e9;
   color: #a65f08;
+}
+
+.candidate-help-support-page .support-ticket-center .candidate-settings-card h5 {
+  font-size: 22px;
+  line-height: 30px;
+}
+
+.candidate-help-support-page .support-ticket-center .candidate-faq-item summary {
+  font-size: 15px;
+  line-height: 24px;
+}
+
+.candidate-help-support-page .support-ticket-center .candidate-faq-item p {
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.candidate-help-support-page .support-ticket-center .candidate-ticket-item strong {
+  font-size: 15px;
+  line-height: 22px;
+}
+
+.candidate-help-support-page .support-ticket-center .candidate-ticket-item p {
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.candidate-help-support-page .support-ticket-center .candidate-ticket-item small {
+  font-size: 12px;
+  line-height: 18px;
+  color: #66789c;
+}
+
+.candidate-help-support-page .support-ticket-center .candidate-ticket-meta small {
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.candidate-help-support-page .support-ticket-center .support-ticket-count,
+.candidate-help-support-page .support-ticket-center .support-ticket-latest-label,
+.candidate-help-support-page .support-ticket-center .support-ticket-latest-body,
+.candidate-help-support-page .support-ticket-center .support-ticket-contact-text,
+.candidate-help-support-page .support-ticket-center .support-ticket-contact-email {
+  font-size: 14px !important;
+  line-height: 22px !important;
+}
+
+.candidate-help-support-page .support-ticket-center .support-ticket-contact-email {
+  font-weight: 600;
 }
 
 /* Circliful styles for profile progress */
@@ -641,3 +787,4 @@ textarea.form-control {
     top: auto;
   }
 }
+

@@ -24,6 +24,17 @@
   gap: 10px;
 }
 
+.profileToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
 .profileBlock img {
   width: 38px;
   height: 38px;
@@ -60,17 +71,17 @@
   text-decoration: none;
 }
 
-.headerActionGroup :global(.btn-notify)::before {
-  content: "\f12e";
-  font-family: uicons-regular-rounded !important;
+.headerActionGroup :global(.btn-notify i) {
   font-size: 16px;
+  line-height: 1;
+  display: inline-flex;
 }
 
 .headerActionGroup :global(.dropdown-menu) {
   min-width: 200px;
 }
 
-/* ── Register dropdown ── */
+/* Register dropdown */
 .registerDropdownWrap {
   position: relative;
   display: inline-block;
@@ -175,3 +186,4 @@
   justify-content: center;
   flex-shrink: 0;
 }
+

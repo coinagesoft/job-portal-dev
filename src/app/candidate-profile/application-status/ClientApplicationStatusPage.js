@@ -21,7 +21,6 @@ const ApplicationStatusCard = ({ application }) => {
 
   return (
     <div className="card-grid-2 hover-up candidate-status-card">
-      <span className="flash"></span>
       <div className="row">
         <div className="col-lg-7 col-md-7 col-sm-12">
           <div className="card-grid-2-image-left">

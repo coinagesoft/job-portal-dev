@@ -4,6 +4,12 @@ import Link from 'next/link';
 import { detailedJob, similarJobs, mapEmbed } from '../data.js';
 
 const CompanySidebar = () => {
+  const formatHourlyPrice = (value) => {
+    const text = String(value || '').trim();
+    if (!text) return '';
+    return text.includes('$') ? text : `$${text}`;
+  };
+
   return (
     <>
       <div className="sidebar-border">
@@ -39,7 +45,7 @@ const CompanySidebar = () => {
         <h6 className="f-18">Similar jobs</h6>
         <div className="sidebar-list-job">
           <ul>
-            {similarJobs.map((job, index) => (
+            {similarJobs.map((job) => (
               <li key={job.id}>
                 <div className="card-list-4 hover-up">
                   <div className="image">
@@ -61,7 +67,7 @@ const CompanySidebar = () => {
                       <div className="row">
                         <div className="col-6">
                           <h6 className="card-price">
-                            {job.price}<span>/Hour</span>
+                            {formatHourlyPrice(job.price)}<span>/Hour</span>
                           </h6>
                         </div>
                         <div className="col-6 text-end">

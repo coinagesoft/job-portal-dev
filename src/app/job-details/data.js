@@ -10,7 +10,7 @@ export const detailedJob = {
   time: "Posted 3 hours ago",
   bannerImg: "/assets/imgs/page/job-single/thumb.png",
   avatar: "/assets/imgs/page/job-single/avatar.png",
-  salary: "55,000 - 72,000 / month",
+  salary: "$55,000 - $72,000 / month",
   experience: "5 - 8 years",
   industry: "Marine Operations / Industrial Maintenance",
   jobLevel: "Senior Technician",

@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef, useEffect, Suspense } from "react";
+import { useState, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Script from "next/script";
 import { useToast } from "@/components/Toast";
@@ -901,7 +901,7 @@ function RegisterPageInner() {
   );
 
   return (
-    <main style={{ minHeight:"100vh", background:"var(--color-background-tertiary)", padding:"40px 16px 60px" }}>
+    <main style={{ minHeight:"100vh", padding:"40px 16px 60px" }}>
       <div style={{ maxWidth: role === "employer" ? 680 : 460, margin:"0 auto" }}>
         {/* Header */}
         <div style={{ textAlign:"center", marginBottom:32 }}>

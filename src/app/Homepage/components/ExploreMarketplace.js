@@ -2,16 +2,15 @@
 import React from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
-import Image from 'next/image';
 
 const ExploreMarketplace = () => {
   const categories = [
-    { title: 'Marketing & Sales', jobs: '123', bg: '/assets/imgs/page/homepage4/img-big1.png' },
-    { title: 'Human resource', jobs: '154', bg: '/assets/imgs/page/homepage4/img-big2.png' },
-    { title: 'Finance', jobs: '546', bg: '/assets/imgs/page/homepage4/img-big3.png' },
-    { title: 'Market Research', jobs: '24', bg: '/assets/imgs/page/homepage4/img-big4.png' },
-    { title: 'Furniture design', jobs: '54', bg: '/assets/imgs/page/homepage4/img-big5.png' },
-    { title: 'Content writer', jobs: '87', bg: '/assets/imgs/page/homepage4/img-big6.png' },
+    { title: 'Marine & Offshore', jobs: '286', bg: '/assets/imgs/page/homepage-bluecollar/card-1.png' },
+    { title: 'Welding & Fabrication', jobs: '341', bg: '/assets/imgs/page/homepage-bluecollar/card-2.png' },
+    { title: 'Electrical & HVAC', jobs: '298', bg: '/assets/imgs/page/homepage-bluecollar/card-3.png' },
+    { title: 'Construction Trades', jobs: '412', bg: '/assets/imgs/page/homepage-bluecollar/card-4.png' },
+    { title: 'Logistics & Transport', jobs: '265', bg: '/assets/imgs/page/homepage-bluecollar/card-5.png' },
+    { title: 'Facility & Maintenance', jobs: '224', bg: '/assets/imgs/page/homepage-bluecollar/card-6.png' },
   ];
 
   return (
@@ -47,7 +46,7 @@ const ExploreMarketplace = () => {
                       className="card-grid-5 card-category hover-up" 
                       style={{ backgroundImage: `url(${category.bg})` }}
                     >
-                      <a href="/jobs-grid">
+                      <a href="/jobs-list">
                         <div className="box-cover-img">
                           <div className="content-bottom">
                             <h6 className="color-white mb-5">{category.title}</h6>

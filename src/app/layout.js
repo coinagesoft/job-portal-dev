@@ -1,7 +1,7 @@
 'use client'
 import './globals.css'
+import './font-utils.css'
 import Script from 'next/script'
-import { Inter } from 'next/font/google'
 import { Provider } from 'react-redux'
 import { store } from '@/store/store'
 import Header from '@/components/Header'
@@ -11,15 +11,11 @@ import EmployerSectionSidebar from '@/components/EmployerSectionSidebar'
 import CandidateSettingsSidebar from '@/components/CandidateSettingsSidebar'
 import { ToastProvider } from '@/components/Toast'
 
-const inter = Inter({ subsets: ['latin'] })
-
-
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" suppressHydrationWarning={true} className={inter.className}>
+    <html lang="en" suppressHydrationWarning={true}>
       <head>
-<link rel="stylesheet" href="/assets/css/style.css" />
-        <link rel="stylesheet" href="/font-utils.css" />
+        <link rel="stylesheet" href="/assets/css/style.css" />
         <link rel="shortcut icon" type="image/x-icon" href="/assets/imgs/template/favicon.svg" />
       </head>
 
@@ -50,7 +46,7 @@ export default function RootLayout({ children }) {
         <Script src="/assets/js/plugins/swiper-bundle.min.js" strategy="afterInteractive" />
         <Script src="/assets/js/plugins/counterup.js" strategy="afterInteractive" />
 
-        {/* perfect-scrollbar initialised ONLY on elements that exist — main.js handles it */}
+        {/* perfect-scrollbar initialised ONLY on elements that exist - main.js handles it */}
         <Script src="/assets/js/plugins/perfect-scrollbar.min.js" strategy="afterInteractive" />
 
         {/* main.js last, after all plugins are ready */}
@@ -60,3 +56,4 @@ export default function RootLayout({ children }) {
     </html>
   )
 }
+
