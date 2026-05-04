@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useState } from 'react';
 import Link from 'next/link';
 
@@ -19,7 +19,7 @@ const jobsData = [
       title: 'Marine Electrician', 
       location: 'Mumbai', 
       time: '3 mins ago', 
-      price: 'INR 55K - INR 72K', 
+      price: '55K - 72K', 
       type: 'Full time', 
       img: '/assets/imgs/page/homepage2/img1.png', 
       tags: ['Panel Wiring', 'Safety'] 
@@ -28,7 +28,7 @@ const jobsData = [
       title: 'HVAC Technician', 
       location: 'Lucknow', 
       time: '6 mins ago', 
-      price: 'INR 40K - INR 52K', 
+      price: '40K - 52K', 
       type: 'Full time', 
       img: '/assets/imgs/page/homepage2/img2.png', 
       tags: ['HVAC', 'Troubleshooting'] 
@@ -37,7 +37,7 @@ const jobsData = [
       title: 'Mechanical Fitter', 
       location: 'Chennai', 
       time: '9 mins ago', 
-      price: 'INR 45K - INR 58K', 
+      price: '45K - 58K', 
       type: 'Full time', 
       img: '/assets/imgs/page/homepage2/img3.png', 
       tags: ['Alignment', 'Assembly'] 
@@ -48,7 +48,7 @@ const jobsData = [
       title: 'Site Welder (6G)', 
       location: 'Pune', 
       time: '12 mins ago', 
-      price: 'INR 50K - INR 72K', 
+      price: '50K - 72K', 
       type: 'Contract', 
       img: '/assets/imgs/page/homepage2/img1.png', 
       tags: ['6G', 'Fabrication'] 
@@ -57,7 +57,7 @@ const jobsData = [
       title: 'Pipe Fitter', 
       location: 'Kolkata', 
       time: '15 mins ago', 
-      price: 'INR 44K - INR 60K', 
+      price: '44K - 60K', 
       type: 'Contract', 
       img: '/assets/imgs/page/homepage2/img2.png', 
       tags: ['Pipe Fit-up', 'Hydro Test'] 
@@ -68,7 +68,7 @@ const jobsData = [
       title: 'Heavy Vehicle Driver', 
       location: 'Hyderabad', 
       time: '20 mins ago', 
-      price: 'INR 28K - INR 40K', 
+      price: '28K - 40K', 
       type: 'Full time', 
       img: '/assets/imgs/page/homepage2/img1.png', 
       tags: ['HMV', 'Fleet Safety'] 
@@ -79,7 +79,7 @@ const jobsData = [
       title: 'Shuttering Carpenter', 
       location: 'Ahmedabad', 
       time: '25 mins ago', 
-      price: 'INR 36K - INR 50K', 
+      price: '36K - 50K', 
       type: 'Full time', 
       img: '/assets/imgs/page/homepage2/img1.png', 
       tags: ['Formwork', 'Layout'] 
@@ -90,7 +90,7 @@ const jobsData = [
       title: 'Deck Crew Assistant', 
       location: 'Goa', 
       time: '30 mins ago', 
-      price: 'INR 32K - INR 45K', 
+      price: '32K - 45K', 
       type: 'Contract', 
       img: '/assets/imgs/page/homepage2/img1.png', 
       tags: ['Deck Support', 'Safety Drill'] 
@@ -101,7 +101,7 @@ const jobsData = [
       title: 'Commis Cook (Bulk Kitchen)', 
       location: 'Kochi', 
       time: '35 mins ago', 
-      price: 'INR 30K - INR 42K', 
+      price: '30K - 42K', 
       type: 'Full time', 
       img: '/assets/imgs/page/homepage2/img1.png', 
       tags: ['Food Safety', 'Prep'] 
@@ -112,7 +112,7 @@ const jobsData = [
       title: 'Fire Safety Technician', 
       location: 'Indore', 
       time: '40 mins ago', 
-      price: 'INR 32K - INR 44K', 
+      price: '32K - 44K', 
       type: 'Full time', 
       img: '/assets/imgs/page/homepage2/img1.png', 
       tags: ['Fire Panel', 'Compliance'] 
@@ -123,7 +123,7 @@ const jobsData = [
       title: 'General Maintenance Technician', 
       location: 'Bhopal', 
       time: '45 mins ago', 
-      price: 'INR 22K - INR 30K', 
+      price: '22K - 30K', 
       type: 'Full time', 
       img: '/assets/imgs/page/homepage2/img1.png', 
       tags: ['Multi-skill', 'Preventive'] 
@@ -227,3 +227,4 @@ export default function LatestJobs() {
     </section>
   );
 }
+

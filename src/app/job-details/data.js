@@ -1,4 +1,4 @@
-import { mockJobs } from "@/app/jobs-list/components/data.js";
+﻿import { mockJobs } from "@/app/jobs-list/components/data.js";
 
 export const detailedJob = {
   id: 99,
@@ -10,7 +10,7 @@ export const detailedJob = {
   time: "Posted 3 hours ago",
   bannerImg: "/assets/imgs/page/job-single/thumb.png",
   avatar: "/assets/imgs/page/job-single/avatar.png",
-  salary: "INR 55,000 - INR 72,000 / month",
+  salary: "55,000 - 72,000 / month",
   experience: "5 - 8 years",
   industry: "Marine Operations / Industrial Maintenance",
   jobLevel: "Senior Technician",
@@ -89,4 +89,5 @@ export const featuredJobs = mockJobs.slice(0, 4);
 
 export const mapEmbed =
   "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3774.1940373635194!2d72.84876179999999!3d18.941284699999998!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7ce1f1b445f81%3A0x8d9cbe88dfb041e2!2sBallard%20Estate%2C%20Mumbai!5e0!3m2!1sen!2sin!4v1713951044000!5m2!1sen!2sin";
+
 

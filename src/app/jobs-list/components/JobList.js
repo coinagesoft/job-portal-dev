@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import JobCardList from './JobCardList';
 import { mockJobs } from './data';
 import ApplyJobModal from '@/app/Homepage/components/ApplyJobModal';
+import Pagination from './Pagination';
 
 const toSafeArray = (value) => (Array.isArray(value) ? value : []);
 
@@ -66,6 +67,27 @@ const JobList = ({ jobs = mockJobs, filters = {} }) => {
 
   React.useEffect(() => {
     let result = [...jobs];
+    const keyword = String(filters.keyword || '').trim().toLowerCase();
+
+    if (keyword) {
+      result = result.filter((job) => {
+        const haystack = [
+          job.title,
+          job.company,
+          job.location,
+          job.type,
+          job.desc,
+          job.role,
+          job.department,
+          ...(job.tags || []),
+          ...(job.industries || [])
+        ]
+          .join(' ')
+          .toLowerCase();
+
+        return haystack.includes(keyword);
+      });
+    }
 
     if (toSafeArray(filters.workMode).length > 0) {
       result = result.filter((job) => filters.workMode.includes(job.workMode));
@@ -178,6 +200,7 @@ const JobList = ({ jobs = mockJobs, filters = {} }) => {
 
   const showingFrom = totalFilteredCount === 0 ? 0 : (currentPage - 1) * showPerPage + 1;
   const showingTo = totalFilteredCount === 0 ? 0 : Math.min(currentPage * showPerPage, totalFilteredCount);
+  const totalPages = Math.max(1, Math.ceil(totalFilteredCount / showPerPage));
 
   const openApplyModal = (job) => {
     setActiveJob(job);
@@ -260,6 +283,9 @@ const JobList = ({ jobs = mockJobs, filters = {} }) => {
           </div>
         ))}
       </div>
+      {totalPages > 1 ? (
+        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+      ) : null}
       <ApplyJobModal showModal={showApplyModal} setShowModal={setShowApplyModal} job={activeJob} />
     </div>
   );

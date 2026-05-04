@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import Preloader from '../Homepage/components/Preloader';
 import HeroSearch from './components/HeroSearch';
 import JobList from './components/JobList';
@@ -8,20 +8,61 @@ import NewsSection from './components/NewsSection';
 import Newsletter from './components/Newsletter';
 import FilterButton from './components/FilterButton';
 import JobFilterSheet from './components/JobFilterSheet';
+import { useSearchParams } from 'next/navigation';
 
 
 const JobsListPage = () => {
+  const searchParams = useSearchParams();
   const [filters, setFilters] = useState({});
   const [showFilterSheet, setShowFilterSheet] = useState(false);
 
-  const totalFilterCount = Object.values(filters).reduce((sum, cat) => sum + (Array.isArray(cat) ? cat.length : 0), 0);
+  const filtersFromQuery = useMemo(() => {
+    const queryFilters = {};
+    const keyword = (searchParams.get('q') || '').trim();
+    const location = (searchParams.get('location') || '').trim();
+    const industries = searchParams.getAll('industry').map((item) => item.trim()).filter(Boolean);
+
+    if (keyword) queryFilters.keyword = keyword;
+    if (location) queryFilters.locationSingle = location;
+    if (industries.length) {
+      queryFilters.industries = industries;
+      queryFilters.industry = industries;
+    }
+
+    return queryFilters;
+  }, [searchParams]);
+
+  useEffect(() => {
+    setFilters((prev) => {
+      const next = { ...prev };
+      delete next.keyword;
+      delete next.locationSingle;
+      delete next.industry;
+      delete next.industries;
+      return { ...next, ...filtersFromQuery };
+    });
+  }, [filtersFromQuery]);
+
+  const totalFilterCount = Object.values(filters).reduce((sum, cat) => {
+    if (Array.isArray(cat)) return sum + cat.length;
+    if (typeof cat === 'string' && cat.trim()) return sum + 1;
+    return sum;
+  }, 0);
 
   const handleFiltersChange = useCallback((newFilters) => {
-    setFilters(newFilters || {});
+    setFilters((prev) => ({
+      ...(newFilters || {}),
+      ...(prev.keyword ? { keyword: prev.keyword } : {}),
+      ...(prev.locationSingle ? { locationSingle: prev.locationSingle } : {})
+    }));
   }, []);
 
   const handleSheetApply = useCallback((sheetFilters) => {
-    setFilters(sheetFilters || {});
+    setFilters((prev) => ({
+      ...(sheetFilters || {}),
+      ...(prev.keyword ? { keyword: prev.keyword } : {}),
+      ...(prev.locationSingle ? { locationSingle: prev.locationSingle } : {})
+    }));
   }, []);
 
   const handleSheetClose = useCallback(() => {
@@ -65,5 +106,3 @@ const JobsListPage = () => {
 };
 
 export default JobsListPage;
-
-

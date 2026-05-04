@@ -6,7 +6,7 @@ import ProfileTabs from "./components/ProfileTabs";
 import { mockProfile } from "./components/data.js";
 import { useToast } from "@/components/Toast";
 
-const SECTION_IDS = ["personal", "photo-intro", "documents", "work", "education", "skills", "languages", "cv"];
+const SECTION_IDS = ["personal", "documents", "work", "education", "skills", "languages", "cv"];
 
 const DEFAULT_DOCUMENT_STATUS = {
   nationalId: "verified",
@@ -24,10 +24,17 @@ const formatFileSize = (sizeInBytes) => {
 };
 
 const createId = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+const syncSkillMatrixWithSelected = (profile) => {
+  const matrixByName = new Map((profile.skillMatrix || []).map((entry) => [entry.name, entry]));
+  const syncedSkillMatrix = (profile.selectedSkills || []).map((name) => (
+    matrixByName.get(name) || { id: createId("skill"), name, proficiency: "Beginner", years: 1 }
+  ));
+  return { ...profile, skillMatrix: syncedSkillMatrix };
+};
 
 const CandidateProfilePage = () => {
   const showToast = useToast();
-  const [profileData, setProfileData] = useState(mockProfile);
+  const [profileData, setProfileData] = useState(() => syncSkillMatrixWithSelected(mockProfile));
   const [showWorkModal, setShowWorkModal] = useState(false);
   const [newWorkEntry, setNewWorkEntry] = useState({});
 
@@ -227,8 +234,25 @@ const CandidateProfilePage = () => {
       const nextSkills = isSelected
         ? prev.selectedSkills.filter((item) => item !== skill)
         : [...prev.selectedSkills, skill];
-      return { ...prev, selectedSkills: nextSkills };
+      const nextSkillMatrix = isSelected
+        ? prev.skillMatrix.filter((entry) => entry.name !== skill)
+        : prev.skillMatrix.some((entry) => entry.name === skill)
+          ? prev.skillMatrix
+          : [
+              ...prev.skillMatrix,
+              { id: createId("skill"), name: skill, proficiency: "Beginner", years: 1 }
+            ];
+      return { ...prev, selectedSkills: nextSkills, skillMatrix: nextSkillMatrix };
     });
+  }, []);
+
+  const updateSkillEntry = useCallback((entryId, field, value) => {
+    setProfileData((prev) => ({
+      ...prev,
+      skillMatrix: prev.skillMatrix.map((entry) =>
+        entry.id === entryId ? { ...entry, [field]: value } : entry
+      )
+    }));
   }, []);
 
   // Language preference handlers
@@ -396,6 +420,7 @@ const CandidateProfilePage = () => {
                 addEducationEntry={addEducationEntry}
                 removeEducationEntry={removeEducationEntry}
                 toggleSkill={toggleSkill}
+                updateSkillEntry={updateSkillEntry}
                 handleDocumentUpload={handleDocumentUpload}
                 clearDocumentUpload={clearDocumentUpload}
                 addCustomDocument={addCustomDocument}

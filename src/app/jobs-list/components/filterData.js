@@ -1,4 +1,4 @@
-export const filterCategories = [
+﻿export const filterCategories = [
   { label: "Work mode", type: "workMode" },
   { label: "Department", type: "department" },
   { label: "Experience", type: "experience" },
@@ -35,11 +35,11 @@ export const filterOptions = {
     { label: "10+ Years", count: 90, selected: false }
   ],
   salary: [
-    { label: "INR 20K - INR 30K", count: 122, selected: false },
-    { label: "INR 30K - INR 45K", count: 418, selected: false },
-    { label: "INR 45K - INR 60K", count: 376, selected: false },
-    { label: "INR 60K - INR 80K", count: 204, selected: false },
-    { label: "INR 80K+", count: 68, selected: false }
+    { label: "20K - 30K", count: 122, selected: false },
+    { label: "30K - 45K", count: 418, selected: false },
+    { label: "45K - 60K", count: 376, selected: false },
+    { label: "60K - 80K", count: 204, selected: false },
+    { label: "80K+", count: 68, selected: false }
   ],
   companies: [
     { label: "Horizon Marine Services", count: 28, selected: false },
@@ -100,4 +100,5 @@ export const filterOptions = {
     { label: "Ahmedabad", count: 132, selected: false }
   ]
 };
+
 

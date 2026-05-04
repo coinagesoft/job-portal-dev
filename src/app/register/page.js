@@ -1,6 +1,6 @@
 'use client'
 import { useState, useRef, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Script from "next/script";
 import { useToast } from "@/components/Toast";
 
@@ -247,6 +247,7 @@ function OtpBlock({ label, target, sent, verified, onSend, onVerify, otpVal, set
 // CANDIDATE FORM
 // ─────────────────────────────────────────────
 function CandidateForm() {
+  const router = useRouter();
   const showToast = useToast();
   const [form, setForm] = useState({ name:"", countryCode:"+91", mobile:"", email:"" });
   const [mobileOtp, setMobileOtp] = useState({ sent:false, verified:false, generated:"", userVal:"" });
@@ -326,6 +327,13 @@ function CandidateForm() {
 
   const canSubmit = mobileOtp.verified && terms && payStatus === "success";
 
+  const handleCandidateSubmit = () => {
+    showToast(`Welcome ${form.name}! Registration complete. Redirecting to login...`, "success");
+    window.setTimeout(() => {
+      router.push("/Login");
+    }, 900);
+  };
+
   return (
     <div>
       <Alert type="info">
@@ -388,7 +396,7 @@ function CandidateForm() {
 
       <Btn variant="primary" disabled={!canSubmit}
         style={{ width:"100%", padding:"13px 0", fontSize:15 }}
-        onClick={() => showToast(`Welcome ${form.name}! Registration complete.`, "success")}>
+        onClick={handleCandidateSubmit}>
         Create Account & Get Started
       </Btn>
     </div>
@@ -401,6 +409,7 @@ function CandidateForm() {
 const STEP_LABELS = ["GST Check", "Company Details", "Contact & OTP", "Licences", "Review"];
 
 function EmployerForm() {
+  const router = useRouter();
   const showToast = useToast();
   const [step, setStep] = useState(1);
   const [data, setData] = useState({
@@ -479,6 +488,13 @@ function EmployerForm() {
   const canGoStep3 = EMPLOYER_UI_PREVIEW_MODE || isStep3Valid;
   const canGoStep4 = EMPLOYER_UI_PREVIEW_MODE || isStep4Valid;
   const canSubmit  = EMPLOYER_UI_PREVIEW_MODE || isStep4Valid;
+
+  const handleEmployerSubmit = () => {
+    showToast(`Welcome ${data.contactName}! Your employer account for ${data.legalName} has been created. You'll receive an email at ${data.corpEmail} once verified. Redirecting to login...`, "success");
+    window.setTimeout(() => {
+      router.push("/Login");
+    }, 900);
+  };
 
   const InfoRow = ({ label, val, mono }) => (
     <div style={{ display:"flex", justifyContent:"space-between", padding:"7px 0",
@@ -853,7 +869,7 @@ function EmployerForm() {
       </div>
       <Btn variant="primary" disabled={!canSubmit}
         style={{ width:"100%", padding:"13px 0", fontSize:15 }}
-        onClick={() => showToast(`Welcome ${data.contactName}! Your employer account for ${data.legalName} has been created. You'll receive an email at ${data.corpEmail} once verified.`, "success")}>
+        onClick={handleEmployerSubmit}>
         Create Account & Start Trial
       </Btn>
       <p style={{ fontSize:11, color:"var(--color-text-tertiary)", textAlign:"center", marginTop:10 }}>
@@ -966,4 +982,3 @@ export default function RegisterPage() {
     </Suspense>
   );
 }
-

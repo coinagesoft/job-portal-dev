@@ -1,4 +1,4 @@
-export const mockProfile = {
+﻿export const mockProfile = {
   salaryExpectation: 45000,
   isITI: true,
   passportNumber: "Z1234567",
@@ -170,7 +170,7 @@ export const mockMyJobs = [
     type: "Full time",
     time: "4 mins ago",
     location: "Mumbai",
-    price: "INR 55,000",
+    price: "55,000",
     priceUnit: "/month",
     tags: ["Panel Wiring", "Safety"],
     description: "Employer shortlisted your profile for electrical maintenance and panel troubleshooting tasks."
@@ -183,7 +183,7 @@ export const mockMyJobs = [
     type: "Contract",
     time: "5 mins ago",
     location: "Pune",
-    price: "INR 62,000",
+    price: "62,000",
     priceUnit: "/month",
     tags: ["6G Welding", "Fabrication"],
     description: "Application moved to interview stage after technical screening call."
@@ -196,7 +196,7 @@ export const mockMyJobs = [
     type: "Full time",
     time: "6 mins ago",
     location: "Delhi / NCR",
-    price: "INR 48,000",
+    price: "48,000",
     priceUnit: "/month",
     tags: ["Dispatch", "Inventory"],
     description: "Your profile is in review for shift leadership and dispatch planning."
@@ -209,7 +209,7 @@ export const mockMyJobs = [
     type: "Full time",
     time: "6 mins ago",
     location: "Chennai",
-    price: "INR 52,000",
+    price: "52,000",
     priceUnit: "/month",
     tags: ["Machine Assembly", "Alignment"],
     description: "Employer requested final document verification before offer release."
@@ -226,7 +226,7 @@ export const mockSavedJobs = [
     type: "Contract",
     time: "4 minutes ago",
     location: "Visakhapatnam",
-    price: "INR 58,000",
+    price: "58,000",
     priceUnit: "/month",
     tags: ["Heavy Lift", "Signal Handling"],
     description: "Saved role for next week application after document update."
@@ -239,7 +239,7 @@ export const mockSavedJobs = [
     type: "Full time",
     time: "5 minutes ago",
     location: "Bengaluru",
-    price: "INR 42,000",
+    price: "42,000",
     priceUnit: "/month",
     tags: ["Leak Testing", "Blueprint Reading"],
     description: "Saved job with immediate joining preference."
@@ -252,7 +252,7 @@ export const mockSavedJobs = [
     type: "Full time",
     time: "6 minutes ago",
     location: "Hyderabad",
-    price: "INR 36,000",
+    price: "36,000",
     priceUnit: "/month",
     tags: ["HMV License", "Fleet Safety"],
     description: "Role saved for alternate shift preference."
@@ -265,7 +265,7 @@ export const mockSavedJobs = [
     type: "Contract",
     time: "6 minutes ago",
     location: "Noida",
-    price: "INR 60,000",
+    price: "60,000",
     priceUnit: "/month",
     tags: ["TIG", "Quality Checks"],
     description: "Application readiness saved for later submission."
@@ -278,7 +278,7 @@ export const mockSavedJobs = [
     type: "Contract",
     time: "4 minutes ago",
     location: "Goa",
-    price: "INR 44,000",
+    price: "44,000",
     priceUnit: "/month",
     tags: ["Deck Support", "Safety Drill"],
     description: "Saved for upcoming coastal deployment cycle."
@@ -291,7 +291,7 @@ export const mockSavedJobs = [
     type: "Full time",
     time: "5 minutes ago",
     location: "Ahmedabad",
-    price: "INR 46,000",
+    price: "46,000",
     priceUnit: "/month",
     tags: ["Formwork", "Layout Reading"],
     description: "Role saved to apply after relocation confirmation."
@@ -304,7 +304,7 @@ export const mockSavedJobs = [
     type: "Full time",
     time: "6 minutes ago",
     location: "Nagpur",
-    price: "INR 58,000",
+    price: "58,000",
     priceUnit: "/month",
     tags: ["Boiler Ops", "Log Sheets"],
     description: "Saved for interview preparation this month."
@@ -317,7 +317,7 @@ export const mockSavedJobs = [
     type: "Full time",
     time: "6 minutes ago",
     location: "Lucknow",
-    price: "INR 50,000",
+    price: "50,000",
     priceUnit: "/month",
     tags: ["HVAC", "Troubleshooting"],
     description: "Saved to compare with current shortlisted roles."
@@ -337,7 +337,7 @@ export const mockApplicationStatuses = [
     stage: "Profile Shortlisted",
     status: "Shortlisted",
     progress: 55,
-    price: "INR 55,000",
+    price: "55,000",
     priceUnit: "/month",
     tags: ["Panel Wiring", "Safety Compliance"],
     description:
@@ -364,7 +364,7 @@ export const mockApplicationStatuses = [
     stage: "Interview Scheduled",
     status: "Interview",
     progress: 80,
-    price: "INR 62,000",
+    price: "62,000",
     priceUnit: "/month",
     tags: ["6G Welding", "Fabrication"],
     description:
@@ -391,7 +391,7 @@ export const mockApplicationStatuses = [
     stage: "Application Under Review",
     status: "In Review",
     progress: 35,
-    price: "INR 48,000",
+    price: "48,000",
     priceUnit: "/month",
     tags: ["Dispatch Planning", "Inventory"],
     description:
@@ -418,7 +418,7 @@ export const mockApplicationStatuses = [
     stage: "Application Closed",
     status: "Rejected",
     progress: 100,
-    price: "INR 52,000",
+    price: "52,000",
     priceUnit: "/month",
     tags: ["Machine Assembly", "Alignment"],
     description:
@@ -445,7 +445,7 @@ export const mockApplicationStatuses = [
     stage: "Application Submitted",
     status: "Applied",
     progress: 20,
-    price: "INR 58,000",
+    price: "58,000",
     priceUnit: "/month",
     tags: ["Heavy Lift", "Signal Handling"],
     description:
@@ -461,4 +461,5 @@ export const mockApplicationStatuses = [
     }
   }
 ];
+
 

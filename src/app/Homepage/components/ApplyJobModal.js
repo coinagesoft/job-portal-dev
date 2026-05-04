@@ -103,29 +103,39 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
         style={{ zIndex: 1050 }}
       >
         <div className="modal-dialog modal-xl modal-dialog-scrollable">
-          <div className="modal-content apply-job-form">
-            <button className="btn-close" type="button" onClick={closeModal} aria-label="Close"></button>
+          <div className="modal-content apply-job-form apply-job-modal-shell">
             <div className="modal-body pl-30 pr-30 pt-30 pb-30">
+              <div className="apply-job-modal-header">
+                <div>
+                  <p className="font-sm text-brand-2 mb-5">Job Application</p>
+                  <h5 className="mb-0 color-brand-1">{job?.title || "Apply to job"}</h5>
+                </div>
+                <button
+                  className="apply-job-modal-close"
+                  type="button"
+                  onClick={closeModal}
+                  aria-label="Close modal"
+                >
+                  x
+                </button>
+              </div>
+
               {submitted ? (
-                <div style={{ textAlign: "center", padding: "40px 0" }}>
+                <div style={{ textAlign: "center", padding: "40px 0 20px" }}>
                   <h4 className="mb-10 color-brand-1">Application Submitted</h4>
                   <p className="font-sm color-text-paragraph-2 mb-20">
                     Your responses and CV preview were submitted successfully to the employer.
                   </p>
-                  <button type="button" className="btn btn-brand-1" onClick={closeModal}>
+                  <button type="button" className="btn btn-default" onClick={closeModal}>
                     Close
                   </button>
                 </div>
               ) : (
                 <div className="row">
                   <div className="col-lg-7 col-md-12">
-                    <div className="mb-20">
-                      <p className="font-sm text-brand-2 mb-5">Job Application</p>
-                      <h4 className="mb-5 color-brand-1">{job?.title || "Apply to job"}</h4>
-                      <p className="font-sm color-text-paragraph-2">
-                        Employer screening questions for this role are listed below.
-                      </p>
-                    </div>
+                    <p className="font-sm color-text-paragraph-2 mb-20">
+                      Employer screening questions for this role are listed below.
+                    </p>
 
                     <div className="mb-20">
                       <h6 className="mb-10">Candidate details</h6>
@@ -145,14 +155,14 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
                     <div className="mb-15">
                       <h6 className="mb-10">Employer screening questions</h6>
                       {employerQuestions.map((question) => (
-                        <div key={question.id} className="mb-15">
+                        <div key={question.id} className="mb-15 apply-job-question-block">
                           <label className="font-sm fw-600 color-text-mutted mb-8 d-block">
                             {question.label}
                             {question.required ? " *" : ""}
                           </label>
 
                           {question.type === "radio" ? (
-                            <div style={{ display: "flex", gap: "18px", flexWrap: "wrap" }}>
+                            <div className="apply-job-question-options">
                               {(question.options || []).map((option) => (
                                 <label key={`${question.id}-${option}`} style={{ display: "flex", gap: "6px" }}>
                                   <input
@@ -200,14 +210,7 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
                   </div>
 
                   <div className="col-lg-5 col-md-12">
-                    <div
-                      style={{
-                        border: "1px solid #dce2ee",
-                        borderRadius: "12px",
-                        padding: "16px",
-                        background: "#f8fbff"
-                      }}
-                    >
+                    <div className="apply-job-preview-panel">
                       <h6 className="mb-10">CV Preview Sent to Employer</h6>
                       <p className="font-xs color-text-paragraph-2 mb-10">
                         This is the profile snapshot the employer receives with your responses.
@@ -216,7 +219,7 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
                       <div className="mb-10">
                         <strong>{candidateName}</strong>
                         <p className="font-xs mb-0">
-                          {mockProfile.trade} · {mockProfile.yearsOfExperience} years · {mockProfile.city}, {mockProfile.state}
+                          {mockProfile.trade} - {mockProfile.yearsOfExperience} years - {mockProfile.city}, {mockProfile.state}
                         </p>
                       </div>
 

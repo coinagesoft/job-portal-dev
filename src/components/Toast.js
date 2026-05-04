@@ -1,21 +1,47 @@
 "use client";
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 
 const ToastContext = createContext(null);
+const DEFAULT_TOAST_DURATION = 3500;
+const DEFAULT_TRANSMISSION_DELAY = 600;
+const ENTRY_ANIMATION_DURATION = 500;
+const EXIT_ANIMATION_DURATION = 700;
 
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
+  const timerIdsRef = useRef([]);
 
-  const showToast = useCallback((message, type = "success", duration = 3500) => {
-    const id = Date.now() + Math.random();
-    setToasts((prev) => [...prev, { id, message, type }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, duration);
+  const dismissToast = useCallback((id) => {
+    setToasts((prev) => prev.map((toast) => (
+      toast.id === id ? { ...toast, isExiting: true } : toast
+    )));
+
+    const cleanupTimer = window.setTimeout(() => {
+      setToasts((prev) => prev.filter((toast) => toast.id !== id));
+    }, EXIT_ANIMATION_DURATION);
+
+    timerIdsRef.current.push(cleanupTimer);
   }, []);
 
-  const removeToast = useCallback((id) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
+  const showToast = useCallback((message, type = "success", duration = DEFAULT_TOAST_DURATION) => {
+    const id = Date.now() + Math.random();
+    const addTimer = window.setTimeout(() => {
+      setToasts((prev) => [...prev, { id, message, type, isExiting: false }]);
+
+      const removeTimer = window.setTimeout(() => {
+        dismissToast(id);
+      }, duration);
+
+      timerIdsRef.current.push(removeTimer);
+    }, DEFAULT_TRANSMISSION_DELAY);
+
+    timerIdsRef.current.push(addTimer);
+  }, [dismissToast]);
+
+  useEffect(() => {
+    return () => {
+      timerIdsRef.current.forEach((timerId) => window.clearTimeout(timerId));
+    };
   }, []);
 
   return (
@@ -38,7 +64,9 @@ export const ToastProvider = ({ children }) => {
                 : toast.type === "warning" ? "#F59E0B"
                 : "#1976D2",
               color: "#fff", fontSize: "14px", fontWeight: 500,
-              animation: "slideInToast 0.3s ease",
+              animation: toast.isExiting
+                ? `slideOutToast ${EXIT_ANIMATION_DURATION}ms ease-in forwards`
+                : `slideInToast ${ENTRY_ANIMATION_DURATION}ms ease-out forwards`,
             }}
           >
             <span style={{ fontSize: "18px" }}>
@@ -49,7 +77,7 @@ export const ToastProvider = ({ children }) => {
             </span>
             <span style={{ flex: 1 }}>{toast.message}</span>
             <button
-              onClick={() => removeToast(toast.id)}
+              onClick={() => dismissToast(toast.id)}
               style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", fontSize: "16px", padding: "0 4px", opacity: 0.8 }}
             >×</button>
           </div>
@@ -57,8 +85,12 @@ export const ToastProvider = ({ children }) => {
       </div>
       <style>{`
         @keyframes slideInToast {
-          from { opacity: 0; transform: translateX(40px); }
+          from { opacity: 0; transform: translateX(56px); }
           to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes slideOutToast {
+          from { opacity: 1; transform: translateX(0); }
+          to { opacity: 0; transform: translateX(84px); }
         }
       `}</style>
     </ToastContext.Provider>

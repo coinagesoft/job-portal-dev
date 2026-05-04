@@ -12,7 +12,7 @@ const companyInfo = {
   phone: "+91 22 4567 8900",
   email: "hiring@horizonmarine.in",
   field: "Marine Recruitment",
-  salaryBand: "INR 35,000 - INR 75,000",
+  salaryBand: "35,000 - 75,000",
   memberSince: "Jul 2012",
   lastJobPosted: "2 days ago",
 };
@@ -51,7 +51,7 @@ const latestJobs = [
     posted: "2 days ago",
     summary:
       "Offshore fabrication and vessel repair role requiring 6G certification and strong TIG/MIG handling experience.",
-    salary: "INR 45,000",
+    salary: "45,000",
     tags: ["6G", "Offshore"]
   },
   {
@@ -64,7 +64,7 @@ const latestJobs = [
     posted: "4 days ago",
     summary:
       "Maintenance of electrical systems, panel troubleshooting, and marine safety compliance support for vessel units.",
-    salary: "INR 52,000",
+    salary: "52,000",
     tags: ["Electrical", "Marine"]
   },
   {
@@ -77,7 +77,7 @@ const latestJobs = [
     posted: "6 days ago",
     summary:
       "Onboard galley operations role focused on hygiene standards, meal prep, and offshore crew support.",
-    salary: "INR 38,000",
+    salary: "38,000",
     tags: ["Hospitality", "Crew"]
   }
 ];
@@ -340,11 +340,6 @@ const CompanyDetailsPage = () => {
                     <li>Phone: {companyInfo.phone}</li>
                     <li>Email: {companyInfo.email}</li>
                   </ul>
-                  <div className="mt-30">
-                    <Link className="btn btn-send-message" href="/jobs-list">
-                      Send Message
-                    </Link>
-                  </div>
                 </div>
               </div>
 

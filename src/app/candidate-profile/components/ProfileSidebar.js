@@ -3,7 +3,6 @@ import Image from "next/image";
 // Sidebar navigation order must match the content sections in ProfileTabs.
 const SECTION_MENU = [
   { id: "personal", icon: "icon-user", label: "Step 1: Personal Info" },
-  { id: "photo-intro", icon: "icon-camera", label: "Step 1.5: Photo & Intro" },
   { id: "documents", icon: "icon-folder", label: "Step 2: Upload Documents" },
   { id: "work", icon: "icon-briefcase", label: "Step 3: Work History" },
   { id: "education", icon: "icon-graduation-cap", label: "Step 4: Education" },
@@ -104,4 +103,3 @@ const ProfileSidebar = ({
 };
 
 export default ProfileSidebar;
-

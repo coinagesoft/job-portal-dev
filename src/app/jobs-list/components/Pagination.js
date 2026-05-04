@@ -7,26 +7,44 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
     pages.push(i);
   }
 
+  const goToPage = (page) => {
+    if (page < 1 || page > totalPages || page === currentPage) return;
+    onPageChange(page);
+  };
+
   return (
     <div className="paginations">
       <ul className="pager">
-        <li><a className="pager-prev" href="#" onClick={() => onPageChange(currentPage - 1)}>&laquo;</a></li>
+        <li>
+          <button
+            type="button"
+            className="pager-prev"
+            onClick={() => goToPage(currentPage - 1)}
+            disabled={currentPage <= 1}
+          />
+        </li>
         {pages.map(page => (
           <li key={page}>
-            <a 
-              className={`pager-number ${currentPage === page ? 'active' : ''}`} 
-              href="#" 
-              onClick={() => onPageChange(page)}
+            <button
+              type="button"
+              className={`pager-number ${currentPage === page ? 'active' : ''}`}
+              onClick={() => goToPage(page)}
             >
               {page}
-            </a>
+            </button>
           </li>
         ))}
-        <li><a className="pager-next" href="#" onClick={() => onPageChange(currentPage + 1)}>&raquo;</a></li>
+        <li>
+          <button
+            type="button"
+            className="pager-next"
+            onClick={() => goToPage(currentPage + 1)}
+            disabled={currentPage >= totalPages}
+          />
+        </li>
       </ul>
     </div>
   );
 };
 
 export default Pagination;
-

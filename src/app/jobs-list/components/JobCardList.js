@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import React from 'react';
 import Link from 'next/link';
 
@@ -40,7 +40,7 @@ const JobCardList = ({ job, onApplyNow, viewMode = 'list' }) => {
           {viewMode === 'list' && (
             <div className="mt-10">
               <span className="font-xs color-text-paragraph-2">
-                Openings: <strong>{job.openings || 1}</strong> · Experience: <strong>{job.experience}</strong>
+                Openings: <strong>{job.openings || 1}</strong> - Experience: <strong>{job.experience}</strong>
               </span>
             </div>
           )}
@@ -68,4 +68,5 @@ const JobCardList = ({ job, onApplyNow, viewMode = 'list' }) => {
 };
 
 export default JobCardList;
+
 

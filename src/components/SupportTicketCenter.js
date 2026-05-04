@@ -334,7 +334,9 @@ const SupportTicketCenter = ({
             <h5 className="mb-15">{title}</h5>
             <div className="p-15" style={{ border: "1px solid #dce2ee", borderRadius: "10px" }}>
               <p className="font-xs color-text-paragraph-2 mb-5">{description}</p>
-              <span className="font-xs color-brand-1">support@jobportal.com</span>
+              <a className="font-xs color-brand-1" href="mailto:support@jobportal.com">
+                support@jobportal.com
+              </a>
             </div>
           </div>
         </div>
@@ -344,4 +346,3 @@ const SupportTicketCenter = ({
 };
 
 export default SupportTicketCenter;
-

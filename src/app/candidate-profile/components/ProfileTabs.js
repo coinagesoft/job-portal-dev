@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useMemo, useState } from "react";
 import { useToast } from "@/components/Toast";
@@ -9,8 +9,6 @@ const LANGUAGE_OPTIONS = [
   "Arabic", "Nepali", "Assamese"
 ];
 const PROFICIENCY_LEVELS = ["Beginner", "Conversational", "Professional", "Native"];
-
-const JOB_TYPE_OPTIONS = ["Domestic jobs", "International jobs", "Contract / Freelance"];
 
 const getStatusDetails = (status) => {
   switch (status) {
@@ -41,7 +39,7 @@ const EditModal = ({ title, onClose, children }) => (
     }}>
       <div style={{ padding: "20px 24px 16px", borderBottom: "1px solid #eee", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <h5 style={{ margin: 0, color: "#05264E" }}>{title}</h5>
-        <button onClick={onClose} style={{ background: "none", border: "none", fontSize: "22px", cursor: "pointer", color: "#666" }}>×</button>
+        <button onClick={onClose} style={{ background: "none", border: "none", fontSize: "22px", cursor: "pointer", color: "#666" }}>Ã—</button>
       </div>
       <div style={{ padding: "20px 24px 24px" }}>{children}</div>
     </div>
@@ -58,6 +56,7 @@ const ProfileTabs = ({
   addWorkEntry,
   removeWorkEntry,
   updateEducationEntry,
+  updateSkillEntry,
   addEducationEntry,
   removeEducationEntry,
   toggleSkill,
@@ -92,6 +91,11 @@ const ProfileTabs = ({
   const profileEmail = profileData.email || "email hidden";
   const location = [profileData.city, profileData.state].filter(Boolean).join(", ");
   const nowLabel = useMemo(() => new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }), []);
+  const openDatePicker = (event) => {
+    if (typeof event?.target?.showPicker === "function") {
+      event.target.showPicker();
+    }
+  };
 
   const renderSingleUploadZone = (docKey, documentData, isCustom = false, customDocId = "") => {
     const zoneKey = isCustom ? `custom-${customDocId}` : docKey;
@@ -137,11 +141,11 @@ const ProfileTabs = ({
 
   return (
     <div className="candidate-profile-v2-main-col">
-      {/* ── PERSONAL ── */}
+      {/* â”€â”€ PERSONAL â”€â”€ */}
       <section id="personal" ref={(n) => registerSectionRef("personal", n)} className="candidate-profile-v2-section-card">
         <div className="candidate-profile-v2-card-header">
           <div className="candidate-profile-v2-title-wrap">
-            <h5 className="candidate-profile-v2-card-title">Step 1: Personal Information</h5>
+            <h5 className="candidate-profile-v2-card-title">Step 1: Personal Information &amp; Profile Photo</h5>
           </div>
           <div className="candidate-profile-v2-actions">
             <button type="button" className="btn btn-border btn-sm" onClick={() => showToast("Changes discarded.", "info")}>Cancel</button>
@@ -167,7 +171,7 @@ const ProfileTabs = ({
                     const file = e.target.files?.[0];
                     if (file) {
                       if (file.size > 2 * 1024 * 1024) {
-                        showToast("File too large — please upload a JPG or PNG under 2 MB.", "error");
+                        showToast("File too large â€” please upload a JPG or PNG under 2 MB.", "error");
                         return;
                       }
                       showToast(`Photo "${file.name}" uploaded successfully.`, "success");
@@ -223,16 +227,20 @@ const ProfileTabs = ({
 
           <div className="candidate-profile-v2-form-grid two-col">
             <div className="form-group">
-              <label className="font-sm color-text-mutted mb-10">Salary Expectation (INR/month)</label>
+              <label className="font-sm color-text-mutted mb-10">Salary Expectation (per month)</label>
               <input className="form-control" type="number" min="0" value={profileData.salaryExpectation || ""} onChange={(e) => updateProfileField("salaryExpectation", Number(e.target.value))} />
               <small className="candidate-profile-v2-field-hint">Employers filter by salary range</small>
             </div>
             <div className="form-group">
               <label className="font-sm color-text-mutted mb-10">ITI Certified</label>
-              <label className="candidate-profile-v2-checkbox-item">
-                <input type="checkbox" checked={profileData.isITI || false} onChange={(e) => updateProfileField("isITI", e.target.checked)} />
-                <span>Yes</span>
-              </label>
+              <select
+                className="form-control"
+                value={profileData.isITI ? "yes" : "no"}
+                onChange={(e) => updateProfileField("isITI", e.target.value === "yes")}
+              >
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
             </div>
           </div>
 
@@ -333,122 +341,7 @@ const ProfileTabs = ({
         </div>
       </section>
 
-      {/* ── PHOTO & INTRO (Step 1.5) ── */}
-      <section id="photo-intro" ref={(n) => registerSectionRef("photo-intro", n)} className="candidate-profile-v2-section-card">
-        <div className="candidate-profile-v2-card-header">
-          <div className="candidate-profile-v2-title-wrap">
-            <h5 className="candidate-profile-v2-card-title">Step 1.5: Profile Photo &amp; Intro</h5>
-          </div>
-          <div className="candidate-profile-v2-actions">
-            <button type="button" className="btn btn-border btn-sm" onClick={() => showToast("Changes discarded.", "info")}>Cancel</button>
-            <button type="button" className="btn btn-default btn-sm" onClick={() => saveSection("personal")}>Save changes</button>
-          </div>
-        </div>
-        <div className="candidate-profile-v2-card-body">
-          <p className="ai-note-inline">Upload a clear profile photo and add a short video or audio intro to stand out to employers. A good photo and introduction significantly improve your profile visibility.</p>
-
-          {/* Profile Photo Upload */}
-          <div style={{ marginBottom: "28px" }}>
-            <h6 style={{ color: "#05264E", marginBottom: "12px" }}>Profile Photo</h6>
-            <div style={{ display: "flex", alignItems: "center", gap: "24px", flexWrap: "wrap" }}>
-              <div style={{
-                width: "96px", height: "96px", borderRadius: "50%", background: "#3B82F6",
-                color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "36px", fontWeight: "bold", flexShrink: 0,
-              }}>
-                {profileName.slice(0, 1).toUpperCase()}
-              </div>
-              <div>
-                <p style={{ fontSize: "13px", color: "#6b7280", marginBottom: "10px" }}>JPG or PNG only · Max 2 MB · Minimum 200×200 px recommended</p>
-                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                  <input
-                    id="photo-intro-upload"
-                    type="file"
-                    accept="image/jpeg,image/png,image/jpg"
-                    style={{ display: "none" }}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        if (file.size > 2 * 1024 * 1024) {
-                          showToast("Photo too large — max 2 MB allowed.", "error");
-                          return;
-                        }
-                        showToast(`Profile photo "${file.name}" uploaded successfully.`, "success");
-                      }
-                      e.target.value = "";
-                    }}
-                  />
-                  <label htmlFor="photo-intro-upload" className="btn btn-default btn-sm" style={{ cursor: "pointer", marginBottom: 0 }}>
-                    Upload Photo
-                  </label>
-                  <button type="button" className="btn btn-border btn-sm" onClick={() => showToast("Profile photo removed.", "info")}>Remove Photo</button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Video Introduction */}
-          <div style={{ marginBottom: "28px" }}>
-            <h6 style={{ color: "#05264E", marginBottom: "8px" }}>Video Introduction <span style={{ fontSize: "12px", fontWeight: "400", color: "#9ca3af" }}>(Optional)</span></h6>
-            <p style={{ fontSize: "13px", color: "#6b7280", marginBottom: "12px" }}>Record or upload a short 30–60 second video introduction. Employers can view this before shortlisting.</p>
-            <div style={{
-              border: "1.5px dashed #d1d5db", borderRadius: "10px", padding: "32px",
-              textAlign: "center", background: "#f9fafb", cursor: "pointer",
-            }}
-              onClick={() => showToast("Video upload coming soon — feature launching shortly.", "info")}
-            >
-              <div style={{ fontSize: "32px", marginBottom: "8px" }}>🎥</div>
-              <p style={{ fontSize: "14px", fontWeight: "600", color: "#374151", marginBottom: "4px" }}>Click to upload your intro video</p>
-              <p style={{ fontSize: "12px", color: "#9ca3af" }}>MP4 / MOV · Max 50 MB · 30–60 seconds recommended</p>
-            </div>
-          </div>
-
-          {/* Trade Certificates Preview Upload */}
-          <div style={{ marginBottom: "12px" }}>
-            <h6 style={{ color: "#05264E", marginBottom: "8px" }}>Trade Certificate Preview <span style={{ fontSize: "12px", fontWeight: "400", color: "#9ca3af" }}>(Optional)</span></h6>
-            <p style={{ fontSize: "13px", color: "#6b7280", marginBottom: "12px" }}>Upload a preview image of your primary trade certificate or licence. This appears on your public profile.</p>
-            <input
-              id="cert-preview-upload"
-              type="file"
-              accept="image/jpeg,image/png,image/jpg,.pdf"
-              style={{ display: "none" }}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) showToast(`Certificate preview "${file.name}" uploaded.`, "success");
-                e.target.value = "";
-              }}
-            />
-            <label htmlFor="cert-preview-upload" className="btn btn-border btn-sm" style={{ cursor: "pointer" }}>
-              Upload Certificate Preview
-            </label>
-          </div>
-
-          {/* Preferred Work Types */}
-          <div style={{ marginTop: "24px" }}>
-            <h6 style={{ color: "#05264E", marginBottom: "12px" }}>Job Preference Tags</h6>
-            <p style={{ fontSize: "13px", color: "#6b7280", marginBottom: "12px" }}>Select work types you are open to. Displayed on your profile to help employers identify fit quickly.</p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-              {["Offshore", "Onshore", "International", "Domestic", "Contract", "Permanent", "Immediate Joiner", "Relocation Ready"].map((tag) => (
-                <button
-                  key={tag}
-                  type="button"
-                  className="btn btn-grey-small"
-                  style={{ fontSize: "12px", padding: "5px 12px" }}
-                  onClick={() => showToast(`Preference "${tag}" toggled.`, "info")}
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-        <div className="candidate-profile-v2-card-footer">
-          <span>A complete photo and intro boosts shortlisting chances by 3×</span>
-          <button type="button" className="btn btn-default btn-sm" onClick={() => saveSection("personal")}>Save changes</button>
-        </div>
-      </section>
-
-      {/* ── DOCUMENTS ── */}
+      {/* â”€â”€ DOCUMENTS â”€â”€ */}
       <section id="documents" ref={(n) => registerSectionRef("documents", n)} className="candidate-profile-v2-section-card">
         <div className="candidate-profile-v2-card-header">
           <div className="candidate-profile-v2-title-wrap">
@@ -456,23 +349,26 @@ const ProfileTabs = ({
             <span className="candidate-profile-v2-badge is-success">{documentSummary.verified} verified</span>
             <span className="candidate-profile-v2-badge is-warning">{documentSummary.pending} pending</span>
           </div>
-          <button type="button" className="btn btn-border btn-sm" onClick={addCustomDocument}>Add document</button>
+          <div className="candidate-profile-v2-actions">
+            <button type="button" className="btn btn-border btn-sm" onClick={addCustomDocument}>Add document</button>
+            <button type="button" className="btn btn-default btn-sm" onClick={() => saveSection("documents")}>Save changes</button>
+          </div>
         </div>
         <div className="candidate-profile-v2-card-body">
           <p className="ai-note-inline">Your CV and documents are being scanned by Smart AI. Parsing and verification may take some time. Once completed, profile fields below are prefilled for your final review.</p>
 
-          {/* CV Upload — prominent card at top */}
+          {/* CV Upload â€” prominent card at top */}
           <div style={{ marginBottom: "20px" }}>
             <article className="candidate-profile-v2-doc-card" style={{ border: "2px solid #3B82F6", background: "#f0f6ff" }}>
               <div className="candidate-profile-v2-doc-head">
-                <h6 style={{ color: "#1976D2" }}>📄 CV / Resume</h6>
+                <h6 style={{ color: "#1976D2" }}>ðŸ“„ CV / Resume</h6>
                 <span className={`candidate-profile-v2-badge ${getStatusDetails(profileData.documents.cv?.status || "optional").className}`}>
                   {getStatusDetails(profileData.documents.cv?.status || "optional").label}
                 </span>
               </div>
               <div className="candidate-profile-v2-doc-body">
                 <p className="candidate-profile-v2-doc-main">Upload your latest CV or resume. This is the primary document employers review.</p>
-                <p className="candidate-profile-v2-doc-meta">Accepted: PDF, DOC, DOCX · Max size: 5 MB</p>
+                <p className="candidate-profile-v2-doc-meta">Accepted: PDF, DOC, DOCX Â· Max size: 5 MB</p>
                 {profileData.documents.cv ? renderSingleUploadZone("cv", profileData.documents.cv) : null}
               </div>
               <div className="candidate-profile-v2-doc-foot">Your CV is shown to verified employers only</div>
@@ -557,14 +453,17 @@ const ProfileTabs = ({
         </div>
       </section>
 
-      {/* ── WORK HISTORY ── */}
+      {/* â”€â”€ WORK HISTORY â”€â”€ */}
       <section id="work" ref={(n) => registerSectionRef("work", n)} className="candidate-profile-v2-section-card">
         <div className="candidate-profile-v2-card-header">
           <div className="candidate-profile-v2-title-wrap">
             <h5 className="candidate-profile-v2-card-title">Step 3: Work History</h5>
             <span className="candidate-profile-v2-badge is-brand">{profileData.workHistory.length} entries</span>
           </div>
-          <button type="button" className="btn btn-default btn-sm" onClick={openWorkModal}>Add experience</button>
+          <div className="candidate-profile-v2-actions">
+            <button type="button" className="btn btn-border btn-sm" onClick={openWorkModal}>Add experience</button>
+            <button type="button" className="btn btn-default btn-sm" onClick={() => saveSection("work")}>Save changes</button>
+          </div>
         </div>
         <div className="candidate-profile-v2-card-body">
           <p className="ai-note-inline">Smart AI suggestion: work history can be prefilled from uploaded CV and documents. Review entries before saving.</p>
@@ -585,11 +484,25 @@ const ProfileTabs = ({
                 <div className="candidate-profile-v2-form-grid two-col">
                   <div className="form-group">
                     <label className="font-sm color-text-mutted mb-10">Start Date</label>
-                    <input className="form-control" type="date" value={entry.startDate || ""} onChange={(e) => updateWorkEntry(entry.id, "startDate", e.target.value)} />
+                    <input
+                      className="form-control"
+                      type="date"
+                      value={entry.startDate || ""}
+                      onChange={(e) => updateWorkEntry(entry.id, "startDate", e.target.value)}
+                      onFocus={openDatePicker}
+                      onClick={openDatePicker}
+                    />
                   </div>
                   <div className="form-group">
                     <label className="font-sm color-text-mutted mb-10">End Date</label>
-                    <input className="form-control" type="date" value={entry.endDate || ""} onChange={(e) => updateWorkEntry(entry.id, "endDate", e.target.value)} />
+                    <input
+                      className="form-control"
+                      type="date"
+                      value={entry.endDate || ""}
+                      onChange={(e) => updateWorkEntry(entry.id, "endDate", e.target.value)}
+                      onFocus={openDatePicker}
+                      onClick={openDatePicker}
+                    />
                   </div>
                 </div>
                 <div className="form-group">
@@ -606,7 +519,7 @@ const ProfileTabs = ({
                 </label>
               </div>
               <div className="candidate-profile-v2-entry-actions">
-                <button type="button" className="btn btn-border btn-sm" onClick={() => { setEditWorkModal(entry); showToast("Editing work entry — update fields below.", "info"); }}>Edit</button>
+                <button type="button" className="btn btn-border btn-sm" onClick={() => { setEditWorkModal(entry); showToast("Editing work entry â€” update fields below.", "info"); }}>Edit</button>
                 <button type="button" className="btn btn-grey-small candidate-profile-v2-btn-delete" onClick={() => removeWorkEntry(entry.id)}>Delete</button>
               </div>
             </div>
@@ -614,14 +527,17 @@ const ProfileTabs = ({
         </div>
       </section>
 
-      {/* ── EDUCATION ── */}
+      {/* â”€â”€ EDUCATION â”€â”€ */}
       <section id="education" ref={(n) => registerSectionRef("education", n)} className="candidate-profile-v2-section-card">
         <div className="candidate-profile-v2-card-header">
           <div className="candidate-profile-v2-title-wrap">
             <h5 className="candidate-profile-v2-card-title">Step 4: Education</h5>
             <span className="candidate-profile-v2-badge is-brand">{profileData.education.length} entries</span>
           </div>
-          <button type="button" className="btn btn-default btn-sm" onClick={addEducationEntry}>Add education</button>
+          <div className="candidate-profile-v2-actions">
+            <button type="button" className="btn btn-border btn-sm" onClick={addEducationEntry}>Add education</button>
+            <button type="button" className="btn btn-default btn-sm" onClick={() => saveSection("education")}>Save changes</button>
+          </div>
         </div>
         <div className="candidate-profile-v2-card-body">
           <p className="ai-note-inline">Smart AI OCR note: education details are auto-extracted when possible. Edit any low-confidence values.</p>
@@ -653,7 +569,7 @@ const ProfileTabs = ({
                 </div>
               </div>
               <div className="candidate-profile-v2-entry-actions">
-                <button type="button" className="btn btn-border btn-sm" onClick={() => { setEditEduModal(entry); showToast("Editing education entry — update fields below.", "info"); }}>Edit</button>
+                <button type="button" className="btn btn-border btn-sm" onClick={() => { setEditEduModal(entry); showToast("Editing education entry â€” update fields below.", "info"); }}>Edit</button>
                 <button type="button" className="btn btn-grey-small candidate-profile-v2-btn-delete" onClick={() => removeEducationEntry(entry.id)}>Delete</button>
               </div>
             </div>
@@ -661,14 +577,17 @@ const ProfileTabs = ({
         </div>
       </section>
 
-      {/* ── SKILLS ── */}
+      {/* â”€â”€ SKILLS â”€â”€ */}
       <section id="skills" ref={(n) => registerSectionRef("skills", n)} className="candidate-profile-v2-section-card">
         <div className="candidate-profile-v2-card-header">
           <div className="candidate-profile-v2-title-wrap">
             <h5 className="candidate-profile-v2-card-title">Step 5: Skills</h5>
             <span className="candidate-profile-v2-badge is-brand">{profileData.selectedSkills.length} selected</span>
           </div>
-          <button type="button" className="btn btn-default btn-sm" onClick={() => showToast("Click on any skill tag below to add or remove it.", "info")}>Add skill</button>
+          <div className="candidate-profile-v2-actions">
+            <button type="button" className="btn btn-border btn-sm" onClick={() => showToast("Click on any skill tag below to add or remove it.", "info")}>Add skill</button>
+            <button type="button" className="btn btn-default btn-sm" onClick={() => saveSection("skills")}>Save changes</button>
+          </div>
         </div>
         <div className="candidate-profile-v2-card-body">
           <p className="ai-note-inline">Smart AI recommendation note: suggested skills are generated from your parsed CV profile.</p>
@@ -708,7 +627,7 @@ const ProfileTabs = ({
         </div>
       </section>
 
-      {/* ── LANGUAGES ── */}
+      {/* â”€â”€ LANGUAGES â”€â”€ */}
       <section id="languages" ref={(n) => registerSectionRef("languages", n)} className="candidate-profile-v2-section-card">
         <div className="candidate-profile-v2-card-header">
           <div className="candidate-profile-v2-title-wrap">
@@ -787,19 +706,19 @@ const ProfileTabs = ({
         </div>
         <div className="candidate-profile-v2-card-footer">
           <span>Languages help employers assess job-site communication requirements</span>
-          <button type="button" className="btn btn-default btn-sm" onClick={() => saveSection("languages")}>Save changes</button>
         </div>
       </section>
 
-      {/* ── CV PREVIEW ── */}
+      {/* â”€â”€ CV PREVIEW â”€â”€ */}
       <section id="cv" ref={(n) => registerSectionRef("cv", n)} className="candidate-profile-v2-section-card">
         <div className="candidate-profile-v2-card-header">
           <div className="candidate-profile-v2-title-wrap">
             <h5 className="candidate-profile-v2-card-title">Step 7: CV Preview</h5>
           </div>
           <div className="candidate-profile-v2-actions">
-            <button type="button" className="btn btn-border btn-sm" onClick={() => showToast("PDF download initiated — your CV will be ready shortly.", "info")}>Download PDF</button>
+            <button type="button" className="btn btn-border btn-sm" onClick={() => showToast("PDF download initiated â€” your CV will be ready shortly.", "info")}>Download PDF</button>
             <button type="button" className="btn btn-default btn-sm" onClick={() => showToast("CV link copied to clipboard!", "success")}>Share CV link</button>
+            <button type="button" className="btn btn-default btn-sm" onClick={() => saveSection("cv")}>Save changes</button>
           </div>
         </div>
         <div className="candidate-profile-v2-card-body">
@@ -815,18 +734,18 @@ const ProfileTabs = ({
                 </div>
                 <div>
                   <h3 style={{ margin: 0, color: "#05264E", fontSize: "26px" }}>{profileName}</h3>
-                  <p style={{ margin: "4px 0 0", color: "#3B82F6", fontWeight: "600", fontSize: "16px" }}>{profileData.trade} · {profileData.yearsOfExperience} years experience</p>
+                  <p style={{ margin: "4px 0 0", color: "#3B82F6", fontWeight: "600", fontSize: "16px" }}>{profileData.trade} Â· {profileData.yearsOfExperience} years experience</p>
                 </div>
               </div>
               <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", fontSize: "13px", color: "#6b7280" }}>
-                <span>📍 {location}</span>
-                <span>📞 {maskedMobile}</span>
-                <span>✉ {profileEmail}</span>
-                {profileData.nationality && <span>🌏 {profileData.nationality}</span>}
+                <span>ðŸ“ {location}</span>
+                <span>ðŸ“ž {maskedMobile}</span>
+                <span>âœ‰ {profileEmail}</span>
+                {profileData.nationality && <span>ðŸŒ {profileData.nationality}</span>}
               </div>
               {(profileData.languages || []).length > 0 && (
                 <div style={{ marginTop: "10px", fontSize: "13px", color: "#6b7280" }}>
-                  🗣 Languages: {(profileData.languages || []).map(l => `${l.name} (${l.proficiency})`).join(" · ")}
+                  ðŸ—£ Languages: {(profileData.languages || []).map(l => `${l.name} (${l.proficiency})`).join(" Â· ")}
                 </div>
               )}
             </div>
@@ -863,7 +782,7 @@ const ProfileTabs = ({
                     <strong style={{ fontSize: "14px" }}>{entry.title}</strong>
                     <p style={{ color: "#6b7280", fontSize: "12px", margin: "2px 0" }}>{entry.institution}</p>
                     <small style={{ color: "#9ca3af" }}>{entry.meta}</small>
-                    {entry.verified && <span style={{ marginLeft: "8px", fontSize: "10px", background: "#d1fae5", color: "#065f46", padding: "1px 6px", borderRadius: "10px" }}>✓ Verified</span>}
+                    {entry.verified && <span style={{ marginLeft: "8px", fontSize: "10px", background: "#d1fae5", color: "#065f46", padding: "1px 6px", borderRadius: "10px" }}>âœ“ Verified</span>}
                   </div>
                 ))}
 
@@ -886,7 +805,7 @@ const ProfileTabs = ({
         </div>
       </section>
 
-      {/* ── ADD WORK MODAL ── */}
+      {/* â”€â”€ ADD WORK MODAL â”€â”€ */}
       {showWorkModal && (
         <EditModal title="Add Work Experience" onClose={closeWorkModal}>
           <div className="candidate-profile-v2-form-grid two-col">
@@ -902,11 +821,25 @@ const ProfileTabs = ({
           <div className="candidate-profile-v2-form-grid two-col">
             <div className="form-group">
               <label className="font-sm color-text-mutted mb-10">Start Date</label>
-              <input className="form-control" type="date" value={newWorkEntry.startDate || ""} onChange={(e) => updateNewWorkField("startDate", e.target.value)} />
+              <input
+                className="form-control"
+                type="date"
+                value={newWorkEntry.startDate || ""}
+                onChange={(e) => updateNewWorkField("startDate", e.target.value)}
+                onFocus={openDatePicker}
+                onClick={openDatePicker}
+              />
             </div>
             <div className="form-group">
               <label className="font-sm color-text-mutted mb-10">End Date</label>
-              <input className="form-control" type="date" value={newWorkEntry.endDate || ""} onChange={(e) => updateNewWorkField("endDate", e.target.value)} />
+              <input
+                className="form-control"
+                type="date"
+                value={newWorkEntry.endDate || ""}
+                onChange={(e) => updateNewWorkField("endDate", e.target.value)}
+                onFocus={openDatePicker}
+                onClick={openDatePicker}
+              />
             </div>
           </div>
           <div className="form-group">
@@ -928,7 +861,7 @@ const ProfileTabs = ({
         </EditModal>
       )}
 
-      {/* ── EDIT WORK MODAL ── */}
+      {/* â”€â”€ EDIT WORK MODAL â”€â”€ */}
       {editWorkModal && (
         <EditModal title="Edit Work Experience" onClose={() => setEditWorkModal(null)}>
           <div className="candidate-profile-v2-form-grid two-col">
@@ -963,7 +896,7 @@ const ProfileTabs = ({
         </EditModal>
       )}
 
-      {/* ── EDIT EDUCATION MODAL ── */}
+      {/* â”€â”€ EDIT EDUCATION MODAL â”€â”€ */}
       {editEduModal && (
         <EditModal title="Edit Education" onClose={() => setEditEduModal(null)}>
           <div className="candidate-profile-v2-form-grid two-col">
@@ -998,7 +931,7 @@ const ProfileTabs = ({
         </EditModal>
       )}
 
-      {/* ── EDIT SKILL MODAL ── */}
+      {/* â”€â”€ EDIT SKILL MODAL â”€â”€ */}
       {editSkillModal && (
         <EditModal title={`Edit Skill: ${editSkillModal.name}`} onClose={() => setEditSkillModal(null)}>
           <div className="candidate-profile-v2-form-grid two-col">
@@ -1016,6 +949,8 @@ const ProfileTabs = ({
           <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end", marginTop: "8px" }}>
             <button type="button" className="btn btn-border btn-sm" onClick={() => setEditSkillModal(null)}>Cancel</button>
             <button type="button" className="btn btn-default btn-sm" onClick={() => {
+              updateSkillEntry(editSkillModal.id, "proficiency", editSkillModal.proficiency);
+              updateSkillEntry(editSkillModal.id, "years", editSkillModal.years);
               setEditSkillModal(null);
               showToast(`Skill "${editSkillModal.name}" updated successfully!`, "success");
             }}>Save Changes</button>
@@ -1027,3 +962,4 @@ const ProfileTabs = ({
 };
 
 export default ProfileTabs;
+

@@ -3,9 +3,13 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-const ProfileJobCard = ({ job, isListView }) => {
+const ProfileJobCard = ({ job, isListView, applyToDetails = false }) => {
+  const displayPrice = String(job.price || "").replace(/INR\s*/gi, "").trim();
+
   return (
-    <div className={`card-grid-2 hover-up${isListView ? "" : " no-padding"}`}>
+    <div
+      className={`card-grid-2 hover-up${isListView ? "" : " no-padding"}${applyToDetails ? " candidate-saved-job-card" : ""}`}
+    >
       <span className="flash"></span>
       <div className="row">
         <div className="col-lg-6 col-md-6 col-sm-12">
@@ -38,7 +42,7 @@ const ProfileJobCard = ({ job, isListView }) => {
           </div>
         )}
       </div>
-      <div className="card-block-info">
+      <div className={`card-block-info${applyToDetails ? " candidate-saved-job-card-info" : ""}`}>
         <h4>
           <Link href="/job-details">{job.title}</Link>
         </h4>
@@ -55,17 +59,23 @@ const ProfileJobCard = ({ job, isListView }) => {
         <div className={`card-2-bottom mt-20${isListView ? " mt-30" : " mt-30"}`}>
           <div className="row">
             <div className="col-lg-7 col-7">
-              <span className="card-text-price">{job.price}</span>
-              <span className="text-muted">{job.priceUnit}</span>
+              {/* <span className="card-text-price">{displayPrice}</span>
+              <span className="text-muted">{job.priceUnit}</span> */}
             </div>
             <div className="col-lg-5 col-5 text-end">
-              <div 
-                className="btn btn-apply-now" 
-                data-bs-toggle="modal" 
-                data-bs-target="#ModalApplyJobForm"
-              >
-                Apply now
-              </div>
+              {applyToDetails ? (
+                <Link className="btn btn-apply-now" href="/job-details">
+                  Apply now
+                </Link>
+              ) : (
+                <div
+                  className="btn btn-apply-now"
+                  data-bs-toggle="modal"
+                  data-bs-target="#ModalApplyJobForm"
+                >
+                  Apply now
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -75,4 +85,3 @@ const ProfileJobCard = ({ job, isListView }) => {
 };
 
 export default ProfileJobCard;
-
