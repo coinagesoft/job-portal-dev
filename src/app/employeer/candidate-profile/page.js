@@ -461,7 +461,7 @@ const EmployerCandidateProfilePage = () => {
                     <li>CV: Available after unlock</li>
                     <li>Unlock expiry window: 60 days</li>
                   </ul>
-                  <div className="mt-30">
+                  {/* <div className="mt-30">
                     <button
                       className="btn btn-send-message w-100"
                       type="button"
@@ -471,7 +471,7 @@ const EmployerCandidateProfilePage = () => {
                   </div>
                   <p className="font-xs color-text-paragraph-2 mt-10 mb-0">
                     Unlock is irreversible and credits are deducted instantly.
-                  </p>
+                  </p> */}
                 </div>
               </div>
 
