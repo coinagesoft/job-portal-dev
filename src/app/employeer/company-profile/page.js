@@ -118,11 +118,11 @@ export default function EmployerCompanyProfilePage() {
                   ))}
                 </div>
               </div>
-              <div className="col-lg-4 col-md-12 text-lg-end">
+              {/* <div className="col-lg-4 col-md-12 text-lg-end">
                 <button className="btn btn-call-icon btn-apply btn-apply-big" type="button" onClick={() => showToast("Company profile saved successfully!", "success")}>
                   Save Changes
                 </button>
-              </div>
+              </div> */}
             </div>
           </div>
 
@@ -302,9 +302,9 @@ export default function EmployerCompanyProfilePage() {
                     <li>Phone: {company.phone}</li>
                     <li>Email: {company.email}</li>
                   </ul>
-                  <div className="mt-30">
+                  {/* <div className="mt-30">
                     <button className="btn btn-send-message" onClick={() => showToast("Message form opened. Compose your message to the employer.", "info")}>Send Message</button>
-                  </div>
+                  </div> */}
                 </div>
               </div>
               <div className="sidebar-border-bg bg-right" style={{ marginTop: "20px" }}>
