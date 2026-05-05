@@ -192,7 +192,7 @@ const Header = () => {
                     type="button"
                   >
                     Register
-                    <span className={styles.registerChevron}>v</span>
+                    {/* <span className={styles.registerChevron}>v</span> */}
                   </button>
                   {registerOpen && (
                     <div className={styles.registerDropdown} onMouseLeave={() => setRegisterOpen(false)}>

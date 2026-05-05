@@ -1100,7 +1100,29 @@ h6,
   background-color: #05264E;
   color: #ffffff;
 }
+/* Primary (Unlock) → match JobBox blue */
+.btn-primary-custom {
+  background: #3C65F5 !important;   /* theme blue */
+  color: #fff;
+  border: none;
+}
 
+.btn-primary-custom:hover {
+  background: #05264E !important;   /* theme hover */
+  color: #fff;
+}
+
+/* Secondary (Download) → match border style */
+.btn-outline-custom {
+  background: transparent;
+  color: #3C65F5;
+  border: 1.5px solid #3C65F5 !important;   /* theme border */
+}
+
+.btn-outline-custom:hover {
+  background: #E0E6F7;   /* light theme bg */
+  color: #3C65F5;
+}
 .btn-border {
   border: 1px solid #B4C0E0;
   padding: 10px 23px 10px 23px;
