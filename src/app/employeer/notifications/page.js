@@ -23,66 +23,42 @@ const allNotifications = [
   {
     id: "n3",
     title: "Credit Alert",
-    message: "Your credit pack expires in 14 days. Renew to avoid interruption.",
+    message: "Your credit pack expires in 14 days.",
     time: "1 day ago",
     read: false,
     type: "credit",
-  },
-  {
-    id: "n4",
-    title: "Verification Update",
-    message: "Your PAN Card document is under admin review.",
-    time: "2 days ago",
-    read: true,
-    type: "verification",
-  },
-  {
-    id: "n5",
-    title: "Job Posted",
-    message: "Your job 'Cook / Galley Hand' has been published successfully.",
-    time: "3 days ago",
-    read: true,
-    type: "job",
-  },
-  {
-    id: "n6",
-    title: "Invoice Generated",
-    message: "Invoice #INV-2026-003 for 3-Month Growth Pack is ready.",
-    time: "5 days ago",
-    read: true,
-    type: "billing",
-  },
-  {
-    id: "n7",
-    title: "New Applicant",
-    message: "Mohammed Asif applied for Cook / Galley Hand",
-    time: "6 days ago",
-    read: true,
-    type: "applicant",
-  },
-  {
-    id: "n8",
-    title: "System Message",
-    message: "Platform maintenance scheduled for 22 Apr 2026, 2–4 AM IST.",
-    time: "1 week ago",
-    read: true,
-    type: "system",
   },
 ];
 
 const typeColors = {
   applicant: "#185FA5",
   credit: "#BA7517",
-  verification: "#0F6E56",
-  job: "#3B6D11",
-  billing: "#5E3B8E",
-  system: "#888780",
 };
 
 const EmployerNotificationsPage = () => {
   const showToast = useToast();
+
   const [notifications, setNotifications] = useState(allNotifications);
   const [filter, setFilter] = useState("all");
+
+  // ✅ NEW STATE FOR TOGGLES
+  const [preferences, setPreferences] = useState([
+    { label: "New applicants", enabled: true },
+    { label: "Credit & billing alerts", enabled: true },
+    { label: "Job status updates", enabled: true },
+    { label: "System messages", enabled: false },
+  ]);
+
+  // ✅ TOGGLE FUNCTION
+  const togglePreference = (index) => {
+    setPreferences((prev) =>
+      prev.map((item, i) =>
+        i === index ? { ...item, enabled: !item.enabled } : item
+      )
+    );
+
+    showToast("Preference updated", "info");
+  };
 
   const markAllRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
@@ -93,7 +69,6 @@ const EmployerNotificationsPage = () => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
-    showToast("Notification marked as read.", "info");
   };
 
   const filtered =
@@ -106,143 +81,105 @@ const EmployerNotificationsPage = () => {
       <section className="section-box mt-50 mb-50">
         <div className="container">
           <div className="content-page">
-            {/* Header */}
+
+            {/* HEADER */}
             <div className="box-filters-job mb-30">
               <div className="row align-items-center">
-                <div className="col-xl-8 col-lg-8">
-                  <h3 className="mb-5">Notifications</h3>
-                  <span className="font-sm color-text-paragraph-2">
-                    {unreadCount > 0
-                      ? `${unreadCount} unread notification${unreadCount > 1 ? "s" : ""}`
-                      : "All caught up!"}
+                <div className="col-xl-8">
+                  <h3>Notifications</h3>
+                  <span>
+                    {unreadCount} unread
                   </span>
                 </div>
-                <div className="col-xl-4 col-lg-4 text-lg-end mt-sm-15">
-                  {unreadCount > 0 && (
-                    <button
-                      className="btn btn-border btn-sm hover-up"
-                      type="button"
-                      onClick={markAllRead}
-                    >
-                      Mark all as read
-                    </button>
-                  )}
+                <div className="col-xl-4 text-end">
+                  <button
+                    className="btn btn-border btn-sm"
+                    onClick={markAllRead}
+                  >
+                    Mark all as read
+                  </button>
                 </div>
               </div>
             </div>
 
-            {/* Filter tabs */}
+            {/* FILTER */}
             <div className="mb-20">
               <button
-                className={`btn btn-sm mr-10 mb-10 ${filter === "all" ? "btn-default" : "btn-border"}`}
-                type="button"
+                className={`btn btn-sm mr-10 ${filter === "all" ? "btn-default" : "btn-border"}`}
                 onClick={() => setFilter("all")}
               >
-                All ({notifications.length})
+                All
               </button>
               <button
-                className={`btn btn-sm mr-10 mb-10 ${filter === "unread" ? "btn-default" : "btn-border"}`}
-                type="button"
+                className={`btn btn-sm ${filter === "unread" ? "btn-default" : "btn-border"}`}
                 onClick={() => setFilter("unread")}
               >
-                Unread ({unreadCount})
+                Unread
               </button>
             </div>
 
-            {/* Notifications list */}
-            <div className="card-grid-2 hover-up">
-              <div className="card-block-info pt-10 pb-10">
-                {filtered.length === 0 && (
-                  <div className="text-center py-40">
-                    <p className="font-sm color-text-paragraph-2">No notifications here.</p>
-                  </div>
-                )}
-                {filtered.map((notif) => (
-                  <div
-                    key={notif.id}
-                    className="card-grid-2 hover-up mb-10"
-                    style={{
-                      background: notif.read ? "#ffffff" : "#eef6ff",
-                      border: notif.read ? "1px solid #f0f0f0" : "1px solid #cfe0f8",
-                      borderRadius: "18px",
-                      cursor: notif.read ? "default" : "pointer",
-                    }}
-                    onClick={() => !notif.read && markRead(notif.id)}
-                  >
-                    <div className="card-block-info py-15 px-20">
-                      <div className="d-flex align-items-start gap-15">
-                        <div
-                          style={{
-                            width: "8px",
-                            height: "8px",
-                            borderRadius: "50%",
-                            background: notif.read ? "#ddd" : typeColors[notif.type] || "#185FA5",
-                            marginTop: "6px",
-                            flexShrink: 0,
-                          }}
-                        />
-                        <div style={{ flex: 1 }}>
-                          <p className="font-sm fw-600 mb-2">{notif.title}</p>
-                          <p className="font-xs color-text-paragraph-2 mb-2">{notif.message}</p>
-                          <p className="font-xs color-text-paragraph-2 mb-0" style={{ opacity: 0.6 }}>
-                            {notif.time}
-                          </p>
-                        </div>
-                        {!notif.read && (
-                          <span
-                            className="badge"
-                            style={{
-                              background: typeColors[notif.type] || "#185FA5",
-                              color: "#fff",
-                              fontSize: "10px",
-                              flexShrink: 0,
-                            }}
-                          >
-                            New
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+            {/* LIST */}
+            {filtered.map((notif) => (
+              <div
+                key={notif.id}
+                className="card-grid-2 mb-10"
+                style={{
+                  background: notif.read ? "#fff" : "#eef6ff",
+                  cursor: "pointer",
+                }}
+                onClick={() => markRead(notif.id)}
+              >
+                <div className="card-block-info p-20">
+                  <p><strong>{notif.title}</strong></p>
+                  <p>{notif.message}</p>
+                  <small>{notif.time}</small>
+                </div>
               </div>
-            </div>
+            ))}
 
-            {/* Notification preferences */}
-            <div className="card-grid-2 hover-up mt-20">
-              <div className="card-block-info pt-20 pb-20">
-                <h5 className="mb-15">Notification Preferences</h5>
+            {/* ✅ FIXED TOGGLE SECTION */}
+            <div className="card-grid-2 mt-20">
+              <div className="card-block-info p-20">
+                <h5>Notification Preferences</h5>
+
                 <div className="row">
-                  {[
-                    { label: "New applicants", enabled: true },
-                    { label: "Credit & billing alerts", enabled: true },
-                    { label: "Job status updates", enabled: true },
-                    { label: "System messages", enabled: false },
-                  ].map((pref) => (
-                    <div className="col-lg-6 col-12 mb-10" key={pref.label}>
-                      <div className="d-flex align-items-center justify-content-between py-5 px-10"
-                        style={{ border: "1px solid #eee", borderRadius: "8px" }}>
-                        <span className="font-sm">{pref.label}</span>
+                  {preferences.map((pref, index) => (
+                    <div className="col-lg-6 mb-10" key={pref.label}>
+                      <div
+                        onClick={() => togglePreference(index)}
+                        style={{
+                          border: "1px solid #eee",
+                          borderRadius: "8px",
+                          padding: "10px",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <span>{pref.label}</span>
+
+                        {/* SWITCH */}
                         <div
                           style={{
-                            width: "36px",
-                            height: "20px",
-                            borderRadius: "10px",
-                            background: pref.enabled ? "#185FA5" : "#ddd",
+                            width: "40px",
+                            height: "22px",
+                            borderRadius: "20px",
+                            background: pref.enabled ? "#3C65F5" : "#ddd",
                             position: "relative",
-                            cursor: "pointer",
+                            transition: "all 0.3s ease",
                           }}
                         >
                           <div
                             style={{
-                              width: "16px",
-                              height: "16px",
+                              width: "18px",
+                              height: "18px",
                               borderRadius: "50%",
                               background: "#fff",
                               position: "absolute",
                               top: "2px",
-                              left: pref.enabled ? "18px" : "2px",
-                              transition: "left 0.2s",
+                              left: pref.enabled ? "20px" : "2px",
+                              transition: "all 0.3s ease",
                             }}
                           />
                         </div>
@@ -250,8 +187,10 @@ const EmployerNotificationsPage = () => {
                     </div>
                   ))}
                 </div>
+
               </div>
             </div>
+
           </div>
         </div>
       </section>
