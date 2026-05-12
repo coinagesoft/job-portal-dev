@@ -8,6 +8,8 @@ import JobsByRole from "./components/JobsByRole";
 import LatestJobsNew from "./components/LatestJobsNew";
 import StatsSectionNew from "./components/StatsSectionNew";
 import TopRecruiters from "./components/TopRecruiters";
+import HeroSection from "./components/HeroSection";
+import JobsOfTheDay from "./components/JobsOfTheDay";
 
 export const metadata = {
   title: "Jobbox - New Homepage Sample",
@@ -19,13 +21,14 @@ export default function HomepageNewPage() {
     <>
       <Preloader />
       <main className="main">
-        <HeroBanner />
+        <HeroSection />
         <BrowseByCategory />
         <StatsSectionNew />
         <HowItWorks />
         <LatestJobsNew />
         <JobsByLocation />
-        <TopRecruiters />
+        {/* <TopRecruiters /> */}
+        <JobsOfTheDay />
         <JobsByRole />
         <ExploreMarketplace />
       </main>

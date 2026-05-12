@@ -2,6 +2,7 @@
 
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
+import "./BrowseByCategory.css";
 
 export default function BrowseByCategory() {
   return (
