@@ -323,6 +323,16 @@ const buildActiveFilterTags = (filters, tokenCount) => {
   return tags;
 };
 
+const CANDIDATE_ACTION_BUTTON_STYLE = {
+  minWidth: "170px",
+  height: "40px",
+  padding: "0 14px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  whiteSpace: "nowrap",
+};
+
 export const metadata = {
   title: "Employer CV Search - Job Portal",
   description: "Search and unlock candidate profiles.",
@@ -701,21 +711,43 @@ const EmployerCvSearchPage = async ({ searchParams }) => {
                                 </span>
                               </div>
                               <div className="col-lg-5 col-5 text-end">
-                                {candidate.canUnlock ? (
-                                  <Link
-                                    className="btn btn-apply-now"
-                                    href="/employeer/candidate-profile"
-                                  >
-                                    {candidate.unlockText}
-                                  </Link>
-                                ) : (
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    flexDirection: "row",
+                                    justifyContent: "flex-end",
+                                    alignItems: "center",
+                                    gap: 8,
+                                  }}
+                                >
                                   <button
-                                    className="btn btn-grey-small"
+                                    className="btn btn-border"
                                     type="button"
+                                    style={CANDIDATE_ACTION_BUTTON_STYLE}
                                   >
-                                    {candidate.unlockText}
+                                    Download CV
                                   </button>
-                                )}
+                                  {candidate.canUnlock ? (
+                                    <Link
+                                      className="btn btn-apply-now"
+                                      href="/employeer/candidate-profile"
+                                      style={{
+                                        ...CANDIDATE_ACTION_BUTTON_STYLE,
+                                        color: "#ffffff",
+                                      }}
+                                    >
+                                      {candidate.unlockText}
+                                    </Link>
+                                  ) : (
+                                    <button
+                                      className="btn btn-grey-small"
+                                      type="button"
+                                      style={CANDIDATE_ACTION_BUTTON_STYLE}
+                                    >
+                                      {candidate.unlockText}
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>

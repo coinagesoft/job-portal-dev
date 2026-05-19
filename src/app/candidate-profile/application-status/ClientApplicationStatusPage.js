@@ -16,6 +16,18 @@ const STATUS_CLASS_MAP = {
   Rejected: 'rejected'
 };
 
+const BLUE_BADGE_STYLE = {
+  backgroundColor: '#e8f0fe',
+  color: '#1a56c4',
+  border: '1px solid #c7dcff'
+};
+
+const BLUE_PILL_STYLE = {
+  backgroundColor: '#e8f0fe',
+  color: '#1a56c4',
+  border: '1px solid #c7dcff'
+};
+
 const ApplicationStatusCard = ({ application }) => {
   const statusClass = STATUS_CLASS_MAP[application.status] || 'applied';
 
@@ -38,7 +50,7 @@ const ApplicationStatusCard = ({ application }) => {
         <div className="col-lg-5 col-md-5 col-sm-12 text-start text-md-end">
           <div className="candidate-status-tags">
             {application.tags.slice(0, 3).map((tag) => (
-              <span key={tag} className="btn btn-grey-small mr-5">
+              <span key={tag} className="btn btn-grey-small mr-5" style={BLUE_BADGE_STYLE}>
                 {tag}
               </span>
             ))}
@@ -64,7 +76,9 @@ const ApplicationStatusCard = ({ application }) => {
               <span className="candidate-status-label">Current Stage</span>
               <h6 className="candidate-status-stage">{application.stage}</h6>
             </div>
-            <span className={`candidate-status-pill ${statusClass}`}>{application.status}</span>
+            <span className={`candidate-status-pill ${statusClass}`} style={BLUE_PILL_STYLE}>
+              {application.status}
+            </span>
           </div>
           <div className="candidate-status-row">
             <span className="candidate-status-date">Applied: {application.appliedOn}</span>
@@ -89,7 +103,7 @@ const ApplicationStatusCard = ({ application }) => {
               <span className="text-muted">{application.priceUnit}</span> */}
             </div>
             <div className="col-lg-5 col-5 text-end">
-              <Link className="btn btn-apply-now" href="/job-details">
+              <Link className="btn btn-apply-now" href="/job-details" style={{ color: '#ffffff' }}>
                 View Job
               </Link>
             </div>
@@ -163,7 +177,9 @@ const ClientApplicationStatusPage = () => {
                   onClick={() => setActiveFilter(filterName)}
                 >
                   <span>{filterName}</span>
-                  <span className="candidate-status-filter-count">{statusCounts[filterName] || 0}</span>
+                  <span className="candidate-status-filter-count" style={BLUE_BADGE_STYLE}>
+                    {statusCounts[filterName] || 0}
+                  </span>
                 </button>
               ))}
             </div>

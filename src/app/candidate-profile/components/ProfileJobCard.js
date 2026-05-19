@@ -3,6 +3,16 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 
+const BLUE_BADGE_STYLE = {
+  backgroundColor: "#e8f0fe",
+  color: "#1a56c4",
+  border: "1px solid #c7dcff"
+};
+
+const WHITE_ACTION_TEXT_STYLE = {
+  color: "#ffffff"
+};
+
 const ProfileJobCard = ({ job, isListView, applyToDetails = false }) => {
   const formatSalary = (value) => {
     const text = String(value || "").replace(/INR|\u20B9/gi, "").trim();
@@ -45,6 +55,7 @@ const ProfileJobCard = ({ job, isListView, applyToDetails = false }) => {
                 <a
                   key={index}
                   className="btn btn-grey-small mr-5"
+                  style={applyToDetails ? BLUE_BADGE_STYLE : undefined}
                   href="#"
                   title={tag}
                   data-bs-toggle="tooltip"
@@ -91,15 +102,17 @@ const ProfileJobCard = ({ job, isListView, applyToDetails = false }) => {
               {applyToDetails ? (
                 <Link
                   className="btn btn-apply-now"
+                  style={WHITE_ACTION_TEXT_STYLE}
                   href="/job-details"
-                  title="Apply to this job"
+                  title="View job details"
                   data-bs-toggle="tooltip"
                 >
-                  Apply now
+                  View Job
                 </Link>
               ) : (
                 <div
                   className="btn btn-apply-now"
+                  style={applyToDetails ? WHITE_ACTION_TEXT_STYLE : undefined}
                   data-bs-toggle="modal"
                   data-bs-target="#ModalApplyJobForm"
                   title="Apply to this job"

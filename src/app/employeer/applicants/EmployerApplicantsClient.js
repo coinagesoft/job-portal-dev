@@ -112,14 +112,15 @@ const EmployerApplicantsClient = () => {
               </div>
             </div>
 
-            <div className="mt-20 mb-20">
+            <div className="candidate-status-filter mt-20 mb-20">
               {applicantStatusTabs.map((tab) => (
                 <button
                   key={tab.label}
-                  className={`btn btn-sm ${tab.isActive ? "btn-default" : "btn-border"} mr-10 mb-10`}
+                  className={`candidate-status-filter-btn ${tab.isActive ? "active" : ""}`}
                   type="button"
                 >
-                  {tab.label} ({tab.count})
+                  <span>{tab.label}</span>
+                  <span className="candidate-status-filter-count">{tab.count}</span>
                 </button>
               ))}
             </div>

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import React, { useState, useEffect, useCallback } from 'react';
 import { filterCategories, filterOptions } from './filterData';
 
@@ -106,7 +106,7 @@ const JobFilterSheet = ({ onApply, onClose, initialFilters = {} }) => {
           gap: '12px'
         }}>
           <h2 style={{
-            fontSize: '18px',
+            fontSize: 'var(--font-lg)',
             fontWeight: '700',
             color: 'var(--text-dark)',
             margin: 0,
@@ -126,7 +126,7 @@ const JobFilterSheet = ({ onApply, onClose, initialFilters = {} }) => {
                 borderRadius: '20px',
                 background: 'rgba(58, 123, 213, 0.1)',
                 border: 'none',
-                fontSize: '12px',
+                fontSize: 'var(--font-xs)',
                 fontWeight: '600',
                 color: 'var(--primary-blue)',
                 cursor: 'pointer'
@@ -156,7 +156,7 @@ const JobFilterSheet = ({ onApply, onClose, initialFilters = {} }) => {
                     borderBottom: '0.5px solid var(--border-light)',
                     backgroundColor: isActive ? 'white' : 'var(--bg-light)',
                     borderLeft: isActive ? '3px solid var(--primary-navy)' : '3px solid transparent',
-                    fontSize: '13.5px',
+                    fontSize: 'var(--font-sm)',
                     fontWeight: isActive ? '600' : '400',
                     color: isActive ? 'var(--text-dark)' : 'var(--text-mid)',
                     cursor: 'pointer',
@@ -177,7 +177,7 @@ const JobFilterSheet = ({ onApply, onClose, initialFilters = {} }) => {
                       background: 'var(--primary-navy)',
                       color: 'white',
                       borderRadius: '10px',
-                      fontSize: '10px',
+                      fontSize: 'var(--font-xxs)',
                       fontWeight: '700'
                     }}>
                       {selCount}
@@ -205,14 +205,14 @@ const JobFilterSheet = ({ onApply, onClose, initialFilters = {} }) => {
                     padding: '14px',
                     border: '1px solid var(--border-light)',
                     borderRadius: '2px',
-                    fontSize: '14px',
+                    fontSize: 'var(--font-base)',
                     background: 'white'
                   }}
                 />
               </div>
             )}
             {filteredOptions.length === 0 ? (
-              <div style={{ textAlign: 'center', color: 'var(--text-light)', fontSize: '13px', padding: '40px 0' }}>
+              <div style={{ textAlign: 'center', color: 'var(--text-light)', fontSize: 'var(--font-sm)', padding: '40px 0' }}>
                 No results found
               </div>
             ) : (
@@ -242,15 +242,15 @@ const JobFilterSheet = ({ onApply, onClose, initialFilters = {} }) => {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: '14px',
+                      fontSize: 'var(--font-base)',
                       color: option.selected ? 'white' : 'transparent'
                     }}
                   >
-                    {option.selected && '✔'}
+                    {option.selected && String.fromCharCode(10003)}
                   </div>
                   <span style={{
                     flex: 1,
-                    fontSize: '14px',
+                    fontSize: 'var(--font-base)',
                     fontWeight: option.selected ? 600 : 400,
                     color: option.selected ? 'var(--text-dark)' : 'var(--text-mid)'
                   }}>
@@ -258,7 +258,7 @@ const JobFilterSheet = ({ onApply, onClose, initialFilters = {} }) => {
                   </span>
                   {option.count !== null && (
                     <span style={{
-                      fontSize: '13px',
+                      fontSize: 'var(--font-sm)',
                       color: 'var(--text-light)',
                       fontWeight: 400
                     }}>
@@ -287,7 +287,7 @@ const JobFilterSheet = ({ onApply, onClose, initialFilters = {} }) => {
               background: 'transparent',
               color: 'var(--primary-navy)',
               borderRadius: '2px',
-              fontSize: '15px',
+              fontSize: 'var(--font-base)',
               fontWeight: 700,
               cursor: 'pointer'
             }}
@@ -302,7 +302,7 @@ const JobFilterSheet = ({ onApply, onClose, initialFilters = {} }) => {
               background: 'var(--primary-navy)',
               color: 'white',
               borderRadius: '2px',
-              fontSize: '15px',
+              fontSize: 'var(--font-base)',
               fontWeight: 700,
               cursor: 'pointer',
               border: 'none'
@@ -324,4 +324,5 @@ JobFilterSheet.show = (filters, onApply) => {
 };
 
 export default JobFilterSheet;
+
 

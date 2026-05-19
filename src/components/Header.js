@@ -141,7 +141,7 @@ const Header = () => {
   const renderPublicMenu = () => (
     <>
       <li>
-        <Link className={isExactPathActive(pathname, "/Homepage") ? "active" : ""} href="/Homepage">
+        <Link className={isExactPathActive(pathname, "/homepage-new") ? "active" : ""} href="/homepage-new">
           Home
         </Link>
       </li>
@@ -159,7 +159,7 @@ const Header = () => {
         <div className="main-header">
           <div className="header-left">
             <div className="header-logo">
-              <Link className="d-flex" href={role ? ROLE_DEFAULT_ROUTE[role] : "/Homepage"}>
+              <Link className="d-flex" href={role ? ROLE_DEFAULT_ROUTE[role] : "/homepage-new"}>
                 <img alt="jobBox" src="/assets/imgs/template/jobhub-logo.svg" />
               </Link>
             </div>

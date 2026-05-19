@@ -1,4 +1,5 @@
 /* Font Utility Classes - 8 Size Scale */
+.font-xxs { font-size: var(--font-xxs, 10px) !important; line-height: 16px !important; }
 .font-xs { font-size: var(--font-xs, 12px) !important; line-height: 18px !important; }
 .font-sm { font-size: var(--font-sm, 14px) !important; line-height: 22px !important; }
 .font-base { font-size: var(--font-base, 14px) !important; line-height: 22px !important; }

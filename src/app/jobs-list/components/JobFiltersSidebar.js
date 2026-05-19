@@ -34,6 +34,11 @@ const JobFiltersSidebar = ({ onFilterChange }) => {
   };
 
   const safeIncludes = (values, value) => (values || []).includes(value);
+  const filterBadgeStyle = {
+    background: '#e8f0fe',
+    color: '#1a56c4',
+    border: '1px solid #c7dcff'
+  };
 
   return (
     <div className="sidebar-shadow none-shadow mb-30" style={{ '--primary-navy': '#122359' }}>
@@ -68,7 +73,7 @@ const JobFiltersSidebar = ({ onFilterChange }) => {
                         <span className="checkmark"></span>
                       </label>
                       {option.count !== null && option.count !== undefined ? (
-                        <span className="number-item">{option.count}</span>
+                        <span className="number-item" style={filterBadgeStyle}>{option.count}</span>
                       ) : null}
                     </li>
                   ))}

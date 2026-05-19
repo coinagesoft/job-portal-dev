@@ -12,7 +12,6 @@ const jobStatusTabs = [
 
 const postingTypeTabs = [
   { label: "Normal", count: 6, isActive: false },
-  { label: "Hot Vacancy", count: 2, isActive: true },
   { label: "Classified", count: 1, isActive: false },
 ];
 
@@ -48,7 +47,7 @@ const employerJobs = [
     postType: "Classified",
     postTypeClass: "badge bg-warning text-dark",
     visibility: "Visibility: Standard listing",
-    priorityText: "Classified listing with lower cost than Hot Vacancy",
+    priorityText: "Classified listing with lower promotion cost",
     monetization: "Posting fee: INR 999 + GST",
     applicants: 7,
     lastApplicant: "Suresh Menon - Applied 5h ago",
@@ -62,7 +61,7 @@ const employerJobs = [
         isApplicants: true,
       },
       { label: "Edit", href: "/dashboard/post-job" },
-      { label: "Boost as Hot" },
+      { label: "Pause" },
     ],
   },
   {
@@ -151,11 +150,6 @@ const EmployerJobListPage = () => {
       showToast(`Job "${jobTitle}" has been paused.`, "warning");
     else if (label === "Resume")
       showToast(`Job "${jobTitle}" has been resumed.`, "success");
-    else if (label === "Boost as Hot")
-      showToast(
-        `Boost request sent for "${jobTitle}". You will be redirected to payment.`,
-        "info",
-      );
     else showToast(`${label} — ${jobTitle}`, "info");
   };
 
@@ -239,17 +233,15 @@ const EmployerJobListPage = () => {
                           <div className="mt-10 d-flex flex-wrap align-items-center">
                             <div className="mt-10 d-flex flex-wrap">
                               {[
-                                job.postType,
-                                job.postType === "Hot Vacancy" &&
-                                  "Urgent Hiring",
+                                job.postType !== "Hot Vacancy"
+                                  ? job.postType
+                                  : null,
                               ]
                                 .filter(Boolean)
                                 .map((tag, index) => (
                                   <span
                                     key={index}
-                                    className={`btn btn-grey-small mr-5 mb-5 ${
-                                      tag === "Hot Vacancy" ? "tag-hot" : ""
-                                    }`}
+                                    className="btn btn-grey-small mr-5 mb-5"
                                   >
                                     {tag}
                                   </span>
@@ -283,13 +275,7 @@ const EmployerJobListPage = () => {
                         {/* Right: Status + Actions */}
                         <div className="col-lg-5 col-md-12 col-sm-12 text-lg-end mt-md-15 mt-sm-15">
                           <div className="card-2-bottom mt-20 mt-lg-0">
-                            <span
-                              className={`btn btn-grey-small ${
-                                job.status === "Active"
-                                  ? "tag-active"
-                                  : "tag-paused"
-                              }`}
-                            >
+                            <span className="btn btn-grey-small mr-5 mb-5">
                               {job.status}
                             </span>
                             <div className="mt-10">
@@ -303,6 +289,11 @@ const EmployerJobListPage = () => {
                                         : "btn-outline-theme"
                                     } btn-sm mr-5 mb-5`}
                                     href={action.href}
+                                    style={
+                                      action.label === "Applicants"
+                                        ? { color: "#ffffff" }
+                                        : undefined
+                                    }
                                     onClick={() =>
                                       showToast(
                                         `${action.label} — ${job.title}`,
@@ -314,7 +305,15 @@ const EmployerJobListPage = () => {
 
                                     {action.isApplicants &&
                                       job.applicants > 0 && (
-                                        <span className="badge-count"> - 
+                                        <span
+                                          style={{
+                                            marginLeft: 6,
+                                            color: "#ffffff",
+                                            fontSize: 10,
+                                            fontWeight: 700,
+                                          }}
+                                        >
+                                          - 
                                           {job.applicants}
                                         </span>
                                       )}
@@ -349,3 +348,5 @@ const EmployerJobListPage = () => {
 };
 
 export default EmployerJobListPage;
+
+

@@ -60,6 +60,7 @@ const JobCardList = ({ job, onApplyNow, viewMode = 'list' }) => {
                 <button
                   type="button"
                   className="btn btn-apply-now"
+                  style={{ color: '#ffffff' }}
                   onClick={() => onApplyNow?.(job)}
                 >
                   Apply now

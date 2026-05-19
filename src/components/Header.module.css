@@ -50,7 +50,7 @@
 }
 
 .profileBlock :global(.info-member strong) {
-  font-size: 13px;
+  font-size: var(--font-sm);
 }
 
 .profileBlock :global(.icon-down) {
@@ -72,7 +72,7 @@
 }
 
 .headerActionGroup :global(.btn-notify i) {
-  font-size: 16px;
+  font-size: var(--font-md);
   line-height: 1;
   display: inline-flex;
 }
@@ -101,7 +101,7 @@
 }
 
 .registerChevron {
-  font-size: 10px;
+  font-size: var(--font-xxs);
   opacity: 0.7;
   margin-top: 1px;
 }
@@ -163,20 +163,20 @@
 
 .registerDropdownItem strong {
   display: block;
-  font-size: 13px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: inherit;
 }
 
 .registerDropdownItem small {
   display: block;
-  font-size: 11px;
+  font-size: var(--font-xxs);
   color: #6e7c89;
   margin-top: 1px;
 }
 
 .registerDropdownIcon {
-  font-size: 20px;
+  font-size: var(--font-xl);
   width: 32px;
   height: 32px;
   border-radius: 8px;

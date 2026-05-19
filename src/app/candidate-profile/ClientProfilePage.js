@@ -547,10 +547,10 @@ const StepSkills = ({ data, onToggle, onUpdateSkill }) => {
 // ─── STEP 2 — Documents ───────────────────────────────────────────────────────
 const DocUploadBox = ({ doc, docKey, onUpload, onClear }) => {
   const statusColors = {
-    verified: { bg: "#eaf3de", color: T.success, label: "Verified", iconClass: "fi-rr-check" },
-    uploaded: { bg: "#e8f0fe", color: "#1a56c4", label: "Uploaded", iconClass: "fi-rr-check" },
-    missing: { bg: "#fcebeb", color: T.error, label: "Required", iconClass: "fi-rr-exclamation" },
-    optional: { bg: T.bg, color: T.muted, label: "Optional", iconClass: null },
+    verified: { bg: "#e8f0fe", color: "#1a56c4", border: "#c7dcff", label: "Verified", iconClass: "fi-rr-check" },
+    uploaded: { bg: "#e8f0fe", color: "#1a56c4", border: "#c7dcff", label: "Uploaded", iconClass: "fi-rr-check" },
+    missing: { bg: "#e8f0fe", color: "#1a56c4", border: "#c7dcff", label: "Required", iconClass: "fi-rr-exclamation" },
+    optional: { bg: "#e8f0fe", color: "#1a56c4", border: "#c7dcff", label: "Optional", iconClass: null },
   };
   const s = statusColors[doc.status] || statusColors.optional;
 
@@ -560,7 +560,7 @@ const DocUploadBox = ({ doc, docKey, onUpload, onClear }) => {
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
             <span style={{ fontWeight: 700, fontSize: 14, color: T.navy }}>{doc.label}</span>
-            <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: s.bg, color: s.color, display: "inline-flex", alignItems: "center", gap: 5 }}>
+            <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: s.bg, color: s.color, border: `1px solid ${s.border}`, display: "inline-flex", alignItems: "center", gap: 5 }}>
               {s.iconClass && <i className={s.iconClass} aria-hidden="true" style={{ fontSize: 10, lineHeight: 1 }} />}
               {s.label}
             </span>
@@ -691,9 +691,9 @@ const CompletionSummary = ({ percent, onEdit }) => (
     </div>
     <div>
       <Btn onClick={onEdit} variant="outline" style={{ marginRight: 12 }}>Edit Profile</Btn>
-      <Btn>
-        <span>Browse Jobs</span>
-        <i className="fi-rr-arrow-small-right" aria-hidden="true" />
+      <Btn style={{ color: T.white }}>
+        <span style={{ color: T.white }}>Browse Jobs</span>
+        <i className="fi-rr-arrow-small-right" aria-hidden="true" style={{ color: T.white }} />
       </Btn>
     </div>
   </div>

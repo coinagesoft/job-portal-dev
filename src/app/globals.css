@@ -8,13 +8,20 @@
   --text-mid: #4f5e64;
   --text-light: #a0abb8;
   --bg-light: #ffffff;
+  --font-family-base: "Plus Jakarta Sans", sans-serif;
+  --font-xxs: 10px;
   --font-xs: 12px;
   --font-sm: 14px;
   --font-base: 14px;
   --font-md: 16px;
   --font-lg: 18px;
   --font-xl: 20px;
+  --font-h1: 42px;
   --font-h2: 36px;
+  --font-h3: 32px;
+  --font-h4: 24px;
+  --font-h5: 20px;
+  --font-h6: 16px;
   --font-display: 56px;
   --lh-tight: 1.2;
   --lh-normal: 1.6;
@@ -87,7 +94,7 @@
 .job-filter-checkbox.checked::after {
   content: "\2713";
   color: white;
-  font-size: 14px;
+  font-size: var(--font-base);
   position: absolute;
   top: 50%;
   left: 50%;
@@ -110,7 +117,7 @@ body {
   flex-direction: column;
   color: var(--foreground);
   background: var(--background);
-  font-family: "Plus Jakarta Sans", sans-serif;
+  font-family: var(--font-family-base);
   font-size: var(--font-base);
   line-height: var(--lh-normal);
   -webkit-font-smoothing: antialiased;
@@ -144,7 +151,7 @@ a {
   border-radius: 8px;
   background: #ffffff;
   color: #ff9900;
-  font-size: 12px;
+  font-size: var(--font-xs);
   line-height: 1.5;
 }
 
@@ -179,8 +186,8 @@ a {
 input.form-control,
 select.form-control,
 textarea.form-control {
-  font-family: "Plus Jakarta Sans", sans-serif;
-  font-size: 14px;
+  font-family: var(--font-family-base);
+  font-size: var(--font-base);
   line-height: 22px;
   color: #4f5e64;
 }
@@ -208,7 +215,7 @@ textarea.form-control {
   border-radius: 10px;
   background: #ffffff;
   color: #4f5e64 !important;
-  font-size: 16px;
+  font-size: var(--font-md);
   line-height: 26px;
   font-weight: 700;
   padding: 10px 23px;
@@ -288,7 +295,7 @@ textarea.form-control {
   line-height: 26px;
   text-decoration: none;
   position: relative;
-  font-size: 18px;
+  font-size: var(--font-lg);
   border: none;
   background: transparent;
 }
@@ -419,7 +426,7 @@ textarea.form-control {
   border-radius: 50%;
   background: #ffffff;
   color: #42526b;
-  font-size: 18px;
+  font-size: var(--font-lg);
   line-height: 1;
   font-weight: 700;
 }
@@ -457,7 +464,7 @@ textarea.form-control {
 }
 
 .apply-job-step {
-  font-size: 12px;
+  font-size: var(--font-xs);
   font-weight: 700;
   color: #9aa5b8;
 }
@@ -520,8 +527,8 @@ textarea.form-control {
   padding: 6px 12px;
   margin-right: 8px;
   margin-bottom: 8px;
-  font-family: "Plus Jakarta Sans", sans-serif;
-  font-size: 12px;
+  font-family: var(--font-family-base);
+  font-size: var(--font-xs);
   font-weight: 600;
   line-height: 18px;
 }
@@ -566,8 +573,8 @@ textarea.form-control {
   justify-content: center;
   border-radius: 999px;
   padding: 6px 14px;
-  font-family: "Plus Jakarta Sans", sans-serif;
-  font-size: 12px;
+  font-family: var(--font-family-base);
+  font-size: var(--font-xs);
   font-weight: 700;
   letter-spacing: 0.2px;
   text-transform: uppercase;
@@ -614,7 +621,7 @@ textarea.form-control {
 
 .candidate-ticket-item p {
   margin-bottom: 0;
-  font-size: 12px;
+  font-size: var(--font-xs);
   color: #5b6474;
 }
 
@@ -630,7 +637,7 @@ textarea.form-control {
   align-items: center;
   border-radius: 999px;
   padding: 4px 10px;
-  font-size: 11px;
+  font-size: var(--font-xxs);
   font-weight: 700;
   line-height: 1;
 }
@@ -651,38 +658,38 @@ textarea.form-control {
 }
 
 .candidate-help-support-page .support-ticket-center .candidate-settings-card h5 {
-  font-size: 22px;
+  font-size: var(--font-xl);
   line-height: 30px;
 }
 
 .candidate-help-support-page .support-ticket-center .candidate-faq-item summary {
-  font-size: 15px;
+  font-size: var(--font-base);
   line-height: 24px;
 }
 
 .candidate-help-support-page .support-ticket-center .candidate-faq-item p {
-  font-size: 14px;
+  font-size: var(--font-base);
   line-height: 22px;
 }
 
 .candidate-help-support-page .support-ticket-center .candidate-ticket-item strong {
-  font-size: 15px;
+  font-size: var(--font-base);
   line-height: 22px;
 }
 
 .candidate-help-support-page .support-ticket-center .candidate-ticket-item p {
-  font-size: 14px;
+  font-size: var(--font-base);
   line-height: 22px;
 }
 
 .candidate-help-support-page .support-ticket-center .candidate-ticket-item small {
-  font-size: 12px;
+  font-size: var(--font-xs);
   line-height: 18px;
   color: #66789c;
 }
 
 .candidate-help-support-page .support-ticket-center .candidate-ticket-meta small {
-  font-size: 13px;
+  font-size: var(--font-xs);
   line-height: 20px;
 }
 
@@ -691,7 +698,7 @@ textarea.form-control {
 .candidate-help-support-page .support-ticket-center .support-ticket-latest-body,
 .candidate-help-support-page .support-ticket-center .support-ticket-contact-text,
 .candidate-help-support-page .support-ticket-center .support-ticket-contact-email {
-  font-size: 14px !important;
+  font-size: var(--font-base) !important;
   line-height: 22px !important;
 }
 
@@ -777,7 +784,7 @@ textarea.form-control {
 }
 
 .candidate-profile-v2 #circle-staticstic-demo .timer {
-  font-family: "Plus Jakarta Sans", sans-serif;
+  font-family: var(--font-family-base);
   font-weight: 700;
 }
 
@@ -786,5 +793,51 @@ textarea.form-control {
     position: static;
     top: auto;
   }
+}
+
+/* Theme typography normalization */
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-family-base);
+}
+
+.font-xxs {
+  font-size: var(--font-xxs) !important;
+  line-height: 16px !important;
+}
+
+.font-xs {
+  font-size: var(--font-xs) !important;
+  line-height: 18px !important;
+}
+
+.font-sm {
+  font-size: var(--font-sm) !important;
+  line-height: 22px !important;
+}
+
+.font-md {
+  font-size: var(--font-md) !important;
+  line-height: 24px !important;
+}
+
+.font-lg {
+  font-size: var(--font-lg) !important;
+  line-height: 26px !important;
+}
+
+.font-xl {
+  font-size: var(--font-xl) !important;
+  line-height: 28px !important;
+}
+
+.text-14 {
+  font-size: var(--font-base) !important;
+}
+
+.f-18 {
+  font-size: var(--font-lg) !important;
 }
 
