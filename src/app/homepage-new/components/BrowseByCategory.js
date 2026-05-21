@@ -80,7 +80,7 @@ export default function BrowseByCategory() {
                 <a href="#">
                   <div className="item-logo">
                     <div className="image-left">
-                      <i className="fa-solid fa-oil-well"></i>
+                    <i className="fa-solid fa-gas-pump"></i>
                     </div>
 
                     <div className="text-info-right">

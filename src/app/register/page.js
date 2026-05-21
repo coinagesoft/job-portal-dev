@@ -91,7 +91,7 @@ function StepBar({ current, total, labels }) {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: 12,
+                  fontSize: "var(--font-xs)",
                   fontWeight: 600,
                   flexShrink: 0,
                   background: done
@@ -109,7 +109,7 @@ function StepBar({ current, total, labels }) {
               {labels && (
                 <span
                   style={{
-                    fontSize: 10,
+                    fontSize: "var(--font-xxs)",
                     color: active ? "#ff9900" : "var(--color-text-tertiary)",
                     whiteSpace: "nowrap",
                     fontWeight: active ? 600 : 400,
@@ -143,7 +143,7 @@ function Field({ label, hint, required, children }) {
       <label
         style={{
           display: "block",
-          fontSize: 12,
+          fontSize: "var(--font-xs)",
           fontWeight: 600,
           color: "var(--color-text-secondary)",
           marginBottom: 5,
@@ -156,7 +156,7 @@ function Field({ label, hint, required, children }) {
       {hint && (
         <p
           style={{
-            fontSize: 11,
+            fontSize: "var(--font-xs)",
             color: "var(--color-text-tertiary)",
             marginTop: 4,
           }}
@@ -207,7 +207,7 @@ function Btn({ children, variant = "primary", disabled, onClick, style = {} }) {
     justifyContent: "center",
     padding: "9px 20px",
     borderRadius: 8,
-    fontSize: 13,
+    fontSize: "var(--font-sm)",
     fontWeight: 600,
     cursor: disabled ? "not-allowed" : "pointer",
     border: "none",
@@ -254,7 +254,7 @@ function Alert({ type = "info", children }) {
       style={{
         padding: "10px 14px",
         borderRadius: 8,
-        fontSize: 12,
+        fontSize: "var(--font-xs)",
         background: c.bg,
         color: c.color,
         border: `0.5px solid ${c.border}`,
@@ -337,7 +337,7 @@ function MobileOtpField({
                 alignItems: "center",
                 justifyContent: "center",
                 color: "#fff",
-                fontSize: 13,
+                fontSize: "var(--font-sm)",
                 fontWeight: 700,
                 flexShrink: 0,
               }}
@@ -364,7 +364,7 @@ function MobileOtpField({
             onClick={sendOtp}
             style={{
               flexShrink: 0,
-              fontSize: 12,
+              fontSize: "var(--font-xs)",
               padding: "0 12px",
               height: 38,
             }}
@@ -389,7 +389,7 @@ function MobileOtpField({
                 onClick={verifyOtp}
                 style={{
                   flexShrink: 0,
-                  fontSize: 12,
+                  fontSize: "var(--font-xs)",
                   padding: "0 14px",
                   height: 38,
                 }}
@@ -423,7 +423,12 @@ function OtpBlock({
           variant={verified ? "success" : "ghost"}
           disabled={disabled || verified}
           onClick={onSend}
-          style={{ flexShrink: 0, fontSize: 12, padding: "0 12px", height: 38 }}
+          style={{
+            flexShrink: 0,
+            fontSize: "var(--font-xs)",
+            padding: "0 12px",
+            height: 38,
+          }}
         >
           {verified ? "✓ Verified" : sent ? "Resend OTP" : "Send OTP"}
         </Btn>
@@ -443,7 +448,7 @@ function OtpBlock({
               onClick={onVerify}
               style={{
                 flexShrink: 0,
-                fontSize: 12,
+                fontSize: "var(--font-xs)",
                 padding: "0 14px",
                 height: 38,
               }}
@@ -454,7 +459,9 @@ function OtpBlock({
         )}
       </div>
       {verified && (
-        <p style={{ fontSize: 11, color: "#3B6D11", marginTop: 4 }}>
+        <p
+          style={{ fontSize: "var(--font-xs)", color: "#3B6D11", marginTop: 4 }}
+        >
           ✓ {target} verified successfully
         </p>
       )}
@@ -640,7 +647,11 @@ function CandidateForm() {
               variant="primary"
               onClick={handlePay}
               disabled={loading}
-              style={{ width: "100%", padding: "11px 0", fontSize: 14 }}
+              style={{
+                width: "100%",
+                padding: "11px 0",
+                fontSize: "var(--font-sm)",
+              }}
             >
               {loading ? "Processing..." : "Pay INR 100 via Razorpay"}
             </Btn>
@@ -648,7 +659,7 @@ function CandidateForm() {
           {paymentMessage && (
             <p
               style={{
-                fontSize: 11,
+                fontSize: "var(--font-xs)",
                 marginTop: 8,
                 color: "var(--color-text-tertiary)",
               }}
@@ -658,7 +669,137 @@ function CandidateForm() {
           )}
         </Field>
       )}
+      {/* Social Register */}
+      <div style={{ marginBottom: 26 }}>
+        {/* Divider */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            marginBottom: 18,
+            gap: 14,
+          }}
+        >
+          <div
+            style={{
+              flex: 1,
+              height: 1,
+              background: "#ececec",
+            }}
+          />
 
+          <span
+            style={{
+              fontSize: 13,
+              color: "var(--color-text-tertiary)",
+              fontWeight: 600,
+            }}
+          >
+            OR REGISTER WITH
+          </span>
+
+          <div
+            style={{
+              flex: 1,
+              height: 1,
+              background: "#ececec",
+            }}
+          />
+        </div>
+
+        {/* Buttons */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 14,
+          }}
+        >
+          {/* Google */}
+          <button
+            type="button"
+            style={{
+              width: "100%",
+              height: 54,
+              borderRadius: 10,
+              border: "1px solid #ffc151",
+              background: "#ffffff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 12,
+              fontWeight: 600,
+              fontSize: 14,
+              color: "#122359",
+              cursor: "pointer",
+              transition: "all 0.25s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "#ff9900";
+              e.currentTarget.style.color = "#ffffff";
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow =
+                "0 8px 20px rgba(255,153,0,0.18)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "#ffffff";
+              e.currentTarget.style.color = "#122359";
+              e.currentTarget.style.transform = "translateY(0px)";
+              e.currentTarget.style.boxShadow = "none";
+            }}
+          >
+            <img
+              src="https://www.svgrepo.com/show/475656/google-color.svg"
+              alt="google"
+              width={20}
+              height={20}
+            />
+            Register with Google
+          </button>
+
+          {/* LinkedIn */}
+          <button
+            type="button"
+            style={{
+              width: "100%",
+              height: 54,
+              borderRadius: 10,
+              border: "1px solid #ffc151",
+              background: "#ffffff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 12,
+              fontWeight: 600,
+              fontSize: 14,
+              color: "#122359",
+              cursor: "pointer",
+              transition: "all 0.25s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "#ff9900";
+              e.currentTarget.style.color = "#ffffff";
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow =
+                "0 8px 20px rgba(255,153,0,0.18)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "#ffffff";
+              e.currentTarget.style.color = "#122359";
+              e.currentTarget.style.transform = "translateY(0px)";
+              e.currentTarget.style.boxShadow = "none";
+            }}
+          >
+            <img
+              src="https://cdn-icons-png.flaticon.com/512/3536/3536505.png"
+              alt="linkedin"
+              width={18}
+              height={18}
+            />
+            Register with LinkedIn
+          </button>
+        </div>
+      </div>
       <div style={{ marginBottom: 20 }}>
         <label
           style={{
@@ -666,7 +807,7 @@ function CandidateForm() {
             alignItems: "center",
             gap: 10,
             cursor: "pointer",
-            fontSize: 13,
+            fontSize: "var(--font-sm)",
             color: "var(--color-text-secondary)",
           }}
         >
@@ -683,7 +824,7 @@ function CandidateForm() {
       <Btn
         variant="primary"
         disabled={!canSubmit}
-        style={{ width: "100%", padding: "13px 0", fontSize: 15 }}
+        style={{ width: "100%", padding: "13px 0", fontSize: "var(--font-md)" }}
         onClick={handleCandidateSubmit}
       >
         Create Account & Get Started
@@ -821,11 +962,9 @@ function EmployerForm() {
   const isStep2Valid = data.hasGst !== null && data.industry;
   const isStep3Valid =
     data.legalName && data.state && data.city && data.pincode;
+  // Corporate email is optional — only mobile OTP is mandatory
   const isStep4Valid =
-    data.contactName &&
-    data.designation &&
-    data.corpEmailOtp.verified &&
-    data.mobileOtp.verified;
+    data.contactName && data.designation && data.mobileOtp.verified;
   const canGoStep2 = EMPLOYER_UI_PREVIEW_MODE || isStep2Valid;
   const canGoStep3 = EMPLOYER_UI_PREVIEW_MODE || isStep3Valid;
   const canGoStep4 = EMPLOYER_UI_PREVIEW_MODE || isStep4Valid;
@@ -848,7 +987,7 @@ function EmployerForm() {
         justifyContent: "space-between",
         padding: "7px 0",
         borderBottom: "0.5px solid var(--color-border-tertiary)",
-        fontSize: 13,
+        fontSize: "var(--font-sm)",
       }}
     >
       <span style={{ color: "var(--color-text-secondary)" }}>{label}</span>
@@ -870,7 +1009,7 @@ function EmployerForm() {
     <div>
       <h3
         style={{
-          fontSize: 16,
+          fontSize: "var(--font-md)",
           fontWeight: 600,
           marginBottom: 6,
           color: "var(--color-text-primary)",
@@ -880,7 +1019,7 @@ function EmployerForm() {
       </h3>
       <p
         style={{
-          fontSize: 13,
+          fontSize: "var(--font-sm)",
           color: "var(--color-text-secondary)",
           marginBottom: 20,
         }}
@@ -921,10 +1060,12 @@ function EmployerForm() {
               transition: "all .15s",
             }}
           >
-            <div style={{ fontSize: 24, marginBottom: 8 }}>{opt.icon}</div>
+            <div style={{ fontSize: "var(--font-h6)", marginBottom: 8 }}>
+              {opt.icon}
+            </div>
             <div
               style={{
-                fontSize: 14,
+                fontSize: "var(--font-sm)",
                 fontWeight: 600,
                 marginBottom: 4,
                 color: "var(--color-text-primary)",
@@ -934,7 +1075,7 @@ function EmployerForm() {
             </div>
             <div
               style={{
-                fontSize: 11,
+                fontSize: "var(--font-xs)",
                 color: "var(--color-text-secondary)",
                 lineHeight: 1.5,
               }}
@@ -985,7 +1126,7 @@ function EmployerForm() {
     <div>
       <h3
         style={{
-          fontSize: 16,
+          fontSize: "var(--font-md)",
           fontWeight: 600,
           marginBottom: 16,
           color: "var(--color-text-primary)",
@@ -1151,7 +1292,7 @@ function EmployerForm() {
       />
       <p
         style={{
-          fontSize: 12,
+          fontSize: "var(--font-xs)",
           fontWeight: 600,
           color: "var(--color-text-secondary)",
           marginBottom: 14,
@@ -1228,17 +1369,28 @@ function EmployerForm() {
           }}
         >
           {data.companyLogo ? (
-            <p style={{ fontSize: 13, color: "#3B6D11", fontWeight: 600 }}>
+            <p
+              style={{
+                fontSize: "var(--font-sm)",
+                color: "#3B6D11",
+                fontWeight: 600,
+              }}
+            >
               ✓ {data.companyLogo.name}
             </p>
           ) : (
             <>
-              <p style={{ fontSize: 13, color: "var(--color-text-secondary)" }}>
+              <p
+                style={{
+                  fontSize: "var(--font-sm)",
+                  color: "var(--color-text-secondary)",
+                }}
+              >
                 Click to upload logo
               </p>
               <p
                 style={{
-                  fontSize: 11,
+                  fontSize: "var(--font-xs)",
                   color: "var(--color-text-tertiary)",
                   marginTop: 4,
                 }}
@@ -1290,7 +1442,7 @@ function EmployerForm() {
     <div>
       <h3
         style={{
-          fontSize: 16,
+          fontSize: "var(--font-md)",
           fontWeight: 600,
           marginBottom: 16,
           color: "var(--color-text-primary)",
@@ -1324,40 +1476,40 @@ function EmployerForm() {
         </Field>
       </div>
 
-   <Field
-  label="Corporate Email (Optional)"
-  hint="Free domains (Gmail, Yahoo etc.) are not accepted"
->
-  <Input
-    type="email"
-    value={data.corpEmail}
-    onChange={e => set("corpEmail", e.target.value)}
-    placeholder="you@yourcompany.com"
-  />
+      <Field
+        label="Corporate Email (Optional)"
+        hint="Free domains (Gmail, Yahoo etc.) are not accepted"
+      >
+        <Input
+          type="email"
+          value={data.corpEmail}
+          onChange={(e) => set("corpEmail", e.target.value)}
+          placeholder="you@yourcompany.com"
+        />
 
-  {data.corpEmail && (
-    <div style={{ marginTop: 8 }}>
-      <OtpBlock
-        target="corporate email"
-        sent={data.corpEmailOtp.sent}
-        verified={data.corpEmailOtp.verified}
-        disabled={!data.corpEmail}
-        onSend={sendCorpEmailOtp}
-        onVerify={verifyCorpEmailOtp}
-        otpVal={data.corpEmailOtp.userVal}
-        setOtpVal={v =>
-          setData(p => ({
-            ...p,
-            corpEmailOtp: {
-              ...p.corpEmailOtp,
-              userVal: v,
-            },
-          }))
-        }
-      />
-    </div>
-  )}
-</Field>
+        {data.corpEmail && (
+          <div style={{ marginTop: 8 }}>
+            <OtpBlock
+              target="corporate email"
+              sent={data.corpEmailOtp.sent}
+              verified={data.corpEmailOtp.verified}
+              disabled={!data.corpEmail}
+              onSend={sendCorpEmailOtp}
+              onVerify={verifyCorpEmailOtp}
+              otpVal={data.corpEmailOtp.userVal}
+              setOtpVal={(v) =>
+                setData((p) => ({
+                  ...p,
+                  corpEmailOtp: {
+                    ...p.corpEmailOtp,
+                    userVal: v,
+                  },
+                }))
+              }
+            />
+          </div>
+        )}
+      </Field>
 
       <Field label="Mobile Number" required>
         <MobileOtpField
@@ -1410,7 +1562,7 @@ function EmployerForm() {
     <div>
       <h3
         style={{
-          fontSize: 16,
+          fontSize: "var(--font-md)",
           fontWeight: 600,
           marginBottom: 4,
           color: "var(--color-text-primary)",
@@ -1419,7 +1571,7 @@ function EmployerForm() {
         Licence & document upload
         <span
           style={{
-            fontSize: 11,
+            fontSize: "var(--font-xs)",
             fontWeight: 400,
             color: "var(--color-text-tertiary)",
             marginLeft: 10,
@@ -1433,7 +1585,7 @@ function EmployerForm() {
       </h3>
       <p
         style={{
-          fontSize: 13,
+          fontSize: "var(--font-sm)",
           color: "var(--color-text-secondary)",
           marginBottom: 20,
           lineHeight: 1.5,
@@ -1463,7 +1615,6 @@ function EmployerForm() {
             color: "#3B6D11",
             bg: "#EAF3DE",
             desc: "Recruitment licence for overseas placement",
-
           },
           {
             id: "rpsl",
@@ -1479,7 +1630,7 @@ function EmployerForm() {
             <div key={lic.id}>
               <p
                 style={{
-                  fontSize: 12,
+                  fontSize: "var(--font-xs)",
                   fontWeight: 600,
                   color: "var(--color-text-secondary)",
                   marginBottom: 8,
@@ -1502,16 +1653,22 @@ function EmployerForm() {
               >
                 {file ? (
                   <p
-                    style={{ fontSize: 12, color: "#3B6D11", fontWeight: 600 }}
+                    style={{
+                      fontSize: "var(--font-xs)",
+                      color: "#3B6D11",
+                      fontWeight: 600,
+                    }}
                   >
                     ✓ {file.name}
                   </p>
                 ) : (
                   <>
-                    <p style={{ fontSize: 20, opacity: 0.3 }}>↑</p>
+                    <p style={{ fontSize: "var(--font-xl)", opacity: 0.3 }}>
+                      ↑
+                    </p>
                     <p
                       style={{
-                        fontSize: 12,
+                        fontSize: "var(--font-xs)",
                         color: "var(--color-text-secondary)",
                       }}
                     >
@@ -1519,7 +1676,7 @@ function EmployerForm() {
                     </p>
                     <p
                       style={{
-                        fontSize: 11,
+                        fontSize: "var(--font-xs)",
                         color: "var(--color-text-tertiary)",
                         marginTop: 3,
                       }}
@@ -1551,7 +1708,7 @@ function EmployerForm() {
                   padding: "8px 10px",
                   background: lic.bg,
                   borderRadius: 6,
-                  fontSize: 11,
+                  fontSize: "var(--font-xs)",
                   color: lic.color,
                 }}
               >
@@ -1588,7 +1745,7 @@ function EmployerForm() {
     <div>
       <h3
         style={{
-          fontSize: 16,
+          fontSize: "var(--font-md)",
           fontWeight: 600,
           marginBottom: 4,
           color: "var(--color-text-primary)",
@@ -1598,7 +1755,7 @@ function EmployerForm() {
       </h3>
       <p
         style={{
-          fontSize: 13,
+          fontSize: "var(--font-sm)",
           color: "var(--color-text-secondary)",
           marginBottom: 20,
         }}
@@ -1616,7 +1773,7 @@ function EmployerForm() {
       >
         <p
           style={{
-            fontSize: 11,
+            fontSize: "var(--font-xs)",
             fontWeight: 600,
             color: "var(--color-text-tertiary)",
             marginBottom: 10,
@@ -1653,7 +1810,7 @@ function EmployerForm() {
       >
         <p
           style={{
-            fontSize: 11,
+            fontSize: "var(--font-xs)",
             fontWeight: 600,
             color: "var(--color-text-tertiary)",
             marginBottom: 10,
@@ -1684,7 +1841,7 @@ function EmployerForm() {
       >
         <p
           style={{
-            fontSize: 11,
+            fontSize: "var(--font-xs)",
             fontWeight: 600,
             color: "var(--color-text-tertiary)",
             marginBottom: 10,
@@ -1718,7 +1875,7 @@ function EmployerForm() {
       >
         <p
           style={{
-            fontSize: 11,
+            fontSize: "var(--font-xs)",
             fontWeight: 600,
             color: "#ff9900",
             marginBottom: 10,
@@ -1738,14 +1895,14 @@ function EmployerForm() {
       <Btn
         variant="primary"
         disabled={!canSubmit}
-        style={{ width: "100%", padding: "13px 0", fontSize: 15 }}
+        style={{ width: "100%", padding: "13px 0", fontSize: "var(--font-md)" }}
         onClick={handleEmployerSubmit}
       >
         Create Account & Start Trial
       </Btn>
       <p
         style={{
-          fontSize: 11,
+          fontSize: "var(--font-xs)",
           color: "var(--color-text-tertiary)",
           textAlign: "center",
           marginTop: 10,
@@ -1797,7 +1954,7 @@ function RegisterPageInner() {
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <div
             style={{
-              fontSize: 11,
+              fontSize: "var(--font-xs)",
               fontWeight: 700,
               letterSpacing: 1.5,
               color: "#ff9900",
@@ -1809,7 +1966,7 @@ function RegisterPageInner() {
           </div>
           <h1
             style={{
-              fontSize: 26,
+              fontSize: "var(--font-h5)",
               fontWeight: 700,
               color: "var(--color-text-primary)",
               marginBottom: 8,
@@ -1821,7 +1978,12 @@ function RegisterPageInner() {
                 ? "Candidate Registration"
                 : "Create your account"}
           </h1>
-          <p style={{ fontSize: 14, color: "var(--color-text-secondary)" }}>
+          <p
+            style={{
+              fontSize: "var(--font-sm)",
+              color: "var(--color-text-secondary)",
+            }}
+          >
             {role === "employer"
               ? "Complete your company profile to start posting jobs and accessing candidates."
               : role === "candidate"
@@ -1845,7 +2007,7 @@ function RegisterPageInner() {
             {!role && (
               <p
                 style={{
-                  fontSize: 12,
+                  fontSize: "var(--font-xs)",
                   fontWeight: 600,
                   color: "var(--color-text-secondary)",
                   marginBottom: 12,
@@ -1910,7 +2072,7 @@ function RegisterPageInner() {
                     {!role && (
                       <div
                         style={{
-                          fontSize: 11,
+                          fontSize: "var(--font-xs)",
                           color: "var(--color-text-secondary)",
                           marginTop: 2,
                         }}
@@ -1931,7 +2093,7 @@ function RegisterPageInner() {
             <p
               style={{
                 textAlign: "center",
-                fontSize: 13,
+                fontSize: "var(--font-sm)",
                 color: "var(--color-text-tertiary)",
                 marginTop: 24,
               }}
@@ -1944,7 +2106,7 @@ function RegisterPageInner() {
         <p
           style={{
             textAlign: "center",
-            fontSize: 13,
+            fontSize: "var(--font-sm)",
             color: "var(--color-text-secondary)",
             marginTop: 20,
           }}

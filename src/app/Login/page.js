@@ -1,16 +1,19 @@
 "use client";
 
-import { useToast } from '@/components/Toast';
+import { useToast } from "@/components/Toast";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { loginUser } from "@/store/authSlice";
-import { ROLE_DEFAULT_ROUTE, STATIC_ROLE_BY_MOBILE } from "@/constants/panelConfig";
+import {
+  ROLE_DEFAULT_ROUTE,
+  STATIC_ROLE_BY_MOBILE,
+} from "@/constants/panelConfig";
 
 export default function LoginPage() {
   const showToast = useToast();
+
   const [input, setInput] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState("");
@@ -20,21 +23,27 @@ export default function LoginPage() {
 
   const dispatch = useDispatch();
   const router = useRouter();
+
   const { isLoading: authLoading, user } = useSelector((state) => state.auth);
 
-  // Auto-detect type
-  const isEmail = input.includes('@');
-  const isMobile = /^\d{10}$/.test(input.replace(/\D/g, ''));
-  const normalizedMobile = input.replace(/\D/g, '').slice(-10);
+  // Detect input type
+  const isEmail = input.includes("@");
+  const isMobile = /^\d{10}$/.test(input.replace(/\D/g, ""));
+  const normalizedMobile = input.replace(/\D/g, "").slice(-10);
+
   const isKnownDemoNumber = Boolean(STATIC_ROLE_BY_MOBILE[normalizedMobile]);
 
   useEffect(() => {
     if (!user?.role) return;
+
     router.replace(ROLE_DEFAULT_ROUTE[user.role] || "/Homepage");
   }, [router, user]);
 
-  const isInputValid = isEmail ? input.includes('@') && input.includes('.') : isMobile;
+  const isInputValid = isEmail
+    ? input.includes("@") && input.includes(".")
+    : isMobile;
 
+  // Send OTP
   const sendOtp = () => {
     if (!isInputValid) {
       setError("Enter valid email or 10-digit mobile number.");
@@ -42,17 +51,22 @@ export default function LoginPage() {
     }
 
     if (isMobile && !isKnownDemoNumber) {
-      setError("Only assigned demo numbers allowed: 1010101010 (Candidate), 2020202020 (Employer).");
+      setError(
+        "Only assigned demo numbers allowed: 1010101010 (Candidate), 2020202020 (Employer).",
+      );
       return;
     }
 
     const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+
     setGeneratedOtp(newOtp);
     setOtpSent(true);
     setError("");
-    showToast(`OTP sent to ${isEmail ? 'email' : 'mobile'}: ${newOtp}`, 'info');
+
+    showToast(`OTP sent to ${isEmail ? "email" : "mobile"}: ${newOtp}`, "info");
   };
 
+  // Login
   const handleSignIn = async () => {
     if (otp !== generatedOtp) {
       setError("Invalid OTP.");
@@ -65,13 +79,14 @@ export default function LoginPage() {
     try {
       const payload = await dispatch(
         loginUser({
-          [isEmail ? 'email' : 'mobile']: isEmail ? input : normalizedMobile,
+          [isEmail ? "email" : "mobile"]: isEmail ? input : normalizedMobile,
           enteredOtp: otp,
           generatedOtp: generatedOtp,
-        })
+        }),
       ).unwrap();
 
-      showToast('Login successful! Redirecting...', 'success');
+      showToast("Login successful! Redirecting...", "success");
+
       router.push(payload.redirectTo || "/Homepage");
     } catch (err) {
       setError(err || "Login failed");
@@ -81,114 +96,416 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="main">
-      <section className="pt-100 login-register">
-        <div className="container">
-          <div className="row login-register-cover">
-            <div className="col-lg-4 col-md-6 col-sm-12 mx-auto">
-              <div className="text-center">
-                <p className="font-sm text-brand-2">Sign In</p>
-                <h2 className="mt-10 mb-5 text-brand-1">Access Your Portal</h2>
-                <p className="font-sm color-text-paragraph-2 mb-30">
-                  Enter email or mobile -&gt; OTP -&gt; Sign In<br/>
-                  Demo: 1010101010 (Candidate), 2020202020 (Employer)
-                </p>
-              </div>
-
-              <form onSubmit={(e) => e.preventDefault()}>
-                {error && <div className="alert alert-danger p-2 mb-3">{error}</div>}
-
-                <div className="form-group mb-4">
-                  <label className="font-sm color-text-mutted mb-10">
-                    Email or Mobile Number <span className="color-red">*</span>
-                  </label>
-                  <input
-                    className="form-control"
-                    value={input}
-                    onChange={(e) => {
-                      setInput(e.target.value);
-                      setError("");
-                    }}
-                    placeholder="Email or 10-digit mobile"
-                  />
-                  <small className="form-text font-xs color-text-paragraph-2 d-block mt-5">
-                    {input && !isInputValid ? (
-                      isEmail ? "Enter valid email" : "Enter 10-digit mobile"
-                    ) : isMobile && !isKnownDemoNumber ? (
-                      "Use demo numbers: 1010101010 / 2020202020"
-                    ) : (
-                      "We'll send OTP to verify"
-                    )}
-                  </small>
-                </div>
-
-                <div className="form-group mb-4">
-                  <button
-                    className="btn btn-border btn-sm w-100"
-                    type="button"
-                    onClick={sendOtp}
-                    disabled={!isInputValid || loading || otpSent}
-                  >
-                    Send OTP
-                  </button>
-                </div>
-
-                {otpSent && (
-                  <div className="form-group mb-4">
-                    <label className="font-sm color-text-mutted mb-10">Enter OTP</label>
-                    <input
-                      className="form-control"
-                      type="text"
-                      maxLength="6"
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                      placeholder="123456"
-                    />
-                  </div>
-                )}
-
-                {(otpSent && otp.length === 6) && (
-                  <div className="form-group">
-                    <button
-                      className="btn btn-brand-1 hover-up w-100"
-                      type="button"
-                      onClick={handleSignIn}
-                      disabled={loading || authLoading}
-                    >
-                      {loading || authLoading ? "Signing in..." : "Sign In"}
-                    </button>
-                  </div>
-                )}
-
-                <div className="text-center">
-                  <Link href="/register" className="font-sm color-text-paragraph-2">
-                    Don't have account? Register
-                  </Link>
-                </div>
-              </form>
+    <main
+      className="main"
+      style={{
+        minHeight: "100vh",
+        background: "linear-gradient(180deg, #fffdf7 0%, #fff8e6 100%)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "40px 16px",
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 460,
+        }}
+      >
+        {/* Card */}
+        <div
+          style={{
+            background: "#ffffff",
+            border: "1px solid var(--color-border-tertiary)",
+            borderRadius: 18,
+            padding: "38px 34px",
+            boxShadow: "0 10px 35px rgba(0,0,0,0.05)",
+          }}
+        >
+          {/* Header */}
+          <div
+            style={{
+              textAlign: "center",
+              marginBottom: 30,
+            }}
+          >
+            <div
+              style={{
+                fontSize: "12px",
+                fontWeight: 700,
+                letterSpacing: 1.4,
+                textTransform: "uppercase",
+                color: "#ff9900",
+                marginBottom: 10,
+              }}
+            >
+              SkillBridge
             </div>
 
-            <div className="img-1 d-none d-lg-block">
-              <Image
-                className="shape-1"
-                src="/assets/imgs/page/login-register/img-1.svg"
-                alt="JobBox"
-                width={200}
-                height={200}
-              />
-            </div>
-            <div className="img-2">
-              <Image
-                src="/assets/imgs/page/login-register/img-2.svg"
-                alt="JobBox"
-                width={300}
-                height={400}
-              />
-            </div>
+            <h1
+              style={{
+                fontSize: "30px",
+                fontWeight: 700,
+                color: "var(--color-text-primary)",
+                marginBottom: 10,
+                lineHeight: 1.2,
+              }}
+            >
+              Access Your Portal
+            </h1>
+
+            <p
+              style={{
+                fontSize: "14px",
+                lineHeight: 1.7,
+                color: "var(--color-text-secondary)",
+              }}
+            >
+              Enter email or mobile → OTP → Sign In
+              <br />
+              Demo:
+              <br />
+              1010101010 (Candidate)
+              <br />
+              2020202020 (Employer)
+            </p>
           </div>
+
+          {/* Form */}
+          <form onSubmit={(e) => e.preventDefault()}>
+            {/* Error */}
+            {error && (
+              <div
+                style={{
+                  marginBottom: 18,
+                  padding: "12px 14px",
+                  borderRadius: 10,
+                  background: "#FCEBEB",
+                  border: "1px solid #F7C1C1",
+                  color: "#A32D2D",
+                  fontSize: 13,
+                  lineHeight: 1.5,
+                }}
+              >
+                {error}
+              </div>
+            )}
+
+            {/* Input */}
+            <div className="form-group" style={{ marginBottom: 20 }}>
+              <label
+                style={{
+                  display: "block",
+                  marginBottom: 8,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "var(--color-text-secondary)",
+                }}
+              >
+                Email or Mobile Number
+                <span style={{ color: "#E24B4A" }}> *</span>
+              </label>
+
+              <input
+                className="form-control"
+                value={input}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  setError("");
+                }}
+                placeholder="Enter email or mobile"
+                style={{
+                  height: 54,
+                  borderRadius: 10,
+                  border: "1px solid var(--color-border-secondary)",
+                  fontSize: 14,
+                  padding: "0 16px",
+                }}
+              />
+
+              <small
+                style={{
+                  display: "block",
+                  marginTop: 8,
+                  fontSize: 12,
+                  color: "var(--color-text-tertiary)",
+                }}
+              >
+                {input && !isInputValid
+                  ? isEmail
+                    ? "Enter valid email"
+                    : "Enter 10-digit mobile"
+                  : isMobile && !isKnownDemoNumber
+                    ? "Use demo numbers: 1010101010 / 2020202020"
+                    : "We'll send OTP to verify"}
+              </small>
+            </div>
+
+            {/* Send OTP */}
+            <div className="form-group" style={{ marginBottom: 20 }}>
+              <button
+                type="button"
+                onClick={sendOtp}
+                disabled={!isInputValid || loading || otpSent}
+                style={{
+                  width: "100%",
+                  height: 52,
+                  borderRadius: 10,
+                  border: "1px solid #ff9900",
+                  background: otpSent ? "#f7f7f7" : "#ffffff",
+                  color: "#ff9900",
+                  fontWeight: 700,
+                  fontSize: 14,
+                  cursor: "pointer",
+                  transition: "all 0.25s ease",
+                }}
+                onMouseEnter={(e) => {
+                  if (!otpSent) {
+                    e.target.style.background = "#ff9900";
+                    e.target.style.color = "#fff";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!otpSent) {
+                    e.target.style.background = "#fff";
+                    e.target.style.color = "#ff9900";
+                  }
+                }}
+              >
+                {otpSent ? "OTP Sent" : "Send OTP"}
+              </button>
+            </div>
+
+            {/* OTP */}
+            {otpSent && (
+              <div className="form-group" style={{ marginBottom: 22 }}>
+                <label
+                  style={{
+                    display: "block",
+                    marginBottom: 8,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "var(--color-text-secondary)",
+                  }}
+                >
+                  Enter OTP
+                </label>
+
+                <input
+                  className="form-control"
+                  type="text"
+                  maxLength="6"
+                  value={otp}
+                  onChange={(e) =>
+                    setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
+                  }
+                  placeholder="123456"
+                  style={{
+                    height: 54,
+                    borderRadius: 10,
+                    border: "1px solid var(--color-border-secondary)",
+                    textAlign: "center",
+                    letterSpacing: 4,
+                    fontWeight: 700,
+                    fontSize: 18,
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Login Button */}
+            {otpSent && otp.length === 6 && (
+              <div className="form-group" style={{ marginBottom: 24 }}>
+                <button
+                  type="button"
+                  onClick={handleSignIn}
+                  disabled={loading || authLoading}
+                  style={{
+                    width: "100%",
+                    height: 54,
+                    borderRadius: 10,
+                    border: "none",
+                    background: "#ff9900",
+                    color: "#ffffff",
+                    fontWeight: 700,
+                    fontSize: 15,
+                    cursor: "pointer",
+                    transition: "all 0.25s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = "#e68f00";
+                    e.target.style.transform = "translateY(-2px)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = "#ff9900";
+                    e.target.style.transform = "translateY(0px)";
+                  }}
+                >
+                  {loading || authLoading ? "Signing in..." : "Sign In"}
+                </button>
+              </div>
+            )}
+
+            {/* Divider */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                margin: "28px 0",
+                gap: 14,
+              }}
+            >
+              <div
+                style={{
+                  flex: 1,
+                  height: 1,
+                  background: "#ececec",
+                }}
+              />
+
+              <span
+                style={{
+                  fontSize: 13,
+                  color: "var(--color-text-tertiary)",
+                  fontWeight: 600,
+                }}
+              >
+                OR
+              </span>
+
+              <div
+                style={{
+                  flex: 1,
+                  height: 1,
+                  background: "#ececec",
+                }}
+              />
+            </div>
+
+            {/* Social Buttons */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 14,
+              }}
+            >
+              {/* Google */}
+              <button
+                type="button"
+                style={{
+                  width: "100%",
+                  height: 54,
+                  borderRadius: 10,
+                  border: "1px solid #ffc151",
+                  background: "#ffffff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 12,
+                  fontWeight: 600,
+                  fontSize: 14,
+                  color: "#122359",
+                  cursor: "pointer",
+                  transition: "all 0.25s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#ff9900";
+                  e.currentTarget.style.color = "#ffffff";
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow =
+                    "0 8px 20px rgba(255,153,0,0.18)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "#ffffff";
+                  e.currentTarget.style.color = "#122359";
+                  e.currentTarget.style.transform = "translateY(0px)";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
+              >
+                <img
+                  src="https://www.svgrepo.com/show/475656/google-color.svg"
+                  alt="google"
+                  width={20}
+                  height={20}
+                />
+                Continue with Google
+              </button>
+
+              {/* LinkedIn */}
+              <button
+                type="button"
+                style={{
+                  width: "100%",
+                  height: 54,
+                  borderRadius: 10,
+                  border: "1px solid #ffc151",
+                  background: "#ffffff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 12,
+                  fontWeight: 600,
+                  fontSize: 14,
+                  color: "#122359",
+                  cursor: "pointer",
+                  transition: "all 0.25s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#ff9900";
+                  e.currentTarget.style.color = "#ffffff";
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                  e.currentTarget.style.boxShadow =
+                    "0 8px 20px rgba(255,153,0,0.18)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "#ffffff";
+                  e.currentTarget.style.color = "#122359";
+                  e.currentTarget.style.transform = "translateY(0px)";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
+              >
+                <img
+                  src="https://cdn-icons-png.flaticon.com/512/3536/3536505.png"
+                  alt="linkedin"
+                  width={18}
+                  height={18}
+                />
+                Continue with LinkedIn
+              </button>
+            </div>
+
+            <div
+              style={{
+                textAlign: "center",
+                marginTop: 28,
+              }}
+            >
+              <Link
+                href="/register"
+                style={{
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: "#ff9900",
+                  transition: "all 0.25s ease",
+                  display: "inline-block",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "#122359";
+                  e.currentTarget.style.transform = "translateY(-1px)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "#ff9900";
+                  e.currentTarget.style.transform = "translateY(0px)";
+                }}
+              >
+                Don't have an account? Register
+              </Link>
+            </div>
+          </form>
         </div>
-      </section>
+      </div>
     </main>
   );
 }
-

@@ -10350,3 +10350,25 @@ ul li:last-child .card-list-4 {
   }
 }
 /*# sourceMappingURL=style.css.map */
+/* =========================================
+   GLOBAL LIGHT YELLOW BACKGROUND
+========================================= */
+
+body {
+  background: #fff8ec !important;
+}
+
+/* Optional soft section tint */
+.section-box,
+.section {
+  background: transparent;
+}
+
+/* Alternate section shades */
+.section-box:nth-child(even) {
+  background: #fff7e8;
+}
+
+.section-box:nth-child(odd) {
+  background: #fffaf2;
+}
