@@ -1477,8 +1477,8 @@ function EmployerForm() {
       </div>
 
       <Field
-        label="Corporate Email (Optional)"
-        hint="Free domains (Gmail, Yahoo etc.) are not accepted"
+        label="Company Email "
+       required
       >
         <Input
           type="email"

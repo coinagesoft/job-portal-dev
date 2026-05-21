@@ -19,6 +19,7 @@ export const mockJobs = [
   {
     id: 1,
     company: "Horizon Marine Services",
+    aiMatch: 92,
     location: "Mumbai",
     title: "Marine Electrician",
     type: "Full time",
