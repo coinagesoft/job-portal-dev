@@ -211,60 +211,175 @@ const EmployerJobListPage = () => {
             <div className="box-list-jobs display-list">
               {employerJobs.map((job) => (
                 <div className="col-xl-12 col-12" key={job.id}>
-                  <div className="card-grid-2 hover-up">
+                  <div
+                    className="card-grid-2 hover-up"
+                    style={{
+                      border: "1px solid rgba(18, 35, 89, 0.08)",
+                      borderRadius: "24px",
+                      overflow: "hidden",
+                      transition:
+                        "transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease",
+                      background: "#ffffff",
+                      boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
+                      marginBottom: "24px",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "translateY(-8px)";
+
+                      e.currentTarget.style.border =
+                        "1px solid rgba(255, 153, 0, 0.18)";
+
+                      e.currentTarget.style.boxShadow =
+                        "0 20px 40px rgba(255,153,0,0.14)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "translateY(0px)";
+
+                      e.currentTarget.style.border =
+                        "1px solid rgba(18, 35, 89, 0.08)";
+
+                      e.currentTarget.style.boxShadow =
+                        "0 4px 14px rgba(18,35,89,0.04)";
+                    }}
+                  >
                     <div className="card-block-info pt-20">
                       <div className="row align-items-center">
-                        {/* Left: Job details */}
+                        {/* Left */}
                         <div className="col-lg-7 col-md-12 col-sm-12">
                           <h4>
                             <a
                               href="#"
                               onClick={(e) => {
                                 e.preventDefault();
+
                                 showToast(`Viewing: ${job.title}`, "info");
                               }}
                             >
                               {job.title}
                             </a>
                           </h4>
+
                           <p className="font-sm color-text-paragraph mt-10">
                             {job.meta}
                           </p>
-                          <div className="mt-10 d-flex flex-wrap align-items-center">
-                            <div className="mt-10 d-flex flex-wrap">
-                              {[
-                                job.postType !== "Hot Vacancy"
-                                  ? job.postType
-                                  : null,
-                              ]
-                                .filter(Boolean)
-                                .map((tag, index) => (
-                                  <span
-                                    key={index}
-                                    className="btn btn-grey-small mr-5 mb-5"
-                                  >
-                                    {tag}
-                                  </span>
-                                ))}
-                            </div>
+
+                          {/* TOP TAG */}
+                          <div
+                            style={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: 8,
+                              marginTop: 18,
+                              marginBottom: 10,
+                            }}
+                          >
+                            {[
+                              job.postType !== "Hot Vacancy"
+                                ? job.postType
+                                : null,
+                            ]
+                              .filter(Boolean)
+                              .map((tag, index) => (
+                                <span
+                                  key={index}
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    padding: "6px 14px",
+                                    borderRadius: 999,
+                                    background: "#EAF4FF",
+                                    border: "1px solid #B9DCFF",
+                                    color: "#1D4ED8",
+                                    fontSize: 12,
+                                    fontWeight: 600,
+                                    lineHeight: 1,
+                                    transition: "all 0.25s ease",
+                                    cursor: "pointer",
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.background =
+                                      "#1D4ED8";
+
+                                    e.currentTarget.style.color = "#ffffff";
+
+                                    e.currentTarget.style.transform =
+                                      "translateY(-1px)";
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.background =
+                                      "#EAF4FF";
+
+                                    e.currentTarget.style.color = "#1D4ED8";
+
+                                    e.currentTarget.style.transform =
+                                      "translateY(0px)";
+                                  }}
+                                >
+                                  {tag}
+                                </span>
+                              ))}
                           </div>
+
                           <p className="font-xs color-text-paragraph-2 mt-10 mb-5">
                             {job.visibility}
                           </p>
+
                           <p className="font-xs color-text-paragraph-2 mb-0">
                             {job.priorityText}
                           </p>
+
                           <p className="font-xs color-text-paragraph-2 mb-0">
                             {job.monetization}
                           </p>
+
                           <p className="font-xs color-text-paragraph-2 mt-10 mb-5">
                             Last applicant activity: {job.lastApplicant}
                           </p>
-                          <div className="mt-10 d-flex flex-wrap">
+
+                          {/* SKILL TAGS */}
+                          <div
+                            style={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: 8,
+                              marginTop: 14,
+                            }}
+                          >
                             {job.topMatches.map((tag) => (
                               <span
                                 key={`${job.id}-${tag}`}
-                                className="badge bg-light text-dark mr-5 mb-5"
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  padding: "6px 12px",
+                                  borderRadius: 999,
+                                  background: "#F4F7FF",
+                                  border: "1px solid rgba(29,78,216,0.10)",
+                                  color: "#1D4ED8",
+                                  fontSize: 12,
+                                  fontWeight: 600,
+                                  lineHeight: 1,
+                                  transition: "all 0.25s ease",
+                                  cursor: "pointer",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.background = "#1D4ED8";
+
+                                  e.currentTarget.style.color = "#ffffff";
+
+                                  e.currentTarget.style.transform =
+                                    "translateY(-2px)";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.background = "#F4F7FF";
+
+                                  e.currentTarget.style.color = "#1D4ED8";
+
+                                  e.currentTarget.style.transform =
+                                    "translateY(0px)";
+                                }}
                               >
                                 {tag}
                               </span>
@@ -272,28 +387,60 @@ const EmployerJobListPage = () => {
                           </div>
                         </div>
 
-                        {/* Right: Status + Actions */}
+                        {/* RIGHT */}
                         <div className="col-lg-5 col-md-12 col-sm-12 text-lg-end mt-md-15 mt-sm-15">
                           <div className="card-2-bottom mt-20 mt-lg-0">
                             <span className="btn btn-grey-small mr-5 mb-5">
                               {job.status}
                             </span>
+
                             <div className="mt-10">
                               {job.actions.map((action) =>
                                 action.href ? (
                                   <Link
                                     key={`${job.id}-${action.label}`}
-                                    className={`btn ${
-                                      action.label === "Applicants"
-                                        ? "btn-apply-now"
-                                        : "btn-outline-theme"
-                                    } btn-sm mr-5 mb-5`}
+                                    className="btn btn-sm mr-5 mb-5"
                                     href={action.href}
                                     style={
                                       action.label === "Applicants"
-                                        ? { color: "#ffffff" }
+                                        ? {
+                                            background: "#FFA300",
+                                            border: "1px solid #FFA300",
+                                            color: "#ffffff",
+                                            transition: "all 0.3s ease",
+                                          }
                                         : undefined
                                     }
+                                    onMouseEnter={(e) => {
+                                      if (action.label === "Applicants") {
+                                        e.currentTarget.style.background =
+                                          "#e69500";
+
+                                        e.currentTarget.style.border =
+                                          "1px solid #e69500";
+
+                                        e.currentTarget.style.transform =
+                                          "translateY(-2px)";
+
+                                        e.currentTarget.style.boxShadow =
+                                          "0 10px 24px rgba(255,163,0,0.28)";
+                                      }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      if (action.label === "Applicants") {
+                                        e.currentTarget.style.background =
+                                          "#FFA300";
+
+                                        e.currentTarget.style.border =
+                                          "1px solid #FFA300";
+
+                                        e.currentTarget.style.transform =
+                                          "translateY(0px)";
+
+                                        e.currentTarget.style.boxShadow =
+                                          "none";
+                                      }
+                                    }}
                                     onClick={() =>
                                       showToast(
                                         `${action.label} — ${job.title}`,
@@ -313,8 +460,7 @@ const EmployerJobListPage = () => {
                                             fontWeight: 700,
                                           }}
                                         >
-                                          - 
-                                          {job.applicants}
+                                          -{job.applicants}
                                         </span>
                                       )}
                                   </Link>
@@ -348,5 +494,3 @@ const EmployerJobListPage = () => {
 };
 
 export default EmployerJobListPage;
-
-

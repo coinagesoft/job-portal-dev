@@ -158,19 +158,21 @@ const EmployerCandidateProfilePage = () => {
                 </div>
               </div>
               <div className="col-lg-4 col-md-12 text-lg-end">
-                <div className="action-buttons">
+                <div className="action-buttons d-flex flex-wrap gap-2 justify-content-lg-end">
                   <button
                     className="btn btn-primary-custom btn-lg"
                     type="button"
                     title="Unlock this candidate's full profile"
+                    style={{ whiteSpace: "nowrap" }}
                   >
                     Unlock Profile - 2 Credits
                   </button>
 
                   <button
-                    className="btn btn-outline-custom btn-lg ml-12"
+                    className="btn btn-outline-custom btn-lg"
                     type="button"
                     title="Unlock required before downloading CV"
+                    style={{ whiteSpace: "nowrap" }}
                   >
                     Download CV - 2 Credits
                   </button>
