@@ -1966,9 +1966,81 @@ function RegisterPageInner() {
   );
 
   return (
-    <main style={{ minHeight: "100vh", padding: "40px 16px 60px" }}>
+    <main
+      style={{
+        minHeight: "100vh",
+        padding: "40px 16px 60px",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      <img
+        src="/assets/imgs/page/login-register/img-3.svg"
+        alt=""
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          left: -90,
+          bottom: -26,
+          width: "min(520px, 50vw)",
+          opacity: 0.13,
+          pointerEvents: "none",
+          userSelect: "none",
+          filter: "var(--theme-image-palette-filter)",
+        }}
+      />
+      <img
+        src="/assets/imgs/page/login-register/img-2.svg"
+        alt=""
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          right: -120,
+          top: -42,
+          width: "min(560px, 52vw)",
+          opacity: 0.1,
+          pointerEvents: "none",
+          userSelect: "none",
+          filter: "var(--theme-image-palette-filter)",
+        }}
+      />
+      <img
+        src="/assets/imgs/page/login-register/img-6.svg"
+        alt=""
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          top: 26,
+          left: 22,
+          width: "min(96px, 13vw)",
+          opacity: 0.2,
+          pointerEvents: "none",
+          userSelect: "none",
+          filter: "var(--theme-image-palette-filter)",
+        }}
+      />
+      <img
+        src="/assets/imgs/page/login-register/img-4.svg"
+        alt=""
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          bottom: 24,
+          right: 26,
+          width: "min(132px, 16vw)",
+          opacity: 0.2,
+          pointerEvents: "none",
+          userSelect: "none",
+          filter: "var(--theme-image-palette-filter)",
+        }}
+      />
       <div
-        style={{ maxWidth: role === "employer" ? 680 : 460, margin: "0 auto" }}
+        style={{
+          maxWidth: role === "employer" ? 680 : 460,
+          margin: "0 auto",
+          position: "relative",
+          zIndex: 1,
+        }}
       >
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: 32 }}>

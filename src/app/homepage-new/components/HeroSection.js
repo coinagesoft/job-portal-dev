@@ -31,7 +31,7 @@ export default function HeroSection() {
                 <form>
                   <div className="box-industry">
                     <select className="form-input mr-10 select-active input-industry">
-                      <option value="0">Select Trade</option>
+                      <option value="0"> Trade</option>
                       <option value="1">Welder</option>
                       <option value="2">HVAC Technician</option>
                       <option value="3">Pipe Fitter</option>

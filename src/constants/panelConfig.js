@@ -10,7 +10,7 @@ export const ROLE_DEFAULT_ROUTE = {
 
 // Candidate header: exactly 6 tabs (excluding profile & notification which are in profile dropdown)
 export const CANDIDATE_HEADER_SECTIONS = [
-  { label: "Dashboard", href: "/homepage-new" },
+  { label: "Home", href: "/homepage-new" },
   { label: "Find Jobs", href: "/jobs-list" },
   { label: "My Applications", href: "/candidate-profile/application-status" },
   { label: "Saved Jobs", href: "/candidate-profile/saved-jobs" },
@@ -21,7 +21,7 @@ export const CANDIDATE_HEADER_SECTIONS = [
 export const EMPLOYER_HEADER_TABS = [
   {
     key: "dashboard",
-    label: "Dashboard",
+    label: "Home",
     links: [
       { label: "CV Search", href: "/employeer/cv-search" },
       { label: "Shortlisted", href: "/employeer/candidate-profile" },

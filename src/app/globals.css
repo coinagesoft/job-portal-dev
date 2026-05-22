@@ -3,6 +3,13 @@
   --foreground: #122359;
   --primary-navy: #122359;
   --primary-blue: #ffa300;
+  --palette-navy: #122359;
+  --palette-gold-100: #ffc151;
+  --palette-gold-200: #ffb32b;
+  --palette-gold-300: #ffa300;
+  --palette-gold-400: #ff9900;
+  --theme-image-palette-filter: sepia(1) saturate(300%) hue-rotate(334deg)
+    brightness(1.03) contrast(1.02);
   --border-light: #ffc151;
   --text-dark: #122359;
   --text-mid: #4f5e64;
@@ -34,6 +41,21 @@
   --color-text-primary: #122359;
   --color-text-secondary: #4f5e64;
   --color-text-tertiary: #66789c;
+}
+
+/* Palette tint pass for static graphics */
+img[src*="/assets/imgs/template/"]:not([src*="jobhub-logo.svg"]):not(
+    [src*="logo.svg"]
+  ):not([src$=".gif"]),
+img[src*="/assets2/imgs/template/"]:not([src$=".gif"]),
+img[src*="/assets/imgs/brands/"],
+img[src*="/assets/imgs/page/job-single/"] {
+  filter: var(--theme-image-palette-filter);
+}
+
+.banner-hero.banner-single::before,
+.banner-hero.banner-single::after {
+  filter: var(--theme-image-palette-filter);
 }
 
 .job-filter-sheet {
@@ -246,6 +268,17 @@ textarea.form-control {
   display: flex;
   flex-direction: column;
   margin-bottom: 0 !important;
+  border: 1px solid rgba(18, 35, 89, 0.08) !important;
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 4px 14px rgba(18, 35, 89, 0.04);
+  transition: all 0.35s ease;
+}
+
+.candidate-saved-job-card:hover {
+  transform: translateY(-8px);
+  border-color: rgba(255, 153, 0, 0.22) !important;
+  box-shadow: 0 20px 40px rgba(255, 153, 0, 0.12) !important;
 }
 
 .candidate-saved-job-card .card-block-info {
@@ -416,6 +449,13 @@ textarea.form-control {
 /* Align homepage hero text block with search bar left edge */
 .hero-banner-content {
   padding-left: 0 !important;
+}
+
+/* Jobs List hero decorative line graphics -> orange shade */
+.banner-hero.banner-single.jobs-list-hero-graphic-orange::before,
+.banner-hero.banner-single.jobs-list-hero-graphic-orange::after {
+  filter: sepia(1) saturate(280%) hue-rotate(334deg) brightness(1.03);
+  opacity: 0.95;
 }
 
 .apply-job-modal-shell {

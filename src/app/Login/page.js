@@ -100,17 +100,81 @@ export default function LoginPage() {
       className="main"
       style={{
         minHeight: "100vh",
-        background: "linear-gradient(180deg, #fffdf7 0%, #fff8e6 100%)",
+        background: "#ffffff",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         padding: "40px 16px",
+        position: "relative",
+        overflow: "hidden",
       }}
     >
+      <img
+        src="/assets/imgs/page/login-register/img-1.svg"
+        alt=""
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          top: 24,
+          left: 28,
+          width: "min(140px, 24vw)",
+          opacity: 0.55,
+          pointerEvents: "none",
+          userSelect: "none",
+          filter: "grayscale(1) brightness(0.45) contrast(1.12)",
+        }}
+      />
+      <img
+        src="/assets/imgs/page/login-register/img-4.svg"
+        alt=""
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          top: 26,
+          right: 36,
+          width: "min(130px, 23vw)",
+          opacity: 0.5,
+          pointerEvents: "none",
+          userSelect: "none",
+          filter: "grayscale(1) brightness(0.45) contrast(1.12)",
+        }}
+      />
+      <img
+        src="/assets/imgs/page/login-register/img-6.svg"
+        alt=""
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          bottom: 20,
+          left: 34,
+          width: "min(105px, 18vw)",
+          opacity: 0.45,
+          pointerEvents: "none",
+          userSelect: "none",
+          filter: "grayscale(1) brightness(0.45) contrast(1.12)",
+        }}
+      />
+      <img
+        src="/assets/imgs/page/login-register/img-5.svg"
+        alt=""
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          right: 18,
+          bottom: -6,
+          width: "min(150px, 26vw)",
+          opacity: 0.5,
+          pointerEvents: "none",
+          userSelect: "none",
+          filter: "grayscale(1) brightness(0.45) contrast(1.12)",
+        }}
+      />
       <div
         style={{
           width: "100%",
           maxWidth: 460,
+          position: "relative",
+          zIndex: 1,
         }}
       >
         {/* Card */}

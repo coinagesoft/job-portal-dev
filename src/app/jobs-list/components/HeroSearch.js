@@ -81,7 +81,7 @@ const HeroSearch = () => {
   return (
     <section className="section-box-2">
       <div className="container">
-        <div className="banner-hero banner-single banner-single-bg">
+        <div className="banner-hero banner-single banner-single-bg jobs-list-hero-graphic-orange">
           <div className="block-banner text-center">
             <h3 className="animate__animated animate__fadeInUp">
               <span className="color-brand-2">
