@@ -10,7 +10,8 @@ import AuthRouteGuard from '@/components/AuthRouteGuard'
 import EmployerSectionSidebar from '@/components/EmployerSectionSidebar'
 import CandidateSettingsSidebar from '@/components/CandidateSettingsSidebar'
 import { ToastProvider } from '@/components/Toast'
-
+import AuthInitializer from "@/components/AuthInitializer";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 export default function RootLayout({ children }) {
   return (
     <html
@@ -36,9 +37,14 @@ export default function RootLayout({ children }) {
       <body suppressHydrationWarning={true}>
         <Provider store={store}>
           <ToastProvider>
+            <AuthInitializer />
             <AuthRouteGuard />
+            <GoogleOAuthProvider
+  clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}
+>
             <Header />
             {children}
+            </GoogleOAuthProvider>
             <EmployerSectionSidebar />
             <CandidateSettingsSidebar />
             <Footer />

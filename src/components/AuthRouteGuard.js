@@ -13,33 +13,66 @@ const isInProtectedGroup = (pathname, prefixes) =>
   prefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 
 const AuthRouteGuard = () => {
-  const pathname = usePathname();
-  const router = useRouter();
-  const role = useSelector((state) => state.auth.user?.role);
+ const pathname = usePathname();
+const router = useRouter();
 
-  useEffect(() => {
-    if (!pathname) return;
+const role = useSelector(
+  (state) => state.auth.user?.role
+);
 
-    const isCandidateRoute = isInProtectedGroup(pathname, CANDIDATE_PROTECTED_PREFIXES);
-    const isEmployerRoute = isInProtectedGroup(pathname, EMPLOYER_PROTECTED_PREFIXES);
-    const isProtectedRoute = isCandidateRoute || isEmployerRoute;
+const initialized = useSelector(
+  (state) => state.auth.initialized
+);
 
-    if (!isProtectedRoute) return;
+console.log("ROLE", role);
+console.log("INITIALIZED", initialized);
 
-    if (!role) {
-      router.replace("/Login");
-      return;
-    }
+useEffect(() => {
+  if (!initialized) return;
 
-    if (role === "candidate" && isEmployerRoute) {
-      router.replace(ROLE_DEFAULT_ROUTE.candidate);
-      return;
-    }
+  if (!pathname) return;
 
-    if (role === "employer" && isCandidateRoute) {
-      router.replace(ROLE_DEFAULT_ROUTE.employer);
-    }
-  }, [pathname, role, router]);
+  const isCandidateRoute =
+    isInProtectedGroup(
+      pathname,
+      CANDIDATE_PROTECTED_PREFIXES
+    );
+
+  const isEmployerRoute =
+    isInProtectedGroup(
+      pathname,
+      EMPLOYER_PROTECTED_PREFIXES
+    );
+
+  const isProtectedRoute =
+    isCandidateRoute || isEmployerRoute;
+
+  if (!isProtectedRoute) return;
+
+  if (!role) {
+    router.replace("/Login");
+    return;
+  }
+
+  if (
+    role === "candidate" &&
+    isEmployerRoute
+  ) {
+    router.replace(
+      ROLE_DEFAULT_ROUTE.candidate
+    );
+    return;
+  }
+
+  if (
+    role === "employer" &&
+    isCandidateRoute
+  ) {
+    router.replace(
+      ROLE_DEFAULT_ROUTE.employer
+    );
+  }
+}, [pathname, role, initialized, router]);
 
   return null;
 };

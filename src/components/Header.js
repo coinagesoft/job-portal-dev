@@ -140,11 +140,13 @@ const Header = () => {
       );
     }, [pathname]);
 
-  const handleLogout = () => {
-    dispatch(logout());
+ const handleLogout = () => {
+  localStorage.removeItem("token");
 
-    router.push("/Login");
-  };
+  dispatch(logout());
+
+  router.replace("/Login");
+};
 
   const renderProfileActions = ({
     profileLinks,
@@ -296,7 +298,7 @@ const Header = () => {
           />
 
           <div className="info-member">
-            <strong className="color-brand-1">
+            <strong className="color-brand-1 " style={{fontSize:"12px"}}>
               Account Owner
             </strong>
 
