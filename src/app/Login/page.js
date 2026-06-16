@@ -182,6 +182,29 @@ export default function LoginPage() {
 
 
   });
+
+const handleLinkedInLogin = () => {
+  const clientId =
+    process.env.NEXT_PUBLIC_LINKEDIN_CLIENT_ID;
+
+  const redirectUri =
+    encodeURIComponent(
+      "http://localhost:3000/linkedin/callback"
+    );
+
+  const scope =
+    encodeURIComponent(
+      "openid profile email"
+    );
+
+  window.location.href =
+    `https://www.linkedin.com/oauth/v2/authorization` +
+    `?response_type=code` +
+    `&client_id=${clientId}` +
+    `&redirect_uri=${redirectUri}` +
+    `&scope=${scope}`;
+};
+
   return (
     <main
       className="main content-page"
@@ -583,6 +606,7 @@ export default function LoginPage() {
               {/* LinkedIn */}
               <button
                 type="button"
+                onClick={handleLinkedInLogin}
                 style={{
                   width: "100%",
                   height: 54,
