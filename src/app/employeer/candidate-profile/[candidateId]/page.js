@@ -1,12 +1,8 @@
+"use client";
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
-import candidateProfileService from "../api/candidateProfileService";
+import candidateProfileService from "@/services/recruiter/Candidateprofileservice.js";
 
-export const metadata = {
-  title: "Employer Candidate Profile - Job Portal",
-  description:
-    "Employer view for candidate profile with unlock and private tagging.",
-};
 
 const EmployerCandidateProfilePage = () => {
   const { candidateId } = useParams();
