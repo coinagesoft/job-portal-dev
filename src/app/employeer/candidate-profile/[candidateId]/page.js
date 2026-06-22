@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "next/navigation";
 import candidateProfileService from "@/services/recruiter/Candidateprofileservice.js";
 
 
