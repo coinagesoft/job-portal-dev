@@ -7,18 +7,15 @@ import {
   gstCheck,
   saveCompanyDetails,
   saveContactDetails,
-
   sendMobileOtp,
   verifyMobileOtp,
   resendMobileOtp,
-
   sendEmailOtp,
   verifyEmailOtp,
   resendEmailOtp,
-
   uploadLicences,
   submitRegistration,
-  resumeRegistration
+  resumeRegistration,
 } from "@/services/recruiter/recruiterRegistrationService";
 // ─────────────────────────────────────────────
 // Shared helpers
@@ -36,7 +33,7 @@ const INDUSTRIES = [
   "Manufacturing",
   "Hospitality",
   "Marine",
-  "Other"
+  "Other",
 ];
 
 const STATES = [
@@ -64,8 +61,6 @@ const STATES = [
 
 const TOTAL_EMP_STEPS = 5;
 const EMPLOYER_UI_PREVIEW_MODE = false;
-
-
 
 // ─────────────────────────────────────────────
 // Sub-components
@@ -289,13 +284,10 @@ function MobileOtpField({
   onOtpStateChange,
   sendMobileOtp,
   verifyMobileOtp,
-  resendMobileOtp
+  resendMobileOtp,
 }) {
   const { sent, verified, generated, userVal } = otp;
   const showToast = useToast();
-
-
-
 
   return (
     <div>
@@ -361,10 +353,8 @@ function MobileOtpField({
             variant="ghost"
             disabled={mobile.length < 10 || verified}
             onClick={() => {
-              if (sent)
-                resendMobileOtp();
-              else
-                sendMobileOtp();
+              if (sent) resendMobileOtp();
+              else sendMobileOtp();
             }}
             style={{
               flexShrink: 0,
@@ -428,10 +418,8 @@ function OtpBlock({
           variant={verified ? "success" : "ghost"}
           disabled={disabled || verified}
           onClick={() => {
-            if (sent)
-              onResend();
-            else
-              onSend();
+            if (sent) onResend();
+            else onSend();
           }}
           style={{
             flexShrink: 0,
@@ -612,41 +600,51 @@ function CandidateForm() {
       </Field>
 
       <Field label="Mobile Number" required>
-        <div style={{ display: "flex", gap: 8 }}>
-          <Input
-            value={data.mobile}
-            onChange={(e) => set("mobile", e.target.value)}
-          />
+        <Input
+          placeholder="Enter mobile number"
+          value={form.mobile}
+          onChange={(e) => set("mobile", e.target.value)}
+        />
 
-          <Btn
-            variant="ghost"
-            onClick={sendMobileOtp}
-          >
-            Send OTP
-          </Btn>
-        </div>
+        <div style={{ marginTop: 8 }}>
+          <OtpBlock
+            target="mobile"
+            sent={mobileOtp.sent}
+            verified={mobileOtp.verified}
+            disabled={!form.mobile}
+            onSend={() => {
+              const otp = genOtp();
 
-        {data.mobileOtp.sent && (
-          <>
-            <Input
-              value={data.mobileOtp.userVal}
-              onChange={(e) =>
-                setData((p) => ({
+              setMobileOtp({
+                sent: true,
+                verified: false,
+                generated: otp,
+                userVal: "",
+              });
+
+              showToast(`Mobile OTP (demo): ${otp}`, "info");
+            }}
+            onVerify={() => {
+              if (mobileOtp.userVal === mobileOtp.generated) {
+                setMobileOtp((p) => ({
                   ...p,
-                  mobileOtp: {
-                    ...p.mobileOtp,
-                    userVal: e.target.value
-                  }
-                }))
+                  verified: true,
+                }));
+
+                showToast("Mobile verified successfully.", "success");
+              } else {
+                showToast("Invalid OTP", "error");
               }
-
-            />
-
-            <Btn onClick={verifyMobileOtp}>
-              Verify
-            </Btn>
-          </>
-        )}
+            }}
+            otpVal={mobileOtp.userVal}
+            setOtpVal={(v) =>
+              setMobileOtp((p) => ({
+                ...p,
+                userVal: v,
+              }))
+            }
+          />
+        </div>
       </Field>
 
       <Field label="Email" hint="Optional — verify to improve account security">
@@ -945,196 +943,123 @@ function EmployerForm() {
     }, 1500);
   };
   const handleSendMobileOtp = async () => {
-
     try {
-
-      const sessionId =
-        localStorage.getItem("registrationSessionId");
+      const sessionId = localStorage.getItem("registrationSessionId");
 
       await saveStep3();
 
-      const response =
-        await sendMobileOtp(
-          {
-            mobileNumber: data.mobile,
-            countryCode: data.countryCode
-          },
-          sessionId
-        );
+      const response = await sendMobileOtp(
+        {
+          mobileNumber: data.mobile,
+          countryCode: data.countryCode,
+        },
+        sessionId,
+      );
 
-      setData(p => ({
+      setData((p) => ({
         ...p,
         mobileOtp: {
           ...p.mobileOtp,
-          sent: true
-        }
+          sent: true,
+        },
       }));
 
-      showToast(
-        response.data.message,
-        "success"
-      );
-
+      showToast(response.data.message, "success");
+    } catch (err) {
+      showToast(err.response?.data?.message, "error");
     }
-    catch (err) {
-
-      showToast(
-        err.response?.data?.message,
-        "error"
-      );
-
-    }
-
   };
   const handleVerifyMobileOtp = async () => {
-
     try {
+      const sessionId = localStorage.getItem("registrationSessionId");
 
-      const sessionId =
-        localStorage.getItem("registrationSessionId");
-
-      const response =
-        await verifyMobileOtp(
-          {
-            mobileNumber: data.mobile,
-            countryCode: data.countryCode,
-            mobileOtpCode: data.mobileOtp.userVal
-          },
-          sessionId
-        );
+      const response = await verifyMobileOtp(
+        {
+          mobileNumber: data.mobile,
+          countryCode: data.countryCode,
+          mobileOtpCode: data.mobileOtp.userVal,
+        },
+        sessionId,
+      );
 
       if (response.data.success) {
-        setData(p => ({
+        setData((p) => ({
           ...p,
           mobileOtp: {
             ...p.mobileOtp,
-            verified: true
-          }
+            verified: true,
+          },
         }));
 
-        showToast(
-          "Mobile verified",
-          "success"
-        );
+        showToast("Mobile verified", "success");
       }
-
+    } catch (err) {
+      showToast(err.response?.data?.message, "error");
     }
-    catch (err) {
-      showToast(
-        err.response?.data?.message,
-        "error"
-      );
-    }
-
   };
 
   const handleResendMobileOtp = async () => {
-
     try {
+      const sessionId = localStorage.getItem("registrationSessionId");
 
-      const sessionId =
-        localStorage.getItem("registrationSessionId");
+      const response = await resendMobileOtp(sessionId);
 
-      const response =
-        await resendMobileOtp(sessionId);
-
-      showToast(
-        response.data.message,
-        "success"
-      );
-
+      showToast(response.data.message, "success");
+    } catch (err) {
+      showToast(err.response?.data?.message, "error");
     }
-    catch (err) {
-
-      showToast(
-        err.response?.data?.message,
-        "error"
-      );
-
-    }
-
   };
 
   const sendCorpEmailOtp = async () => {
-
     try {
+      const sessionId = localStorage.getItem("registrationSessionId");
 
-      const sessionId =
-        localStorage.getItem("registrationSessionId");
+      const response = await sendEmailOtp(
+        {
+          companyEmail: data.corpEmail,
+        },
+        sessionId,
+      );
 
-      const response =
-        await sendEmailOtp(
-          {
-            companyEmail: data.corpEmail
-          },
-          sessionId
-        );
-
-      setData(p => ({
+      setData((p) => ({
         ...p,
         corpEmailOtp: {
           ...p.corpEmailOtp,
-          sent: true
-        }
+          sent: true,
+        },
       }));
 
-      showToast(
-        response.data.message,
-        "success"
-      );
-
+      showToast(response.data.message, "success");
+    } catch (err) {
+      showToast(err.response?.data?.message, "error");
     }
-    catch (err) {
-
-      showToast(
-        err.response?.data?.message,
-        "error"
-      );
-
-    }
-
   };
   const verifyCorpEmailOtp = async () => {
-
     try {
+      const sessionId = localStorage.getItem("registrationSessionId");
 
-      const sessionId =
-        localStorage.getItem("registrationSessionId");
-
-      const response =
-        await verifyEmailOtp(
-          {
-            companyEmail: data.corpEmail,
-              emailOtpCode: data.corpEmailOtp.userVal
-          },
-          sessionId
-        );
+      const response = await verifyEmailOtp(
+        {
+          companyEmail: data.corpEmail,
+          emailOtpCode: data.corpEmailOtp.userVal,
+        },
+        sessionId,
+      );
 
       if (response.data.success) {
-        setData(p => ({
+        setData((p) => ({
           ...p,
           corpEmailOtp: {
             ...p.corpEmailOtp,
-            verified: true
-          }
+            verified: true,
+          },
         }));
 
-        showToast(
-          "Email verified",
-          "success"
-        );
+        showToast("Email verified", "success");
       }
-
+    } catch (err) {
+      showToast(err.response?.data?.message, "error");
     }
-    catch (err) {
-
-      showToast(
-        err.response?.data?.message,
-        "error"
-      );
-
-    }
-
   };
 
   const isStep2Valid = data.hasGst !== null && data.industry;
@@ -1148,184 +1073,139 @@ function EmployerForm() {
   const canGoStep2 = EMPLOYER_UI_PREVIEW_MODE || isStep2Valid;
   const canGoStep3 = EMPLOYER_UI_PREVIEW_MODE || isStep3Valid;
   const canGoStep4 = EMPLOYER_UI_PREVIEW_MODE || isStep4Valid;
-const canSubmit =
-  EMPLOYER_UI_PREVIEW_MODE ||
-  step === 5;
-  
+  const canSubmit = EMPLOYER_UI_PREVIEW_MODE || step === 5;
+
   useEffect(() => {
+    const resume = async () => {
+      const sessionId = localStorage.getItem("registrationSessionId");
 
-  const resume = async () => {
-
-    const sessionId =
-      localStorage.getItem("registrationSessionId");
-
-    if (!sessionId)
-      return;
-
-    try {
-
-      const response =
-        await resumeRegistration(sessionId);
-
-      if (!response.data.success)
-        return;
+      if (!sessionId) return;
 
       try {
-      const session =
-        response.data;
-console.log(response.data)
-      // restore form values
-     const step1 = session.step1Data || {};
-const step2 = session.step2Data || {};
-const step3 = session.step3Data || {};
-const step4 = session.step4Data || {};
+        const response = await resumeRegistration(sessionId);
 
-setData(p => ({
-  ...p,
+        if (!response.data.success) return;
 
-  // STEP 1
-  hasGst: step1.gstRegistered,
-  industry: step1.industryType,
+        try {
+          const session = response.data;
+          console.log(response.data);
+          // restore form values
+          const step1 = session.step1Data || {};
+          const step2 = session.step2Data || {};
+          const step3 = session.step3Data || {};
+          const step4 = session.step4Data || {};
 
-  // STEP 2
-  legalName: step2.legalName || "",
-  tradeName: step2.tradeName || "",
+          setData((p) => ({
+            ...p,
 
-  businessType: step2.businessType || "",
-  companySize: step2.companySize || "",
+            // STEP 1
+            hasGst: step1.gstRegistered,
+            industry: step1.industryType,
 
-  gstn: step2.gstn || "",
-  pan: step2.pan || "",
-  cin: step2.cin || "",
+            // STEP 2
+            legalName: step2.legalName || "",
+            tradeName: step2.tradeName || "",
 
-  state: step2.state || "",
-  city: step2.city || "",
-  pincode: step2.pincode || "",
-  address: step2.addressLine1 || "",
+            businessType: step2.businessType || "",
+            companySize: step2.companySize || "",
 
-  officialWebsite: step2.websiteUrl || "",
+            gstn: step2.gstn || "",
+            pan: step2.pan || "",
+            cin: step2.cin || "",
 
-  companyLogo: step2.companyLogoUrl
-    ? {
-        name:
-          step2.companyLogoUrl.split("/").pop(),
-        url: step2.companyLogoUrl
+            state: step2.state || "",
+            city: step2.city || "",
+            pincode: step2.pincode || "",
+            address: step2.addressLine1 || "",
+
+            officialWebsite: step2.websiteUrl || "",
+
+            companyLogo: step2.companyLogoUrl
+              ? {
+                  name: step2.companyLogoUrl.split("/").pop(),
+                  url: step2.companyLogoUrl,
+                }
+              : null,
+
+            // STEP 3
+            contactName: step3.contactPersonName || "",
+            designation: step3.designation || "",
+
+            contactPersonEmail: step3.contactPersonEmail || "",
+
+            corpEmail: step3.companyEmail || "",
+
+            mobile: step3.mobileNumber || "",
+
+            countryCode: step3.countryCode || "+91",
+
+            profileSummary: step3.companyDescription || "",
+
+            mobileOtp: {
+              ...p.mobileOtp,
+              sent: !!step3.mobileNumber,
+              verified: step3.mobileVerified || false,
+            },
+
+            corpEmailOtp: {
+              ...p.corpEmailOtp,
+              sent: !!step3.companyEmail,
+              verified: step3.companyEmailVerified || false,
+            },
+
+            // STEP 4
+            licDocs: [
+              ...(step4.poeLicenceUrl
+                ? [
+                    {
+                      id: "poe",
+                      name: step4.poeLicenceUrl.split("/").pop(),
+                      url: step4.poeLicenceUrl,
+                    },
+                  ]
+                : []),
+
+              ...(step4.rpslLicenceUrl
+                ? [
+                    {
+                      id: "rpsl",
+                      name: step4.rpslLicenceUrl.split("/").pop(),
+                      url: step4.rpslLicenceUrl,
+                    },
+                  ]
+                : []),
+            ],
+          }));
+          console.log("hasGst being set to", session.gstRegistered);
+          // move to next step
+          setStep(Math.min(session.stepStatus.lastCompletedStep + 1, 5));
+        } finally {
+          setLoadingResume(false);
+        }
+      } catch (err) {
+        console.log("Resume failed", err);
       }
-    : null,
+    };
 
-  // STEP 3
-  contactName: step3.contactPersonName || "",
-  designation: step3.designation || "",
-
-  contactPersonEmail:
-    step3.contactPersonEmail || "",
-
-  corpEmail:
-    step3.companyEmail || "",
-
-  mobile:
-    step3.mobileNumber || "",
-
-  countryCode:
-    step3.countryCode || "+91",
-
-  profileSummary:
-    step3.companyDescription || "",
-
-  mobileOtp: {
-    ...p.mobileOtp,
-    sent: !!step3.mobileNumber,
-    verified: step3.mobileVerified || false
-  },
-
-  corpEmailOtp: {
-    ...p.corpEmailOtp,
-    sent: !!step3.companyEmail,
-    verified:
-      step3.companyEmailVerified || false
-  },
-
-  // STEP 4
-  licDocs: [
-    ...(step4.poeLicenceUrl
-      ? [{
-          id: "poe",
-          name:
-            step4.poeLicenceUrl
-              .split("/")
-              .pop(),
-          url: step4.poeLicenceUrl
-        }]
-      : []),
-
-    ...(step4.rpslLicenceUrl
-      ? [{
-          id: "rpsl",
-          name:
-            step4.rpslLicenceUrl
-              .split("/")
-              .pop(),
-          url: step4.rpslLicenceUrl
-        }]
-      : [])
-  ]
-
-}));
-console.log("hasGst being set to", session.gstRegistered);
-      // move to next step
-      setStep(
-        Math.min(
-          session.stepStatus.lastCompletedStep + 1,
-          5
-        )
-      );
-      }
-finally {
-  setLoadingResume(false);
-
-}
-    }
-   catch (err) {
-
-  console.log("Resume failed", err);
-   }
-
-  };
-
-  resume();
-
-}, []);
+    resume();
+  }, []);
   const handleEmployerSubmit = async () => {
-
     try {
+      const sessionId = localStorage.getItem("registrationSessionId");
 
-      const sessionId =
-        localStorage.getItem("registrationSessionId");
-
-      const response =
-        await submitRegistration({
-          sessionId,
-          consentGiven: true
-        });
+      const response = await submitRegistration({
+        sessionId,
+        consentGiven: true,
+      });
 
       if (response.data.success) {
-
-        showToast(
-          "Registration completed",
-          "success"
-        );
+        showToast("Registration completed", "success");
 
         router.push("/Login");
       }
-
     } catch (err) {
-
-      showToast(
-        err.response?.data?.message,
-        "error"
-      );
+      showToast(err.response?.data?.message, "error");
     }
-
   };
 
   const InfoRow = ({ label, val, mono }) => (
@@ -1356,23 +1236,19 @@ finally {
     try {
       const response = await gstCheck({
         gstRegistered: data.hasGst,
-        industryType: data.industry
+        industryType: data.industry,
       });
 
       if (response.data.success) {
-
         localStorage.setItem(
           "registrationSessionId",
-          response.data.registrationSessionId
+          response.data.registrationSessionId,
         );
 
         setStep(2);
       }
     } catch (err) {
-      showToast(
-        err.response?.data?.message || "Something went wrong",
-        "error"
-      );
+      showToast(err.response?.data?.message || "Something went wrong", "error");
     }
   };
   // ── Step 1: GST Selector ──────────────────
@@ -1481,11 +1357,7 @@ finally {
       <div
         style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}
       >
-        <Btn
-          variant="primary"
-          disabled={!canGoStep2}
-          onClick={handleStep1}
-        >
+        <Btn variant="primary" disabled={!canGoStep2} onClick={handleStep1}>
           Continue →
         </Btn>
       </div>
@@ -1493,11 +1365,8 @@ finally {
   );
 
   const handleStep2 = async () => {
-
     try {
-
-      const sessionId =
-        localStorage.getItem("registrationSessionId");
+      const sessionId = localStorage.getItem("registrationSessionId");
 
       const formData = new FormData();
 
@@ -1514,42 +1383,23 @@ finally {
       formData.append("gstn", data.gstn);
       formData.append("pan", data.pan);
 
-      formData.append(
-        "companyDisplayName",
-        data.tradeName || data.legalName
-      );
+      formData.append("companyDisplayName", data.tradeName || data.legalName);
 
-      formData.append(
-        "addressLine2",
-        ""
-      );
+      formData.append("addressLine2", "");
 
-      formData.append(
-        "industryType",
-        data.industry
-      );
+      formData.append("industryType", data.industry);
 
-      formData.append(
-        "gstnRegistrationDate",
-        data.gstRegDate
-      );
+      formData.append("gstnRegistrationDate", data.gstRegDate);
 
-      if (data.companyLogo)
-        formData.append("companyLogo", data.companyLogo);
+      if (data.companyLogo) formData.append("companyLogo", data.companyLogo);
 
-      const response =
-        await saveCompanyDetails(formData, sessionId);
+      const response = await saveCompanyDetails(formData, sessionId);
 
       if (response.data.success) {
         setStep(3);
       }
-
     } catch (err) {
-
-      showToast(
-        err.response?.data?.message,
-        "error"
-      );
+      showToast(err.response?.data?.message, "error");
     }
   };
   // ── Step 2: Company Details ───────────────
@@ -1870,69 +1720,41 @@ finally {
     </div>
   );
   const saveStep3 = async () => {
-
     try {
+      const sessionId = localStorage.getItem("registrationSessionId");
 
-      const sessionId =
-        localStorage.getItem("registrationSessionId");
-
-      const response =
-        await saveContactDetails(
-          {
-            contactPersonName: data.contactName,
-            designation: data.designation,
-            contactPersonEmail: data.contactPersonEmail,
-            companyEmail: data.corpEmail,
-            mobileNumber: data.mobile,
-            countryCode: data.countryCode,
-            companyDescription: data.profileSummary
-          },
-          sessionId
-        );
+      const response = await saveContactDetails(
+        {
+          contactPersonName: data.contactName,
+          designation: data.designation,
+          contactPersonEmail: data.contactPersonEmail,
+          companyEmail: data.corpEmail,
+          mobileNumber: data.mobile,
+          countryCode: data.countryCode,
+          companyDescription: data.profileSummary,
+        },
+        sessionId,
+      );
 
       if (response.data.success) {
-        showToast(
-          response.data.message,
-          "success"
-        );
+        showToast(response.data.message, "success");
       }
-
+    } catch (err) {
+      showToast(err.response?.data?.message, "error");
     }
-    catch (err) {
-      showToast(
-        err.response?.data?.message,
-        "error"
-      );
-    }
-
   };
 
   const handleResendEmailOtp = async () => {
-
     try {
+      const sessionId = localStorage.getItem("registrationSessionId");
 
-      const sessionId =
-        localStorage.getItem("registrationSessionId");
+      const response = await resendEmailOtp(sessionId);
 
-      const response =
-        await resendEmailOtp(sessionId);
-
-      showToast(
-        response.data.message,
-        "success"
-      );
-
+      showToast(response.data.message, "success");
+    } catch (err) {
+      showToast(err.response?.data?.message, "error");
     }
-    catch (err) {
-
-      showToast(
-        err.response?.data?.message,
-        "error"
-      );
-
-    }
-
-  }
+  };
   // ── Step 3: Contact & OTP ─────────────────
   const renderStep3 = () => (
     <div>
@@ -1972,10 +1794,7 @@ finally {
         </Field>
       </div>
 
-      <Field
-        label="Company Email "
-        required
-      >
+      <Field label="Company Email " required>
         <Input
           type="email"
           value={data.corpEmail}
@@ -2016,12 +1835,11 @@ finally {
           onMobileChange={(v) => set("mobile", v)}
           otp={data.mobileOtp}
           onOtpStateChange={(v) =>
-            setData(p => ({
+            setData((p) => ({
               ...p,
-              mobileOtp: v
+              mobileOtp: v,
             }))
           }
-
           sendMobileOtp={handleSendMobileOtp}
           verifyMobileOtp={handleVerifyMobileOtp}
           resendMobileOtp={handleResendMobileOtp}
@@ -2064,62 +1882,36 @@ finally {
   );
   const handleStep4 = async () => {
     try {
-
-      const sessionId =
-        localStorage.getItem("registrationSessionId");
+      const sessionId = localStorage.getItem("registrationSessionId");
 
       const formData = new FormData();
 
       // Find files
-      const poeDoc =
-        data.licDocs.find(x => x.id === "poe");
+      const poeDoc = data.licDocs.find((x) => x.id === "poe");
 
-      const rpslDoc =
-        data.licDocs.find(x => x.id === "rpsl");
+      const rpslDoc = data.licDocs.find((x) => x.id === "rpsl");
 
       if (!poeDoc || !rpslDoc) {
-        showToast(
-          "Both POE and RPSL licences are required.",
-          "error"
-        );
+        showToast("Both POE and RPSL licences are required.", "error");
         return;
       }
 
-      formData.append(
-        "PoeLicence",
-        poeDoc.file
-      );
+      formData.append("PoeLicence", poeDoc.file);
 
-      formData.append(
-        "RpslLicence",
-        rpslDoc.file
-      );
+      formData.append("RpslLicence", rpslDoc.file);
 
-      const response =
-        await uploadLicences(
-          formData,
-          sessionId
-        );
+      const response = await uploadLicences(formData, sessionId);
 
       if (response.data.success) {
-
-        showToast(
-          response.data.message,
-          "success"
-        );
+        showToast(response.data.message, "success");
 
         setStep(5);
       }
-
-    }
-    catch (err) {
-
+    } catch (err) {
       showToast(
-        err.response?.data?.message ||
-        "Licence upload failed.",
-        "error"
+        err.response?.data?.message || "Licence upload failed.",
+        "error",
       );
-
     }
   };
   // ── Step 4: Licence Upload ────────────────
@@ -2329,247 +2121,245 @@ finally {
   // );
 
   const renderStep4 = () => (
-  <div>
-    <h3
-      style={{
-        fontSize: "var(--font-md)",
-        fontWeight: 600,
-        marginBottom: 4,
-        color: "var(--color-text-primary)",
-      }}
-    >
-      Licence & document upload
-      <span
+    <div>
+      <h3
         style={{
-          fontSize: "var(--font-xs)",
-          fontWeight: 400,
-          color: "var(--color-text-tertiary)",
-          marginLeft: 10,
-          background: "var(--color-background-secondary)",
-          padding: "2px 8px",
-          borderRadius: 6,
+          fontSize: "var(--font-md)",
+          fontWeight: 600,
+          marginBottom: 4,
+          color: "var(--color-text-primary)",
         }}
       >
-        Optional
-      </span>
-    </h3>
+        Licence & document upload
+        <span
+          style={{
+            fontSize: "var(--font-xs)",
+            fontWeight: 400,
+            color: "var(--color-text-tertiary)",
+            marginLeft: 10,
+            background: "var(--color-background-secondary)",
+            padding: "2px 8px",
+            borderRadius: 6,
+          }}
+        >
+          Optional
+        </span>
+      </h3>
 
-    <p
-      style={{
-        fontSize: "var(--font-sm)",
-        color: "var(--color-text-secondary)",
-        marginBottom: 20,
-        lineHeight: 1.5,
-      }}
-    >
-      Upload recruitment licences to earn trust badges displayed on all job
-      listings.
-    </p>
+      <p
+        style={{
+          fontSize: "var(--font-sm)",
+          color: "var(--color-text-secondary)",
+          marginBottom: 20,
+          lineHeight: 1.5,
+        }}
+      >
+        Upload recruitment licences to earn trust badges displayed on all job
+        listings.
+      </p>
 
-    <Alert type="info">
-      <strong>Blue Tick</strong> requires: GST Verified + one active licence +
-      corporate domain email — all simultaneously.
-    </Alert>
+      <Alert type="info">
+        <strong>Blue Tick</strong> requires: GST Verified + one active licence +
+        corporate domain email — all simultaneously.
+      </Alert>
 
-    <div
-      style={{
-        marginTop: 12,
-        marginBottom: 14,
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 8,
-        padding: "8px 12px",
-        borderRadius: 8,
-        border: "1px solid rgba(255,163,0,.32)",
-        background: "#fff8ee",
-        color: "#8a5a00",
-        fontSize: "var(--font-xs)",
-        fontWeight: 600,
-      }}
-    >
-      <i className="fi fi-rr-lock" />
-      Documents uploaded for verification are private and are not shared with
-      candidates.
-    </div>
+      <div
+        style={{
+          marginTop: 12,
+          marginBottom: 14,
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 8,
+          padding: "8px 12px",
+          borderRadius: 8,
+          border: "1px solid rgba(255,163,0,.32)",
+          background: "#fff8ee",
+          color: "#8a5a00",
+          fontSize: "var(--font-xs)",
+          fontWeight: 600,
+        }}
+      >
+        <i className="fi fi-rr-lock" />
+        Documents uploaded for verification are private and are not shared with
+        candidates.
+      </div>
 
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gap: 14,
-        marginBottom: 14,
-      }}
-    >
-      {[
-        {
-          id: "poe",
-          label: "Recruitment Licence",
-          badge: "Recruitment Licensed",
-          color: "#3B6D11",
-          bg: "#EAF3DE",
-        },
-        {
-          id: "rpsl",
-          label: "RPSL Licence",
-          badge: "RPSL Licensed",
-          color: "#0F6E56",
-          bg: "#E1F5EE",
-        },
-      ].map((lic) => {
-        const file = data.licDocs.find((d) => d.id === lic.id);
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 14,
+          marginBottom: 14,
+        }}
+      >
+        {[
+          {
+            id: "poe",
+            label: "Recruitment Licence",
+            badge: "Recruitment Licensed",
+            color: "#3B6D11",
+            bg: "#EAF3DE",
+          },
+          {
+            id: "rpsl",
+            label: "RPSL Licence",
+            badge: "RPSL Licensed",
+            color: "#0F6E56",
+            bg: "#E1F5EE",
+          },
+        ].map((lic) => {
+          const file = data.licDocs.find((d) => d.id === lic.id);
 
-        return (
-          <div key={lic.id}>
-            <p
-              style={{
-                fontSize: "var(--font-xs)",
-                fontWeight: 600,
-                color: "var(--color-text-secondary)",
-                marginBottom: 8,
-              }}
-            >
-              {lic.label}
-            </p>
+          return (
+            <div key={lic.id}>
+              <p
+                style={{
+                  fontSize: "var(--font-xs)",
+                  fontWeight: 600,
+                  color: "var(--color-text-secondary)",
+                  marginBottom: 8,
+                }}
+              >
+                {lic.label}
+              </p>
 
-            {/* Hidden Input */}
-            <input
-              id={`file-${lic.id}`}
-              type="file"
-              accept=".pdf,.jpg,.jpeg,.png"
-              style={{ display: "none" }}
-              onChange={(e) => {
-                const f = e.target.files?.[0];
+              {/* Hidden Input */}
+              <input
+                id={`file-${lic.id}`}
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                style={{ display: "none" }}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
 
-                if (!f) return;
+                  if (!f) return;
 
-                setData((prev) => ({
-                  ...prev,
-                  licDocs: [
-                    ...prev.licDocs.filter((d) => d.id !== lic.id),
-                    {
-                      id: lic.id,
-                      name: f.name,
-                      file: f,
-                    },
-                  ],
-                }));
-              }}
-            />
+                  setData((prev) => ({
+                    ...prev,
+                    licDocs: [
+                      ...prev.licDocs.filter((d) => d.id !== lic.id),
+                      {
+                        id: lic.id,
+                        name: f.name,
+                        file: f,
+                      },
+                    ],
+                  }));
+                }}
+              />
 
-            {/* Upload Box */}
-            <div
-              onClick={() =>
-                document
-                  .getElementById(`file-${lic.id}`)
-                  ?.click()
-              }
-              style={{
-                border: "1px dashed var(--color-border-secondary,#ffc151)",
-                borderRadius: 8,
-                padding: "24px 16px",
-                textAlign: "center",
-                cursor: "pointer",
-                background: file
-                  ? "#EAF3DE"
-                  : "var(--color-background-secondary)",
-                transition: ".2s",
-              }}
-            >
-              {file ? (
-                <>
-                  <p
-                    style={{
-                      fontSize: "var(--font-xs)",
-                      color: "#3B6D11",
-                      fontWeight: 600,
-                    }}
-                  >
-                    ✓ {file.name}
-                  </p>
+              {/* Upload Box */}
+              <div
+                onClick={() =>
+                  document.getElementById(`file-${lic.id}`)?.click()
+                }
+                style={{
+                  border: "1px dashed var(--color-border-secondary,#ffc151)",
+                  borderRadius: 8,
+                  padding: "24px 16px",
+                  textAlign: "center",
+                  cursor: "pointer",
+                  background: file
+                    ? "#EAF3DE"
+                    : "var(--color-background-secondary)",
+                  transition: ".2s",
+                }}
+              >
+                {file ? (
+                  <>
+                    <p
+                      style={{
+                        fontSize: "var(--font-xs)",
+                        color: "#3B6D11",
+                        fontWeight: 600,
+                      }}
+                    >
+                      ✓ {file.name}
+                    </p>
 
-                  <p
-                    style={{
-                      marginTop: 8,
-                      fontSize: "var(--font-xs)",
-                      color: "#666",
-                    }}
-                  >
-                    Click to change file
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p
-                    style={{
-                      fontSize: "var(--font-xl)",
-                      opacity: 0.3,
-                    }}
-                  >
-                    ↑
-                  </p>
+                    <p
+                      style={{
+                        marginTop: 8,
+                        fontSize: "var(--font-xs)",
+                        color: "#666",
+                      }}
+                    >
+                      Click to change file
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p
+                      style={{
+                        fontSize: "var(--font-xl)",
+                        opacity: 0.3,
+                      }}
+                    >
+                      ↑
+                    </p>
 
-                  <p
-                    style={{
-                      fontSize: "var(--font-xs)",
-                      color: "var(--color-text-secondary)",
-                    }}
-                  >
-                    Upload {lic.label}
-                  </p>
+                    <p
+                      style={{
+                        fontSize: "var(--font-xs)",
+                        color: "var(--color-text-secondary)",
+                      }}
+                    >
+                      Upload {lic.label}
+                    </p>
 
-                  <p
-                    style={{
-                      fontSize: "var(--font-xs)",
-                      color: "var(--color-text-tertiary)",
-                      marginTop: 3,
-                    }}
-                  >
-                    PDF / JPG / PNG · Max 5 MB
-                  </p>
-                </>
-              )}
+                    <p
+                      style={{
+                        fontSize: "var(--font-xs)",
+                        color: "var(--color-text-tertiary)",
+                        marginTop: 3,
+                      }}
+                    >
+                      PDF / JPG / PNG · Max 5 MB
+                    </p>
+                  </>
+                )}
+              </div>
+
+              <div
+                style={{
+                  marginTop: 8,
+                  padding: "8px 10px",
+                  background: lic.bg,
+                  borderRadius: 6,
+                  fontSize: "var(--font-xs)",
+                  color: lic.color,
+                }}
+              >
+                Awards: <strong>{lic.badge}</strong> badge
+              </div>
             </div>
+          );
+        })}
+      </div>
 
-            <div
-              style={{
-                marginTop: 8,
-                padding: "8px 10px",
-                background: lic.bg,
-                borderRadius: 6,
-                fontSize: "var(--font-xs)",
-                color: lic.color,
-              }}
-            >
-              Awards: <strong>{lic.badge}</strong> badge
-            </div>
-          </div>
-        );
-      })}
-    </div>
-
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        marginTop: 8,
-      }}
-    >
-      <Btn variant="outline" onClick={() => setStep(3)}>
-        ← Back
-      </Btn>
-
-      <div style={{ display: "flex", gap: 10 }}>
-        <Btn variant="ghost" onClick={() => setStep(5)}>
-          Skip for now
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginTop: 8,
+        }}
+      >
+        <Btn variant="outline" onClick={() => setStep(3)}>
+          ← Back
         </Btn>
 
-        <Btn variant="primary" onClick={handleStep4}>
-          Continue →
-        </Btn>
+        <div style={{ display: "flex", gap: 10 }}>
+          <Btn variant="ghost" onClick={() => setStep(5)}>
+            Skip for now
+          </Btn>
+
+          <Btn variant="primary" onClick={handleStep4}>
+            Continue →
+          </Btn>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
 
   // ── Step 5: Review & Submit ───────────────
   const renderStep5 = () => (
