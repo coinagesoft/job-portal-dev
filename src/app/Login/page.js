@@ -42,7 +42,7 @@ export default function LoginPage() {
       const response = await sendOtp({
         identifier: input,
         countryCode: isMobile ? "+91" : null,
-        userType: "Recruiter",
+        userType: "Both",
       });
 
       if (!response.data.success) {
@@ -77,7 +77,7 @@ export default function LoginPage() {
         identifier: input,
         countryCode: isMobile ? "+91" : null,
         otpCode: otp,
-        userType: "Recruiter",
+        userType: "Both",
       });
 
       console.log("VERIFY RESPONSE", response);
@@ -93,10 +93,9 @@ export default function LoginPage() {
             employerId: response.data.employerId,
             userName: response.data.userName,
 
-            role:
-              response.data.userType === "Recruiter"
+           role: response.data.userType === "Recruiter"
                 ? "employer"
-                : "candidate",
+               : "candidate",
           },
 
           token: response.data.token,
@@ -112,9 +111,11 @@ export default function LoginPage() {
         "success"
       );
 
-      router.push(
-        "/employeer/cv-search"
-      );
+    if (response.data.userType === "Recruiter") {
+  router.push("/employeer/cv-search");
+} else {
+  router.push("/candidate-profile");
+}
     }
     catch (err) {
       setError(
@@ -139,7 +140,7 @@ export default function LoginPage() {
       try {
         const response = await googleLogin({
           accessToken: tokenResponse.access_token,
-          userType: "Recruiter",
+          userType: "Both",
         });
         console.log("AFTER API CALL", response);
 
@@ -169,9 +170,12 @@ export default function LoginPage() {
           response.data.token
         );
 
-        router.push(
-          "/employeer/cv-search"
-        );
+       if (response.data.userType === "Recruiter") {
+  router.push("/employeer/cv-search");
+} else {
+  router.push("/candidate-profile");
+}
+
       } catch (err) {
         setError(
           err?.response?.data?.message ||

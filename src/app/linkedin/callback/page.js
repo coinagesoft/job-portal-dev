@@ -29,7 +29,7 @@ export default function LinkedInCallback() {
           linkedInCode: code,
           redirectUri:
             "https://job-portal-dev-phi.vercel.app/linkedin/callback",
-          userType: "Recruiter",
+          userType: "Both",
         });
 
         const data = response.data;
