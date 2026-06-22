@@ -1,8 +1,13 @@
 "use client";
 
 import { getProfileCompletion } from "@/services/candidate/profileCompletionService";
+import { State } from "country-state-city";
 
 
+import {
+  getAvailability,
+  updateAvailability,
+} from "@/services/candidate/availabilityService";
 
 import {
   getSkills,
@@ -73,6 +78,13 @@ const TOTAL = STEPS.length;
 const CANDIDATE_ID = "2e51baf0-cf8a-4b3f-b2de-4dfc92b8c222";
 const PROFILE_PHOTO_PREVIEW_KEY = `candidate-profile-photo-preview-${CANDIDATE_ID}`;
 const DEFAULT_PROFILE_PHOTO = "/assets/imgs/page/candidates/candidate-profile.png";
+
+const COUNTRY_MAP = {
+  "+91": "IN",
+  "+1": "US",
+  "+44": "GB",
+  "+971": "AE",
+};
 
 const getStoredProfilePhotoPreview = () => {
   if (typeof window === "undefined") return "";
@@ -262,6 +274,10 @@ const StepPersonal = ({ data,
 
     reader.readAsDataURL(file);
   };
+
+  const states = State.getStatesOfCountry(
+    data.country || "IN"
+  );
   return (
     <div>
       <h4 style={{ color: T.navy, marginBottom: 6, marginTop: 0 }}>Personal Information</h4>
@@ -291,28 +307,28 @@ const StepPersonal = ({ data,
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 20px" }}>
         <Field label="First Name" required>
-          <Inp value={data.firstName || ""} onChange={e => onChange("firstName", e.target.value)} placeholder="Ramesh" />
+          <Inp  value={data.firstName || ""} onChange={e => onChange("firstName", e.target.value.replace(/^\s+/, ""))} placeholder="Ramesh" required />
         </Field>
         <Field label="Last Name" required>
-          <Inp value={data.lastName || ""} onChange={e => onChange("lastName", e.target.value)} placeholder="Sharma" />
+          <Inp value={data.lastName || ""} onChange={e => onChange("lastName", e.target.value.replace(/^\s+/, ""))} placeholder="Sharma" required />
         </Field>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 20px" }}>
         <Field label="Mobile Number" required>
-          <Inp value={data.mobile || ""} onChange={e => onChange("mobile", e.target.value)} placeholder="+91 98765 43210" />
+          <Inp value={data.mobile || ""} onChange={e => onChange("mobile", e.target.value)} placeholder="+91 98765 43210" required />
         </Field>
-        <Field label="Email Address">
-          <Inp type="email" value={data.email || ""} onChange={e => onChange("email", e.target.value)} placeholder="ramesh@email.com" />
+        <Field label="Email Address" required>
+          <Inp type="email" value={data.email || ""} onChange={e => onChange("email", e.target.value)} placeholder="ramesh@email.com" required />
         </Field>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 20px" }}>
-        <Field label="Date of Birth">
-          <Inp type="date" value={data.dob || ""} onChange={e => onChange("dob", e.target.value)} />
+        <Field label="Date of Birth" required>
+          <Inp type="date" value={data.dob || ""} onChange={e => onChange("dob", e.target.value)} required />
         </Field>
-        <Field label="Gender">
-          <Sel value={data.gender || ""} onChange={e => onChange("gender", e.target.value)}>
+        <Field label="Gender" required>
+          <Sel value={data.gender || ""} onChange={e => onChange("gender", e.target.value)} required >
             <option value="">Select gender</option>
             <option>Male</option>
             <option>Female</option>
@@ -324,38 +340,45 @@ const StepPersonal = ({ data,
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0 20px" }}>
         <Field label="City" required>
-          <Inp value={data.city || ""} onChange={e => onChange("city", e.target.value)} placeholder="Pune" />
+          <Inp value={data.city || ""} onChange={e => onChange("city", e.target.value)} placeholder="Pune" required  />
         </Field>
-        <Field label="State">
-          <Sel value={data.state || ""} onChange={e => onChange("state", e.target.value)}>
+        <Field label="State" required>
+          <Sel value={data.state || ""} onChange={e => onChange("state", e.target.value)} required >
             <option value="">Select state</option>
-            {["Andhra Pradesh", "Bihar", "Delhi", "Gujarat", "Haryana", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Punjab", "Rajasthan", "Tamil Nadu", "Telangana", "Uttar Pradesh", "West Bengal", "Other"].map(s => <option key={s}>{s}</option>)}
+            {states.map((state) => (
+              <option
+                key={state.isoCode}
+                value={state.name}
+              >
+                {state.name}
+              </option>
+            ))}
           </Sel>
         </Field>
-        <Field label="PIN Code">
-          <Inp value={data.pin || ""} onChange={e => onChange("pin", e.target.value)} placeholder="411001" maxLength={6} />
+        <Field label="PIN Code" required>
+          <Inp value={data.pin || ""} onChange={e => onChange("pin", e.target.value)} placeholder="411001" maxLength={6} required  />
         </Field>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 20px" }}>
-        <Field label="Nationality">
-          <Inp value={data.nationality || ""} onChange={e => onChange("nationality", e.target.value)} placeholder="Indian" />
+        <Field label="Nationality" required>
+          <Inp value={data.nationality || ""} onChange={e => onChange("nationality", e.target.value)} placeholder="Indian" required />
         </Field>
         <Field label="Trade / Job Title" required>
-          <Inp value={data.trade || ""} onChange={e => onChange("trade", e.target.value)} placeholder="Senior Electrician" />
+          <Inp value={data.trade || ""} onChange={e => onChange("trade", e.target.value)} placeholder="Senior Electrician" required/>
         </Field>
       </div>
 
-      <Field label="Professional Summary" hint="2–4 lines about your experience and specialisation">
+      <Field label="Professional Summary" hint="2–4 lines about your experience and specialisation" required>
         <Textarea value={data.summary || ""} onChange={e => onChange("summary", e.target.value)} rows={4} placeholder="Describe your key skills and years of experience..." />
       </Field>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 20px" }}>
-        <Field label="Expected Salary (₹/month)">
-          <Inp type="number" value={data.salaryExpectation || ""} onChange={e => onChange("salaryExpectation", Number(e.target.value))} placeholder="45000" />
+        <Field label="Expected Salary (₹/month)" required>
+          <Inp type="number" value={data.salaryExpectation || ""} onChange={e => onChange("salaryExpectation", Number(e.target.value))} placeholder="45000" required/>
         </Field>
-        <Field label="Years of Experience">
-          <Inp type="number" value={data.yearsOfExperience || ""} onChange={e => onChange("yearsOfExperience", Number(e.target.value))} placeholder="8" min={0} max={50} />
+        <Field label="Years of Experience" required>
+          <Inp type="number" value={data.yearsOfExperience || ""} onChange={e => onChange("yearsOfExperience", Number(e.target.value))} placeholder="8" min={0} max={50} required />
         </Field>
       </div>
 
@@ -874,61 +897,78 @@ const CandidateProfilePage = () => {
   const [done, setDone] = useState(false);
   const [profileCompletion, setProfileCompletion] = useState(null);
 
-  //load ITI info from API
-  const loadITIInfo = async () => {
+
+  const loadAvailability = useCallback(async () => {
   try {
-    const response = await axios.get(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/candidate/profile/iti-info`,
-      {
-        params: {
-          candidateId: CANDIDATE_ID,
-        },
-      }
-    );
+    const response = await getAvailability(CANDIDATE_ID);
 
     if (response.data.success) {
-      setItiInfo(response.data.data);
+      setProfileData((prev) => ({
+        ...prev,
+        availableForWork:
+          response.data.data.availabilityStatus ===
+          "Open_To_Opportunities",
+      }));
     }
   } catch (error) {
-    console.error(error);
+    console.error("Failed to load availability", error);
   }
-};
-
-useEffect(() => {
-  loadITIInfo();
 }, []);
+  //load ITI info from API
+  const loadITIInfo = async () => {
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/candidate/profile/iti-info`,
+        {
+          params: {
+            candidateId: CANDIDATE_ID,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        setItiInfo(response.data.data);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    loadITIInfo();
+  }, []);
 
 
-useEffect(() => {
-  if (!itiInfo) return;
+  useEffect(() => {
+    if (!itiInfo) return;
 
-  setProfileData((prev) => ({
-    ...prev,
-    documents: {
-      ...prev.documents,
+    setProfileData((prev) => ({
+      ...prev,
+      documents: {
+        ...prev.documents,
 
-      itiCertificate: {
-        label: "ITI Certificate",
-        status: itiInfo.itiCertified
-          ? "verified"
-          : "missing",
+        itiCertificate: {
+          label: "ITI Certificate",
+          status: itiInfo.itiCertified
+            ? "verified"
+            : "missing",
 
-        type: "readonly",
+          type: "readonly",
 
-        description:
-          itiInfo.itiTrade || "ITI Trade",
+          description:
+            itiInfo.itiTrade || "ITI Trade",
 
-        metaLines: [
-          `Primary Trade: ${itiInfo.primaryTrade}`,
-          `Marks: ${itiInfo.itiMarks}`,
-          `College: ${itiInfo.itiCollege}`,
-        ],
+          metaLines: [
+            `Primary Trade: ${itiInfo.primaryTrade}`,
+            `Marks: ${itiInfo.itiMarks}`,
+            `College: ${itiInfo.itiCollege}`,
+          ],
 
-        file: null,
+          file: null,
+        },
       },
-    },
-  }));
-}, [itiInfo]);
+    }));
+  }, [itiInfo]);
 
   const loadProfileCompletion = useCallback(async () => {
     try {
@@ -970,13 +1010,15 @@ useEffect(() => {
 
       if (response.data.success) {
         const profile = response.data.data;
+        const country =
+          COUNTRY_MAP[profile.countryCode] || "IN";
         console.log("profilePhotoUrl =", profile.profilePhotoUrl);
         const names = profile.fullName
           ? profile.fullName.split(" ")
           : [];
 
         setProfileData((prev) => ({
-          ...prev,
+          ...prev, country,
 
           firstName: names[0] || "",
           lastName: names.slice(1).join(" ") || "",
@@ -1027,7 +1069,9 @@ useEffect(() => {
     console.log("API URL =", process.env.NEXT_PUBLIC_API_URL);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadPersonalInfo();
-  }, [loadPersonalInfo]);
+     loadAvailability();
+   
+  }, [loadPersonalInfo, loadAvailability]);
 
   //Update profile data to API
   const savePersonalInfo = async () => {
@@ -1048,6 +1092,7 @@ useEffect(() => {
         newsletterOptIn:
           profileData.newsletterOptIn || false,
       };
+      
 
       const response = await axios.put(
         `${process.env.NEXT_PUBLIC_API_URL}/api/candidate/profile/personal-info`,
@@ -1079,8 +1124,17 @@ useEffect(() => {
         "error"
       );
 
-      return false;    // <-- ADD THIS
+      return false;    
     }
+    await updateAvailability(
+  CANDIDATE_ID,
+  {
+    availabilityStatus:
+      profileData.availableForWork
+        ? "Open_To_Opportunities"
+        : "Not_Available",
+  }
+);  
   };
 
   // Upload profile photo to API
@@ -1965,6 +2019,10 @@ useEffect(() => {
       default: return null;
     }
   };
+
+
+
+
 
   return (
     <main className="main">

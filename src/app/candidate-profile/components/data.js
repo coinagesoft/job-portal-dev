@@ -21,6 +21,7 @@
   address: "",
   role: "",
   category: "",
+  country: "IN",
   hasDisability: false,
   disabilityNote: "",
   preferredWorkLocation: "",
