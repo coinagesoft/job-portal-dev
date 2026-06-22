@@ -5,11 +5,10 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { loginUser } from "@/store/authSlice";
-import {
-  ROLE_DEFAULT_ROUTE,
-  STATIC_ROLE_BY_MOBILE,
-} from "@/constants/panelConfig";
+import { setUser } from "@/store/authSlice";
+import { sendOtp, verifyOtp } from "@/services/recruiter/authService";
+import { useGoogleLogin } from "@react-oauth/google";
+import { googleLogin } from "@/services/recruiter/authService";
 
 export default function LoginPage() {
   const showToast = useToast();
@@ -17,7 +16,6 @@ export default function LoginPage() {
   const [input, setInput] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState("");
-  const [generatedOtp, setGeneratedOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -31,69 +29,185 @@ export default function LoginPage() {
   const isMobile = /^\d{10}$/.test(input.replace(/\D/g, ""));
   const normalizedMobile = input.replace(/\D/g, "").slice(-10);
 
-  const isKnownDemoNumber = Boolean(STATIC_ROLE_BY_MOBILE[normalizedMobile]);
-
-  useEffect(() => {
-    if (!user?.role) return;
-
-    router.replace(ROLE_DEFAULT_ROUTE[user.role] || "/Homepage");
-  }, [router, user]);
-
   const isInputValid = isEmail
     ? input.includes("@") && input.includes(".")
     : isMobile;
 
   // Send OTP
-  const sendOtp = () => {
-    if (!isInputValid) {
-      setError("Enter valid email or 10-digit mobile number.");
-      return;
-    }
-
-    if (isMobile && !isKnownDemoNumber) {
-      setError(
-        "Only assigned demo numbers allowed: 1010101010 (Candidate), 2020202020 (Employer).",
-      );
-      return;
-    }
-
-    const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
-
-    setGeneratedOtp(newOtp);
-    setOtpSent(true);
-    setError("");
-
-    showToast(`OTP sent to ${isEmail ? "email" : "mobile"}: ${newOtp}`, "info");
-  };
-
-  // Login
-  const handleSignIn = async () => {
-    if (otp !== generatedOtp) {
-      setError("Invalid OTP.");
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-
+  const handleSendOtp = async () => {
     try {
-      const payload = await dispatch(
-        loginUser({
-          [isEmail ? "email" : "mobile"]: isEmail ? input : normalizedMobile,
-          enteredOtp: otp,
-          generatedOtp: generatedOtp,
-        }),
-      ).unwrap();
+      setLoading(true);
+      setError("");
 
-      showToast("Login successful! Redirecting...", "success");
+      const response = await sendOtp({
+        identifier: input,
+        countryCode: isMobile ? "+91" : null,
+        userType: "Both",
+      });
 
-      router.push(payload.redirectTo || "/Homepage");
-    } catch (err) {
-      setError(err || "Login failed");
+      if (!response.data.success) {
+        setError(response.data.message);
+        return;
+      }
+
+      setOtpSent(true);
+
+      showToast(
+        response.data.message,
+        "success"
+      );
+    } catch (error) {
+      setError(
+        error?.response?.data?.message ||
+        "Failed to send OTP"
+      );
     } finally {
       setLoading(false);
     }
   };
+
+
+  // Login
+  const handleSignIn = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await verifyOtp({
+        identifier: input,
+        countryCode: isMobile ? "+91" : null,
+        otpCode: otp,
+        userType: "Both",
+      });
+
+      console.log("VERIFY RESPONSE", response);
+
+      if (!response.data.success) {
+        setError(response.data.message);
+        return;
+      }
+      dispatch(
+        setUser({
+          user: {
+            userId: response.data.userId,
+            employerId: response.data.employerId,
+            userName: response.data.userName,
+
+           role: response.data.userType === "Recruiter"
+                ? "employer"
+               : "candidate",
+          },
+
+          token: response.data.token,
+        })
+      );
+      localStorage.setItem(
+        "token",
+        response.data.token
+      );
+
+      showToast(
+        response.data.message || "Login successful!",
+        "success"
+      );
+
+    if (response.data.userType === "Recruiter") {
+  router.push("/employeer/cv-search");
+} else {
+  router.push("/candidate-profile");
+}
+    }
+    catch (err) {
+      setError(
+        err?.response?.data?.message ||
+        err?.message ||
+        "Login failed"
+      );
+    }
+    finally {
+      setLoading(false);
+    }
+  };
+
+
+  const googleSignIn = useGoogleLogin({
+    flow: "implicit",
+
+    onSuccess: async (tokenResponse) => {
+
+      console.log("GOOGLE SUCCESS", tokenResponse);
+      console.log("BEFORE API CALL");
+      try {
+        const response = await googleLogin({
+          accessToken: tokenResponse.access_token,
+          userType: "Both",
+        });
+        console.log("AFTER API CALL", response);
+
+
+        if (!response.data.success) {
+          setError(response.data.message);
+          return;
+        }
+
+        dispatch(
+          setUser({
+            user: {
+              userId: response.data.userId,
+              employerId: response.data.employerId,
+              userName: response.data.userName,
+              role:
+                response.data.userType === "Recruiter"
+                  ? "employer"
+                  : "candidate",
+            },
+            token: response.data.token,
+          })
+        );
+
+        localStorage.setItem(
+          "token",
+          response.data.token
+        );
+
+       if (response.data.userType === "Recruiter") {
+  router.push("/employeer/cv-search");
+} else {
+  router.push("/candidate-profile");
+}
+
+      } catch (err) {
+        setError(
+          err?.response?.data?.message ||
+          "Google login failed"
+        );
+      }
+    }
+
+
+  });
+
+const handleLinkedInLogin = () => {
+  const clientId =
+    process.env.NEXT_PUBLIC_LINKEDIN_CLIENT_ID;
+
+  const redirectUri =
+    encodeURIComponent(
+      "https://job-portal-dev-phi.vercel.app/linkedin/callback"
+    );
+
+  const scope =
+    encodeURIComponent(
+      "openid profile email"
+    );
+
+  window.location.href =
+    `https://www.linkedin.com/oauth/v2/authorization` +
+    `?response_type=code` +
+    `&client_id=${clientId}` +
+    `&redirect_uri=${redirectUri}` +
+    `&scope=${scope}`;
+};
 
   return (
     <main
@@ -229,12 +343,7 @@ export default function LoginPage() {
               }}
             >
               Enter email or mobile → OTP → Sign In
-              <br />
-              Demo:
-              <br />
-              1010101010 (Candidate)
-              <br />
-              2020202020 (Employer)
+
             </p>
           </div>
 
@@ -302,9 +411,7 @@ export default function LoginPage() {
                   ? isEmail
                     ? "Enter valid email"
                     : "Enter 10-digit mobile"
-                  : isMobile && !isKnownDemoNumber
-                    ? "Use demo numbers: 1010101010 / 2020202020"
-                    : "We'll send OTP to verify"}
+                  : "We'll send OTP to verify"}
               </small>
             </div>
 
@@ -312,7 +419,7 @@ export default function LoginPage() {
             <div className="form-group" style={{ marginBottom: 20 }}>
               <button
                 type="button"
-                onClick={sendOtp}
+                onClick={handleSendOtp}
                 disabled={!isInputValid || loading || otpSent}
                 style={{
                   width: "100%",
@@ -460,6 +567,7 @@ export default function LoginPage() {
               {/* Google */}
               <button
                 type="button"
+                onClick={() => googleSignIn()}
                 style={{
                   width: "100%",
                   height: 54,
@@ -502,6 +610,7 @@ export default function LoginPage() {
               {/* LinkedIn */}
               <button
                 type="button"
+                onClick={handleLinkedInLogin}
                 style={{
                   width: "100%",
                   height: 54,

@@ -1,172 +1,13 @@
+"use client";
 import Link from "next/link";
 
-const EMPLOYER_CREDITS = 3;
-const ANY_TRADE = "any";
-const ANY_AVAILABILITY = "any";
+import { useEffect, useState } from "react";
+import { searchCandidates, getCvSearchDashboard, getFilterOptions } from "@/services/recruiter/recruiterCvSearchService";
 
-const cvCandidates = [
-  {
-    id: "CAND-001",
-    name: "Ramesh Kumar Sharma",
-    trade: "Welder",
-    yearsExp: 8,
-    locationCity: "Mumbai",
-    locationState: "MH",
-    availability: "available",
-    primarySkill: "6G Arc Welding",
-    secondarySkills: [
-      "MIG Welding",
-      "Pipeline Fabrication",
-      "Blueprint Reading",
-    ],
-    certifications: ["ITI Certified", "KYC Verified"],
-    itiCertified: true,
-    passportValid: true,
-    offshoreExperience: true,
-    baseScore: 86,
-    profileUpdatedAt: "2026-04-18",
-    isUnlocked: false,
-  },
-  {
-    id: "CAND-002",
-    name: "Priya Singh",
-    trade: "Electrician",
-    yearsExp: 5,
-    locationCity: "Pune",
-    locationState: "MH",
-    availability: "available",
-    primarySkill: "Industrial Wiring",
-    secondarySkills: ["Panel Troubleshooting", "PLC Basics", "Cable Routing"],
-    certifications: ["ITI Certified"],
-    itiCertified: true,
-    passportValid: false,
-    offshoreExperience: false,
-    baseScore: 82,
-    profileUpdatedAt: "2026-04-20",
-    isUnlocked: false,
-  },
-  {
-    id: "CAND-003",
-    name: "Mohammed Asif",
-    trade: "Marine Engineer",
-    yearsExp: 14,
-    locationCity: "Chennai",
-    locationState: "TN",
-    availability: "unavailable",
-    primarySkill: "Engine Room Maintenance",
-    secondarySkills: [
-      "Dry Dock Support",
-      "Ship Electrical",
-      "Safety Compliance",
-    ],
-    certifications: ["Passport Valid", "STCW"],
-    itiCertified: false,
-    passportValid: true,
-    offshoreExperience: true,
-    baseScore: 84,
-    profileUpdatedAt: "2026-04-12",
-    isUnlocked: false,
-  },
-  {
-    id: "CAND-004",
-    name: "Suresh Deshmukh",
-    trade: "Driver",
-    yearsExp: 3,
-    locationCity: "Nagpur",
-    locationState: "MH",
-    availability: "available",
-    primarySkill: "Heavy Vehicle Driving",
-    secondarySkills: ["Route Planning", "Logbook Maintenance", "Fleet Safety"],
-    certifications: ["LMV + HMV License", "Background Verified"],
-    itiCertified: false,
-    passportValid: false,
-    offshoreExperience: false,
-    baseScore: 74,
-    profileUpdatedAt: "2026-04-21",
-    isUnlocked: true,
-    unlockedDaysLeft: 42,
-  },
-  {
-    id: "CAND-005",
-    name: "Amit Patnaik",
-    trade: "Plumber",
-    yearsExp: 9,
-    locationCity: "Bhubaneswar",
-    locationState: "OD",
-    availability: "available",
-    primarySkill: "Commercial Plumbing",
-    secondarySkills: ["Blueprint Reading", "HVAC Pipeline", "Welding Support"],
-    certifications: ["Safety Card", "KYC Verified"],
-    itiCertified: false,
-    passportValid: true,
-    offshoreExperience: false,
-    baseScore: 78,
-    profileUpdatedAt: "2026-04-15",
-    isUnlocked: false,
-  },
-  {
-    id: "CAND-006",
-    name: "Naveen Kumar",
-    trade: "Mason",
-    yearsExp: 11,
-    locationCity: "Hyderabad",
-    locationState: "TS",
-    availability: "available",
-    primarySkill: "Industrial Blockwork",
-    secondarySkills: ["Concrete Finishing", "Scaffolding", "Blueprint Reading"],
-    certifications: ["ITI Certified", "Safety Card"],
-    itiCertified: true,
-    passportValid: false,
-    offshoreExperience: false,
-    baseScore: 80,
-    profileUpdatedAt: "2026-04-17",
-    isUnlocked: false,
-  },
-  {
-    id: "CAND-007",
-    name: "Harish Menon",
-    trade: "Cook",
-    yearsExp: 7,
-    locationCity: "Kochi",
-    locationState: "KL",
-    availability: "unavailable",
-    primarySkill: "Bulk Meal Production",
-    secondarySkills: ["Menu Planning", "Food Costing", "Hygiene Compliance"],
-    certifications: ["Food Safety Level 2", "Passport Valid"],
-    itiCertified: false,
-    passportValid: true,
-    offshoreExperience: true,
-    baseScore: 79,
-    profileUpdatedAt: "2026-04-11",
-    isUnlocked: false,
-  },
-  {
-    id: "CAND-008",
-    name: "Sneha Verma",
-    trade: "Electrician",
-    yearsExp: 6,
-    locationCity: "Noida",
-    locationState: "UP",
-    availability: "available",
-    primarySkill: "Control Panel Assembly",
-    secondarySkills: [
-      "SCADA Support",
-      "Maintenance Planning",
-      "Cable Fault Testing",
-    ],
-    certifications: ["ITI Certified", "KYC Verified", "Safety Card"],
-    itiCertified: true,
-    passportValid: true,
-    offshoreExperience: false,
-    baseScore: 88,
-    profileUpdatedAt: "2026-04-22",
-    isUnlocked: false,
-  },
-];
 
-const tradeOptions = Array.from(
-  new Set(cvCandidates.map((candidate) => candidate.trade)),
-).sort();
+
+
+
 
 const getQueryValue = (value, fallback = "") => {
   if (Array.isArray(value)) return value[0] ?? fallback;
@@ -177,6 +18,7 @@ const parseInteger = (value) => {
   const parsed = Number.parseInt(getQueryValue(value, ""), 10);
   return Number.isFinite(parsed) ? parsed : null;
 };
+
 
 const isChecked = (value) => {
   const checkedValue = String(getQueryValue(value, "")).toLowerCase();
@@ -200,8 +42,11 @@ const tokenizeSearch = (value) =>
     .filter(Boolean);
 
 const formatLocation = (candidate) =>
-  `${candidate.locationCity}, ${candidate.locationState}`;
-const formatExperience = (candidate) => `${candidate.yearsExp} yrs exp`;
+  `${candidate.currentCity}, ${candidate.currentState}`;
+
+const formatExperience = (candidate) =>
+  `${candidate.experienceYears} yrs exp`;
+
 
 const availabilityLabel = (availability) =>
   availability === "available" ? "Available now" : "Not available";
@@ -225,84 +70,7 @@ const certificationTooltip = (type) =>
         ? "Candidate has offshore experience"
         : type;
 
-const buildCandidateSearchText = (candidate) =>
-  normalizeText(
-    [
-      candidate.id,
-      candidate.name,
-      candidate.trade,
-      candidate.primarySkill,
-      candidate.secondarySkills.join(" "),
-      candidate.certifications.join(" "),
-      formatLocation(candidate),
-    ].join(" "),
-  );
 
-const getMatchedKeywords = (candidate, queryTokens) => {
-  if (!queryTokens.length) return [];
-
-  const searchText = buildCandidateSearchText(candidate);
-  const seen = new Set();
-  const matches = [];
-
-  for (const token of queryTokens) {
-    if (seen.has(token)) continue;
-    if (searchText.includes(token)) {
-      seen.add(token);
-      matches.push(token);
-    }
-  }
-
-  return matches;
-};
-
-const getBandPricing = (score) => {
-  if (score >= 90) return { band: "Band A", credits: 1 };
-  if (score >= 80) return { band: "Band B", credits: 2 };
-  return { band: "Band C", credits: 3 };
-};
-
-const scoreCandidate = (candidate, queryTokens) => {
-  const matchedKeywords = getMatchedKeywords(candidate, queryTokens);
-
-  if (!queryTokens.length) {
-    return {
-      matchedKeywords,
-      matchScore: candidate.baseScore,
-    };
-  }
-
-  const coverage = matchedKeywords.length / queryTokens.length;
-  const weightedScore = Math.round(
-    candidate.baseScore * 0.72 +
-      coverage * 28 +
-      (candidate.itiCertified ? 1 : 0),
-  );
-
-  return {
-    matchedKeywords,
-    matchScore: Math.max(58, Math.min(99, weightedScore)),
-  };
-};
-
-const sortCandidates = (candidates, sortBy) => {
-  const sorted = [...candidates];
-
-  if (sortBy === "newest") {
-    sorted.sort(
-      (a, b) => new Date(b.profileUpdatedAt) - new Date(a.profileUpdatedAt),
-    );
-    return sorted;
-  }
-
-  if (sortBy === "experience") {
-    sorted.sort((a, b) => b.yearsExp - a.yearsExp);
-    return sorted;
-  }
-
-  sorted.sort((a, b) => b.matchScore - a.matchScore);
-  return sorted;
-};
 
 const buildActiveFilterTags = (filters, tokenCount) => {
   const tags = [];
@@ -336,139 +104,200 @@ const CANDIDATE_ACTION_BUTTON_STYLE = {
 const createProfileHighlightTags = (candidate) => {
   const tags = [];
 
-  if (candidate.matchScore >= 85) {
-    tags.push({ label: "Top Match", tone: "standout" });
-  }
-  if (candidate.availability === "available") {
-    tags.push({ label: "Ready to Join", tone: "ready" });
-  }
-  if (candidate.itiCertified) {
-    tags.push({ label: "ITI Certified", tone: "verified" });
-  }
-  if (candidate.passportValid) {
-    tags.push({ label: "Passport Valid", tone: "verified" });
-  }
-  if (candidate.offshoreExperience) {
-    tags.push({ label: "Offshore Ready", tone: "expertise" });
-  }
-  if (candidate.yearsExp >= 10) {
-    tags.push({ label: "10+ Years", tone: "expertise" });
-  }
-  if (candidate.isUnlocked) {
-    tags.push({ label: "Unlocked", tone: "standout" });
+  // Top match
+  if (candidate.keywordMatchPercentage >= 85) {
+    tags.push({
+      label: "Top Match",
+      tone: "standout",
+    });
   }
 
-  candidate.certifications
-    .filter((certification) =>
-      !["ITI Certified", "Passport Valid"].includes(certification),
-    )
+  // Available
+  if (
+    candidate.availabilityStatus?.toLowerCase() === "available"
+  ) {
+    tags.push({
+      label: "Ready to Join",
+      tone: "ready",
+    });
+  }
+
+  // ITI
+  if (candidate.isItiCertified) {
+    tags.push({
+      label: "ITI Certified",
+      tone: "verified",
+    });
+  }
+
+  // Passport
+  if (candidate.isPassportValid) {
+    tags.push({
+      label: "Passport Valid",
+      tone: "verified",
+    });
+  }
+
+  // KYC
+  if (candidate.isKycVerified) {
+    tags.push({
+      label: "KYC Verified",
+      tone: "verified",
+    });
+  }
+
+  // Experience
+  if (candidate.experienceYears >= 10) {
+    tags.push({
+      label: "10+ Years",
+      tone: "expertise",
+    });
+  }
+
+  // Unlocked
+  if (candidate.isUnlocked) {
+    tags.push({
+      label: "Unlocked",
+      tone: "standout",
+    });
+  }
+
+  // Skills
+  (candidate.skills ?? [])
     .slice(0, 2)
-    .forEach((certification) => {
-      tags.push({ label: certification, tone: "neutral" });
+    .forEach((skill) => {
+      tags.push({
+        label: skill,
+        tone: "neutral",
+      });
     });
 
+  // Remove duplicates
   const dedupe = new Set();
+
   return tags
     .filter((tag) => {
-      if (dedupe.has(tag.label)) return false;
+      if (dedupe.has(tag.label)) {
+        return false;
+      }
+
       dedupe.add(tag.label);
       return true;
     })
     .slice(0, 6);
 };
 
-export const metadata = {
-  title: "Employer CV Search - Job Portal",
-  description: "Search and unlock candidate profiles.",
-};
 
-const EmployerCvSearchPage = async ({ searchParams }) => {
-  const params = (await searchParams) || {};
-
-  const filters = {
-    keyword: String(getQueryValue(params.q, "")).trim(),
-    trade: getQueryValue(params.trade, ANY_TRADE),
-    location: String(getQueryValue(params.location, "")).trim(),
-    availability: getQueryValue(params.availability, ANY_AVAILABILITY),
-    minExp: parseInteger(params.minExp),
-    maxExp: parseInteger(params.maxExp),
-    itiOnly: isChecked(params.iti),
-    passportOnly: isChecked(params.passport),
-    offshoreOnly: isChecked(params.offshore),
-    unlockedOnly: isChecked(params.unlocked),
-    sort: getQueryValue(params.sort, "match"),
-  };
-
-  if (
-    filters.minExp !== null &&
-    filters.maxExp !== null &&
-    Number.isFinite(filters.minExp) &&
-    Number.isFinite(filters.maxExp) &&
-    filters.minExp > filters.maxExp
-  ) {
-    const minValue = filters.minExp;
-    filters.minExp = filters.maxExp;
-    filters.maxExp = minValue;
-  }
-
-  const queryTokens = tokenizeSearch(filters.keyword);
-
-  const candidatesWithScore = cvCandidates.map((candidate) => {
-    const scoring = scoreCandidate(candidate, queryTokens);
-    const pricing = getBandPricing(scoring.matchScore);
-    const canUnlock =
-      candidate.isUnlocked || EMPLOYER_CREDITS >= pricing.credits;
-
-    return {
-      ...candidate,
-      ...scoring,
-      ...pricing,
-      canUnlock,
-      unlockText: candidate.isUnlocked
-        ? `Unlocked - ${candidate.unlockedDaysLeft || 30}d left`
-        : canUnlock
-          ? `Unlock profile (${pricing.credits} cr)`
-          : `Need ${pricing.credits} credits`,
-    };
+const EmployerCvSearchPage = () => {
+  const [cvCandidates, setCvCandidates] = useState([]);
+  const [totalCandidates, setTotalCandidates] = useState(0);
+  const [dashboard, setDashboard] = useState(null);
+  const [filterOptions, setFilterOptions] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({
+    keyword: "",
+    tradeCategory: "",
+    minExperience: "",
+    maxExperience: "",
+    location: "",
+    availabilityStatus: "",
+    itiCertifiedOnly: false,
+    passportValidOnly: false,
+    unlockedProfilesOnly: false,
+    sortBy: "KeywordMatch",
+    pageNumber: 1,
+    pageSize: 10
   });
 
-  const filteredCandidates = sortCandidates(
-    candidatesWithScore.filter((candidate) => {
-      if (filters.trade !== ANY_TRADE && candidate.trade !== filters.trade)
-        return false;
+  const resetFilters = async () => {
+    const defaultFilters = {
+      keyword: "",
+      tradeCategory: "",
+      minExperience: "",
+      maxExperience: "",
+      location: "",
+      availabilityStatus: "",
+      itiCertifiedOnly: false,
+      passportValidOnly: false,
+      unlockedProfilesOnly: false,
+      sortBy: "KeywordMatch",
+      pageNumber: 1,
+      pageSize: 10,
+    };
 
-      if (
-        filters.availability !== ANY_AVAILABILITY &&
-        candidate.availability !== filters.availability
-      )
-        return false;
+    setFilters(defaultFilters);
 
-      if (filters.location) {
-        const locationText = normalizeText(
-          `${candidate.locationCity} ${candidate.locationState}`,
-        );
-        if (!locationText.includes(normalizeText(filters.location)))
-          return false;
-      }
+    try {
+      const response = await searchCandidates(defaultFilters);
 
-      if (filters.minExp !== null && candidate.yearsExp < filters.minExp)
-        return false;
-      if (filters.maxExp !== null && candidate.yearsExp > filters.maxExp)
-        return false;
-      if (filters.itiOnly && !candidate.itiCertified) return false;
-      if (filters.passportOnly && !candidate.passportValid) return false;
-      if (filters.offshoreOnly && !candidate.offshoreExperience) return false;
-      if (filters.unlockedOnly && !candidate.isUnlocked) return false;
+      setCvCandidates(response.candidates);
+      setTotalCandidates(response.totalCandidates);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
-      if (queryTokens.length > 0 && candidate.matchedKeywords.length === 0)
-        return false;
+  const loadCandidates = async () => {
+    try {
+      setLoading(true);
 
-      return true;
-    }),
-    filters.sort,
-  );
+      const response = await searchCandidates(filters);
 
-  const activeFilterTags = buildActiveFilterTags(filters, queryTokens.length);
+      setCvCandidates(response.candidates);
+      setTotalCandidates(response.totalCandidates);
+    }
+    catch (error) {
+      console.error(error);
+    }
+    finally {
+      setLoading(false);
+    }
+  };
+
+  const loadFilterOptions = async () => {
+    try {
+      const response = await getFilterOptions();
+      setFilterOptions(response);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const loadDashboard = async () => {
+    try {
+      const response = await getCvSearchDashboard();
+      setDashboard(response);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    loadCandidates();
+    loadDashboard();
+    loadFilterOptions();
+  }, []);
+
+
+  useEffect(() => {
+    if (
+      filters.minExperience !== "" &&
+      filters.maxExperience !== "" &&
+      Number(filters.minExperience) > Number(filters.maxExperience)
+    ) {
+      setFilters((prev) => ({
+        ...prev,
+        minExperience: prev.maxExperience,
+        maxExperience: prev.minExperience,
+      }));
+    }
+  }, [filters.minExperience, filters.maxExperience]);
+
+
+
+
+
+
 
   return (
     <main className="main">
@@ -486,15 +315,21 @@ const EmployerCvSearchPage = async ({ searchParams }) => {
               </div>
 
               <div className="form-find text-start mt-40">
-                <form method="get">
+                <form>
                   <div className="box-industry">
                     <select
                       className="form-input mr-10 select-active input-industry"
-                      name="trade"
-                      defaultValue={filters.trade}
+                      value={filters.tradeCategory}
+                      onChange={(e) =>
+                        setFilters({
+                          ...filters,
+                          tradeCategory: e.target.value,
+                        })
+                      }
                     >
-                      <option value={ANY_TRADE}>Any trade</option>
-                      {tradeOptions.map((tradeOption) => (
+                      <option value="">Any trade</option>
+
+                      {(filterOptions?.tradeCategories ?? []).map((tradeOption) => (
                         <option key={tradeOption} value={tradeOption}>
                           {tradeOption}
                         </option>
@@ -505,8 +340,13 @@ const EmployerCvSearchPage = async ({ searchParams }) => {
                   <input
                     className="form-input input-keysearch mr-10"
                     type="text"
-                    name="q"
-                    defaultValue={filters.keyword}
+                    value={filters.keyword}
+                    onChange={(e) =>
+                      setFilters({
+                        ...filters,
+                        keyword: e.target.value,
+                      })
+                    }
                     placeholder="Trade, skill, name, location"
                     list="cv-keyword-suggestions"
                   />
@@ -517,51 +357,29 @@ const EmployerCvSearchPage = async ({ searchParams }) => {
                     <option value="driver" />
                     <option value="iti certified" />
                     <option value="passport valid" />
-                    <option value="offshore" />
                     <option value="mumbai" />
                     <option value="pipeline" />
                   </datalist>
 
                   <select
                     className="form-input mr-10 select-active"
-                    name="availability"
-                    defaultValue={filters.availability}
+                    value={filters.availabilityStatus}
+                    onChange={(e) =>
+                      setFilters({
+                        ...filters,
+                        availabilityStatus: e.target.value,
+                      })
+                    }
                   >
-                    <option value={ANY_AVAILABILITY}>Any availability</option>
-                    <option value="available">Available now</option>
-                    <option value="unavailable">Not available</option>
+                    <option value="">Any availability</option>
+                    <option value="Available">Available now</option>
+                    <option value="Unavailable">Not available</option>
                   </select>
-
-                  {filters.location ? (
-                    <input
-                      type="hidden"
-                      name="location"
-                      value={filters.location}
-                    />
-                  ) : null}
-                  {filters.minExp !== null ? (
-                    <input type="hidden" name="minExp" value={filters.minExp} />
-                  ) : null}
-                  {filters.maxExp !== null ? (
-                    <input type="hidden" name="maxExp" value={filters.maxExp} />
-                  ) : null}
-                  {filters.itiOnly ? (
-                    <input type="hidden" name="iti" value="1" />
-                  ) : null}
-                  {filters.passportOnly ? (
-                    <input type="hidden" name="passport" value="1" />
-                  ) : null}
-                  {filters.offshoreOnly ? (
-                    <input type="hidden" name="offshore" value="1" />
-                  ) : null}
-                  {filters.unlockedOnly ? (
-                    <input type="hidden" name="unlocked" value="1" />
-                  ) : null}
-                  <input type="hidden" name="sort" value={filters.sort} />
 
                   <button
                     className="btn btn-default btn-find font-sm"
-                    type="submit"
+                    type="button"
+                    onClick={loadCandidates}
                   >
                     Search
                   </button>
@@ -581,8 +399,7 @@ const EmployerCvSearchPage = async ({ searchParams }) => {
                   <div className="row">
                     <div className="col-xl-7 col-lg-7">
                       <span className="text-small text-showing">
-                        <strong>{filteredCandidates.length}</strong> of{" "}
-                        {cvCandidates.length} candidates found
+                        <strong>{totalCandidates}</strong> candidates found
                       </span>
                       <p className="font-xs color-text-paragraph-2 mt-5 mb-0">
                         Keyword match uses role, skills, certifications, and
@@ -594,7 +411,7 @@ const EmployerCvSearchPage = async ({ searchParams }) => {
                         <div className="box-border mr-10">
                           <span className="text-sortby">Credits:</span>
                           <strong className="color-brand-1">
-                            {EMPLOYER_CREDITS}
+                            {dashboard?.availableCredits}
                           </strong>
                         </div>
                         <span className="btn btn-grey-small mr-5">A = 1cr</span>
@@ -604,7 +421,7 @@ const EmployerCvSearchPage = async ({ searchParams }) => {
                     </div>
                   </div>
 
-                  {activeFilterTags.length > 0 ? (
+                  {/* {activeFilterTags.length > 0 ? (
                     <div className="mt-15">
                       {activeFilterTags.map((tag) => (
                         <span
@@ -615,11 +432,11 @@ const EmployerCvSearchPage = async ({ searchParams }) => {
                         </span>
                       ))}
                     </div>
-                  ) : null}
+                  ) : null} */}
                 </div>
 
                 <div className="row display-list">
-                  {filteredCandidates.length === 0 ? (
+                  {cvCandidates.length === 0 ? (
                     <div className="col-xl-12 col-12">
                       <div className="card-grid-2 hover-up">
                         <div className="card-block-info pt-20">
@@ -635,126 +452,117 @@ const EmployerCvSearchPage = async ({ searchParams }) => {
                     </div>
                   ) : null}
 
-                  {filteredCandidates.map((candidate) => (
-                    <div className="col-xl-12 col-12" key={candidate.id}>
-                      {(() => {
-                        const profileHighlightTags =
-                          createProfileHighlightTags(candidate);
+                  {cvCandidates.map((candidate) => {
+                    const profileHighlightTags = createProfileHighlightTags(candidate);
 
-                        return (
-                          <div
-                            className={`card-grid-2 hover-up cv-search-candidate-card ${
-                              candidate.isUnlocked ? "is-unlocked" : ""
+                    return (
+                      <div className="col-xl-12 col-12" key={candidate.candidateId}>
+                        <div
+                          className={`card-grid-2 hover-up cv-search-candidate-card ${candidate.isUnlocked ? "is-unlocked" : ""
                             }`}
-                          >
-                            <div className="row">
-                              <div className="col-lg-7 col-md-7 col-sm-12">
-                                <div className="card-grid-2-image-left">
-                                  <div className="image-box">
-                                    <img
-                                      src="/assets/imgs/page/candidates/candidate-profile.png"
-                                      alt={candidate.name}
-                                    />
-                                  </div>
-                                  <div className="right-info">
-                                    <Link
-                                      className="name-job"
-                                      href="/employeer/candidate-profile"
-                                    >
-                                      {candidate.name} - {candidate.trade}
-                                    </Link>
+                        >
+                          <div className="row">
+                            <div className="col-lg-7 col-md-7 col-sm-12">
+                              <div className="card-grid-2-image-left">
+                                <div className="image-box">
+                                  <img
+                                    src={
+                                      candidate.profilePhotoUrl ||
+                                      "/assets/imgs/page/candidates/candidate-profile.png"
+                                    }
+                                    alt={candidate.fullName}
+                                  />
+                                </div>
 
-                                    <span className="location-small d-block">
-                                      {formatExperience(candidate)} -{" "}
-                                      {formatLocation(candidate)}
-                                    </span>
+                                <div className="right-info">
+                                  <Link
+                                    className="name-job"
+                                    href={`/employeer/candidate-profile/${candidate.candidateId}`}
+                                  >
+                                    {candidate.fullName} - {candidate.primaryTrade}
+                                  </Link>
 
-                                    {candidate.availability === "available" && (
+                                  <span className="location-small d-block">
+                                    {formatExperience(candidate)} - {formatLocation(candidate)}
+                                  </span>
+
+                                  {candidate.availabilityStatus?.toLowerCase() ===
+                                    "available" && (
                                       <span className="available-now-text">
                                         Available now
                                       </span>
                                     )}
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="col-lg-5 text-start text-md-end pr-60 col-md-5 col-sm-12">
-                                <div className="cv-search-profile-tags">
-                                  {profileHighlightTags.map((tag) => (
-                                    <span
-                                      key={`${candidate.id}-${tag.label}`}
-                                      className={`cv-search-highlight-tag cv-search-highlight-tag-${tag.tone}`}
-                                    >
-                                      {tag.label}
-                                    </span>
-                                  ))}
                                 </div>
                               </div>
                             </div>
 
-                            <div className="card-block-info">
-                              <h4>
-                                <Link href="/employeer/candidate-profile">
-                                  {candidate.trade} Candidate Profile
-                                </Link>
-                              </h4>
-
-                              <div className="mt-5">
-                                <span className="card-briefcase">
-                                  {formatExperience(candidate)}
-                                </span>
-                                <span className="card-time">
-                                  <span>{formatLocation(candidate)}</span>
-                                </span>
-                              </div>
-
-                              <div className="cv-search-skill-tags mt-10 mb-10">
-                                <span className="cv-search-skill-tag cv-search-skill-tag-primary">
-                                  Primary: {candidate.primarySkill}
-                                </span>
-                                {candidate.secondarySkills.map((skill) => (
+                            <div className="col-lg-5 text-start text-md-end pr-60 col-md-5 col-sm-12">
+                              <div className="cv-search-profile-tags">
+                                {profileHighlightTags.map((tag) => (
                                   <span
-                                    key={`${candidate.id}-${skill}`}
-                                    className="cv-search-skill-tag cv-search-skill-tag-secondary"
+                                    key={`${candidate.candidateId}-${tag.label}`}
+                                    className={`cv-search-highlight-tag cv-search-highlight-tag-${tag.tone}`}
                                   >
-                                    {skill}
+                                    {tag.label}
                                   </span>
                                 ))}
                               </div>
+                            </div>
+                          </div>
 
-                              {candidate.matchedKeywords.length > 0 ? (
-                                <div className="mb-10">
-                                  {candidate.matchedKeywords.map((keyword) => (
-                                    <span
-                                      key={`${candidate.id}-${keyword}`}
-                                      className="badge bg-light text-dark mr-5 mb-5"
-                                    >
-                                      <i className="fi-rr-search mr-5" />
-                                      {keyword}
-                                    </span>
-                                  ))}
+                          <div className="card-block-info">
+                            <h4>
+                              <Link
+                                href={`/employeer/candidate-profile/${candidate.candidateId}`}
+                              >
+                                {candidate.primaryTrade} Candidate Profile
+                              </Link>
+                            </h4>
+
+                            <div className="mt-5">
+                              <span className="card-briefcase">
+                                {formatExperience(candidate)}
+                              </span>
+
+                              <span className="card-time">
+                                <span>{formatLocation(candidate)}</span>
+                              </span>
+                            </div>
+
+                            <div className="cv-search-skill-tags mt-10 mb-10">
+                              {candidate.skills?.map((skill) => (
+                                <span
+                                  key={`${candidate.candidateId}-${skill}`}
+                                  className="cv-search-skill-tag cv-search-skill-tag-secondary"
+                                >
+                                  {skill}
+                                </span>
+                              ))}
+                            </div>
+
+                            <div className="card-2-bottom mt-20">
+                              <div className="row align-items-center">
+                                <div className="col-lg-7 col-7">
+                                  <span className="card-text-price">
+                                    Keyword match: {candidate.keywordMatchPercentage}%
+                                  </span>
+
+                                  <span className="font-xs color-text-mutted ml-10">
+                                    Band {candidate.band} - {candidate.unlockCredits} cr
+                                  </span>
                                 </div>
-                              ) : null}
 
-                              <div className="card-2-bottom mt-20">
-                                <div className="row align-items-center">
-                                  <div className="col-lg-7 col-7">
-                                    <span className="card-text-price">
-                                      Keyword match: {candidate.matchScore}%
-                                    </span>
-                                    <span className="font-xs color-text-mutted ml-10">
-                                      {candidate.band} - {candidate.credits} cr
-                                    </span>
-                                  </div>
-                                  <div className="col-lg-5 col-5 text-end">
-                                    <div
-                                      style={{
-                                        display: "flex",
-                                        flexDirection: "row",
-                                        justifyContent: "flex-end",
-                                        alignItems: "center",
-                                        gap: 8,
-                                      }}
-                                    >
+                                <div className="col-lg-5 col-5 text-end">
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      flexDirection: "row",
+                                      justifyContent: "flex-end",
+                                      alignItems: "center",
+                                      gap: 8,
+                                    }}
+                                  >
+                                    {candidate.canDownloadCv && (
                                       <button
                                         className="btn btn-border"
                                         type="button"
@@ -762,33 +570,34 @@ const EmployerCvSearchPage = async ({ searchParams }) => {
                                       >
                                         Download CV
                                       </button>
-                                      {candidate.canUnlock ? (
-                                        <Link
-                                          className="btn btn-apply-now cv-search-unlock-btn"
-                                          href="/employeer/candidate-profile"
-                                          style={CANDIDATE_ACTION_BUTTON_STYLE}
-                                        >
-                                          {candidate.unlockText}
-                                        </Link>
-                                      ) : (
-                                        <button
-                                          className="btn btn-grey-small"
-                                          type="button"
-                                          style={CANDIDATE_ACTION_BUTTON_STYLE}
-                                        >
-                                          {candidate.unlockText}
-                                        </button>
-                                      )}
-                                    </div>
+                                    )}
+
+                                    {candidate.isUnlocked ? (
+                                      <Link
+                                        className="btn btn-apply-now cv-search-unlock-btn"
+                                        href={`/employeer/candidate-profile/${candidate.candidateId}`}
+                                        style={CANDIDATE_ACTION_BUTTON_STYLE}
+                                      >
+                                        View Profile
+                                      </Link>
+                                    ) : (
+                                      <Link
+                                        className="btn btn-apply-now"
+                                        href={`/employeer/candidate-profile/${candidate.candidateId}`}
+                                        style={CANDIDATE_ACTION_BUTTON_STYLE}
+                                      >
+                                        Unlock ({candidate.unlockCredits} cr)
+                                      </Link>
+                                    )}
                                   </div>
                                 </div>
                               </div>
                             </div>
                           </div>
-                        );
-                      })()}
-                    </div>
-                  ))}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -796,16 +605,18 @@ const EmployerCvSearchPage = async ({ searchParams }) => {
             <div className="col-lg-3 col-md-12 col-sm-12 col-12">
               <div className="sidebar-shadow none-shadow mb-30">
                 <div className="sidebar-filters">
-                  <form method="get">
+                  <form>
                     <div className="filter-block head-border mb-30">
                       <h5>
                         Search Filters{" "}
-                        <Link
-                          className="link-reset"
-                          href="/employeer/cv-search"
+                        <button
+                          type="button"
+                          className="btn btn-default  mb-10"
+                          onClick={resetFilters}
                         >
                           Reset
-                        </Link>
+                        </button>
+
                       </h5>
                     </div>
 
@@ -816,7 +627,13 @@ const EmployerCvSearchPage = async ({ searchParams }) => {
                           className="form-control form-icons"
                           type="text"
                           name="q"
-                          defaultValue={filters.keyword}
+                          value={filters.keyword}
+                          onChange={(e) =>
+                            setFilters({
+                              ...filters,
+                              keyword: e.target.value
+                            })
+                          }
                           placeholder="Trade, skill, name, location"
                           list="cv-keyword-suggestions"
                         />
@@ -831,12 +648,17 @@ const EmployerCvSearchPage = async ({ searchParams }) => {
                       <div className="form-group">
                         <label className="mb-5">Trade category</label>
                         <select
-                          className="form-control form-icons select-active"
-                          name="trade"
-                          defaultValue={filters.trade}
+                          className="form-input mr-10 select-active input-industry"
+                          value={filters.tradeCategory}
+                          onChange={(e) =>
+                            setFilters({
+                              ...filters,
+                              tradeCategory: e.target.value
+                            })
+                          }
                         >
-                          <option value={ANY_TRADE}>Any trade</option>
-                          {tradeOptions.map((tradeOption) => (
+                          <option value="">Any trade</option>
+                          {filterOptions?.tradeCategories ?? [].map((tradeOption) => (
                             <option key={tradeOption} value={tradeOption}>
                               {tradeOption}
                             </option>
@@ -855,7 +677,13 @@ const EmployerCvSearchPage = async ({ searchParams }) => {
                             name="minExp"
                             min="0"
                             max="40"
-                            defaultValue={filters.minExp ?? ""}
+                            value={filters.minExperience}
+                            onChange={(e) =>
+                              setFilters({
+                                ...filters,
+                                minExperience: e.target.value
+                              })
+                            }
                             placeholder="Min"
                           />
                         </div>
@@ -866,7 +694,13 @@ const EmployerCvSearchPage = async ({ searchParams }) => {
                             name="maxExp"
                             min="0"
                             max="40"
-                            defaultValue={filters.maxExp ?? ""}
+                            value={filters.maxExperience}
+                            onChange={(e) =>
+                              setFilters({
+                                ...filters,
+                                maxExperience: e.target.value
+                              })
+                            }
                             placeholder="Max"
                           />
                         </div>
@@ -880,7 +714,13 @@ const EmployerCvSearchPage = async ({ searchParams }) => {
                           className="form-control form-icons"
                           type="text"
                           name="location"
-                          defaultValue={filters.location}
+                          value={filters.location}
+                          onChange={(e) =>
+                            setFilters({
+                              ...filters,
+                              location: e.target.value
+                            })
+                          }
                           placeholder="City or state"
                         />
                       </div>
@@ -892,11 +732,17 @@ const EmployerCvSearchPage = async ({ searchParams }) => {
                         <select
                           className="form-control form-icons select-active"
                           name="availability"
-                          defaultValue={filters.availability}
+                          value={filters.availabilityStatus}
+                          onChange={(e) =>
+                            setFilters({
+                              ...filters,
+                              availabilityStatus: e.target.value
+                            })
+                          }
                         >
-                          <option value={ANY_AVAILABILITY}>Any</option>
-                          <option value="available">Available now</option>
-                          <option value="unavailable">Not available</option>
+                          <option value="">Any</option>
+                          <option value="Available">Available now</option>
+                          <option value="Unavailable">Not available</option>
                         </select>
                       </div>
                     </div>
@@ -910,7 +756,13 @@ const EmployerCvSearchPage = async ({ searchParams }) => {
                                 type="checkbox"
                                 name="iti"
                                 value="1"
-                                defaultChecked={filters.itiOnly}
+                                checked={filters.itiCertifiedOnly}
+                                onChange={(e) =>
+                                  setFilters({
+                                    ...filters,
+                                    itiCertifiedOnly: e.target.checked
+                                  })
+                                }
                               />
                               <span className="text-small">
                                 ITI certified only
@@ -924,7 +776,13 @@ const EmployerCvSearchPage = async ({ searchParams }) => {
                                 type="checkbox"
                                 name="passport"
                                 value="1"
-                                defaultChecked={filters.passportOnly}
+                                checked={filters.passportValidOnly}
+                                onChange={(e) =>
+                                  setFilters({
+                                    ...filters,
+                                    passportValidOnly: e.target.checked
+                                  })
+                                }
                               />
                               <span className="text-small">Valid passport</span>
                               <span className="checkmark"></span>
@@ -950,7 +808,13 @@ const EmployerCvSearchPage = async ({ searchParams }) => {
                                 type="checkbox"
                                 name="unlocked"
                                 value="1"
-                                defaultChecked={filters.unlockedOnly}
+                                checked={filters.unlockedProfilesOnly}
+                                onChange={(e) =>
+                                  setFilters({
+                                    ...filters,
+                                    unlockedProfilesOnly: e.target.checked
+                                  })
+                                }
                               />
                               <span className="text-small">
                                 Unlocked profiles only
@@ -968,11 +832,23 @@ const EmployerCvSearchPage = async ({ searchParams }) => {
                         <select
                           className="form-control form-icons select-active"
                           name="sort"
-                          defaultValue={filters.sort}
+                          value={filters.sortBy}
+                          onChange={(e) =>
+                            setFilters({
+                              ...filters,
+                              sortBy: e.target.value
+                            })
+                          }
                         >
-                          <option value="match">Keyword match score</option>
-                          <option value="newest">Newest profile update</option>
-                          <option value="experience">
+                          <option value="KeywordMatch">
+                            Keyword match score
+                          </option>
+
+                          <option value="Newest">
+                            Newest profile update
+                          </option>
+
+                          <option value="Experience">
                             Experience high to low
                           </option>
                         </select>
@@ -982,16 +858,18 @@ const EmployerCvSearchPage = async ({ searchParams }) => {
                     <div className="filter-block mb-20">
                       <button
                         className="btn btn-default w-100 mb-10"
-                        type="submit"
+                        type="button"
+                        onClick={loadCandidates}
                       >
                         Search
                       </button>
-                      <Link
+                      <button
+                        type="button"
                         className="btn btn-border w-100"
-                        href="/employeer/cv-search"
+                        onClick={resetFilters}
                       >
                         Clear filters
-                      </Link>
+                      </button>
                     </div>
                   </form>
                 </div>

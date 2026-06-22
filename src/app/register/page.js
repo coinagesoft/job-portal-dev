@@ -1,9 +1,22 @@
 "use client";
-import { useState, useRef, Suspense } from "react";
+import { useState, useRef, Suspense, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Script from "next/script";
 import { useToast } from "@/components/Toast";
-
+import {
+  gstCheck,
+  saveCompanyDetails,
+  saveContactDetails,
+  sendMobileOtp,
+  verifyMobileOtp,
+  resendMobileOtp,
+  sendEmailOtp,
+  verifyEmailOtp,
+  resendEmailOtp,
+  uploadLicences,
+  submitRegistration,
+  resumeRegistration,
+} from "@/services/recruiter/recruiterRegistrationService";
 // ─────────────────────────────────────────────
 // Shared helpers
 // ─────────────────────────────────────────────
@@ -16,12 +29,10 @@ const COUNTRY_CODES = [
 
 const INDUSTRIES = [
   "Construction",
-  "Shipping / Marine",
+  "Shipping",
   "Manufacturing",
   "Hospitality",
-  "Oil & Gas",
-  "Healthcare",
-  "IT / Technology",
+  "Marine",
   "Other",
 ];
 
@@ -49,11 +60,7 @@ const STATES = [
 ];
 
 const TOTAL_EMP_STEPS = 5;
-const EMPLOYER_UI_PREVIEW_MODE = true;
-
-function genOtp() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
+const EMPLOYER_UI_PREVIEW_MODE = false;
 
 // ─────────────────────────────────────────────
 // Sub-components
@@ -275,28 +282,12 @@ function MobileOtpField({
   onMobileChange,
   otp,
   onOtpStateChange,
+  sendMobileOtp,
+  verifyMobileOtp,
+  resendMobileOtp,
 }) {
   const { sent, verified, generated, userVal } = otp;
   const showToast = useToast();
-
-  const sendOtp = () => {
-    const code = genOtp();
-    onOtpStateChange({
-      sent: true,
-      verified: false,
-      generated: code,
-      userVal: "",
-    });
-    showToast(`Mobile OTP (demo): ${code}`, "info");
-  };
-  const verifyOtp = () => {
-    if (userVal === generated) {
-      onOtpStateChange({ ...otp, verified: true });
-      showToast("Mobile number verified successfully.", "success");
-    } else {
-      showToast("Invalid OTP", "error");
-    }
-  };
 
   return (
     <div>
@@ -361,7 +352,10 @@ function MobileOtpField({
           <Btn
             variant="ghost"
             disabled={mobile.length < 10 || verified}
-            onClick={sendOtp}
+            onClick={() => {
+              if (sent) resendMobileOtp();
+              else sendMobileOtp();
+            }}
             style={{
               flexShrink: 0,
               fontSize: "var(--font-xs)",
@@ -386,7 +380,7 @@ function MobileOtpField({
               <Btn
                 variant="primary"
                 disabled={userVal.length !== 6}
-                onClick={verifyOtp}
+                onClick={verifyMobileOtp}
                 style={{
                   flexShrink: 0,
                   fontSize: "var(--font-xs)",
@@ -411,6 +405,7 @@ function OtpBlock({
   sent,
   verified,
   onSend,
+  onResend,
   onVerify,
   otpVal,
   setOtpVal,
@@ -422,7 +417,10 @@ function OtpBlock({
         <Btn
           variant={verified ? "success" : "ghost"}
           disabled={disabled || verified}
-          onClick={onSend}
+          onClick={() => {
+            if (sent) onResend();
+            else onSend();
+          }}
           style={{
             flexShrink: 0,
             fontSize: "var(--font-xs)",
@@ -602,14 +600,51 @@ function CandidateForm() {
       </Field>
 
       <Field label="Mobile Number" required>
-        <MobileOtpField
-          countryCode={form.countryCode}
-          onCountryCodeChange={(v) => set("countryCode", v)}
-          mobile={form.mobile}
-          onMobileChange={(v) => set("mobile", v)}
-          otp={mobileOtp}
-          onOtpStateChange={setMobileOtp}
+        <Input
+          placeholder="Enter mobile number"
+          value={form.mobile}
+          onChange={(e) => set("mobile", e.target.value)}
         />
+
+        <div style={{ marginTop: 8 }}>
+          <OtpBlock
+            target="mobile"
+            sent={mobileOtp.sent}
+            verified={mobileOtp.verified}
+            disabled={!form.mobile}
+            onSend={() => {
+              const otp = genOtp();
+
+              setMobileOtp({
+                sent: true,
+                verified: false,
+                generated: otp,
+                userVal: "",
+              });
+
+              showToast(`Mobile OTP (demo): ${otp}`, "info");
+            }}
+            onVerify={() => {
+              if (mobileOtp.userVal === mobileOtp.generated) {
+                setMobileOtp((p) => ({
+                  ...p,
+                  verified: true,
+                }));
+
+                showToast("Mobile verified successfully.", "success");
+              } else {
+                showToast("Invalid OTP", "error");
+              }
+            }}
+            otpVal={mobileOtp.userVal}
+            setOtpVal={(v) =>
+              setMobileOtp((p) => ({
+                ...p,
+                userVal: v,
+              }))
+            }
+          />
+        </div>
       </Field>
 
       <Field label="Email" hint="Optional — verify to improve account security">
@@ -879,6 +914,7 @@ function EmployerForm() {
     profileStatus: "pending",
   });
   const [ocrLoading, setOcrLoading] = useState(false);
+  const [loadingResume, setLoadingResume] = useState(true);
   const logoRef = useRef();
   const licRef = useRef();
 
@@ -906,78 +942,270 @@ function EmployerForm() {
       setOcrLoading(false);
     }, 1500);
   };
+  const handleSendMobileOtp = async () => {
+    try {
+      const sessionId = localStorage.getItem("registrationSessionId");
 
-  const sendMobileOtp = () => {
-    const otp = genOtp();
-    setData((p) => ({
-      ...p,
-      mobileOtp: { sent: true, verified: false, generated: otp, userVal: "" },
-    }));
-    showToast(`Mobile OTP (demo): ${otp}`, "info");
-  };
-  const verifyMobileOtp = () => {
-    if (data.mobileOtp.userVal === data.mobileOtp.generated) {
-      setData((p) => ({ ...p, mobileOtp: { ...p.mobileOtp, verified: true } }));
-      showToast("Mobile number verified successfully.", "success");
-    } else {
-      showToast("Invalid OTP", "error");
-    }
-  };
-  const sendCorpEmailOtp = () => {
-    if (
-      !data.corpEmail.includes("@") ||
-      data.corpEmail.includes("gmail") ||
-      data.corpEmail.includes("yahoo")
-    ) {
-      showToast(
-        "Please use a corporate email — free domains like Gmail/Yahoo are not allowed",
-        "warning",
+      await saveStep3();
+
+      const response = await sendMobileOtp(
+        {
+          mobileNumber: data.mobile,
+          countryCode: data.countryCode,
+        },
+        sessionId,
       );
-      return;
-    }
-    const otp = genOtp();
-    setData((p) => ({
-      ...p,
-      corpEmailOtp: {
-        sent: true,
-        verified: false,
-        generated: otp,
-        userVal: "",
-      },
-    }));
-    showToast(`Corporate email OTP (demo): ${otp}`, "info");
-  };
-  const verifyCorpEmailOtp = () => {
-    if (data.corpEmailOtp.userVal === data.corpEmailOtp.generated) {
+
       setData((p) => ({
         ...p,
-        corpEmailOtp: { ...p.corpEmailOtp, verified: true },
+        mobileOtp: {
+          ...p.mobileOtp,
+          sent: true,
+        },
       }));
-      showToast("Corporate email verified successfully.", "success");
-    } else {
-      showToast("Invalid OTP", "error");
+
+      showToast(response.data.message, "success");
+    } catch (err) {
+      showToast(err.response?.data?.message, "error");
+    }
+  };
+  const handleVerifyMobileOtp = async () => {
+    try {
+      const sessionId = localStorage.getItem("registrationSessionId");
+
+      const response = await verifyMobileOtp(
+        {
+          mobileNumber: data.mobile,
+          countryCode: data.countryCode,
+          mobileOtpCode: data.mobileOtp.userVal,
+        },
+        sessionId,
+      );
+
+      if (response.data.success) {
+        setData((p) => ({
+          ...p,
+          mobileOtp: {
+            ...p.mobileOtp,
+            verified: true,
+          },
+        }));
+
+        showToast("Mobile verified", "success");
+      }
+    } catch (err) {
+      showToast(err.response?.data?.message, "error");
+    }
+  };
+
+  const handleResendMobileOtp = async () => {
+    try {
+      const sessionId = localStorage.getItem("registrationSessionId");
+
+      const response = await resendMobileOtp(sessionId);
+
+      showToast(response.data.message, "success");
+    } catch (err) {
+      showToast(err.response?.data?.message, "error");
+    }
+  };
+
+  const sendCorpEmailOtp = async () => {
+    try {
+      const sessionId = localStorage.getItem("registrationSessionId");
+
+      const response = await sendEmailOtp(
+        {
+          companyEmail: data.corpEmail,
+        },
+        sessionId,
+      );
+
+      setData((p) => ({
+        ...p,
+        corpEmailOtp: {
+          ...p.corpEmailOtp,
+          sent: true,
+        },
+      }));
+
+      showToast(response.data.message, "success");
+    } catch (err) {
+      showToast(err.response?.data?.message, "error");
+    }
+  };
+  const verifyCorpEmailOtp = async () => {
+    try {
+      const sessionId = localStorage.getItem("registrationSessionId");
+
+      const response = await verifyEmailOtp(
+        {
+          companyEmail: data.corpEmail,
+          emailOtpCode: data.corpEmailOtp.userVal,
+        },
+        sessionId,
+      );
+
+      if (response.data.success) {
+        setData((p) => ({
+          ...p,
+          corpEmailOtp: {
+            ...p.corpEmailOtp,
+            verified: true,
+          },
+        }));
+
+        showToast("Email verified", "success");
+      }
+    } catch (err) {
+      showToast(err.response?.data?.message, "error");
     }
   };
 
   const isStep2Valid = data.hasGst !== null && data.industry;
   const isStep3Valid =
     data.legalName && data.state && data.city && data.pincode;
-  // Corporate email is optional — only mobile OTP is mandatory
   const isStep4Valid =
-    data.contactName && data.designation && data.mobileOtp.verified;
+    data.contactName &&
+    data.designation &&
+    data.mobileOtp.verified &&
+    data.corpEmailOtp.verified;
   const canGoStep2 = EMPLOYER_UI_PREVIEW_MODE || isStep2Valid;
   const canGoStep3 = EMPLOYER_UI_PREVIEW_MODE || isStep3Valid;
   const canGoStep4 = EMPLOYER_UI_PREVIEW_MODE || isStep4Valid;
-  const canSubmit = EMPLOYER_UI_PREVIEW_MODE || isStep4Valid;
+  const canSubmit = EMPLOYER_UI_PREVIEW_MODE || step === 5;
 
-  const handleEmployerSubmit = () => {
-    showToast(
-      `Welcome ${data.contactName}! Your employer account for ${data.legalName} has been created. You'll receive an email at ${data.corpEmail} once verified. Redirecting to login...`,
-      "success",
-    );
-    window.setTimeout(() => {
-      router.push("/Login");
-    }, 900);
+  useEffect(() => {
+    const resume = async () => {
+      const sessionId = localStorage.getItem("registrationSessionId");
+
+      if (!sessionId) return;
+
+      try {
+        const response = await resumeRegistration(sessionId);
+
+        if (!response.data.success) return;
+
+        try {
+          const session = response.data;
+          console.log(response.data);
+          // restore form values
+          const step1 = session.step1Data || {};
+          const step2 = session.step2Data || {};
+          const step3 = session.step3Data || {};
+          const step4 = session.step4Data || {};
+
+          setData((p) => ({
+            ...p,
+
+            // STEP 1
+            hasGst: step1.gstRegistered,
+            industry: step1.industryType,
+
+            // STEP 2
+            legalName: step2.legalName || "",
+            tradeName: step2.tradeName || "",
+
+            businessType: step2.businessType || "",
+            companySize: step2.companySize || "",
+
+            gstn: step2.gstn || "",
+            pan: step2.pan || "",
+            cin: step2.cin || "",
+
+            state: step2.state || "",
+            city: step2.city || "",
+            pincode: step2.pincode || "",
+            address: step2.addressLine1 || "",
+
+            officialWebsite: step2.websiteUrl || "",
+
+            companyLogo: step2.companyLogoUrl
+              ? {
+                  name: step2.companyLogoUrl.split("/").pop(),
+                  url: step2.companyLogoUrl,
+                }
+              : null,
+
+            // STEP 3
+            contactName: step3.contactPersonName || "",
+            designation: step3.designation || "",
+
+            contactPersonEmail: step3.contactPersonEmail || "",
+
+            corpEmail: step3.companyEmail || "",
+
+            mobile: step3.mobileNumber || "",
+
+            countryCode: step3.countryCode || "+91",
+
+            profileSummary: step3.companyDescription || "",
+
+            mobileOtp: {
+              ...p.mobileOtp,
+              sent: !!step3.mobileNumber,
+              verified: step3.mobileVerified || false,
+            },
+
+            corpEmailOtp: {
+              ...p.corpEmailOtp,
+              sent: !!step3.companyEmail,
+              verified: step3.companyEmailVerified || false,
+            },
+
+            // STEP 4
+            licDocs: [
+              ...(step4.poeLicenceUrl
+                ? [
+                    {
+                      id: "poe",
+                      name: step4.poeLicenceUrl.split("/").pop(),
+                      url: step4.poeLicenceUrl,
+                    },
+                  ]
+                : []),
+
+              ...(step4.rpslLicenceUrl
+                ? [
+                    {
+                      id: "rpsl",
+                      name: step4.rpslLicenceUrl.split("/").pop(),
+                      url: step4.rpslLicenceUrl,
+                    },
+                  ]
+                : []),
+            ],
+          }));
+          console.log("hasGst being set to", session.gstRegistered);
+          // move to next step
+          setStep(Math.min(session.stepStatus.lastCompletedStep + 1, 5));
+        } finally {
+          setLoadingResume(false);
+        }
+      } catch (err) {
+        console.log("Resume failed", err);
+      }
+    };
+
+    resume();
+  }, []);
+  const handleEmployerSubmit = async () => {
+    try {
+      const sessionId = localStorage.getItem("registrationSessionId");
+
+      const response = await submitRegistration({
+        sessionId,
+        consentGiven: true,
+      });
+
+      if (response.data.success) {
+        showToast("Registration completed", "success");
+
+        router.push("/Login");
+      }
+    } catch (err) {
+      showToast(err.response?.data?.message, "error");
+    }
   };
 
   const InfoRow = ({ label, val, mono }) => (
@@ -1004,6 +1232,25 @@ function EmployerForm() {
     </div>
   );
 
+  const handleStep1 = async () => {
+    try {
+      const response = await gstCheck({
+        gstRegistered: data.hasGst,
+        industryType: data.industry,
+      });
+
+      if (response.data.success) {
+        localStorage.setItem(
+          "registrationSessionId",
+          response.data.registrationSessionId,
+        );
+
+        setStep(2);
+      }
+    } catch (err) {
+      showToast(err.response?.data?.message || "Something went wrong", "error");
+    }
+  };
   // ── Step 1: GST Selector ──────────────────
   const renderStep1 = () => (
     <div>
@@ -1110,17 +1357,51 @@ function EmployerForm() {
       <div
         style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}
       >
-        <Btn
-          variant="primary"
-          disabled={!canGoStep2}
-          onClick={() => setStep(2)}
-        >
+        <Btn variant="primary" disabled={!canGoStep2} onClick={handleStep1}>
           Continue →
         </Btn>
       </div>
     </div>
   );
 
+  const handleStep2 = async () => {
+    try {
+      const sessionId = localStorage.getItem("registrationSessionId");
+
+      const formData = new FormData();
+
+      formData.append("legalName", data.legalName);
+      formData.append("tradeName", data.tradeName);
+      formData.append("businessType", data.businessType);
+      formData.append("companySize", data.companySize);
+      formData.append("cin", data.cin);
+      formData.append("state", data.state);
+      formData.append("city", data.city);
+      formData.append("pincode", data.pincode);
+      formData.append("addressLine1", data.address);
+      formData.append("websiteUrl", data.officialWebsite);
+      formData.append("gstn", data.gstn);
+      formData.append("pan", data.pan);
+
+      formData.append("companyDisplayName", data.tradeName || data.legalName);
+
+      formData.append("addressLine2", "");
+
+      formData.append("industryType", data.industry);
+
+      formData.append("gstnRegistrationDate", data.gstRegDate);
+
+      if (data.companyLogo) formData.append("companyLogo", data.companyLogo);
+
+      const response = await saveCompanyDetails(formData, sessionId);
+
+      if (response.data.success) {
+        setStep(3);
+      }
+    } catch (err) {
+      showToast(err.response?.data?.message, "error");
+    }
+  };
   // ── Step 2: Company Details ───────────────
   const renderStep2 = () => (
     <div>
@@ -1221,30 +1502,25 @@ function EmployerForm() {
             onChange={(e) => set("businessType", e.target.value)}
           >
             <option value="">Select…</option>
-            {[
-              "Private Limited",
-              "LLP",
-              "Proprietorship",
-              "Partnership",
-              "Public Limited",
-            ].map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
+            <option value="Private_Ltd">Private Limited</option>
+            <option value="Public_Ltd">Public Limited</option>
+            <option value="LLP">LLP</option>
+            <option value="Partnership">Partnership</option>
+            <option value="Proprietorship">Proprietorship</option>
+            <option value="Other">Other</option>
           </Select>
         </Field>
-        <Field label="Company Size" required>
+        <Field label="Company Size">
           <Select
             value={data.companySize}
             onChange={(e) => set("companySize", e.target.value)}
           >
             <option value="">Select size...</option>
-            <option value="1-10">1-10 employees</option>
-            <option value="11-50">11-50 employees</option>
-            <option value="51-200">51-200 employees</option>
-            <option value="201-1000">201-1000 employees</option>
-            <option value="1000+">1000+ employees</option>
+            <option value="Size_1_10">1-10 employees</option>
+            <option value="Size_11_50">11-50 employees</option>
+            <option value="Size_51_200">51-200 employees</option>
+            <option value="Size_201_500">201-500 employees</option>
+            <option value="Size_500_Plus">500+ employees</option>
           </Select>
         </Field>
         <Field label="Company Type">
@@ -1428,15 +1704,57 @@ function EmployerForm() {
         </Btn>
         <Btn
           variant="primary"
-          disabled={!canGoStep3}
-          onClick={() => setStep(3)}
+          disabled={
+            ocrLoading ||
+            !data.legalName ||
+            !data.state ||
+            !data.city ||
+            !data.pincode ||
+            !data.address
+          }
+          onClick={handleStep2}
         >
           Continue →
         </Btn>
       </div>
     </div>
   );
+  const saveStep3 = async () => {
+    try {
+      const sessionId = localStorage.getItem("registrationSessionId");
 
+      const response = await saveContactDetails(
+        {
+          contactPersonName: data.contactName,
+          designation: data.designation,
+          contactPersonEmail: data.contactPersonEmail,
+          companyEmail: data.corpEmail,
+          mobileNumber: data.mobile,
+          countryCode: data.countryCode,
+          companyDescription: data.profileSummary,
+        },
+        sessionId,
+      );
+
+      if (response.data.success) {
+        showToast(response.data.message, "success");
+      }
+    } catch (err) {
+      showToast(err.response?.data?.message, "error");
+    }
+  };
+
+  const handleResendEmailOtp = async () => {
+    try {
+      const sessionId = localStorage.getItem("registrationSessionId");
+
+      const response = await resendEmailOtp(sessionId);
+
+      showToast(response.data.message, "success");
+    } catch (err) {
+      showToast(err.response?.data?.message, "error");
+    }
+  };
   // ── Step 3: Contact & OTP ─────────────────
   const renderStep3 = () => (
     <div>
@@ -1476,10 +1794,7 @@ function EmployerForm() {
         </Field>
       </div>
 
-      <Field
-        label="Company Email "
-       required
-      >
+      <Field label="Company Email " required>
         <Input
           type="email"
           value={data.corpEmail}
@@ -1495,6 +1810,7 @@ function EmployerForm() {
               verified={data.corpEmailOtp.verified}
               disabled={!data.corpEmail}
               onSend={sendCorpEmailOtp}
+              onResend={handleResendEmailOtp}
               onVerify={verifyCorpEmailOtp}
               otpVal={data.corpEmailOtp.userVal}
               setOtpVal={(v) =>
@@ -1518,7 +1834,15 @@ function EmployerForm() {
           mobile={data.mobile}
           onMobileChange={(v) => set("mobile", v)}
           otp={data.mobileOtp}
-          onOtpStateChange={(v) => setData((p) => ({ ...p, mobileOtp: v }))}
+          onOtpStateChange={(v) =>
+            setData((p) => ({
+              ...p,
+              mobileOtp: v,
+            }))
+          }
+          sendMobileOtp={handleSendMobileOtp}
+          verifyMobileOtp={handleVerifyMobileOtp}
+          resendMobileOtp={handleResendMobileOtp}
         />
       </Field>
 
@@ -1556,8 +1880,246 @@ function EmployerForm() {
       </div>
     </div>
   );
+  const handleStep4 = async () => {
+    try {
+      const sessionId = localStorage.getItem("registrationSessionId");
 
+      const formData = new FormData();
+
+      // Find files
+      const poeDoc = data.licDocs.find((x) => x.id === "poe");
+
+      const rpslDoc = data.licDocs.find((x) => x.id === "rpsl");
+
+      if (!poeDoc || !rpslDoc) {
+        showToast("Both POE and RPSL licences are required.", "error");
+        return;
+      }
+
+      formData.append("PoeLicence", poeDoc.file);
+
+      formData.append("RpslLicence", rpslDoc.file);
+
+      const response = await uploadLicences(formData, sessionId);
+
+      if (response.data.success) {
+        showToast(response.data.message, "success");
+
+        setStep(5);
+      }
+    } catch (err) {
+      showToast(
+        err.response?.data?.message || "Licence upload failed.",
+        "error",
+      );
+    }
+  };
   // ── Step 4: Licence Upload ────────────────
+  // const renderStep4 = () => (
+  //   <div>
+  //     <h3
+  //       style={{
+  //         fontSize: "var(--font-md)",
+  //         fontWeight: 600,
+  //         marginBottom: 4,
+  //         color: "var(--color-text-primary)",
+  //       }}
+  //     >
+  //       Licence & document upload
+  //       <span
+  //         style={{
+  //           fontSize: "var(--font-xs)",
+  //           fontWeight: 400,
+  //           color: "var(--color-text-tertiary)",
+  //           marginLeft: 10,
+  //           background: "var(--color-background-secondary)",
+  //           padding: "2px 8px",
+  //           borderRadius: 6,
+  //         }}
+  //       >
+  //         Optional
+  //       </span>
+  //     </h3>
+  //     <p
+  //       style={{
+  //         fontSize: "var(--font-sm)",
+  //         color: "var(--color-text-secondary)",
+  //         marginBottom: 20,
+  //         lineHeight: 1.5,
+  //       }}
+  //     >
+  //       Upload recruitment licences to earn trust badges displayed on all job
+  //       listings.
+  //     </p>
+  //     <Alert type="info">
+  //       <strong>Blue Tick</strong> requires: GST Verified + one active licence +
+  //       corporate domain email — all simultaneously.
+  //     </Alert>
+  //     <div
+  //       style={{
+  //         marginTop: 12,
+  //         marginBottom: 14,
+  //         display: "inline-flex",
+  //         alignItems: "center",
+  //         gap: 8,
+  //         padding: "8px 12px",
+  //         borderRadius: 8,
+  //         border: "1px solid rgba(255, 163, 0, 0.32)",
+  //         background: "#fff8ee",
+  //         color: "#8a5a00",
+  //         fontSize: "var(--font-xs)",
+  //         fontWeight: 600,
+  //       }}
+  //     >
+  //       <i className="fi fi-rr-lock" />
+  //       Documents uploaded for verification are private and are not shared with
+  //       candidates.
+  //     </div>
+  //     <div
+  //       style={{
+  //         display: "grid",
+  //         gridTemplateColumns: "1fr 1fr",
+  //         gap: 14,
+  //         marginBottom: 14,
+  //       }}
+  //     >
+  //       {[
+  //         {
+  //           id: "poe",
+  //           label: "Recruitment Licence",
+  //           badge: "Recruitment Licensed",
+
+  //           color: "#3B6D11",
+  //           bg: "#EAF3DE",
+  //           desc: "Recruitment licence for overseas placement",
+  //         },
+  //         {
+  //           id: "rpsl",
+  //           label: "RPSL Licence",
+  //           badge: "RPSL Licensed",
+  //           color: "#0F6E56",
+  //           bg: "#E1F5EE",
+  //           desc: "Shipping recruitment licence for vessel placements",
+  //         },
+  //       ].map((lic) => {
+  //         const file = data.licDocs.find((d) => d.id === lic.id);
+  //         return (
+  //           <div key={lic.id}>
+  //             <p
+  //               style={{
+  //                 fontSize: "var(--font-xs)",
+  //                 fontWeight: 600,
+  //                 color: "var(--color-text-secondary)",
+  //                 marginBottom: 8,
+  //               }}
+  //             >
+  //               {lic.label}
+  //             </p>
+  //             <div
+  //               onClick={() => licRef.current?.click()}
+  //               style={{
+  //                 border: "1px dashed var(--color-border-secondary, #ffc151)",
+  //                 borderRadius: 8,
+  //                 padding: "24px 16px",
+  //                 textAlign: "center",
+  //                 cursor: "pointer",
+  //                 background: file
+  //                   ? "#EAF3DE"
+  //                   : "var(--color-background-secondary)",
+  //               }}
+  //             >
+  //               {file ? (
+  //                 <p
+  //                   style={{
+  //                     fontSize: "var(--font-xs)",
+  //                     color: "#3B6D11",
+  //                     fontWeight: 600,
+  //                   }}
+  //                 >
+  //                   ✓ {file.name}
+  //                 </p>
+  //               ) : (
+  //                 <>
+  //                   <p style={{ fontSize: "var(--font-xl)", opacity: 0.3 }}>
+  //                     ↑
+  //                   </p>
+  //                   <p
+  //                     style={{
+  //                       fontSize: "var(--font-xs)",
+  //                       color: "var(--color-text-secondary)",
+  //                     }}
+  //                   >
+  //                     Upload {lic.label}
+  //                   </p>
+  //                   <p
+  //                     style={{
+  //                       fontSize: "var(--font-xs)",
+  //                       color: "var(--color-text-tertiary)",
+  //                       marginTop: 3,
+  //                     }}
+  //                   >
+  //                     PDF / JPG / PNG · Max 5 MB
+  //                   </p>
+  //                 </>
+  //               )}
+  //             </div>
+  //             <input
+  //               type="file"
+  //               accept=".pdf,.jpg,.jpeg,.png"
+  //               style={{ display: "none" }}
+  //               onChange={(e) => {
+  //                 const f = e.target.files?.[0];
+  //                 if (f)
+  //                   setData((p) => ({
+  //                     ...p,
+  //                     licDocs: [
+  //                       ...p.licDocs.filter((d) => d.id !== lic.id),
+  //                       { id: lic.id, name: f.name, file: f },
+  //                     ],
+  //                   }));
+  //               }}
+  //             />
+  //             <div
+  //               style={{
+  //                 marginTop: 8,
+  //                 padding: "8px 10px",
+  //                 background: lic.bg,
+  //                 borderRadius: 6,
+  //                 fontSize: "var(--font-xs)",
+  //                 color: lic.color,
+  //               }}
+  //             >
+  //               Awards: <strong>{lic.badge}</strong> badge
+  //             </div>
+  //           </div>
+  //         );
+  //       })}
+  //     </div>
+  //     <div
+  //       style={{
+  //         display: "flex",
+  //         justifyContent: "space-between",
+  //         marginTop: 8,
+  //       }}
+  //     >
+  //       <Btn variant="outline" onClick={() => setStep(3)}>
+  //         ← Back
+  //       </Btn>
+  //       <div style={{ display: "flex", gap: 10 }}>
+  //         <Btn
+  //           variant="ghost"
+  //           onClick={() => setStep(5)}
+  //         >
+  //           Skip for now
+  //         </Btn>
+  //         <Btn variant="primary" onClick={handleStep4}>
+  //           Continue →
+  //         </Btn>
+  //       </div>
+  //     </div>
+  //   </div>
+  // );
+
   const renderStep4 = () => (
     <div>
       <h3
@@ -1583,6 +2145,7 @@ function EmployerForm() {
           Optional
         </span>
       </h3>
+
       <p
         style={{
           fontSize: "var(--font-sm)",
@@ -1594,10 +2157,12 @@ function EmployerForm() {
         Upload recruitment licences to earn trust badges displayed on all job
         listings.
       </p>
+
       <Alert type="info">
         <strong>Blue Tick</strong> requires: GST Verified + one active licence +
         corporate domain email — all simultaneously.
       </Alert>
+
       <div
         style={{
           marginTop: 12,
@@ -1607,7 +2172,7 @@ function EmployerForm() {
           gap: 8,
           padding: "8px 12px",
           borderRadius: 8,
-          border: "1px solid rgba(255, 163, 0, 0.32)",
+          border: "1px solid rgba(255,163,0,.32)",
           background: "#fff8ee",
           color: "#8a5a00",
           fontSize: "var(--font-xs)",
@@ -1618,6 +2183,7 @@ function EmployerForm() {
         Documents uploaded for verification are private and are not shared with
         candidates.
       </div>
+
       <div
         style={{
           display: "grid",
@@ -1631,10 +2197,8 @@ function EmployerForm() {
             id: "poe",
             label: "Recruitment Licence",
             badge: "Recruitment Licensed",
-
             color: "#3B6D11",
             bg: "#EAF3DE",
-            desc: "Recruitment licence for overseas placement",
           },
           {
             id: "rpsl",
@@ -1642,10 +2206,10 @@ function EmployerForm() {
             badge: "RPSL Licensed",
             color: "#0F6E56",
             bg: "#E1F5EE",
-            desc: "Shipping recruitment licence for vessel placements",
           },
         ].map((lic) => {
           const file = data.licDocs.find((d) => d.id === lic.id);
+
           return (
             <div key={lic.id}>
               <p
@@ -1658,10 +2222,39 @@ function EmployerForm() {
               >
                 {lic.label}
               </p>
+
+              {/* Hidden Input */}
+              <input
+                id={`file-${lic.id}`}
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                style={{ display: "none" }}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+
+                  if (!f) return;
+
+                  setData((prev) => ({
+                    ...prev,
+                    licDocs: [
+                      ...prev.licDocs.filter((d) => d.id !== lic.id),
+                      {
+                        id: lic.id,
+                        name: f.name,
+                        file: f,
+                      },
+                    ],
+                  }));
+                }}
+              />
+
+              {/* Upload Box */}
               <div
-                onClick={() => licRef.current?.click()}
+                onClick={() =>
+                  document.getElementById(`file-${lic.id}`)?.click()
+                }
                 style={{
-                  border: "1px dashed var(--color-border-secondary, #ffc151)",
+                  border: "1px dashed var(--color-border-secondary,#ffc151)",
                   borderRadius: 8,
                   padding: "24px 16px",
                   textAlign: "center",
@@ -1669,23 +2262,42 @@ function EmployerForm() {
                   background: file
                     ? "#EAF3DE"
                     : "var(--color-background-secondary)",
+                  transition: ".2s",
                 }}
               >
                 {file ? (
-                  <p
-                    style={{
-                      fontSize: "var(--font-xs)",
-                      color: "#3B6D11",
-                      fontWeight: 600,
-                    }}
-                  >
-                    ✓ {file.name}
-                  </p>
+                  <>
+                    <p
+                      style={{
+                        fontSize: "var(--font-xs)",
+                        color: "#3B6D11",
+                        fontWeight: 600,
+                      }}
+                    >
+                      ✓ {file.name}
+                    </p>
+
+                    <p
+                      style={{
+                        marginTop: 8,
+                        fontSize: "var(--font-xs)",
+                        color: "#666",
+                      }}
+                    >
+                      Click to change file
+                    </p>
+                  </>
                 ) : (
                   <>
-                    <p style={{ fontSize: "var(--font-xl)", opacity: 0.3 }}>
+                    <p
+                      style={{
+                        fontSize: "var(--font-xl)",
+                        opacity: 0.3,
+                      }}
+                    >
                       ↑
                     </p>
+
                     <p
                       style={{
                         fontSize: "var(--font-xs)",
@@ -1694,6 +2306,7 @@ function EmployerForm() {
                     >
                       Upload {lic.label}
                     </p>
+
                     <p
                       style={{
                         fontSize: "var(--font-xs)",
@@ -1706,22 +2319,7 @@ function EmployerForm() {
                   </>
                 )}
               </div>
-              <input
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
-                style={{ display: "none" }}
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f)
-                    setData((p) => ({
-                      ...p,
-                      licDocs: [
-                        ...p.licDocs.filter((d) => d.id !== lic.id),
-                        { id: lic.id, name: f.name },
-                      ],
-                    }));
-                }}
-              />
+
               <div
                 style={{
                   marginTop: 8,
@@ -1738,6 +2336,7 @@ function EmployerForm() {
           );
         })}
       </div>
+
       <div
         style={{
           display: "flex",
@@ -1748,11 +2347,13 @@ function EmployerForm() {
         <Btn variant="outline" onClick={() => setStep(3)}>
           ← Back
         </Btn>
+
         <div style={{ display: "flex", gap: 10 }}>
           <Btn variant="ghost" onClick={() => setStep(5)}>
             Skip for now
           </Btn>
-          <Btn variant="primary" onClick={() => setStep(5)}>
+
+          <Btn variant="primary" onClick={handleStep4}>
             Continue →
           </Btn>
         </div>

@@ -17,11 +17,15 @@ export const loginUser = createAsyncThunk(
       return rejectWithValue("Invalid OTP. Please verify and try again.");
     }
 
-    const user = {
-      id: normalizedMobile,
-      mobile: normalizedMobile,
-      role,
-    };
+  const user = {
+    userId: response.userId,
+    employerId: response.employerId,
+    userName: response.userName,
+    role:
+        response.userType === "Recruiter"
+            ? "employer"
+            : "candidate"
+};
 
     return {
       user,
@@ -33,19 +37,27 @@ export const loginUser = createAsyncThunk(
 
 const authSlice = createSlice({
   name: "auth",
-  initialState: {
-    user: null,
-    token: null,
-    isLoading: false,
-    error: null,
+ initialState: {
+  user: null,
+  token: null,
+  isLoading: false,
+  error: null,
+  initialized: false,
+},
+ reducers: {
+  setUser: (state, action) => {
+    state.user = action.payload.user;
+    state.token = action.payload.token;
   },
-  reducers: {
-    logout: (state) => {
-      state.user = null;
-      state.token = null;
-      state.error = null;
-    },
+  setInitialized: (state) => {
+    state.initialized = true;
   },
+  logout: (state) => {
+    state.user = null;
+    state.token = null;
+    state.error = null;
+  },
+},
   extraReducers: (builder) => {
     builder
       .addCase(loginUser.pending, (state) => {
@@ -64,6 +76,10 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout } = authSlice.actions;
+export const {
+  setUser,
+  setInitialized,
+  logout
+} = authSlice.actions;
 export default authSlice.reducer;
 
