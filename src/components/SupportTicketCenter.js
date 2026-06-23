@@ -120,66 +120,66 @@ const SupportTicketCenter = ({
     resolved: 0,
   });
 
-const loadTickets = useCallback(async () => {
-  try {
-    const response = await getTickets(
-      CANDIDATE_ID
-    );
-
-    if (response?.data?.tickets) {
-      setAllTickets(
-        response.data.tickets.map((ticket) =>
-          normalizeTicket(ticket, audience)
-        )
+  const loadTickets = useCallback(async () => {
+    try {
+      const response = await getTickets(
+        CANDIDATE_ID
       );
+
+      if (response?.data?.tickets) {
+        setAllTickets(
+          response.data.tickets.map((ticket) =>
+            normalizeTicket(ticket, audience)
+          )
+        );
+      }
+    } catch (error) {
+      console.error(error);
     }
-  } catch (error) {
-    console.error(error);
-  }
-}, [audience]);
+  }, [audience]);
 
-const loadTicketSummary = useCallback(async () => {
-  try {
-    const response = await getTicketSummary(CANDIDATE_ID);
+  const loadTicketSummary = useCallback(async () => {
+    try {
+      const response = await getTicketSummary(CANDIDATE_ID);
 
-    if (response?.data) {
-      setTicketSummary({
-        totalTickets: response.data.totalTickets || 0,
-        open: response.data.open || 0,
-        inProgress: response.data.inProgress || 0,
-        resolved: response.data.resolved || 0,
-      });
+      if (response?.data) {
+        setTicketSummary({
+          totalTickets: response.data.totalTickets || 0,
+          open: response.data.open || 0,
+          inProgress: response.data.inProgress || 0,
+          resolved: response.data.resolved || 0,
+        });
+      }
+    } catch (error) {
+      console.error(error);
     }
-  } catch (error) {
-    console.error(error);
-  }
-}, []);
+  }, []);
 
-useEffect(() => {
-  loadTickets();
-  loadTicketSummary();
-}, [loadTickets, loadTicketSummary]);
+  useEffect(() => {
+    loadTickets();
+    loadTicketSummary();
+  }, [loadTickets, loadTicketSummary]);
 
-const loadTicketThread = async (ticketId) => {
-  try {
-    const response = await getThread(ticketId, CANDIDATE_ID);
+  const loadTicketThread = async (ticketId) => {
+    try {
+      const response = await getThread(ticketId, CANDIDATE_ID);
 
-    if (response?.data?.success) {
-      const nextTicket = normalizeTicket(response.data, audience);
+      if (response?.data?.success) {
+        const nextTicket = normalizeTicket(response.data, audience);
 
-      setAllTickets((prev) =>
-        prev.map((ticket) =>
-          ticket.id === ticketId ? nextTicket : ticket
-        )
-      );
+        setAllTickets((prev) =>
+          prev.map((ticket) =>
+            ticket.id === ticketId ? nextTicket : ticket
+          )
+        );
+      }
+    } catch (error) {
+      console.error(error);
+      showToast("Failed to load ticket thread", "error");
     }
-  } catch (error) {
-    console.error(error);
-    showToast("Failed to load ticket thread", "error");
-  }
-};
+  };
 
- 
+
 
   const tickets = useMemo(() => allTickets, [allTickets]);
 
@@ -194,56 +194,56 @@ const loadTicketThread = async (ticketId) => {
   };
 
   const handleSubmit = async () => {
-  const nextErrors = validate();
+    const nextErrors = validate();
 
-  if (Object.keys(nextErrors).length > 0) {
-    setErrors(nextErrors);
-    return;
-  }
- 
-  try {
-    const payload = {
-      subject: form.subject,
-      category: CATEGORY_TO_API[form.category] || form.category,
-      description: form.description,
-    };
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      return;
+    }
 
-     console.log("Ticket Payload:", payload);
+    try {
+      const payload = {
+        subject: form.subject,
+        category: CATEGORY_TO_API[form.category] || form.category,
+        description: form.description,
+      };
 
-    const response = await createTicket(
-      CANDIDATE_ID,
-      payload
-    );
+      console.log("Ticket Payload:", payload);
 
-    if (response?.data?.success) {
-      await loadTickets();
-      await loadTicketSummary();
+      const response = await createTicket(
+        CANDIDATE_ID,
+        payload
+      );
 
-      setForm({
-        subject: "",
-        category: "",
-        description: "",
-      });
+      if (response?.data?.success) {
+        await loadTickets();
+        await loadTicketSummary();
+
+        setForm({
+          subject: "",
+          category: "",
+          description: "",
+        });
+
+        showToast(
+          "Support ticket submitted successfully!",
+          "success"
+        );
+      }
+    } catch (error) {
+      console.log(
+        "Backend Error:",
+        error?.response?.data
+      );
+
+      console.error(error);
 
       showToast(
-        "Support ticket submitted successfully!",
-        "success"
+        "Failed to create ticket",
+        "error"
       );
     }
-  } catch (error) {
-  console.log(
-    "Backend Error:",
-    error?.response?.data
-  );
-
-  console.error(error);
-
-  showToast(
-    "Failed to create ticket",
-    "error"
-  );
-}
-};
+  };
 
   const addReply = async (ticketId) => {
     const replyText = newReplyTextByTicket[ticketId] || "";
@@ -391,7 +391,11 @@ const loadTicketThread = async (ticketId) => {
               {ticketSummary.totalTickets} ticket{ticketSummary.totalTickets !== 1 ? "s" : ""} total
             </p>
 
-            <div className="candidate-ticket-list">
+            <div className="candidate-ticket-list" style={{
+              maxHeight: "490px", // adjust as needed
+              overflowY: "auto",
+              paddingRight: "6px"
+            }}>
               {tickets.map((ticket) => {
                 const latestAdminReply = getLatestAdminReply(ticket.messages || []);
                 const isExpanded = expandedTicketId === ticket.id;
@@ -479,7 +483,7 @@ const loadTicketThread = async (ticketId) => {
                             ))}
                           </div>
 
-                          <div style={{ marginTop: "8px", display: "flex", gap: "8px" }}>
+                          <div style={{ marginTop: "8px", display: "flex", gap: "8px" }} >
                             <input
                               className="form-control"
                               type="text"
@@ -488,8 +492,9 @@ const loadTicketThread = async (ticketId) => {
                               onChange={(event) =>
                                 setNewReplyTextByTicket((prev) => ({ ...prev, [ticket.id]: event.target.value }))
                               }
+                              required
                             />
-                            <button type="button" className="btn btn-brand-1 btn-small" onClick={() => addReply(ticket.id)}>
+                            <button type="button" className="btn btn-brand-1 btn-small" disabled={!newReplyTextByTicket[ticket.id]?.trim()} onClick={() => addReply(ticket.id)}>
                               Send
                             </button>
                           </div>
