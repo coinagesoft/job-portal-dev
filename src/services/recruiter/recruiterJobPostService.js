@@ -14,6 +14,13 @@ export const saveJobDetails = async (payload) => {
 
   return response.data;
 };
+export const getJobResume = async (jobId) => {
+  const response = await api.get(
+    `/api/recruiter/jobs/${jobId}/resume`
+  );
+
+  return response.data;
+};
 
 export const saveCompensation = async (jobId, payload) => {
   const formData = new FormData();
@@ -60,12 +67,23 @@ export const saveSkills = async (jobId, payload) => {
   return response.data;
 };
 
-export const saveEligibility = async (jobId, payload) => {
+export const saveEligibility = async (
+  jobId,
+  payload
+) => {
   const formData = new FormData();
 
-  Object.entries(payload).forEach(([key, value]) => {
-    formData.append(key, value);
-  });
+  Object.entries(payload).forEach(
+    ([key, value]) => {
+      if (
+        value !== null &&
+        value !== undefined &&
+        value !== ""
+      ) {
+        formData.append(key, value);
+      }
+    }
+  );
 
   const response = await api.patch(
     `/api/recruiter/jobs/${jobId}/step4-eligibility`,
@@ -74,7 +92,6 @@ export const saveEligibility = async (jobId, payload) => {
 
   return response.data;
 };
-
 export const saveLocation = async (jobId, payload) => {
   const formData = new FormData();
 
@@ -96,8 +113,14 @@ export const saveQuestions = async (jobId, payload) => {
   payload.questions.forEach((q) => {
     formData.append("questionText", q.questionText);
     formData.append("answerType", q.answerType);
-    formData.append("isMandatory", q.isMandatory);
+    formData.append("isMandatory", String(q.isMandatory));
   });
+
+  console.log("STEP6 PAYLOAD");
+
+  for (const pair of formData.entries()) {
+    console.log(pair[0], pair[1]);
+  }
 
   const response = await api.patch(
     `/api/recruiter/jobs/${jobId}/step6-questions`,
@@ -107,18 +130,44 @@ export const saveQuestions = async (jobId, payload) => {
   return response.data;
 };
 
-export const publishJob = async (payload) => {
+export const publishJob = async (
+  payload
+) => {
   const formData = new FormData();
 
-  Object.entries(payload).forEach(([key, value]) => {
-    if (Array.isArray(value)) {
-      value.forEach((item) =>
-        formData.append("PublishingTags", item)
+  formData.append(
+    "JobId",
+    payload.JobId
+  );
+
+  formData.append(
+    "ApplicationDeadline",
+    payload.ApplicationDeadline
+  );
+
+  formData.append(
+    "CompanyVisibility",
+    payload.CompanyVisibility
+  );
+
+  formData.append(
+    "JobType",
+    payload.JobType
+  );
+
+  formData.append(
+    "PublishNow",
+    payload.PublishNow
+  );
+
+  payload.PublishingTags?.forEach(
+    (tag) => {
+      formData.append(
+        "PublishingTags",
+        tag
       );
-    } else {
-      formData.append(key, value);
     }
-  });
+  );
 
   const response = await api.patch(
     "/api/recruiter/jobs/step7-publish",

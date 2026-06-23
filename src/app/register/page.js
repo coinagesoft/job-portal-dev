@@ -4,6 +4,15 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Script from "next/script";
 import { useToast } from "@/components/Toast";
 import {
+  registerCandidate,
+  sendOtp,
+  verifyOtp,
+  createCandidateOrder,
+  googleLogin,
+  linkedInLogin
+} from "@/services/candidate/candidateAuthService";
+
+import {
   gstCheck,
   saveCompanyDetails,
   saveContactDetails,
@@ -286,7 +295,7 @@ function MobileOtpField({
   verifyMobileOtp,
   resendMobileOtp,
 }) {
-  const { sent, verified, generated, userVal } = otp;
+  const { sent, verified, userVal } = otp;
   const showToast = useToast();
 
   return (
@@ -473,24 +482,28 @@ function OtpBlock({
 function CandidateForm() {
   const router = useRouter();
   const showToast = useToast();
+  const [otpToken, setOtpToken] = useState("");
   const [form, setForm] = useState({
     name: "",
     countryCode: "+91",
     mobile: "",
     email: "",
   });
-  const [mobileOtp, setMobileOtp] = useState({
-    sent: false,
-    verified: false,
-    generated: "",
-    userVal: "",
-  });
-  const [emailOtp, setEmailOtp] = useState({
-    sent: false,
-    verified: false,
-    generated: "",
-    userVal: "",
-  });
+ const [mobileOtp, setMobileOtp] = useState({
+  sent: false,
+  verified: false,
+  userVal: "",
+});
+const [emailOtp, setEmailOtp] = useState({
+  sent: false,
+  verified: false,
+  userVal: "",
+});
+const [paymentData, setPaymentData] = useState({
+  razorpayOrderId: "",
+  razorpayPaymentId: "",
+  razorpaySignature: ""
+});
   const [terms, setTerms] = useState(false);
   const [payStatus, setPayStatus] = useState("");
   const [loading, setLoading] = useState(false);
@@ -498,87 +511,265 @@ function CandidateForm() {
 
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
-  const sendEmail = () => {
-    const otp = genOtp();
-    setEmailOtp({ sent: true, verified: false, generated: otp, userVal: "" });
-    showToast(`Email OTP (demo): ${otp}`, "info");
-  };
-  const verifyEmail = () => {
-    if (emailOtp.userVal === emailOtp.generated) {
-      setEmailOtp((p) => ({ ...p, verified: true }));
-      showToast("Email verified successfully.", "success");
-    } else {
-      showToast("Invalid OTP", "error");
+  const sendMobileOtp = async () => {
+  try {
+    const response = await sendOtp({
+      identifier: form.mobile.replace(/\D/g, ""),
+      countryCode: form.countryCode,
+    });
+
+    if (response.data.success) {
+      setMobileOtp((p) => ({
+        ...p,
+        sent: true,
+        verified: false,
+        userVal: "",
+      }));
+
+      showToast(response.data.message, "success");
     }
-  };
+  } catch (err) {
+    showToast(
+      err?.response?.data?.message || "Failed to send OTP",
+      "error"
+    );
+  }
+};
+
+const verifyMobileOtp = async () => {
+  try {
+    const response = await verifyOtp({
+      identifier: form.mobile.replace(/\D/g, ""),
+      countryCode: form.countryCode,
+      otpCode: mobileOtp.userVal,
+    });
+if (response.data.success) {
+
+  setOtpToken(response.data.otpToken);
+
+  setMobileOtp((p) => ({
+    ...p,
+    verified: true,
+  }));
+
+  showToast("Mobile verified successfully", "success");
+}
+  } catch (err) {
+    showToast(
+      err?.response?.data?.message || "Invalid OTP",
+      "error"
+    );
+  }
+};
+
+const sendEmail = async () => {
+  try {
+    const response = await sendOtp({
+      identifier: form.email,
+    });
+
+    if (response.data.success) {
+      setEmailOtp((p) => ({
+        ...p,
+        sent: true,
+        verified: false,
+        userVal: "",
+      }));
+
+      showToast(response.data.message, "success");
+    }
+  } catch (err) {
+    showToast(
+      err?.response?.data?.message || "Failed to send OTP",
+      "error"
+    );
+  }
+};
+
+const verifyEmail = async () => {
+  try {
+    const response = await verifyOtp({
+      identifier: form.email,
+      otpCode: emailOtp.userVal,
+    });
+
+if (response.data.success) {
+
+  setOtpToken(response.data.otpToken);
+
+  setEmailOtp((p) => ({
+    ...p,
+    verified: true,
+  }));
+
+  showToast("Email verified successfully", "success");
+}
+  } catch (err) {
+    showToast(
+      err?.response?.data?.message || "Invalid OTP",
+      "error"
+    );
+  }
+};
 
   // Razorpay test payment ₹100
-  const handlePay = () => {
-    setLoading(true);
-    // Set NEXT_PUBLIC_RAZORPAY_KEY_ID in .env.local with your Razorpay test key
-    const key = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "";
+ const handlePay = async () => {
+try {
+setLoading(true);
 
-    if (typeof window === "undefined") {
+const key =
+  process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "";
+
+if (typeof window === "undefined") {
+  setLoading(false);
+  return;
+}
+
+if (!window.Razorpay || !key) {
+  setLoading(false);
+
+  setPaymentMessage(
+    "Razorpay SDK or key missing."
+  );
+
+  return;
+}
+
+// Create order from backend
+const orderResponse =
+  await createCandidateOrder({
+    amount: 100,
+  });
+
+const order = orderResponse.data;
+
+if (!order.success) {
+  setLoading(false);
+
+  setPaymentMessage(
+    "Unable to create payment order."
+  );
+
+  return;
+}
+
+const options = {
+  key,
+
+  amount: order.amount * 100,
+
+  currency: order.currency,
+
+  order_id: order.orderId,
+
+  name: "SkillBridge",
+
+  description: "Candidate Registration Fee",
+
+  handler: function (response) {
+
+    console.log("RAZORPAY RESPONSE", response);
+
+    setPaymentData({
+      razorpayOrderId:
+        response.razorpay_order_id,
+
+      razorpayPaymentId:
+        response.razorpay_payment_id,
+
+      razorpaySignature:
+        response.razorpay_signature,
+    });
+
+    setPayStatus("success");
+
+    setPaymentMessage(
+      `Payment successful. Reference: ${response.razorpay_payment_id}`
+    );
+
+    setLoading(false);
+  },
+
+  prefill: {
+    name: form.name,
+    contact: form.mobile,
+    email: form.email,
+  },
+
+  theme: {
+    color: "#ff9900",
+  },
+
+  modal: {
+    ondismiss: () => {
       setLoading(false);
-      return;
-    }
 
-    const completeAsDemo = () => {
-      setPayStatus("success");
       setPaymentMessage(
-        "Payment captured in demo mode. Add NEXT_PUBLIC_RAZORPAY_KEY_ID in .env.local for live checkout.",
+        "Payment window closed before completion."
       );
-      setLoading(false);
-    };
+    },
+  },
+};
 
-    if (!window.Razorpay || !key) {
-      window.setTimeout(completeAsDemo, 300);
-      return;
-    }
+const rzp = new window.Razorpay(options);
 
-    const options = {
-      key,
-      amount: 10000,
-      currency: "INR",
-      name: "SkillBridge",
-      description: "Candidate Registration Fee",
-      handler: function (response) {
-        setPayStatus("success");
-        setPaymentMessage(
-          `Payment successful. Reference: ${response?.razorpay_payment_id || "N/A"}`,
-        );
-        setLoading(false);
-      },
-      prefill: { name: form.name, contact: form.mobile, email: form.email },
-      theme: { color: "#ff9900" },
-      modal: {
-        ondismiss: () => {
-          setLoading(false);
-          setPaymentMessage("Payment window closed before completion.");
-        },
-      },
-    };
+rzp.open();
 
-    try {
-      const rzp = new window.Razorpay(options);
-      rzp.open();
-    } catch (error) {
-      console.error("Razorpay initialization error", error);
-      completeAsDemo();
-    }
-  };
+} catch (error) {
+
+console.error(
+  "Razorpay initialization error",
+  error
+);
+
+setLoading(false);
+
+setPaymentMessage(
+  "Payment initialization failed."
+);
+
+}
+};
+
 
   const canSubmit = mobileOtp.verified && terms && payStatus === "success";
 
-  const handleCandidateSubmit = () => {
-    showToast(
-      `Welcome ${form.name}! Registration complete. Redirecting to login...`,
-      "success",
-    );
-    window.setTimeout(() => {
+const handleCandidateSubmit = async () => {
+  try {
+    console.log({
+  otpToken,
+  paymentData
+});
+    const response = await registerCandidate({
+  fullName: form.name,
+  mobileNumber: form.mobile.replace(/\D/g, ""),
+  countryCode: form.countryCode,
+  email: form.email,
+
+ otpToken: otpToken,
+
+  razorpayOrderId: paymentData.razorpayOrderId,
+  razorpayPaymentId: paymentData.razorpayPaymentId,
+  razorpaySignature: paymentData.razorpaySignature,
+
+  termsAccepted: terms
+});
+
+
+
+    showToast(response.data.message, "success");
+
+    setTimeout(() => {
       router.push("/Login");
-    }, 900);
-  };
+    }, 1000);
+  } catch (err) {
+    showToast(
+      err?.response?.data?.message ||
+      "Registration failed",
+      "error"
+    );
+  }
+};
 
   return (
     <div>
@@ -607,43 +798,22 @@ function CandidateForm() {
         />
 
         <div style={{ marginTop: 8 }}>
-          <OtpBlock
-            target="mobile"
-            sent={mobileOtp.sent}
-            verified={mobileOtp.verified}
-            disabled={!form.mobile}
-            onSend={() => {
-              const otp = genOtp();
-
-              setMobileOtp({
-                sent: true,
-                verified: false,
-                generated: otp,
-                userVal: "",
-              });
-
-              showToast(`Mobile OTP (demo): ${otp}`, "info");
-            }}
-            onVerify={() => {
-              if (mobileOtp.userVal === mobileOtp.generated) {
-                setMobileOtp((p) => ({
-                  ...p,
-                  verified: true,
-                }));
-
-                showToast("Mobile verified successfully.", "success");
-              } else {
-                showToast("Invalid OTP", "error");
-              }
-            }}
-            otpVal={mobileOtp.userVal}
-            setOtpVal={(v) =>
-              setMobileOtp((p) => ({
-                ...p,
-                userVal: v,
-              }))
-            }
-          />
+<OtpBlock
+  target="mobile"
+  sent={mobileOtp.sent}
+  verified={mobileOtp.verified}
+  disabled={!form.mobile}
+  onSend={sendMobileOtp}
+  onResend={sendMobileOtp}
+  onVerify={verifyMobileOtp}
+  otpVal={mobileOtp.userVal}
+  setOtpVal={(v) =>
+    setMobileOtp((p) => ({
+      ...p,
+      userVal: v,
+    }))
+  }
+/>
         </div>
       </Field>
 
@@ -657,15 +827,21 @@ function CandidateForm() {
         {form.email && (
           <div style={{ marginTop: 8 }}>
             <OtpBlock
-              target="email"
-              sent={emailOtp.sent}
-              verified={emailOtp.verified}
-              disabled={!form.email}
-              onSend={sendEmail}
-              onVerify={verifyEmail}
-              otpVal={emailOtp.userVal}
-              setOtpVal={(v) => setEmailOtp((p) => ({ ...p, userVal: v }))}
-            />
+  target="email"
+  sent={emailOtp.sent}
+  verified={emailOtp.verified}
+  disabled={!form.email}
+  onSend={sendEmail}
+  onResend={sendEmail}
+  onVerify={verifyEmail}
+  otpVal={emailOtp.userVal}
+  setOtpVal={(v) =>
+    setEmailOtp((p) => ({
+      ...p,
+      userVal: v,
+    }))
+  }
+/>
           </div>
         )}
       </Field>
@@ -909,8 +1085,8 @@ function EmployerForm() {
     mobile: "",
     profileSummary: "",
     licDocs: [],
-    mobileOtp: { sent: false, verified: false, generated: "", userVal: "" },
-    corpEmailOtp: { sent: false, verified: false, generated: "", userVal: "" },
+    mobileOtp: { sent: false, verified: false,  userVal: "" },
+    corpEmailOtp: { sent: false, verified: false, userVal: "" },
     profileStatus: "pending",
   });
   const [ocrLoading, setOcrLoading] = useState(false);
@@ -950,7 +1126,7 @@ function EmployerForm() {
 
       const response = await sendMobileOtp(
         {
-          mobileNumber: data.mobile,
+          mobileNumber: data.mobile.replace(/\D/g, ""),
           countryCode: data.countryCode,
         },
         sessionId,
@@ -975,7 +1151,7 @@ function EmployerForm() {
 
       const response = await verifyMobileOtp(
         {
-          mobileNumber: data.mobile,
+          mobileNumber: data.mobile.replace(/\D/g, ""),
           countryCode: data.countryCode,
           mobileOtpCode: data.mobileOtp.userVal,
         },
