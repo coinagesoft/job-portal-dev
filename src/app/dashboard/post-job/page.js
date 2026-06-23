@@ -751,7 +751,7 @@ function Step6({ go, jobForm, setJobForm, onSubmit }) {
       stepNum={6}
       title="Questions"
       subtitle="Screening questions"
-      onBack={() => go(5)}
+      onBack={() => go(5)} 
       onContinue={onSubmit}
     >
       {jobForm.questions.map((question, index) => (
