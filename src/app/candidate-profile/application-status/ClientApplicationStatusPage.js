@@ -289,9 +289,14 @@ const loadApplications = async () => {
 
     const response =
       await getMyApplications(candidateId);
+      console.log("FULL RESPONSE", response);
+    console.log("RESPONSE DATA", response?.data);
 
     const jobs =
       response?.data?.applications || [];
+
+     
+
 
     const mappedData = jobs.map((item) => ({
       id: item.applicationId,
@@ -309,6 +314,7 @@ const loadApplications = async () => {
         item.companyLogoUrl ||
        "/assets/imgs/brands/brand-10.png",
     }));
+console.log("MAPPED DATA", mappedData);
 
     setApplications(mappedData);
   } catch (error) {
@@ -320,6 +326,9 @@ const loadApplications = async () => {
     setLoading(false);
   }
 };
+useEffect(() => {
+  console.log("APPLICATIONS STATE", applications);
+}, [applications]);
 
   useEffect(() => {
     if (!ackStateReady || typeof window === 'undefined') return;
