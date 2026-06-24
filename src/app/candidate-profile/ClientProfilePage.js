@@ -1,5 +1,5 @@
 "use client";
-
+import { getCandidateId } from "@/utils/authHelper";
 import { getProfileCompletion } from "@/services/candidate/profileCompletionService";
 import { State } from "country-state-city";
 
@@ -916,9 +916,10 @@ const formatFileSize = (bytes) => {
 };
 
 const CandidateProfilePage = () => {
+  const candidateId = getCandidateId();
+
   const showToast = useToast();
   const router = useRouter();
-
   const [itiInfo, setItiInfo] = useState(null);
 
   const [profileData, setProfileData] = useState(() => ({
@@ -934,7 +935,7 @@ const CandidateProfilePage = () => {
 
   const loadAvailability = useCallback(async () => {
     try {
-      const response = await getAvailability(CANDIDATE_ID);
+      const response = await getAvailability(candidateId);
 
       if (response.data.success) {
         setProfileData((prev) => ({
@@ -1008,9 +1009,7 @@ const CandidateProfilePage = () => {
 
   const loadProfileCompletion = useCallback(async () => {
     try {
-      const response = await getProfileCompletion(
-        CANDIDATE_ID
-      );
+      const response = await getProfileCompletion(candidateId)
 
       if (response.data.success) {
         setProfileCompletion(
@@ -1271,9 +1270,7 @@ const CandidateProfilePage = () => {
   // Load work experience from API
   const loadWorkExperience = useCallback(async () => {
     try {
-      const response = await getWorkExperience(
-        CANDIDATE_ID
-      );
+      const response = await getWorkExperience(candidateId)
 
       if (response.data.success) {
 
@@ -1421,10 +1418,7 @@ const CandidateProfilePage = () => {
     try {
       const payload = buildWorkPayload(entry);
 
-      await createWorkExperience(
-        CANDIDATE_ID,
-        payload
-      );
+      await createWorkExperience(candidateId, payload)
 
       await loadWorkExperience();
 
