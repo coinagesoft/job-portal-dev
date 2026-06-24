@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+// import { useSearchParams } from "next/navigation";
 import styles from "./post-job.module.css";
 
 import {
@@ -1010,9 +1010,10 @@ const STEP_VIEWS = [Step1, Step2, Step3, Step4, Step5, Step6, Step7];
 
 /* ─── Page ────────────────────────────────────────────────────────────────── */
 export default function DashboardPostJobPage() {
-  const searchParams = useSearchParams();
+  // const searchParams = useSearchParams();
   const router = useRouter();
-  const editJobId = searchParams.get("jobId");
+  // const editJobId = searchParams.get("jobId");
+  const [editJobId, setEditJobId] = useState(null);
   const [activeStep, setActiveStep] = useState(1);
   const [jdSuggestions, setJdSuggestions] = useState([]);
   const [additionalJdSuggestions, setAdditionalJdSuggestions] = useState([]);
@@ -1168,6 +1169,13 @@ export default function DashboardPostJobPage() {
       setGhostSuggestion("");
     }
   };
+  useEffect(() => {
+  if (typeof window === "undefined") return;
+
+  const params = new URLSearchParams(window.location.search);
+
+  setEditJobId(params.get("jobId"));
+}, []);
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchInlineSuggestions(jobForm.JobDescription, "job");

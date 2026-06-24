@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useToast } from "@/components/Toast";
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+
 import {
   getJobDashboard,
   getRecruiterJobs,
@@ -52,16 +52,24 @@ const EmployerJobListPage = () => {
   const [activeStatus, setActiveStatus] = useState("Active");
   const [activeType, setActiveType] = useState("All Types");
   const [dashboard, setDashboard] = useState(null);
-  const searchParams = useSearchParams();
-  useEffect(() => {
-    const success = searchParams.get("success");
+ useEffect(() => {
+  if (typeof window === "undefined") return;
 
-    if (success === "job-published") {
-      showToast("Job published successfully", "success");
+  const params = new URLSearchParams(window.location.search);
 
-      window.history.replaceState({}, "", window.location.pathname);
-    }
-  }, [searchParams]);
+  const success = params.get("success");
+
+  if (success === "job-published") {
+    showToast("Job published successfully", "success");
+
+    window.history.replaceState(
+      {},
+      "",
+      window.location.pathname
+    );
+  }
+}, []);
+ 
   const JOB_STATUS_TABS = [
     {
       label: "Active",

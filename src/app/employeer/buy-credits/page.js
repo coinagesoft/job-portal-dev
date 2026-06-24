@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Script from "next/script";
+import { getWallet } from "@/services/recruiter/recruiterCreditWalletService";
 
 const CREDIT_PACKS = [
   {
@@ -39,19 +40,26 @@ const EmployerBuyCreditsPage = () => {
   const [paying, setPaying] = useState(false);
   const [paid, setPaid] = useState(false);
   const [paidPack, setPaidPack] = useState(null);
+  const [wallet, setWallet] = useState(null);
 
   const total = selected.price + selected.gst;
 
+  useEffect(() => {
+    getWallet()
+      .then(setWallet)
+      .catch(() => setWallet(null));
+  }, []);
+
   const handlePayment = () => {
     if (typeof window === "undefined" || !window.Razorpay) {
-      showToast('Payment gateway is loading. Please try again in a moment.', 'warning');
+      alert("Payment gateway is loading. Please try again in a moment.");
       return;
     }
     setPaying(true);
 
     const options = {
-      key: "rzp_test_SgugRS3Yw7i4uA", // Replace with your Razorpay test key
-      amount: total * 100, // paise
+      key: "rzp_test_SgugRS3Yw7i4uA",
+      amount: total * 100,
       currency: "INR",
       name: "JobBox.ai",
       description: `${selected.name} — ${selected.credits} Credits`,
@@ -62,9 +70,9 @@ const EmployerBuyCreditsPage = () => {
         setPaid(true);
       },
       prefill: {
-        name: "Arjun Mehta",
-        email: "arjun.mehta@horizonmarine.in",
-        contact: "9876543210",
+        name: wallet ? "" : "Recruiter",
+        email: "",
+        contact: "",
       },
       notes: {
         pack: selected.name,
@@ -83,7 +91,7 @@ const EmployerBuyCreditsPage = () => {
     const rzp = new window.Razorpay(options);
     rzp.on("payment.failed", function () {
       setPaying(false);
-      showToast('Payment failed. Please try again or use a different payment method.', 'error');
+      alert("Payment failed. Please try again or use a different payment method.");
     });
     rzp.open();
   };
@@ -122,7 +130,9 @@ const EmployerBuyCreditsPage = () => {
                       </div>
                       <div className="d-flex justify-content-between mb-20">
                         <span className="font-sm color-text-paragraph">Amount Paid</span>
-                        <strong className="color-brand-1">₹{(paidPack.price + paidPack.gst).toLocaleString("en-IN")}</strong>
+                        <strong className="color-brand-1">
+                          ₹{(paidPack.price + paidPack.gst).toLocaleString("en-IN")}
+                        </strong>
                       </div>
                       <div className="d-flex gap-10 justify-content-center">
                         <Link className="btn btn-default hover-up" href="/employeer/credit-wallet">
@@ -164,13 +174,51 @@ const EmployerBuyCreditsPage = () => {
                   </span>
                 </div>
                 <div className="col-xl-4 col-lg-4 text-lg-end mt-sm-15">
-                  <span className="font-sm color-brand-1 mr-10">Current balance: 3 credits</span>
+                  <span className="font-sm color-brand-1 mr-10">
+                    Current balance:{" "}
+                    {wallet !== null
+                      ? `${wallet.availableCredits < 0 ? 0 : wallet.availableCredits} credits`
+                      : "—"}
+                  </span>
                   <Link className="btn btn-border btn-sm" href="/employeer/credit-wallet">
                     Wallet
                   </Link>
                 </div>
               </div>
             </div>
+
+            {/* Live wallet summary */}
+            {wallet && (
+              <div className="card-grid-2 hover-up cv-search-candidate-card mb-10">
+                <div className="card-block-info pt-15 pb-15">
+                  <div className="row align-items-center">
+                    <div className="col-md-4 col-sm-12">
+                      <p className="font-xs color-text-paragraph-2 mb-5">Active Plan</p>
+                      <p className="font-sm mb-0"><strong>{wallet.packageName}</strong></p>
+                    </div>
+                    <div className="col-md-4 col-sm-12">
+                      <p className="font-xs color-text-paragraph-2 mb-5">Credits Available</p>
+                      <p className="font-sm mb-0">
+                        <strong className="color-brand-1">
+                          {wallet.availableCredits < 0 ? 0 : wallet.availableCredits}
+                        </strong>{" "}
+                        / {wallet.allocatedCredits} allocated
+                      </p>
+                    </div>
+                    <div className="col-md-4 col-sm-12">
+                      <p className="font-xs color-text-paragraph-2 mb-5">Plan Expires</p>
+                      <p className="font-sm mb-0">
+                        {new Date(wallet.packExpiresAt).toLocaleDateString("en-IN", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="text-center mt-20 mb-10">
               <h2 className="mb-15">Select A Credit Pack</h2>
@@ -280,7 +328,9 @@ const EmployerBuyCreditsPage = () => {
                       }}
                     >
                       <p className="font-xs mb-0" style={{ color: "#856404" }}>
-                        🧪 <strong>Test Mode:</strong> Use Razorpay test card <code>4111 1111 1111 1111</code>, any future expiry, CVV <code>123</code>. No real money is charged.
+                        🧪 <strong>Test Mode:</strong> Use Razorpay test card{" "}
+                        <code>4111 1111 1111 1111</code>, any future expiry, CVV <code>123</code>.
+                        No real money is charged.
                       </p>
                     </div>
 
