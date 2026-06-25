@@ -13,22 +13,22 @@ const iconMap = {
   location: '/assets/imgs/page/job-single/location.svg',
 };
 
-const JobOverview = () => {
+const JobOverview = ({ job = detailedJob }) => {
   const infoItems = [
-    { icon: 'industry', label: 'Industry', value: detailedJob.industry },
-    { icon: 'jobLevel', label: 'Job level', value: detailedJob.jobLevel },
-    { icon: 'salary', label: 'Salary', value: detailedJob.salary },
-    { icon: 'experience', label: 'Experience', value: detailedJob.experience },
-    { icon: 'jobType', label: 'Job type', value: detailedJob.jobType },
-    { icon: 'experience', label: 'Age Range', value: detailedJob.minAgeMax },
-    { icon: 'location', label: 'Location Type', value: detailedJob.locationType },
-    { icon: 'industry', label: 'Education', value: detailedJob.education },
-    { icon: 'industry', label: 'Certifications', value: detailedJob.requiredCertification },
-    { icon: 'jobType', label: 'Gender', value: detailedJob.gender },
-    { icon: 'location', label: 'Languages', value: detailedJob.languagePreferred },
-    { icon: 'deadline', label: 'Deadline', value: detailedJob.deadline },
-    { icon: 'updated', label: 'Updated', value: detailedJob.updated },
-    { icon: 'location', label: 'Location', value: detailedJob.location },
+    { icon: 'industry', label: 'Industry', value: job.industry },
+    { icon: 'jobLevel', label: 'Job level', value: job.jobLevel },
+    { icon: 'salary', label: 'Salary', value: job.salary },
+    { icon: 'experience', label: 'Experience', value: job.experience },
+    { icon: 'jobType', label: 'Job type', value: job.jobType },
+    { icon: 'experience', label: 'Age Range', value: job.minAgeMax },
+    { icon: 'location', label: 'Location Type', value: job.locationType },
+    { icon: 'industry', label: 'Education', value: job.education },
+    { icon: 'industry', label: 'Certifications', value: job.requiredCertification },
+    { icon: 'jobType', label: 'Gender', value: job.gender },
+    { icon: 'location', label: 'Languages', value: job.languagePreferred },
+    { icon: 'deadline', label: 'Deadline', value: job.deadline },
+    { icon: 'updated', label: 'Updated', value: job.updated },
+    { icon: 'location', label: 'Location', value: job.location },
   ];
 
   return (

@@ -91,4 +91,82 @@ export const featuredJobs = mockJobs.slice(0, 4);
 export const mapEmbed =
   "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3774.1940373635194!2d72.84876179999999!3d18.941284699999998!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7ce1f1b445f81%3A0x8d9cbe88dfb041e2!2sBallard%20Estate%2C%20Mumbai!5e0!3m2!1sen!2sin!4v1713951044000!5m2!1sen!2sin";
 
+const asText = (value, fallback = "") =>
+  value === null || value === undefined || value === "" ? fallback : String(value);
+
+const joinText = (...values) =>
+  values
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .join(", ");
+
+export const mapApiJobToDetailedJob = (job = {}) => {
+  const cityState = joinText(job.city, job.state);
+  const companyName = asText(job.companyName, detailedJob.company);
+  const fullCompanyName = asText(job.companyFullName || job.companyLegalName, companyName);
+  const location = asText(
+    job.location || cityState || job.workLocation,
+    detailedJob.location
+  );
+  const roleTitle = asText(job.jobTitle, detailedJob.title);
+  const employmentType = asText(job.jobType || job.employmentType, detailedJob.type);
+  const timeAgo = asText(job.timeAgo || job.postedTimeAgo, detailedJob.time);
+  const salary = asText(job.salaryDisplay || job.salaryRange, detailedJob.salary);
+  const experience = job.experienceRequiredYears
+    ? `${job.experienceRequiredYears} Years`
+    : detailedJob.experience;
+  const education = asText(job.educationQualification || job.education, detailedJob.education);
+  const certifications = Array.isArray(job.certifications)
+    ? job.certifications.join(", ")
+    : asText(job.requiredCertification, detailedJob.requiredCertification);
+  const languages = Array.isArray(job.languageRequirements)
+    ? job.languageRequirements.join(", ")
+    : asText(job.languagePreferred, detailedJob.languagePreferred);
+
+  return {
+    ...detailedJob,
+    ...job,
+    id: job.id || job.jobId || detailedJob.id,
+    jobId: job.jobId || detailedJob.jobId,
+    title: roleTitle,
+    jobTitle: roleTitle,
+    company: companyName,
+    companyName,
+    companyFull: fullCompanyName,
+    location,
+    type: employmentType,
+    jobType: employmentType,
+    time: timeAgo,
+    salary,
+    experience,
+    industry: asText(job.tradeCategory || job.industry, detailedJob.industry),
+    jobLevel: asText(job.jobLevel || job.seniorityLevel, detailedJob.jobLevel),
+    minAgeMax: asText(job.ageRange || job.minAgeMax, detailedJob.minAgeMax),
+    locationType: asText(job.workMode || job.locationType, detailedJob.locationType),
+    education,
+    requiredCertification: certifications,
+    gender: asText(job.genderPreference || job.gender, detailedJob.gender),
+    languagePreferred: languages,
+    deadline: asText(job.applicationDeadline || job.deadline, detailedJob.deadline),
+    updated: asText(job.updatedAt || job.updatedOn || job.updated, detailedJob.updated),
+    openJobs: Number(job.openJobs || job.activeJobsCount || detailedJob.openJobs),
+    address: asText(job.companyAddress || job.address, detailedJob.address),
+    phone: asText(job.companyPhone || job.phone, detailedJob.phone),
+    email: asText(job.companyEmail || job.email, detailedJob.email),
+    bannerImg: asText(job.bannerImg || job.coverImageUrl, detailedJob.bannerImg),
+    avatar: asText(job.companyLogoUrl || job.avatar, detailedJob.avatar),
+    screeningQuestions: Array.isArray(job.screeningQuestions)
+      ? job.screeningQuestions
+      : detailedJob.employerQuestions,
+    employerQuestions: Array.isArray(job.employerQuestions)
+      ? job.employerQuestions
+      : detailedJob.employerQuestions,
+    verifications: job.verifications || detailedJob.verifications || {},
+    description: asText(
+      job.jobDescriptionHtml || job.descriptionHtml || job.description,
+      detailedJob.description
+    ),
+  };
+};
+
 

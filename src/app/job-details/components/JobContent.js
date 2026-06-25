@@ -1,5 +1,6 @@
 'use client';
 import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
 import ApplyJobModal from '@/app/Homepage/components/ApplyJobModal';
 import { detailedJob } from '../data.js';
 
@@ -24,24 +25,28 @@ const badgeStyle = {
   marginBottom: '6px',
 };
 
-const JobContent = () => {
+const JobContent = ({ job = detailedJob }) => {
   const [showModal, setShowModal] = useState(false);
   const toggleModal = () => setShowModal(!showModal);
 
   const showToast = useToast();
-
-  const candidateId =
-    "2e51baf0-cf8a-4b3f-b2de-4dfc92b8c222";
+  const candidateId = useSelector((state) => state.auth.user?.userId);
 
   const handleSaveJob = async () => {
     try {
-      const jobId = detailedJob.jobId;
-            console.log("Job ID:", jobId);
-console.log("Candidate ID:", candidateId);
+      const jobId = job.jobId;
 
       if (!jobId) {
         showToast(
           "Job id is missing. Please open this job from the jobs list.",
+          "error"
+        );
+        return;
+      }
+
+      if (!candidateId) {
+        showToast(
+          "Please log in as a candidate to save jobs.",
           "error"
         );
         return;
@@ -77,7 +82,7 @@ console.log("Candidate ID:", candidateId);
 }
   };
 
-  const verifications = detailedJob.verifications || {};
+  const verifications = job.verifications || {};
   const hasAnyVerification = Object.values(verifications).some(Boolean);
 
   return (
@@ -106,9 +111,9 @@ console.log("Candidate ID:", candidateId);
         </div>
       )}
 
-      <div dangerouslySetInnerHTML={{ __html: detailedJob.description }} />
+      <div dangerouslySetInnerHTML={{ __html: job.description }} />
       <div className="author-single">
-        <span>{detailedJob.companyFull}</span>
+        <span>{job.companyFull}</span>
       </div>
       <div className="single-apply-jobs">
         <div className="row align-items-center">
@@ -135,7 +140,7 @@ console.log("Candidate ID:", candidateId);
           </div>
         </div>
       </div>
-      <ApplyJobModal showModal={showModal} setShowModal={setShowModal} job={detailedJob} />
+      <ApplyJobModal showModal={showModal} setShowModal={setShowModal} job={job} />
     </div>
   );
 };

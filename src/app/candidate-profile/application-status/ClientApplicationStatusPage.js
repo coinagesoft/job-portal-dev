@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useSelector } from 'react-redux';
 // import CandidateProfileInnerNav from '../components/CandidateProfileInnerNav';
 import { useToast } from '@/components/Toast';
 // import { mockApplicationStatuses } from '../components/data';
@@ -110,6 +111,9 @@ const handleSavedJobButtonHoverLeave = (event) => {
   event.currentTarget.style.boxShadow = 'none';
 };
 
+const getJobDetailsHref = (jobId) =>
+  jobId ? `/job-details?jobId=${jobId}` : '/job-details';
+
 const ApplicationStatusCard = ({ application, isAcknowledged, onAcknowledge }) => {
   const statusClass = STATUS_CLASS_MAP[application.status] || 'applied';
 
@@ -152,7 +156,7 @@ const ApplicationStatusCard = ({ application, isAcknowledged, onAcknowledge }) =
 
       <div className="card-block-info">
         <h4>
-          <Link href="/job-details">{application.title}</Link>
+          <Link href={getJobDetailsHref(application.jobId)}>{application.title}</Link>
         </h4>
         <div className="mt-5">
           <span className="card-briefcase">{application.type}</span>
@@ -211,7 +215,7 @@ const ApplicationStatusCard = ({ application, isAcknowledged, onAcknowledge }) =
             <div className="col-lg-5 col-5 text-end">
               <Link
                 className="btn btn-apply-now"
-                href="/job-details"
+                href={getJobDetailsHref(application.jobId)}
                 style={SAVED_JOB_ACTION_BUTTON_STYLE}
                 onMouseEnter={handleSavedJobButtonHoverEnter}
                 onMouseLeave={handleSavedJobButtonHoverLeave}
@@ -228,15 +232,13 @@ const ApplicationStatusCard = ({ application, isAcknowledged, onAcknowledge }) =
 
 const ClientApplicationStatusPage = () => {
   const showToast = useToast();
+  const candidateId = useSelector((state) => state.auth.user?.userId);
   const [activeFilter, setActiveFilter] = useState('All');
   const [acknowledgedMessages, setAcknowledgedMessages] = useState({});
   const [ackStateReady, setAckStateReady] = useState(false);
   const reminderSignatureRef = useRef('');
   const [applications, setApplications] = useState([]);
-const [loading, setLoading] = useState(false);
-
-const candidateId =
-  "2e51baf0-cf8a-4b3f-b2de-4dfc92b8c222";
+  const [loading, setLoading] = useState(false);
 
   const statusSummary = useMemo(() => {
     const activeCount = applications.filter((item) =>
@@ -280,55 +282,53 @@ const candidateId =
   }, []);
 
   useEffect(() => {
-  loadApplications();
-}, []);
+    const loadApplications = async () => {
+      if (!candidateId) {
+        setApplications([]);
+        return;
+      }
 
-const loadApplications = async () => {
-  try {
-    setLoading(true);
+      try {
+        setLoading(true);
 
-    const response =
-      await getMyApplications(candidateId);
-      console.log("FULL RESPONSE", response);
-    console.log("RESPONSE DATA", response?.data);
+        const response =
+          await getMyApplications(candidateId);
 
-    const jobs =
-      response?.data?.applications || [];
+        const jobs =
+          response?.data?.applications || [];
 
-     
+        const mappedData = jobs.map((item) => ({
+          id: item.applicationId,
+          jobId: item.jobId || item.jobPostId || item.id || null,
+          company: item.companyName,
+          title: item.jobTitle,
+          location: [item.city, item.state].filter(Boolean).join(', '),
+          type: item.employmentType,
+          appliedOn: item.appliedTimeAgo,
+          updatedOn: item.updatedTimeAgo || item.appliedTimeAgo,
+          status: item.applicationStatus,
+          stage: item.applicationStage || item.applicationStatus,
+          tags: item.tags || [],
+          description: item.salaryDisplay,
+          recruiterNote: item.recruiterNote || 'Your application is under review.',
+          logo:
+            item.companyLogoUrl ||
+            "/assets/imgs/brands/brand-10.png",
+        }));
 
+        setApplications(mappedData);
+      } catch (error) {
+        console.error(
+          "Failed to load applications",
+          error
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    const mappedData = jobs.map((item) => ({
-      id: item.applicationId,
-      company: item.companyName,
-      title: item.jobTitle,
-      location: `${item.city || ""}, ${item.state || ""}`,
-      type: item.employmentType,
-      appliedOn: item.appliedTimeAgo,
-      updatedOn: item.appliedTimeAgo,
-      status: item.applicationStatus,
-      stage: item.applicationStatus,
-      tags: item.tags || [],
-      description: item.salaryDisplay,
-      logo:
-        item.companyLogoUrl ||
-       "/assets/imgs/brands/brand-10.png",
-    }));
-console.log("MAPPED DATA", mappedData);
-
-    setApplications(mappedData);
-  } catch (error) {
-    console.error(
-      "Failed to load applications",
-      error
-    );
-  } finally {
-    setLoading(false);
-  }
-};
-useEffect(() => {
-  console.log("APPLICATIONS STATE", applications);
-}, [applications]);
+    loadApplications();
+  }, [candidateId]);
 
   useEffect(() => {
     if (!ackStateReady || typeof window === 'undefined') return;
@@ -379,7 +379,7 @@ useEffect(() => {
       }
       return acc;
     }, {});
-  }, []);
+  }, [applications]);
 
   return (
     <main className="main">
@@ -429,7 +429,13 @@ useEffect(() => {
               ))}
             </div>
 
-            {filteredApplications.length === 0 && (
+            {loading && (
+              <div className="candidate-status-empty">
+                <h6>Loading applications...</h6>
+              </div>
+            )}
+
+            {!loading && filteredApplications.length === 0 && (
               <div className="candidate-status-empty">
                 <h6>No applications found for this status</h6>
                 <p className="font-sm color-text-paragraph-2">Try another filter to view your applications.</p>

@@ -77,7 +77,8 @@ const STEPS = [
 ];
 
 const TOTAL = STEPS.length;
-const CANDIDATE_ID = "2e51baf0-cf8a-4b3f-b2de-4dfc92b8c222";
+const CANDIDATE_ID =
+  localStorage.getItem("candidateId");
 const PROFILE_PHOTO_PREVIEW_KEY = `candidate-profile-photo-preview-${CANDIDATE_ID}`;
 const DEFAULT_PROFILE_PHOTO = "/assets/imgs/page/candidates/candidate-profile.png";
 

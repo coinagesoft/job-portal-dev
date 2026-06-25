@@ -1,9 +1,9 @@
 'use client';
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { detailedJob, similarJobs, mapEmbed } from '../data.js';
+import { detailedJob, similarJobs } from '../data.js';
 
-const CompanySidebar = () => {
+const CompanySidebar = ({ job = detailedJob }) => {
   const [isShortlisted, setIsShortlisted] = useState(false);
 
   const formatHourlyPrice = (value) => {
@@ -19,17 +19,17 @@ const CompanySidebar = () => {
         <div className="sidebar-heading">
           <div className="avatar-sidebar">
             <figure>
-              <img alt="jobBox" src={detailedJob.avatar} />
+              <img alt="jobBox" src={job.avatar} />
             </figure>
             <div className="sidebar-info">
-              <span className="sidebar-company">{detailedJob.companyFull}</span>
+              <span className="sidebar-company">{job.companyFull}</span>
               <span className="card-location">
                 <i className="fa-solid fa-location-dot mr-5" style={{ color: 'var(--color-brand-1)' }}></i>
-                {detailedJob.location}
+                {job.location}
               </span>
               <a className="link-underline mt-15" href="#">
                 <i className="fa-solid fa-briefcase mr-5"></i>
-                {detailedJob.openJobs} Open Jobs
+                {job.openJobs} Open Jobs
               </a>
             </div>
           </div>
@@ -50,13 +50,13 @@ const CompanySidebar = () => {
               <li key={job.id}>
                 <div className="card-list-4 hover-up">
                   <div className="image">
-                    <Link href="/job-details">
+                    <Link href={job.jobId ? `/job-details?jobId=${job.jobId}` : '/job-details'}>
                       <img src={job.img} alt="jobBox" />
                     </Link>
                   </div>
                   <div className="info-text">
                     <h5 className="font-md font-bold color-brand-1">
-                      <Link href="/job-details">{job.title}</Link>
+                      <Link href={job.jobId ? `/job-details?jobId=${job.jobId}` : '/job-details'}>{job.title}</Link>
                     </h5>
                     <div className="mt-0">
                       <span className="card-briefcase">

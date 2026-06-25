@@ -20,6 +20,9 @@ const COMPANY_BADGE_BY_POSTED_BY = {
 const toSafeTags = (value) =>
   Array.isArray(value) ? value.filter((tag) => Boolean(tag)) : [];
 
+const getJobDetailsHref = (jobId) =>
+  jobId ? `/job-details?jobId=${jobId}` : "/job-details";
+
 const JobCardList = ({ job, onApplyNow, viewMode = "list" }) => {
   const tags = toSafeTags(job.tags);
   const companyTagsFromData = toSafeTags(job.companyTags);
@@ -165,7 +168,7 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list" }) => {
                 lineHeight: 1.3,
               }}
             >
-              <Link href="/job-details">
+              <Link href={getJobDetailsHref(job.jobId)}>
                 {job.jobTitle}
               </Link>
             </h4>

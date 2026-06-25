@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSelector } from "react-redux";
 import { mockProfile } from "@/app/candidate-profile/components/data";
 
 import { applyJob } from "@/services/candidate/applyJobService";
@@ -44,11 +45,9 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
   const [error, setError] = useState("");
 
   const showToast = useToast();
+  const candidateId = useSelector((state) => state.auth.user?.userId);
 
   const [profile, setProfile] = useState(null);
-
-const candidateId =
-  "2e51baf0-cf8a-4b3f-b2de-4dfc92b8c222";
 
 const candidateName =
   profile?.fullName || "";
@@ -78,6 +77,11 @@ const employerQuestions = useMemo(() => {
 
   useEffect(() => {
   const loadProfile = async () => {
+    if (!candidateId) {
+      setProfile(null);
+      return;
+    }
+
     try {
       const response =
         await getProfileSummary(candidateId);
@@ -92,7 +96,7 @@ const employerQuestions = useMemo(() => {
   };
 
   loadProfile();
-}, []);
+}, [candidateId]);
 
   useEffect(() => {
     if (!showModal || typeof document === "undefined") return undefined;
@@ -161,8 +165,13 @@ const employerQuestions = useMemo(() => {
 
 
   try {
-    const candidateId =
-      "2e51baf0-cf8a-4b3f-b2de-4dfc92b8c222";
+    if (!candidateId) {
+      showToast(
+        "Please log in as a candidate to apply.",
+        "error"
+      );
+      return;
+    }
 
     const payload = {
       fullName: candidateName,
