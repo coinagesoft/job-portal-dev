@@ -1,8 +1,15 @@
 "use client";
-
+import { getCandidateId } from "@/utils/authHelper";
 import { getProfileCompletion } from "@/services/candidate/profileCompletionService";
+import { State } from "country-state-city";
+
+import { useRouter } from "next/navigation";
 
 
+import {
+  getAvailability,
+  updateAvailability,
+} from "@/services/candidate/availabilityService";
 
 import {
   getSkills,
@@ -73,6 +80,13 @@ const TOTAL = STEPS.length;
 const CANDIDATE_ID = "2e51baf0-cf8a-4b3f-b2de-4dfc92b8c222";
 const PROFILE_PHOTO_PREVIEW_KEY = `candidate-profile-photo-preview-${CANDIDATE_ID}`;
 const DEFAULT_PROFILE_PHOTO = "/assets/imgs/page/candidates/candidate-profile.png";
+
+const COUNTRY_MAP = {
+  "+91": "IN",
+  "+1": "US",
+  "+44": "GB",
+  "+971": "AE",
+};
 
 const getStoredProfilePhotoPreview = () => {
   if (typeof window === "undefined") return "";
@@ -262,6 +276,10 @@ const StepPersonal = ({ data,
 
     reader.readAsDataURL(file);
   };
+
+  const states = State.getStatesOfCountry(
+    data.country || "IN"
+  );
   return (
     <div>
       <h4 style={{ color: T.navy, marginBottom: 6, marginTop: 0 }}>Personal Information</h4>
@@ -291,28 +309,28 @@ const StepPersonal = ({ data,
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 20px" }}>
         <Field label="First Name" required>
-          <Inp value={data.firstName || ""} onChange={e => onChange("firstName", e.target.value)} placeholder="Ramesh" />
+          <Inp value={data.firstName || ""} onChange={e => onChange("firstName", e.target.value.replace(/^\s+/, ""))} placeholder="Ramesh" required />
         </Field>
         <Field label="Last Name" required>
-          <Inp value={data.lastName || ""} onChange={e => onChange("lastName", e.target.value)} placeholder="Sharma" />
+          <Inp value={data.lastName || ""} onChange={e => onChange("lastName", e.target.value.replace(/^\s+/, ""))} placeholder="Sharma" required />
         </Field>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 20px" }}>
         <Field label="Mobile Number" required>
-          <Inp value={data.mobile || ""} onChange={e => onChange("mobile", e.target.value)} placeholder="+91 98765 43210" />
+          <Inp value={data.mobile || ""} onChange={e => onChange("mobile", e.target.value)} placeholder="+91 98765 43210" required />
         </Field>
-        <Field label="Email Address">
-          <Inp type="email" value={data.email || ""} onChange={e => onChange("email", e.target.value)} placeholder="ramesh@email.com" />
+        <Field label="Email Address" required>
+          <Inp type="email" value={data.email || ""} onChange={e => onChange("email", e.target.value)} placeholder="ramesh@email.com" required />
         </Field>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 20px" }}>
-        <Field label="Date of Birth">
-          <Inp type="date" value={data.dob || ""} onChange={e => onChange("dob", e.target.value)} />
+        <Field label="Date of Birth" required>
+          <Inp type="date" value={data.dob || ""} onChange={e => onChange("dob", e.target.value)} required />
         </Field>
-        <Field label="Gender">
-          <Sel value={data.gender || ""} onChange={e => onChange("gender", e.target.value)}>
+        <Field label="Gender" required>
+          <Sel value={data.gender || ""} onChange={e => onChange("gender", e.target.value)} required >
             <option value="">Select gender</option>
             <option>Male</option>
             <option>Female</option>
@@ -324,38 +342,45 @@ const StepPersonal = ({ data,
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0 20px" }}>
         <Field label="City" required>
-          <Inp value={data.city || ""} onChange={e => onChange("city", e.target.value)} placeholder="Pune" />
+          <Inp value={data.city || ""} onChange={e => onChange("city", e.target.value)} placeholder="Pune" required />
         </Field>
-        <Field label="State">
-          <Sel value={data.state || ""} onChange={e => onChange("state", e.target.value)}>
+        <Field label="State" required>
+          <Sel value={data.state || ""} onChange={e => onChange("state", e.target.value)} required >
             <option value="">Select state</option>
-            {["Andhra Pradesh", "Bihar", "Delhi", "Gujarat", "Haryana", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Punjab", "Rajasthan", "Tamil Nadu", "Telangana", "Uttar Pradesh", "West Bengal", "Other"].map(s => <option key={s}>{s}</option>)}
+            {states.map((state) => (
+              <option
+                key={state.isoCode}
+                value={state.name}
+              >
+                {state.name}
+              </option>
+            ))}
           </Sel>
         </Field>
-        <Field label="PIN Code">
-          <Inp value={data.pin || ""} onChange={e => onChange("pin", e.target.value)} placeholder="411001" maxLength={6} />
+        <Field label="PIN Code" required>
+          <Inp value={data.pin || ""} onChange={e => onChange("pin", e.target.value)} placeholder="411001" maxLength={6} required />
         </Field>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 20px" }}>
-        <Field label="Nationality">
-          <Inp value={data.nationality || ""} onChange={e => onChange("nationality", e.target.value)} placeholder="Indian" />
+        <Field label="Nationality" required>
+          <Inp value={data.nationality || ""} onChange={e => onChange("nationality", e.target.value)} placeholder="Indian" required />
         </Field>
         <Field label="Trade / Job Title" required>
-          <Inp value={data.trade || ""} onChange={e => onChange("trade", e.target.value)} placeholder="Senior Electrician" />
+          <Inp value={data.trade || ""} onChange={e => onChange("trade", e.target.value)} placeholder="Senior Electrician" required />
         </Field>
       </div>
 
-      <Field label="Professional Summary" hint="2–4 lines about your experience and specialisation">
+      <Field label="Professional Summary" hint="2–4 lines about your experience and specialisation" required>
         <Textarea value={data.summary || ""} onChange={e => onChange("summary", e.target.value)} rows={4} placeholder="Describe your key skills and years of experience..." />
       </Field>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 20px" }}>
-        <Field label="Expected Salary (₹/month)">
-          <Inp type="number" value={data.salaryExpectation || ""} onChange={e => onChange("salaryExpectation", Number(e.target.value))} placeholder="45000" />
+        <Field label="Expected Salary (₹/month)" required>
+          <Inp type="number" value={data.salaryExpectation || ""} onChange={e => onChange("salaryExpectation", Number(e.target.value))} placeholder="45000" required />
         </Field>
-        <Field label="Years of Experience">
-          <Inp type="number" value={data.yearsOfExperience || ""} onChange={e => onChange("yearsOfExperience", Number(e.target.value))} placeholder="8" min={0} max={50} />
+        <Field label="Years of Experience" required>
+          <Inp type="number" value={data.yearsOfExperience || ""} onChange={e => onChange("yearsOfExperience", Number(e.target.value))} placeholder="8" min={0} max={50} required />
         </Field>
       </div>
 
@@ -419,8 +444,17 @@ const StepWork = ({ data, onUpdate, onAdd, onRemove }) => {
                 <Field label="Start Date">
                   <Inp type="date" value={entry.startDate} onChange={e => onUpdate(entry.id, "startDate", e.target.value)} />
                 </Field>
+
                 <Field label="End Date">
-                  <Inp type="date" value={entry.current ? "" : entry.endDate} onChange={e => onUpdate(entry.id, "endDate", e.target.value)} disabled={entry.current} />
+                  <Inp
+                    type="date"
+                    value={entry.endDate || ""}
+                    min={entry.startDate || ""}
+                    onChange={e =>
+                      onUpdate(entry.id, "endDate", e.target.value)
+                    }
+                    disabled={entry.current}
+                  />
                 </Field>
               </div>
               <div style={{ marginBottom: 12 }}>
@@ -451,7 +485,20 @@ const StepWork = ({ data, onUpdate, onAdd, onRemove }) => {
           <Field label="Location"><Inp value={newEntry.location} onChange={e => setNewEntry(p => ({ ...p, location: e.target.value }))} placeholder="City, State" /></Field>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
             <Field label="Start Date"><Inp type="date" value={newEntry.startDate} onChange={e => setNewEntry(p => ({ ...p, startDate: e.target.value }))} /></Field>
-            <Field label="End Date"><Inp type="date" value={newEntry.endDate} onChange={e => setNewEntry(p => ({ ...p, endDate: e.target.value }))} disabled={newEntry.current} /></Field>
+            <Field label="End Date">
+              <Inp
+                type="date"
+                value={newEntry.endDate}
+                min={newEntry.startDate || ""}
+                onChange={e =>
+                  setNewEntry(p => ({
+                    ...p,
+                    endDate: e.target.value
+                  }))
+                }
+                disabled={newEntry.current}
+              />
+            </Field>
           </div>
           <div style={{ marginBottom: 14 }}>
             <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: T.text, cursor: "pointer" }}>
@@ -591,7 +638,13 @@ const StepSkills = ({ data, onToggle, onUpdateSkill }) => {
         </div>
         <div style={{ marginTop: 16, display: "flex", gap: 8 }}>
           <Inp value={customSkill} onChange={e => setCustomSkill(e.target.value)} placeholder="Add a custom skill..." onKeyDown={e => e.key === "Enter" && addCustom()} style={{ flex: 1, height: 42 }} />
-          <Btn onClick={addCustom} style={{ padding: "8px 16px" }}>+ Add</Btn>
+          <Btn
+            onClick={addCustom}
+            disabled={!customSkill.trim()}
+            style={{ padding: "8px 16px" }}
+          >
+            + Add
+          </Btn>
         </div>
       </Card>
 
@@ -762,7 +815,7 @@ const StepLanguages = ({ data, onAdd, onRemove, onUpdate }) => {
 };
 
 // ─── Completion Summary (final step done) ────────────────────────────────────
-const CompletionSummary = ({ percent, onEdit }) => (
+const CompletionSummary = ({ percent, onEdit, router }) => (
   <div style={{ textAlign: "center", padding: "40px 20px" }}>
     <div style={{ width: 96, height: 96, borderRadius: "50%", background: T.successBg, border: `3px solid ${T.success}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40, margin: "0 auto 20px" }}>
       <i className="fi-rr-check" aria-hidden="true" style={{ lineHeight: 1 }} />
@@ -778,7 +831,7 @@ const CompletionSummary = ({ percent, onEdit }) => (
     </div>
     <div>
       <Btn onClick={onEdit} variant="outline" style={{ marginRight: 12 }}>Edit Profile</Btn>
-      <Btn style={{ color: T.white }}>
+      <Btn style={{ color: T.white }}  onClick={() => router.push("/jobs-list")}>
         <span style={{ color: T.white }}>Browse Jobs</span>
         <i className="fi-rr-arrow-small-right" aria-hidden="true" style={{ color: T.white }} />
       </Btn>
@@ -818,12 +871,13 @@ const ProfileMini = ({ data, percent, currentStep, onJump }) => (
         const n = i + 1;
         const done = n < currentStep;
         const active = n === currentStep;
+        const canJump = typeof onJump === "function";
         return (
-          <button key={step.id} onClick={() => onJump(n)} style={{
+          <button key={step.id} onClick={() => canJump && onJump(n)} disabled={!canJump} style={{
             width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "10px 20px",
             background: active ? "#fff8ec" : "transparent", border: "none",
             borderLeft: active ? `3px solid ${T.orange}` : "3px solid transparent",
-            cursor: "pointer", textAlign: "left", transition: "all .15s",
+            cursor: canJump ? "pointer" : "default", textAlign: "left", transition: "all .15s",
           }}>
             <span style={{ fontSize: 12, width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: done ? T.success : active ? T.orange : T.bg, color: (done || active) ? T.white : T.muted, fontWeight: 700 }}>
               <i
@@ -862,8 +916,10 @@ const formatFileSize = (bytes) => {
 };
 
 const CandidateProfilePage = () => {
-  const showToast = useToast();
+  const candidateId = getCandidateId();
 
+  const showToast = useToast();
+  const router = useRouter();
   const [itiInfo, setItiInfo] = useState(null);
 
   const [profileData, setProfileData] = useState(() => ({
@@ -873,68 +929,87 @@ const CandidateProfilePage = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [done, setDone] = useState(false);
   const [profileCompletion, setProfileCompletion] = useState(null);
+  const [initialPersonalInfo, setInitialPersonalInfo] = useState(null);
+  const [initialWorkHistory, setInitialWorkHistory] = useState([]);
 
+
+  const loadAvailability = useCallback(async () => {
+    try {
+      const response = await getAvailability(candidateId);
+
+      if (response.data.success) {
+        setProfileData((prev) => ({
+          ...prev,
+          availableForWork:
+            response.data.data.availabilityStatus ===
+            "Open_To_Opportunities",
+        }));
+      }
+    } catch (error) {
+      console.error("Failed to load availability", error);
+    }
+  }, []);
   //load ITI info from API
   const loadITIInfo = async () => {
-  try {
-    const response = await axios.get(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/candidate/profile/iti-info`,
-      {
-        params: {
-          candidateId: CANDIDATE_ID,
-        },
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/candidate/profile/iti-info`,
+        {
+          params: {
+            candidateId: CANDIDATE_ID,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        setItiInfo(response.data.data);
       }
-    );
-
-    if (response.data.success) {
-      setItiInfo(response.data.data);
+    } catch (error) {
+      console.error(error);
     }
-  } catch (error) {
-    console.error(error);
-  }
-};
+  };
 
-useEffect(() => {
-  loadITIInfo();
-}, []);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadITIInfo();
+  }, []);
 
 
-useEffect(() => {
-  if (!itiInfo) return;
+  useEffect(() => {
+    if (!itiInfo) return;
 
-  setProfileData((prev) => ({
-    ...prev,
-    documents: {
-      ...prev.documents,
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setProfileData((prev) => ({
+      ...prev,
+      documents: {
+        ...prev.documents,
 
-      itiCertificate: {
-        label: "ITI Certificate",
-        status: itiInfo.itiCertified
-          ? "verified"
-          : "missing",
+        itiCertificate: {
+          label: "ITI Certificate",
+          status: itiInfo.itiCertified
+            ? "verified"
+            : "missing",
 
-        type: "readonly",
+          type: "readonly",
 
-        description:
-          itiInfo.itiTrade || "ITI Trade",
+          description:
+            itiInfo.itiTrade || "ITI Trade",
 
-        metaLines: [
-          `Primary Trade: ${itiInfo.primaryTrade}`,
-          `Marks: ${itiInfo.itiMarks}`,
-          `College: ${itiInfo.itiCollege}`,
-        ],
+          metaLines: [
+            `Primary Trade: ${itiInfo.primaryTrade}`,
+            `Marks: ${itiInfo.itiMarks}`,
+            `College: ${itiInfo.itiCollege}`,
+          ],
 
-        file: null,
+          file: null,
+        },
       },
-    },
-  }));
-}, [itiInfo]);
+    }));
+  }, [itiInfo]);
 
   const loadProfileCompletion = useCallback(async () => {
     try {
-      const response = await getProfileCompletion(
-        CANDIDATE_ID
-      );
+      const response = await getProfileCompletion(candidateId)
 
       if (response.data.success) {
         setProfileCompletion(
@@ -970,13 +1045,32 @@ useEffect(() => {
 
       if (response.data.success) {
         const profile = response.data.data;
+        const country =
+          COUNTRY_MAP[profile.countryCode] || "IN";
         console.log("profilePhotoUrl =", profile.profilePhotoUrl);
         const names = profile.fullName
           ? profile.fullName.split(" ")
           : [];
+        const personalInfoData = {
+          firstName: names[0] || "",
+          lastName: names.slice(1).join(" ") || "",
+          dob: profile.dateOfBirth
+            ? profile.dateOfBirth.split("T")[0]
+            : "",
+          gender: profile.gender || "",
+          email: profile.email || "",
+          city: profile.currentCity || "",
+          state: profile.currentState || "",
+          pin: profile.pincode || "",
+          summary: profile.professionalSummary || "",
+          yearsOfExperience:
+            profile.totalExperienceYears || 0,
+        };
+
+        setInitialPersonalInfo(personalInfoData);
 
         setProfileData((prev) => ({
-          ...prev,
+          ...prev, country,
 
           firstName: names[0] || "",
           lastName: names.slice(1).join(" ") || "",
@@ -1027,10 +1121,32 @@ useEffect(() => {
     console.log("API URL =", process.env.NEXT_PUBLIC_API_URL);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadPersonalInfo();
-  }, [loadPersonalInfo]);
+    loadAvailability();
+
+  }, [loadPersonalInfo, loadAvailability]);
 
   //Update profile data to API
   const savePersonalInfo = async () => {
+    const currentPersonalInfo = {
+      firstName: profileData.firstName,
+      lastName: profileData.lastName,
+      dob: profileData.dob,
+      gender: profileData.gender,
+      email: profileData.email,
+      city: profileData.city,
+      state: profileData.state,
+      pin: profileData.pin,
+      summary: profileData.summary,
+      yearsOfExperience:
+        profileData.yearsOfExperience,
+    };
+
+    if (
+      JSON.stringify(currentPersonalInfo) ===
+      JSON.stringify(initialPersonalInfo)
+    ) {
+      return true;
+    }
     try {
       const payload = {
         fullName: `${profileData.firstName} ${profileData.lastName}`.trim(),
@@ -1048,6 +1164,7 @@ useEffect(() => {
         newsletterOptIn:
           profileData.newsletterOptIn || false,
       };
+
 
       const response = await axios.put(
         `${process.env.NEXT_PUBLIC_API_URL}/api/candidate/profile/personal-info`,
@@ -1079,8 +1196,17 @@ useEffect(() => {
         "error"
       );
 
-      return false;    // <-- ADD THIS
+      return false;
     }
+    await updateAvailability(
+      CANDIDATE_ID,
+      {
+        availabilityStatus:
+          profileData.availableForWork
+            ? "Open_To_Opportunities"
+            : "Not_Available",
+      }
+    );
   };
 
   // Upload profile photo to API
@@ -1144,32 +1270,35 @@ useEffect(() => {
   // Load work experience from API
   const loadWorkExperience = useCallback(async () => {
     try {
-      const response = await getWorkExperience(
-        CANDIDATE_ID
-      );
+      const response = await getWorkExperience(candidateId)
 
       if (response.data.success) {
+
+        const workData = response.data.data.map(
+          (item) => ({
+            id: item.workId,
+            title: item.jobTitle,
+            company: item.companyName,
+            location: item.workLocation,
+            startDate: item.startDate
+              ? item.startDate.split("T")[0]
+              : "",
+            endDate: item.endDate
+              ? item.endDate.split("T")[0]
+              : "",
+            current: item.isCurrent,
+            description:
+              item.jobDescription || "",
+            isOffshore:
+              item.isOffshore || false,
+          })
+        );
+
+        setInitialWorkHistory(workData);
+
         setProfileData((prev) => ({
           ...prev,
-          workHistory: response.data.data.map(
-            (item) => ({
-              id: item.workId,
-              title: item.jobTitle,
-              company: item.companyName,
-              location: item.workLocation,
-              startDate: item.startDate
-                ? item.startDate.split("T")[0]
-                : "",
-              endDate: item.endDate
-                ? item.endDate.split("T")[0]
-                : "",
-              current: item.isCurrent,
-              description:
-                item.jobDescription || "",
-              isOffshore:
-                item.isOffshore || false,
-            })
-          ),
+          workHistory: workData,
         }));
       }
     } catch (error) {
@@ -1229,6 +1358,16 @@ useEffect(() => {
   };
 
   const saveWork = async (work) => {
+    const originalWork = initialWorkHistory.find(
+      (w) => w.id === work.id
+    );
+
+    if (
+      originalWork &&
+      JSON.stringify(originalWork) === JSON.stringify(work)
+    ) {
+      return true;
+    }
     if (!validateWorkPayload(work)) {
       return false;
     }
@@ -1279,10 +1418,7 @@ useEffect(() => {
     try {
       const payload = buildWorkPayload(entry);
 
-      await createWorkExperience(
-        CANDIDATE_ID,
-        payload
-      );
+      await createWorkExperience(candidateId, payload)
 
       await loadWorkExperience();
 
@@ -1356,6 +1492,17 @@ useEffect(() => {
 
     if (!work.current && !work.endDate) {
       showToast("End date is required unless this is your current job.", "error");
+      return false;
+    }
+    if (
+      work.startDate &&
+      work.endDate &&
+      new Date(work.endDate) < new Date(work.startDate)
+    ) {
+      showToast(
+        "End Date cannot be earlier than Start Date.",
+        "error"
+      );
       return false;
     }
 
@@ -1696,6 +1843,14 @@ useEffect(() => {
         }));
       }
     } catch (error) {
+      if (error.response?.status === 404) {
+        setProfileData((prev) => ({
+          ...prev,
+          languages: [],
+        }));
+        return;
+      }
+
       console.error(
         "Failed to load languages",
         error
@@ -1837,9 +1992,17 @@ useEffect(() => {
     await addSkill(skill);
   };
   const updateSkillState = useCallback((id, field, value) => {
-    setProfileData(p => ({
+    setProfileData((p) => ({
       ...p,
-      skillMatrix: p.skillMatrix.map(e => e.id === id ? { ...e, [field]: value } : e),
+      skillMatrix: p.skillMatrix.map((e) =>
+        e.id === id
+          ? {
+            ...e,
+            [field]: value,
+            isModified: true, // mark changed
+          }
+          : e
+      ),
     }));
   }, []);
 
@@ -1903,13 +2066,15 @@ useEffect(() => {
 
     if (currentStep === 5) {
       const results = await Promise.all(
-        (profileData.skillMatrix || []).map((skill) => {
-          if (!skill.id || String(skill.id).startsWith("skill-")) {
-            return addSkill(skill.name);
-          }
+        (profileData.skillMatrix || [])
+          .filter((skill) => skill.isModified)
+          .map((skill) => {
+            if (!skill.id || String(skill.id).startsWith("skill-")) {
+              return addSkill(skill.name);
+            }
 
-          return saveSkill(skill);
-        })
+            return saveSkill(skill);
+          })
       );
 
       if (results.some((saved) => !saved)) return;
@@ -1966,6 +2131,10 @@ useEffect(() => {
     }
   };
 
+
+
+
+
   return (
     <main className="main">
       <section style={{ padding: "40px 0 60px" }}>
@@ -1979,7 +2148,7 @@ useEffect(() => {
           <div className="row">
             {/* Left sidebar */}
             <div className="col-lg-3 col-md-4 d-none d-md-block">
-              <ProfileMini data={profileData} percent={completionPercent} currentStep={currentStep} onJump={done ? null : (n) => setCurrentStep(n)} />
+              <ProfileMini data={profileData} percent={profileCompletion?.overallPct || 0} currentStep={currentStep} onJump={done ? null : (n) => setCurrentStep(n)} />
             </div>
 
             {/* Main form area */}
@@ -1993,7 +2162,14 @@ useEffect(() => {
                 {/* Content area */}
                 <div style={{ padding: "32px 32px 24px" }}>
                   {done ? (
-                    <CompletionSummary percent={completionPercent} onEdit={() => { setDone(false); setCurrentStep(1); }} />
+                    <CompletionSummary
+  percent={completionPercent}
+  onEdit={() => {
+    setDone(false);
+    setCurrentStep(1);
+  }}
+  router={router}
+/>
                   ) : (
                     stepContent()
                   )}
@@ -2035,4 +2211,4 @@ useEffect(() => {
   );
 };
 
-export default CandidateProfilePage;
+export default CandidateProfilePage;  

@@ -1,59 +1,17 @@
 "use client";
+import { useEffect, useState } from "react";
 
-const subUsers = [
-  {
-    id: "su-001",
-    name: "Arjun Mehta",
-    email: "arjun.mehta@horizonmarine.in",
-    mobile: "+91 98765 43210",
-    role: "Account owner",
-    canUnlock: "Yes",
-    search: "Yes",
-    postJob: "Yes",
-    manageApp: "Yes",
-    status: "Owner",
-    deactivate: "-",
-  },
-  {
-    id: "su-002",
-    name: "Sneha Raut",
-    email: "sneha.raut@horizonmarine.in",
-    mobile: "+91 90011 22334",
-    role: "HR Manager",
-    canUnlock: "Yes",
-    search: "Yes",
-    postJob: "Yes",
-    manageApp: "Yes",
-    status: "Active",
-    deactivate: "Deactivate",
-  },
-  {
-    id: "su-003",
-    name: "Rahul Desai",
-    email: "rahul.desai@horizonmarine.in",
-    mobile: "+91 98876 55443",
-    role: "Recruiter",
-    canUnlock: "Yes",
-    search: "Yes",
-    postJob: "No",
-    manageApp: "Yes",
-    status: "Active",
-    deactivate: "Deactivate",
-  },
-  {
-    id: "su-004",
-    name: "Prachi Joshi",
-    email: "prachi.joshi@horizonmarine.in",
-    mobile: "+91 97765 44332",
-    role: "Viewer",
-    canUnlock: "No",
-    search: "Yes",
-    postJob: "No",
-    manageApp: "No",
-    status: "Invite pending",
-    deactivate: "Deactivate",
-  },
-];
+import {
+  getSubUsers,
+  inviteSubUser,
+  updateSubUser,
+  deactivateSubUser,
+  reactivateSubUser,
+  resendInvite,
+} from "@/services/recruiter/recruiterSubUserService";
+
+import { useToast } from "@/components/Toast";
+
 const JOB_TAG_STYLE = {
   display: "inline-flex",
   alignItems: "center",
@@ -105,6 +63,33 @@ const getStatusStyle = (status) => {
 };
 
 const EmployerSubUserPage = () => {
+  const showToast = useToast();
+  const [editingUser, setEditingUser] = useState(null);
+  const [subUsers, setSubUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const loadSubUsers = async () => {
+    try {
+      setLoading(true);
+
+      const response = await getSubUsers();
+
+      setSubUsers(response.subUsers || []);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const [inviteForm, setInviteForm] = useState({
+    subUserName: "",
+    subUserEmail: "",
+    subUserMobile: "",
+    countryCode: "+91",
+    role: "Recruiter",
+  });
+  useEffect(() => {
+    loadSubUsers();
+  }, []);
   return (
     <main className="main">
       <section className="section-box mt-50 mb-50">
@@ -202,7 +187,7 @@ const EmployerSubUserPage = () => {
             >
               {subUsers.map((user) => (
                 <div
-                  key={user.id}
+                  key={user.subUserId}
                   className="subuser-hover-card"
                   style={{
                     background: "#ffffff",
@@ -246,7 +231,7 @@ const EmployerSubUserPage = () => {
                           flexShrink: 0,
                         }}
                       >
-                        {user.name
+                        {user.subUserName
                           .split(" ")
                           .map((n) => n[0])
                           .join("")}
@@ -269,13 +254,14 @@ const EmployerSubUserPage = () => {
                               fontWeight: 700,
                             }}
                           >
-                            {user.name}
+                            {user.subUserName}
                           </h5>
 
                           <span
-                            style={JOB_TAG_STYLE}
-                            onMouseEnter={handleTagHoverEnter}
-                            onMouseLeave={handleTagHoverLeave}
+                            style={{
+                              ...JOB_TAG_STYLE,
+                              ...getStatusStyle(user.status),
+                            }}
                           >
                             {user.status}
                           </span>
@@ -307,7 +293,7 @@ const EmployerSubUserPage = () => {
                                 marginRight: "6px",
                               }}
                             />
-                            {user.email}
+                            {user.subUserEmail}
                           </span>
 
                           <span>
@@ -317,7 +303,7 @@ const EmployerSubUserPage = () => {
                                 marginRight: "6px",
                               }}
                             />
-                            {user.mobile}
+                            {user.countryCode} {user.subUserMobile}
                           </span>
                         </div>
                       </div>
@@ -341,19 +327,19 @@ const EmployerSubUserPage = () => {
                         {[
                           {
                             label: "Unlock",
-                            value: user.canUnlock,
+                            value: user.permissions?.canUnlockProfiles,
                           },
                           {
                             label: "Search",
-                            value: user.search,
+                            value: user.permissions?.canSearchCandidates,
                           },
                           {
                             label: "Post Job",
-                            value: user.postJob,
+                            value: user.permissions?.canPostJobs,
                           },
                           {
                             label: "Manage",
-                            value: user.manageApp,
+                            value: user.permissions?.canManageApplications,
                           },
                         ].map((item) => (
                           <span
@@ -363,15 +349,13 @@ const EmployerSubUserPage = () => {
                               alignItems: "center",
                               padding: "7px 12px",
                               borderRadius: "999px",
-                              background:
-                                item.value === "Yes" ? "#ecfdf3" : "#f4f5f7",
-                              color:
-                                item.value === "Yes" ? "#0BAB7C" : "#66789c",
+                              background: item.value ? "#ecfdf3" : "#f4f5f7",
+                              color: item.value ? "#0BAB7C" : "#66789c",
                               fontSize: "11px",
                               fontWeight: 700,
                             }}
                           >
-                            {item.label}: {item.value}
+                            {item.label}: {item.value ? "Yes" : "No"}
                           </span>
                         ))}
                       </div>
@@ -386,35 +370,41 @@ const EmployerSubUserPage = () => {
                       >
                         <button
                           className="btn btn-border btn-sm"
-                          style={{
-                            borderRadius: "10px",
-                            fontWeight: 700,
+                          onClick={() => {
+                            setEditingUser(user);
+
+                            setInviteForm({
+                              subUserName: user.subUserName || "",
+                              subUserEmail: user.subUserEmail || "",
+                              subUserMobile: user.subUserMobile || "",
+                              countryCode: user.countryCode || "+91",
+                              role: user.role || "Recruiter",
+                            });
                           }}
                         >
-                          <i
-                            className="fi fi-rr-edit"
-                            style={{
-                              marginRight: "5px",
-                            }}
-                          />
+                          <i className="fi fi-rr-edit me-1" />
                           Edit
                         </button>
 
-                        {user.deactivate !== "-" && (
+                        {user.status === "Active" ? (
                           <button
                             className="btn btn-grey-small"
-                            style={{
-                              borderRadius: "10px",
-                              fontWeight: 700,
+                            onClick={async () => {
+                              await deactivateSubUser(user.subUserId);
+                              loadSubUsers();
                             }}
                           >
-                            <i
-                              className="fi fi-rr-cross-circle"
-                              style={{
-                                marginRight: "5px",
-                              }}
-                            />
                             Deactivate
+                          </button>
+                        ) : (
+                          <button
+                            className="btn btn-default btn-sm"
+                            onClick={async () => {
+                              await reactivateSubUser(user.subUserId);
+                              loadSubUsers();
+                            }}
+                          >
+                            Reactivate
                           </button>
                         )}
                       </div>
@@ -456,6 +446,13 @@ const EmployerSubUserPage = () => {
                       className="form-control"
                       type="text"
                       placeholder="Full name"
+                      value={inviteForm.subUserName || ""}
+                      onChange={(e) =>
+                        setInviteForm({
+                          ...inviteForm,
+                          subUserName: e.target.value,
+                        })
+                      }
                     />
                   </div>
 
@@ -465,6 +462,13 @@ const EmployerSubUserPage = () => {
                       className="form-control"
                       type="email"
                       placeholder="Corporate email"
+                      value={inviteForm.subUserEmail || ""}
+                      onChange={(e) =>
+                        setInviteForm({
+                          ...inviteForm,
+                          subUserEmail: e.target.value,
+                        })
+                      }
                     />
                   </div>
 
@@ -474,16 +478,32 @@ const EmployerSubUserPage = () => {
                       className="form-control"
                       type="text"
                       placeholder="+91 XXXXX XXXXX"
+                      value={inviteForm.subUserMobile || ""}
+                      onChange={(e) =>
+                        setInviteForm({
+                          ...inviteForm,
+                          subUserMobile: e.target.value,
+                        })
+                      }
                     />
                   </div>
 
                   <div className="form-group">
                     <label className="form-label">Role</label>
 
-                    <select className="form-control form-select">
-                      <option>Recruiter</option>
-                      <option>HR Manager</option>
-                      <option>Viewer</option>
+                    <select
+                      className="form-control form-select"
+                      value={inviteForm.role || "Recruiter"}
+                      onChange={(e) =>
+                        setInviteForm({
+                          ...inviteForm,
+                          role: e.target.value,
+                        })
+                      }
+                    >
+                      <option value="Recruiter">Recruiter</option>
+                      <option value="HR_Manager">HR Manager</option>
+                      <option value="Viewer">Viewer</option>
                     </select>
                   </div>
 
@@ -552,6 +572,41 @@ const EmployerSubUserPage = () => {
                     </div>
                   </div>
                   <button
+                    onClick={async () => {
+                      try {
+                        if (editingUser) {
+                          await updateSubUser(
+                            editingUser.subUserId,
+                            inviteForm,
+                          );
+
+                          showToast("User updated successfully", "success");
+                        } else {
+                          await inviteSubUser(inviteForm);
+
+                          showToast("Invitation sent successfully", "success");
+                        }
+
+                        await loadSubUsers();
+
+                        setEditingUser(null);
+
+                        setInviteForm({
+                          subUserName: "",
+                          subUserEmail: "",
+                          subUserMobile: "",
+                          countryCode: "+91",
+                          role: "Recruiter",
+                        });
+                      } catch (error) {
+                        console.error(error.response?.data);
+
+                        showToast(
+                          error.response?.data?.message || "Operation failed",
+                          "error",
+                        );
+                      }
+                    }}
                     className="btn btn-default btn-sm"
                     style={{
                       borderRadius: "12px",
@@ -561,7 +616,7 @@ const EmployerSubUserPage = () => {
                     }}
                     type="button"
                   >
-                    Send invite
+                    {editingUser ? "Update User" : "Send Invite"}
                   </button>
 
                   <p
