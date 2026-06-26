@@ -3,103 +3,157 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Script from "next/script";
-import { getWallet } from "@/services/recruiter/recruiterCreditWalletService";
-
-const CREDIT_PACKS = [
-  {
-    id: "starter",
-    name: "1-Month Starter",
-    credits: 10,
-    price: 2499,
-    gst: 450,
-    rateLabel: "₹249 / credit",
-    popular: false,
-  },
-  {
-    id: "growth",
-    name: "3-Month Growth",
-    credits: 30,
-    price: 4999,
-    gst: 900,
-    rateLabel: "₹166 / credit — Save 33%",
-    popular: true,
-  },
-  {
-    id: "scale",
-    name: "6-Month Scaler",
-    credits: 75,
-    price: 9999,
-    gst: 1800,
-    rateLabel: "₹133 / credit — Save 47%",
-    popular: false,
-  },
-];
+import {
+  getWallet,
+  getCreditPlans,
+  createCreditPlanOrder,
+  verifyCreditPlanPayment,
+} from "@/services/recruiter/recruiterCreditWalletService";
 
 const EmployerBuyCreditsPage = () => {
-  const [selected, setSelected] = useState(CREDIT_PACKS[1]);
+  // const [selected, setSelected] = useState(CREDIT_PACKS[1]);
   const [paying, setPaying] = useState(false);
   const [paid, setPaid] = useState(false);
   const [paidPack, setPaidPack] = useState(null);
   const [wallet, setWallet] = useState(null);
+  const [plans, setPlans] = useState([]);
+  const [selected, setSelected] = useState(null);
 
-  const total = selected.price + selected.gst;
+  const gst = selected ? selected.price * 0.18 : 0;
+
+  const total = selected ? selected.price + gst : 0;
 
   useEffect(() => {
     getWallet()
       .then(setWallet)
       .catch(() => setWallet(null));
-  }, []);
 
-  const handlePayment = () => {
-    if (typeof window === "undefined" || !window.Razorpay) {
-      alert("Payment gateway is loading. Please try again in a moment.");
+    getCreditPlans().then((data) => {
+      setPlans(data);
+
+      if (data.length > 0) setSelected(data[0]);
+    });
+  }, []);
+  if (!selected) {
+    return (
+      <main className="main">
+        <section className="section-box mt-50">
+          <div className="container text-center">
+            <h4>Loading plans...</h4>
+          </div>
+        </section>
+      </main>
+    );
+  }
+const handlePayment = async () => {
+  if (typeof window === "undefined" || !window.Razorpay) {
+    alert("Payment gateway is loading. Please try again.");
+    return;
+  }
+
+  if (!selected) {
+    alert("Please select a plan.");
+    return;
+  }
+
+  setPaying(true);
+
+  try {
+    // Create Razorpay order from backend
+    const order = await createCreditPlanOrder(selected.planId);
+
+    if (!order.success) {
+      alert(order.message || "Unable to create payment order.");
+      setPaying(false);
       return;
     }
-    setPaying(true);
 
     const options = {
-      key: "rzp_test_SgugRS3Yw7i4uA",
-      amount: total * 100,
-      currency: "INR",
-      name: "JobBox.ai",
-      description: `${selected.name} — ${selected.credits} Credits`,
-      image: "/assets2/imgs/page/homepage/img-banner.png",
-      handler: function (response) {
-        setPaying(false);
-        setPaidPack(selected);
-        setPaid(true);
+      key: order.razorpayKeyId,
+      amount: order.amountPaise,
+      currency: order.currency,
+      order_id: order.razorpayOrderId,
+
+      name: "Job Portal",
+      description: `${selected.planName} - ${selected.credits} Credits`,
+
+      handler: async function (response) {
+        try {
+          const verify = await verifyCreditPlanPayment({
+            transactionId: order.transactionId,
+            razorpayOrderId: response.razorpay_order_id,
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpaySignature: response.razorpay_signature,
+          });
+
+          if (verify.success) {
+            setPaidPack(selected);
+            setPaid(true);
+
+            const wallet = await getWallet();
+            setWallet(wallet);
+          } else {
+            alert(verify.message || "Payment verification failed.");
+          }
+        } catch (err) {
+          console.error(err);
+          alert("Payment verification failed.");
+        } finally {
+          setPaying(false);
+        }
       },
+
       prefill: {
-        name: wallet ? "" : "Recruiter",
+        name: "Recruiter",
         email: "",
         contact: "",
       },
+
       notes: {
-        pack: selected.name,
+        planId: selected.planId,
+        planName: selected.planName,
         credits: selected.credits,
       },
+
       theme: {
         color: "#ff9900",
       },
+
       modal: {
-        ondismiss: function () {
+        ondismiss() {
           setPaying(false);
         },
       },
     };
 
     const rzp = new window.Razorpay(options);
-    rzp.on("payment.failed", function () {
+
+    rzp.on("payment.failed", function (response) {
+      console.error(response.error);
+
+      alert(
+        response.error.description ||
+          "Payment failed. Please try again."
+      );
+
       setPaying(false);
-      alert("Payment failed. Please try again or use a different payment method.");
     });
+
     rzp.open();
-  };
+  } catch (err) {
+    console.error(err);
+    alert("Unable to create payment order.");
+    setPaying(false);
+  }
+};
 
   if (paid && paidPack) {
     return (
       <main className="main">
-        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+        <Script
+          src="https://checkout.razorpay.com/v1/checkout.js"
+          strategy="lazyOnload"
+        />
         <section className="section-box mt-50 mb-50">
           <div className="container">
             <div className="content-page">
@@ -107,41 +161,69 @@ const EmployerBuyCreditsPage = () => {
                 <div className="col-lg-6 col-md-10">
                   <div className="card-grid-2 hover-up cv-search-candidate-card text-center">
                     <div className="card-block-info pt-30 pb-30">
-                      <div style={{ fontSize: "52px", marginBottom: "16px" }}>🎉</div>
-                      <h4 className="color-brand-1 mb-10">Payment Successful!</h4>
+                      <div style={{ fontSize: "52px", marginBottom: "16px" }}>
+                        🎉
+                      </div>
+                      <h4 className="color-brand-1 mb-10">
+                        Payment Successful!
+                      </h4>
                       <p className="font-md color-text-paragraph-2 mb-20">
-                        <strong>{paidPack.credits} credits</strong> ({paidPack.name}) have been added to your wallet.
+                        <strong>{paidPack.credits} credits</strong> (
+                        {paidPack.planName}) have been added to your wallet.
                       </p>
                       <div
                         className="mb-25 p-15"
-                        style={{ background: "#e7f9ed", borderRadius: "10px", border: "1px solid #86efac" }}
+                        style={{
+                          background: "#e7f9ed",
+                          borderRadius: "10px",
+                          border: "1px solid #86efac",
+                        }}
                       >
-                        <p className="font-sm mb-0" style={{ color: "#166534" }}>
-                          ✅ Your GST-compliant invoice and payment receipt have been sent to your registered email. Check your inbox.
+                        <p
+                          className="font-sm mb-0"
+                          style={{ color: "#166534" }}
+                        >
+                          ✅ Your GST-compliant invoice and payment receipt have
+                          been sent to your registered email. Check your inbox.
                         </p>
                       </div>
                       <div className="d-flex justify-content-between mb-10">
-                        <span className="font-sm color-text-paragraph">Pack</span>
-                        <strong>{paidPack.name}</strong>
+                        <span className="font-sm color-text-paragraph">
+                          Pack
+                        </span>
+                        <strong>{paidPack.planName}</strong>
                       </div>
                       <div className="d-flex justify-content-between mb-10">
-                        <span className="font-sm color-text-paragraph">Credits Added</span>
+                        <span className="font-sm color-text-paragraph">
+                          Credits Added
+                        </span>
                         <strong>{paidPack.credits} credits</strong>
                       </div>
                       <div className="d-flex justify-content-between mb-20">
-                        <span className="font-sm color-text-paragraph">Amount Paid</span>
+                        <span className="font-sm color-text-paragraph">
+                          Amount Paid
+                        </span>
                         <strong className="color-brand-1">
-                          ₹{(paidPack.price + paidPack.gst).toLocaleString("en-IN")}
+                          ₹
+                          {(paidPack.price * 1.18).toLocaleString(
+                            "en-IN",
+                          )}
                         </strong>
                       </div>
                       <div className="d-flex gap-10 justify-content-center">
-                        <Link className="btn btn-default hover-up" href="/employeer/credit-wallet">
+                        <Link
+                          className="btn btn-default hover-up"
+                          href="/employeer/credit-wallet"
+                        >
                           View Wallet
                         </Link>
                         <button
                           className="btn btn-border hover-up"
                           type="button"
-                          onClick={() => { setPaid(false); setPaidPack(null); }}
+                          onClick={() => {
+                            setPaid(false);
+                            setPaidPack(null);
+                          }}
                         >
                           Buy More Credits
                         </button>
@@ -159,11 +241,13 @@ const EmployerBuyCreditsPage = () => {
 
   return (
     <main className="main">
-      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+      <Script
+        src="https://checkout.razorpay.com/v1/checkout.js"
+        strategy="lazyOnload"
+      />
       <section className="section-box mt-50 mb-20">
         <div className="container">
           <div className="content-page">
-
             {/* Page header */}
             <div className="box-filters-job employer-cv-surface-card mb-10">
               <div className="row align-items-center">
@@ -180,7 +264,10 @@ const EmployerBuyCreditsPage = () => {
                       ? `${wallet.availableCredits < 0 ? 0 : wallet.availableCredits} credits`
                       : "—"}
                   </span>
-                  <Link className="btn btn-border btn-sm" href="/employeer/credit-wallet">
+                  <Link
+                    className="btn btn-border btn-sm"
+                    href="/employeer/credit-wallet"
+                  >
                     Wallet
                   </Link>
                 </div>
@@ -193,26 +280,39 @@ const EmployerBuyCreditsPage = () => {
                 <div className="card-block-info pt-15 pb-15">
                   <div className="row align-items-center">
                     <div className="col-md-4 col-sm-12">
-                      <p className="font-xs color-text-paragraph-2 mb-5">Active Plan</p>
-                      <p className="font-sm mb-0"><strong>{wallet.packageName}</strong></p>
+                      <p className="font-xs color-text-paragraph-2 mb-5">
+                        Active Plan
+                      </p>
+                      <p className="font-sm mb-0">
+                        <strong>{wallet.packageName}</strong>
+                      </p>
                     </div>
                     <div className="col-md-4 col-sm-12">
-                      <p className="font-xs color-text-paragraph-2 mb-5">Credits Available</p>
+                      <p className="font-xs color-text-paragraph-2 mb-5">
+                        Credits Available
+                      </p>
                       <p className="font-sm mb-0">
                         <strong className="color-brand-1">
-                          {wallet.availableCredits < 0 ? 0 : wallet.availableCredits}
+                          {wallet.availableCredits < 0
+                            ? 0
+                            : wallet.availableCredits}
                         </strong>{" "}
                         / {wallet.allocatedCredits} allocated
                       </p>
                     </div>
                     <div className="col-md-4 col-sm-12">
-                      <p className="font-xs color-text-paragraph-2 mb-5">Plan Expires</p>
+                      <p className="font-xs color-text-paragraph-2 mb-5">
+                        Plan Expires
+                      </p>
                       <p className="font-sm mb-0">
-                        {new Date(wallet.packExpiresAt).toLocaleDateString("en-IN", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                        })}
+                        {new Date(wallet.packExpiresAt).toLocaleDateString(
+                          "en-IN",
+                          {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          },
+                        )}
                       </p>
                     </div>
                   </div>
@@ -223,7 +323,8 @@ const EmployerBuyCreditsPage = () => {
             <div className="text-center mt-20 mb-10">
               <h2 className="mb-15">Select A Credit Pack</h2>
               <p className="font-lg color-text-paragraph-2">
-                Longer packs offer a lower per-credit rate. Top-ups inherit your active package expiry date.
+                Longer packs offer a lower per-credit rate. Top-ups inherit your
+                active package expiry date.
               </p>
             </div>
 
@@ -231,10 +332,13 @@ const EmployerBuyCreditsPage = () => {
             <div className="max-width-price">
               <div className="block-pricing mt-30">
                 <div className="row justify-content-center align-items-stretch">
-                  {CREDIT_PACKS.map((pack) => (
-                    <div className="col-xl-4 col-lg-4 col-md-6 col-sm-10 d-flex" key={pack.id}>
+                  {plans.map((pack) => (
+                    <div
+                      className="col-xl-4 col-lg-4 col-md-6 col-sm-10 d-flex"
+                      key={pack.planId}
+                    >
                       <div
-                        className={`box-pricing-item employer-cv-surface-card${selected.id === pack.id ? " active" : ""} d-flex flex-column h-100`}
+                        className={`box-pricing-item employer-cv-surface-card${selected.planId === pack.planId ? " active" : ""} d-flex flex-column h-100`}
                         onClick={() => setSelected(pack)}
                         style={{ cursor: "pointer" }}
                       >
@@ -257,9 +361,11 @@ const EmployerBuyCreditsPage = () => {
                             Most Popular
                           </div>
                         )}
-                        <h3>{pack.name}</h3>
+                        <h3>{pack.planName}</h3>
                         <div className="box-info-price">
-                          <span className="text-price color-brand-2">{pack.credits}</span>
+                          <span className="text-price color-brand-2">
+                            {pack.credits}
+                          </span>
                           <span className="text-month">credits</span>
                         </div>
                         <div className="border-bottom mb-30">
@@ -276,11 +382,13 @@ const EmployerBuyCreditsPage = () => {
                         </ul>
                         <div className="mt-auto">
                           <button
-                            className={`btn ${selected.id === pack.id ? "btn-default" : "btn-border"}`}
+                            className={`btn ${selected.planId === pack.planId ? "btn-default" : "btn-border"}`}
                             type="button"
                             onClick={() => setSelected(pack)}
                           >
-                            {selected.id === pack.id ? "✓ Selected" : "Choose Pack"}
+                            {selected.planId === pack.planId
+                              ? "✓ Selected"
+                              : "Choose Pack"}
                           </button>
                         </div>
                       </div>
@@ -298,22 +406,34 @@ const EmployerBuyCreditsPage = () => {
                     <h5 className="mb-15">Order Summary</h5>
                     <div className="d-flex justify-content-between mb-10">
                       <span className="font-sm color-text-paragraph">Pack</span>
-                      <strong>{selected.name} — {selected.credits} credits</strong>
+                      <strong>
+                        {selected?.planName ?? ""} — {selected?.credits ?? 0}{" "}
+                        credits
+                      </strong>
                     </div>
                     <div className="d-flex justify-content-between mb-10">
-                      <span className="font-sm color-text-paragraph">Price</span>
+                      <span className="font-sm color-text-paragraph">
+                        Price
+                      </span>
                       <strong>₹{selected.price.toLocaleString("en-IN")}</strong>
                     </div>
                     <div className="d-flex justify-content-between mb-10">
-                      <span className="font-sm color-text-paragraph">GST (18%)</span>
-                      <strong>₹{selected.gst.toLocaleString("en-IN")}</strong>
+                      <span className="font-sm color-text-paragraph">
+                        GST (18%)
+                      </span>
+                      <strong>₹{gst.toLocaleString("en-IN")}</strong>
                     </div>
                     <div
                       className="d-flex justify-content-between mb-20 pt-10"
                       style={{ borderTop: "1px solid #eee" }}
                     >
-                      <span className="font-md color-text-paragraph">Total Payable</span>
-                      <strong className="color-brand-1" style={{ fontSize: "18px" }}>
+                      <span className="font-md color-text-paragraph">
+                        Total Payable
+                      </span>
+                      <strong
+                        className="color-brand-1"
+                        style={{ fontSize: "18px" }}
+                      >
                         ₹{total.toLocaleString("en-IN")}
                       </strong>
                     </div>
@@ -329,8 +449,8 @@ const EmployerBuyCreditsPage = () => {
                     >
                       <p className="font-xs mb-0" style={{ color: "#856404" }}>
                         🧪 <strong>Test Mode:</strong> Use Razorpay test card{" "}
-                        <code>4111 1111 1111 1111</code>, any future expiry, CVV <code>123</code>.
-                        No real money is charged.
+                        <code>4111 1111 1111 1111</code>, any future expiry, CVV{" "}
+                        <code>123</code>. No real money is charged.
                       </p>
                     </div>
 
@@ -340,16 +460,18 @@ const EmployerBuyCreditsPage = () => {
                       onClick={handlePayment}
                       disabled={paying}
                     >
-                      {paying ? "Opening Payment..." : `Pay ₹${total.toLocaleString("en-IN")} via Razorpay`}
+                      {paying
+                        ? "Opening Payment..."
+                        : `Pay ₹${total.toLocaleString("en-IN")} via Razorpay`}
                     </button>
                     <p className="font-xs color-text-paragraph-2 text-center mt-10 mb-0">
-                      Secured by Razorpay. Invoice generated instantly after payment.
+                      Secured by Razorpay. Invoice generated instantly after
+                      payment.
                     </p>
                   </div>
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       </section>

@@ -943,8 +943,8 @@ function Step7({ go, jobForm, setJobForm, onSubmit }) {
               }))
             }
           >
-            <option value="Show_Name">Show Company Name</option>
-            <option value="Hide_Name">Hide Company Name</option>
+            <option value="ShowName">Show Company Name</option>
+            <option value="HideName">Hide Company Name</option>
           </select>
         </Field>
 
@@ -961,7 +961,7 @@ function Step7({ go, jobForm, setJobForm, onSubmit }) {
           >
             <option value="Normal">Normal</option>
             <option value="Featured">Featured</option>
-            <option value="Premium">Premium</option>
+            <option value="Classified">Classified</option>
           </select>
         </Field>
 
@@ -1089,7 +1089,7 @@ export default function DashboardPostJobPage() {
 
     // Step 7
     ApplicationDeadline: "",
-    CompanyVisibility: "Show_Name",
+    CompanyVisibility: "ShowName",
     PublishJobType: "Normal",
     PublishingTags: [],
     PublishNow: true,
@@ -1170,12 +1170,12 @@ export default function DashboardPostJobPage() {
     }
   };
   useEffect(() => {
-  if (typeof window === "undefined") return;
+    if (typeof window === "undefined") return;
 
-  const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(window.location.search);
 
-  setEditJobId(params.get("jobId"));
-}, []);
+    setEditJobId(params.get("jobId"));
+  }, []);
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchInlineSuggestions(jobForm.JobDescription, "job");
@@ -1393,7 +1393,14 @@ export default function DashboardPostJobPage() {
       return;
     } catch (error) {
       console.log("STEP7 ERROR", error.response?.data);
-
+      console.log("STEP7 DATA", {
+  JobId: jobId,
+  ApplicationDeadline: jobForm.ApplicationDeadline,
+  CompanyVisibility: jobForm.CompanyVisibility,
+  JobType: jobForm.PublishJobType,
+  PublishingTags: jobForm.PublishingTags,
+  PublishNow: jobForm.PublishNow,
+});
       console.error(error);
     }
   };
