@@ -662,7 +662,7 @@ const options = {
 
   order_id: order.orderId,
 
-  name: "SkillBridge",
+  name: "Job Portal",
 
   description: "Candidate Registration Fee",
 
