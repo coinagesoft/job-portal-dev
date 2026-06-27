@@ -2,7 +2,7 @@ import api from "../api";
 
 export const getCompanyDetails = async (employerId) => {
   const response = await api.get(
-    `/api/candidate/jobs/company_details/${employerId}`
+    `/api/candidate/public/GetCompany/details/${employerId}`
   );
 
   console.log(response);

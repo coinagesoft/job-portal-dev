@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { getCompanyDetails } from "@/services/candidate/companyService";
 import { getAllJobs } from "@/services/candidate/allJobsService";
+import { Suspense } from "react";
 
 // const companyInfo = {
 //   name: "Horizon Marine Services",
@@ -96,7 +97,7 @@ const latestJobs = [
 //   description: "Candidate-facing company details page."
 // };
 
-const CompanyDetailsPage = () => {
+function CompanyDetailsContent() {
   const searchParams = useSearchParams();
   const employerId = searchParams.get("employerId");
 
@@ -268,7 +269,7 @@ const CompanyDetailsPage = () => {
                 <h5 className="mb-30">Latest Jobs</h5>
                 <div className="box-list-jobs display-list">
                   {companyJobs.map((job) => (
-                    <div className="col-xl-12 col-12" key={job.id}>
+                    <div className="col-xl-12 col-12" key={job.jobId}>
                       <div className="card-grid-2 hover-up cv-search-candidate-card">
                         <span className="flash"></span>
                         <div className="row">
@@ -314,7 +315,7 @@ const CompanyDetailsPage = () => {
                           <div className="card-2-bottom mt-20">
                             <div className="row">
                               <div className="col-lg-7 col-7">
-                                <span className="card-text-price">{job.salaryDisplay}</span>
+                                <span className="card-text-price">{job.salaryRange}</span>
                                 <span className="text-muted">/month</span>
                               </div>
                               <div className="col-lg-5 col-5 text-end">
@@ -347,7 +348,7 @@ const CompanyDetailsPage = () => {
                   <div className="avatar-sidebar">
                     <div className="sidebar-info pl-0">
                       <span className="sidebar-company">{companyInfo.companyName}</span>
-                      <span className="card-location">{companyInfo.fullLocation}</span>
+                      <span className="card-location">{companyInfo.city}  , {companyInfo.state}</span>
                     </div>
                   </div>
                 </div>
@@ -372,7 +373,7 @@ const CompanyDetailsPage = () => {
                       </div>
                       <div className="sidebar-text-info">
                         <span className="text-description">Company field</span>
-                        <strong className="small-heading">{companyInfo.industryType}</strong>
+                        <strong className="small-heading">{companyInfo.industry}</strong>
                       </div>
                     </li>
                     <li>
@@ -381,7 +382,7 @@ const CompanyDetailsPage = () => {
                       </div>
                       <div className="sidebar-text-info">
                         <span className="text-description">Location</span>
-                        <strong className="small-heading">{companyInfo.fullLocation} Remote Friendly</strong>
+                        <strong className="small-heading">{companyInfo.addressLine1} </strong>
                       </div>
                     </li>
                     {/* <li>
@@ -504,4 +505,10 @@ const CompanyDetailsPage = () => {
   );
 };
 
-export default CompanyDetailsPage;
+export default function CompanyDetailsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CompanyDetailsContent />
+    </Suspense>
+  );
+}

@@ -95,54 +95,39 @@
     { id: "skill-3", name: "PLC basics", proficiency: "Intermediate", years: 2 },
     { id: "skill-4", name: "Motor winding", proficiency: "Expert", years: 7 }
   ],
-  documents: {
-    nationalId: {
-      label: "National ID",
-      status: "verified",
-      type: "dual",
-      description: "Aadhaar Card",
-      metaLines: ["Uploaded: 01 Apr 2026", "Extracted name: Ramesh K. Sharma"],
-      frontFile: { name: "aadhaar_front.jpg", size: "340 KB" },
-      backFile: null,
-      footerNote: "ID hash stored securely"
-    },
-    passport: {
-      label: "Passport",
-      status: "missing",
-      type: "single",
-      description: "Required for international jobs.",
-      metaLines: ["Minimum 6 months validity needed."],
-      file: null,
-      footerNote: "Unlocks international job applications"
-    },
-    itiCertificate: {
-      label: "ITI Certificate",
-      status: "verified",
-      type: "readonly",
-      description: "Electrician Trade",
-      metaLines: ["Year: 2014", "Cert: ITI/2014/PUN/7823", "AI extracted and verified"],
-      file: { name: "iti_certificate_2014.pdf", size: "1.2 MB" },
-      footerNote: "AI verified"
-    },
-    experienceLetter: {
-      label: "Experience Letter",
-      status: "optional",
-      type: "single",
-      description: "Upload experience or relieving letter from your previous employer.",
-      metaLines: ["Adds credibility to work history."],
-      file: null,
-      footerNote: "Adds credibility to work history"
-    },
-    medicalFitness: {
-      label: "Medical Fitness",
-      status: "optional",
-      type: "single",
-      description: "Required for offshore and high-risk roles.",
-      metaLines: ["Upload a valid medical fitness certificate."],
-      file: null,
-      footerNote: "Required for offshore jobs"
-    }
+ documents: {
+  resume: {
+    label: "Resume",
+    status: "missing",
+    description: "Upload your resume",
+    file: null,
+    metaLines: [],
   },
+
+  educationCertificate: {
+    label: "Education Certificates",
+    status: "missing",
+    description: "Upload education certificates",
+    file: null,
+    metaLines: [],
+  },
+
+  passport: {
+    label: "Passport",
+    status: "optional",
+    description: "Upload passport copy",
+    file: null,
+    metaLines: [],
+  },
+
+  aadhaar: {
+    label: "Aadhaar Card",
+    status: "optional",
+    description: "Upload Aadhaar card",
+    file: null,
+    metaLines: [],
+  },
+},
   customDocuments: [],
   languages: [
     { name: "Hindi", proficiency: "Native", reading: true, writing: true, speaking: true },
@@ -152,15 +137,15 @@
 };
 
 // Inject CV doc into mockProfile.documents
-mockProfile.documents.cv = {
-  label: "CV / Resume",
-  status: "optional",
-  type: "single",
-  description: "Upload your latest CV or resume (PDF, DOC, DOCX).",
-  metaLines: ["Accepted: PDF, DOC, DOCX", "Max size: 5 MB"],
-  file: null,
-  footerNote: "Your CV is shown to verified employers only"
-};
+// mockProfile.documents.cv = {
+//   label: "CV / Resume",
+//   status: "optional",
+//   type: "single",
+//   description: "Upload your latest CV or resume (PDF, DOC, DOCX).",
+//   metaLines: ["Accepted: PDF, DOC, DOCX", "Max size: 5 MB"],
+//   file: null,
+//   footerNote: "Your CV is shown to verified employers only"
+// };
 
 export const mockMyJobs = [
   {

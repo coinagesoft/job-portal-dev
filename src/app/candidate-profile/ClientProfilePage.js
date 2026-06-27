@@ -40,7 +40,27 @@ import {
   deleteLanguage,
 } from "@/services/candidate/languagesService";
 
+import {
+  uploadResume,
+  deleteResume,
+  getDocuments,
+} from "@/services/candidate/candidateResume.js";
 
+import {
+  uploadEducationCertificate,
+  deleteEducationCertificate,
+  getEducationCertificates,
+} from "@/services/candidate/candidateEducationCert.js";
+
+import {
+  uploadPassport,
+  deletePassport,
+} from "@/services/candidate/candidatePassport";
+
+import {
+  uploadAadhaar,
+  deleteAadhaar,
+} from "@/services/candidate/candidateAadhaar";
 
 import api from "@/services/api";
 
@@ -2439,6 +2459,250 @@ const CandidateProfilePage = () => {
     }
   };
 
+  //Documents
+  const loadDocuments = useCallback(async () => {
+    try {
+      const response = await getDocuments();
+
+      console.log("DOCUMENTS:", response.data);
+
+      if (response.data.success) {
+        const docs = response.data.data;
+
+        setProfileData((prev) => ({
+          ...prev,
+          documents: {
+            ...prev.documents,
+
+            // Resume
+            resume: {
+              ...prev.documents.resume,
+              status: docs.resume ? "uploaded" : "missing",
+
+              file: docs.resume
+                ? {
+                  id: docs.resume.cvId,
+                  name: docs.resume.cvFileUrl
+                    .split("/")
+                    .pop(),
+                  url: docs.resume.cvFileUrl,
+                }
+                : null,
+
+              metaLines: docs.resume
+                ? [
+                  `Status: ${docs.resume.verificationStatus}`,
+                  `Uploaded: ${new Date(
+                    docs.resume.uploadedAt
+                  ).toLocaleDateString()}`
+                ]
+                : [],
+            },
+
+            // Education Certificates
+            educationCertificate: {
+              ...prev.documents.educationCertificate,
+
+              status:
+                docs.educationCertificates?.length > 0
+                  ? "uploaded"
+                  : "missing",
+
+              file:
+                docs.educationCertificates?.length > 0
+                  ? {
+                    id:
+                      docs.educationCertificates[0]
+                        .educationId,
+
+                    name:
+                      docs.educationCertificates[0]
+                        .educationLevel,
+                  }
+                  : null,
+
+              metaLines:
+                docs.educationCertificates?.map(
+                  (item) =>
+                    `${item.educationLevel} - ${item.instituteName}`
+                ) || [],
+            },
+
+            // Passport
+            passport: {
+              ...prev.documents.passport,
+
+              status: docs.passport
+                ? "uploaded"
+                : "optional",
+
+              file: docs.passport
+                ? {
+                  id: docs.passport.passportId,
+                  name:
+                    docs.passport.passportNumber,
+                }
+                : null,
+            },
+
+            // Aadhaar
+            aadhaar: {
+              ...prev.documents.aadhaar,
+
+              status: docs.aadhaar
+                ? "uploaded"
+                : "optional",
+
+              file: docs.aadhaar
+                ? {
+                  id: docs.aadhaar.aadhaarId,
+                  name:
+                    docs.aadhaar.aadhaarNumber,
+                }
+                : null,
+            },
+          },
+        }));
+      }
+    } catch (error) {
+      console.error(
+        "Failed to load documents",
+        error
+      );
+    }
+  }, []);
+
+  const handleDocumentUpload = async (docKey, file) => {
+    try {
+      if (docKey === "resume") {
+        await uploadResume(file);
+        await loadDocuments();
+
+        showToast("Resume uploaded successfully", "success");
+        return;
+      }
+
+      if (docKey === "educationCertificate") {
+        const education = profile.education[0];
+
+        await uploadEducationCertificate(
+          {
+            title: education.title,
+            institution: education.institution,
+            passoutYear: 2024,
+            marksPercentage: "75%",
+            certificateNumber: "",
+          },
+          file
+        );
+
+        await loadDocuments();
+
+        showToast("Education certificate uploaded", "success");
+        return;
+      }
+
+      if (docKey === "passport") {
+        await uploadPassport(file);
+
+        setProfileData((prev) => ({
+          ...prev,
+          documents: {
+            ...prev.documents,
+            passport: {
+              ...prev.documents.passport,
+              file: {
+                name: file.name,
+                size: formatFileSize(file.size),
+              },
+              status: "uploaded",
+            },
+          },
+        }));
+
+        showToast("Passport uploaded successfully", "success");
+        return;
+      }
+
+      if (docKey === "aadhaar") {
+        await uploadAadhaar(file);
+
+        setProfileData((prev) => ({
+          ...prev,
+          documents: {
+            ...prev.documents,
+            aadhaar: {
+              ...prev.documents.aadhaar,
+              file: {
+                name: file.name,
+                size: formatFileSize(file.size),
+              },
+              status: "uploaded",
+            },
+          },
+        }));
+
+        showToast("Aadhaar uploaded successfully", "success");
+        return;
+      }
+    } catch (error) {
+      console.error(error);
+      showToast("Upload failed", "error");
+    }
+  };
+
+  const handleDocumentClear = async (docKey) => {
+    try {
+      if (docKey === "resume") {
+        await deleteResume();
+        await loadDocuments();
+
+        showToast("Resume deleted successfully", "success");
+        return;
+      }
+
+      if (docKey === "passport") {
+        await deletePassport();
+
+        setProfileData((prev) => ({
+          ...prev,
+          documents: {
+            ...prev.documents,
+            passport: {
+              ...prev.documents.passport,
+              file: null,
+              status: "optional",
+            },
+          },
+        }));
+
+        showToast("Passport removed", "success");
+        return;
+      }
+
+      if (docKey === "aadhaar") {
+        await deleteAadhaar();
+
+        setProfileData((prev) => ({
+          ...prev,
+          documents: {
+            ...prev.documents,
+            aadhaar: {
+              ...prev.documents.aadhaar,
+              file: null,
+              status: "optional",
+            },
+          },
+        }));
+
+        showToast("Aadhaar removed successfully", "success");
+        return;
+      }
+    } catch (error) {
+      console.error(error);
+      showToast("Document delete failed", "error");
+    }
+  };
 
   return (
     <main className="main">
