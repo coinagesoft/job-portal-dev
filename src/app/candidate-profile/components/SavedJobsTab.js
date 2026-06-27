@@ -2,7 +2,8 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import ProfileJobCard from "./ProfileJobCard";
-import { getSavedJobs } from "@/services/candidate/jobService";
+import { getSavedJobs } from "@/services/candidate/savedJobsService";
+import { getAllJobs } from "@/services/candidate/allJobsService";
 
 const SavedJobsTab = () => {
   const [savedJobs, setSavedJobs] = useState([]);
@@ -15,33 +16,56 @@ const SavedJobsTab = () => {
     loadSavedJobs();
   }, []);
 
-  const loadSavedJobs = async () => {
-    try {
-      setLoading(true);
+ const loadSavedJobs = async () => {
+  try {
+    setLoading(true);
 
-      const response = await getSavedJobs(
-        "2e51baf0-cf8a-4b3f-b2de-4dfc92b8c222"
-      );
+    const [savedResponse, allJobsResponse] = await Promise.all([
+      getSavedJobs(),
+      getAllJobs(),
+    ]);
 
-      if (response?.data?.success) {
-        const formattedJobs = response.data.savedJobs.map((job) => ({
+    if (savedResponse?.data?.success) {
+      const allJobs = allJobsResponse?.data || [];
+
+      const formattedJobs = savedResponse.data.savedJobs.map((job) => {
+        // Find matching job from All_Jobs API
+        const matchedJob = allJobs.find(
+          (item) => item.jobId === job.jobId
+        );
+
+        return {
           id: job.savedJobId,
           jobId: job.jobId,
-          logo: job.companyLogoUrl || "/assets/imgs/page/dashboard/company-logo.png",
+
+          // Take logo from All_Jobs API
+          logo:
+            matchedJob?.companyLogoUrl ||
+            "/assets2/imgs/brands/brand-1.png",
 
           company: job.companyName,
-          location:
-            job.locationDisplay ||
-            [job.city, job.state].filter(Boolean).join(", "),
+
+         location:
+  matchedJob?.jobLocation ||
+  matchedJob?.companyLocation ||
+  job.locationDisplay ||
+  [job.city, job.state].filter(Boolean).join(", "),
 
           title: job.jobTitle,
+
           type: job.employmentType,
 
-          experience: job.experienceDisplay || "Experience not specified",
+          experience:
+            job.experienceDisplay ||
+            "Experience not specified",
 
-          description: job.role || "",
+       description:
+  matchedJob?.description ||
+  job.role ||
+  "No description available",
 
           price: job.salaryDisplay,
+
           priceUnit: "",
 
           tags:
@@ -50,16 +74,17 @@ const SavedJobsTab = () => {
               : job.tags || [],
 
           time: job.timeAgo || "Recently",
-        }));
+        };
+      });
 
-        setSavedJobs(formattedJobs);
-      }
-    } catch (error) {
-      console.error("Saved Jobs Error:", error);
-    } finally {
-      setLoading(false);
+      setSavedJobs(formattedJobs);
     }
-  };
+  } catch (error) {
+    console.error("Saved Jobs Error:", error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const totalPages = Math.max(
     1,

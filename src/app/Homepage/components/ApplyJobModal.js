@@ -9,6 +9,8 @@ import { applyJob } from "@/services/candidate/applyJobService";
 import { useToast } from "@/components/Toast";
 
 import { getProfileSummary } from "@/services/candidate/profileSummaryService";
+import { getCandidateId } from "@/utils/authHelper";
+
 
 const getDefaultQuestions = (job) => {
   const roleTitle = String(job?.jobTitle || "this role");
@@ -45,58 +47,59 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
   const [error, setError] = useState("");
 
   const showToast = useToast();
-  const candidateId = useSelector((state) => state.auth.user?.userId);
+
+  const candidateId = getCandidateId();
 
   const [profile, setProfile] = useState(null);
 
-const candidateName =
-  profile?.fullName || "";
+  const candidateName =
+    profile?.fullName || "";
 
-const employerQuestions = useMemo(() => {
-  if (
-    Array.isArray(job?.screeningQuestions) &&
-    job.screeningQuestions.length > 0
-  ) {
-    return job.screeningQuestions.map(
-      (question, index) => ({
-        id: `question-${index}`,
-        label: question.questionText,
-        type:
-          question.answerType?.toLowerCase() === "yesno"
-            ? "radio"
-            : "text",
-        required: question.isMandatory,
-        options: ["Yes", "No"],
-      })
-    );
-  }
+  const employerQuestions = useMemo(() => {
+    if (
+      Array.isArray(job?.screeningQuestions) &&
+      job.screeningQuestions.length > 0
+    ) {
+      return job.screeningQuestions.map(
+        (question, index) => ({
+          id: `question-${index}`,
+          label: question.questionText,
+          type:
+            question.answerType?.toLowerCase() === "yesno"
+              ? "radio"
+              : "text",
+          required: question.isMandatory,
+          options: ["Yes", "No"],
+        })
+      );
+    }
 
-  return getDefaultQuestions(job);
-}, [job]);
+    return getDefaultQuestions(job);
+  }, [job]);
 
 
   useEffect(() => {
-  const loadProfile = async () => {
-    if (!candidateId) {
-      setProfile(null);
-      return;
-    }
+    const loadProfile = async () => {
+      if (!candidateId) {
+        setProfile(null);
+        return;
+      }
 
-    try {
-      const response =
-        await getProfileSummary(candidateId);
+      try {
+        const response =
+          await getProfileSummary(candidateId);
 
-      setProfile(response.data.data);
-    } catch (error) {
-      console.error(
-        "Failed to load profile",
-        error
-      );
-    }
-  };
+        setProfile(response.data.data);
+      } catch (error) {
+        console.error(
+          "Failed to load profile",
+          error
+        );
+      }
+    };
 
-  loadProfile();
-}, [candidateId]);
+    loadProfile();
+  }, [candidateId]);
 
   useEffect(() => {
     if (!showModal || typeof document === "undefined") return undefined;
@@ -159,82 +162,87 @@ const employerQuestions = useMemo(() => {
   };
 
   const submitApplication = async () => {
-  if (!validateBeforeSubmit()) return;
-  console.log("JOB DATA:", job);
+   console.log("Candidate ID:", candidateId);
+console.log("Job ID:", job.jobId);
+
+    if (!validateBeforeSubmit()) return;
+    console.log("JOB DATA:", job);
 
 
 
-  try {
-    if (!candidateId) {
-      showToast(
-        "Please log in as a candidate to apply.",
-        "error"
+    try {
+      if (!candidateId) {
+        showToast(
+          "Please log in as a candidate to apply.",
+          "error"
+        );
+        return;
+      }
+
+      const payload = {
+        passportGatePassed: true,
+        ageConfirmed: true,
+
+        motivationMessage: "",
+
+        screeningAnswers: employerQuestions.map(
+          (question) => ({
+            questionText: question.label,
+            answer: answers[question.id] || "",
+          })
+        ),
+
+        languageConfirmations: [],
+
+        certificateConfirmations: [],
+      };
+          console.log("Payload:", payload);
+
+
+      console.log(
+        "SCREENING ANSWERS:",
+        employerQuestions.map((question) => ({
+          questionText: question.label,
+          answer: answers[question.id] || "",
+        }))
+
+
       );
-      return;
-    }
-
-    const payload = {
-      fullName: candidateName,
-     phone: profile?.mobileNumber || "",
-email: profile?.email || "",
-      passportGatePassed: true,
-
-      screeningAnswers: employerQuestions.map(
-  (question) => ({
-    questionText:
-      question.id === "passport"
-        ? "Do you have a valid passport?"
-        : question.label,
-    answer: answers[question.id] || "",
-  })
-)
-    };
-
-    console.log(
-  "SCREENING ANSWERS:",
-  employerQuestions.map((question) => ({
-    questionText: question.label,
-    answer: answers[question.id] || "",
-  }))
-
-
-);
-  console.log("JOB INSIDE MODAL", job);
-console.log(
-  "EMPLOYER QUESTIONS INSIDE MODAL",
-  job?.employerQuestions
-);
-    console.log("Apply Payload", payload);
-    console.log(JSON.stringify(payload, null, 2));
-
-    const response = await applyJob(
-      job.jobId,
-      candidateId,
-      payload
-    );
-
-    if (response?.data?.success) {
-      setSubmitted(true);
-
-      showToast(
-        response.data.message ||
-        "Application submitted successfully",
-        "success"
+      console.log("JOB INSIDE MODAL", job);
+      console.log(
+        "EMPLOYER QUESTIONS INSIDE MODAL",
+        job?.employerQuestions
       );
-    }
-  } catch (error) {
-    console.log(
-      "Apply Error",
-      error.response?.data
-    );
+      console.log("Apply Payload", payload);
+      console.log(JSON.stringify(payload, null, 2));
 
-    showToast(
-      error.response?.data?.message ||
-      "Failed to apply",
-      "error"
-    );
-  }
-};
+      const response = await applyJob(
+        job.jobId,
+        payload
+      );
+
+      if (response?.data?.success) {
+        setSubmitted(true);
+
+        showToast(
+          response.data.message ||
+          "Application submitted successfully",
+          "success"
+        );
+      }
+    } catch (error) {
+  console.log("FULL ERROR:", error);
+  console.log("ERROR RESPONSE:", error.response);
+  console.log("ERROR DATA:", error.response?.data);
+  console.log("STATUS:", error.response?.status);
+
+  showToast(
+    error.response?.data?.message ||
+    "Failed to apply",
+    "error"
+  );
+}
+  };
   if (!showModal) return null;
 
   return (

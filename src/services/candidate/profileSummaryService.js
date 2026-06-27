@@ -1,13 +1,12 @@
-// services/candidate/profileSummaryService.js
+// profileSummaryService.js
 
 import api from "../api";
+import { getCandidateId } from "@/utils/authHelper";
 
-export const getProfileSummary = (candidateId) =>
-  api.get(
-    "/api/candidate/profile/summary",
-    {
-      params: {
-        candidateId,
-      },
-    }
+export const getProfileSummary = () => {
+  const candidateId = getCandidateId();
+
+  return api.get(
+    `/api/candidate/profile/summary?candidateId=${candidateId}`
   );
+};

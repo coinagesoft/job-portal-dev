@@ -1,5 +1,5 @@
 "use client";
-
+import { getCandidateId } from "@/utils/authHelper";
 import { getProfileCompletion } from "@/services/candidate/profileCompletionService";
 import { State } from "country-state-city";
 
@@ -42,7 +42,7 @@ import {
 
 
 
-import axios from "axios";
+import api from "@/services/api";
 
 import React, { useCallback, useMemo, useState, useEffect } from "react";
 import { mockProfile } from "./components/data.js";
@@ -77,9 +77,7 @@ const STEPS = [
 ];
 
 const TOTAL = STEPS.length;
-const CANDIDATE_ID =
-  localStorage.getItem("candidateId");
-const PROFILE_PHOTO_PREVIEW_KEY = `candidate-profile-photo-preview-${CANDIDATE_ID}`;
+const PROFILE_PHOTO_PREVIEW_KEY = "candidate-profile-photo-preview";
 const DEFAULT_PROFILE_PHOTO = "/assets/imgs/page/candidates/candidate-profile.png";
 
 const COUNTRY_MAP = {
@@ -252,7 +250,7 @@ const StepBar = ({ current }) => (
 // ─── STEP 1 — Personal Information ───────────────────────────────────────────
 const StepPersonal = ({ data,
   onChange,
-  onPhotoUpload, }) => {
+  onPhotoUpload, errors = {} }) => {
   const [avatarPreview, setAvatarPreview] = useState(null);
   const avatarSrc = avatarPreview || data.avatar || DEFAULT_PROFILE_PHOTO;
 
@@ -310,19 +308,50 @@ const StepPersonal = ({ data,
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 20px" }}>
         <Field label="First Name" required>
-          <Inp value={data.firstName || ""} onChange={e => onChange("firstName", e.target.value.replace(/^\s+/, ""))} placeholder="Ramesh" required />
+          <Inp
+            value={data.firstName || ""}
+            onChange={e => onChange("firstName", e.target.value.replace(/^\s+/, ""))}
+            placeholder="Ramesh"
+          />
+
+          {errors.firstName && (
+            <p
+              style={{
+                color: "red",
+                fontSize: "12px",
+                marginTop: "4px",
+              }}
+            >
+              {errors.firstName}
+            </p>
+          )}
         </Field>
         <Field label="Last Name" required>
           <Inp value={data.lastName || ""} onChange={e => onChange("lastName", e.target.value.replace(/^\s+/, ""))} placeholder="Sharma" required />
+          {errors.lastName && (
+            <p style={{ color: "red", fontSize: "12px", marginTop: "4px" }}>
+              {errors.lastName}
+            </p>
+          )}
         </Field>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 20px" }}>
         <Field label="Mobile Number" required>
           <Inp value={data.mobile || ""} onChange={e => onChange("mobile", e.target.value)} placeholder="+91 98765 43210" required />
+          {errors.mobile && (
+            <p style={{ color: "red", fontSize: "12px", marginTop: "4px" }}>
+              {errors.mobile}
+            </p>
+          )}
         </Field>
         <Field label="Email Address" required>
           <Inp type="email" value={data.email || ""} onChange={e => onChange("email", e.target.value)} placeholder="ramesh@email.com" required />
+          {errors.email && (
+            <p style={{ color: "red", fontSize: "12px", marginTop: "4px" }}>
+              {errors.email}
+            </p>
+          )}
         </Field>
       </div>
 
@@ -398,7 +427,18 @@ const StepPersonal = ({ data,
 // ─── STEP 3 — Work Experience ─────────────────────────────────────────────────
 const StepWork = ({ data, onUpdate, onAdd, onRemove }) => {
   const [showForm, setShowForm] = useState(false);
-  const [newEntry, setNewEntry] = useState({ title: "", company: "", location: "", startDate: "", endDate: "", current: false, description: "" });
+
+  const [newEntry, setNewEntry] = useState({
+    title: "",
+    company: "",
+    location: "",
+    startDate: "",
+    endDate: "",
+    current: false,
+    noticePeriod: "",
+    isOffshore: false,
+    description: ""
+  });
   const showToast = useToast();
 
   const handleSave = async () => {
@@ -417,7 +457,7 @@ const StepWork = ({ data, onUpdate, onAdd, onRemove }) => {
     const saved = await onAdd(newEntry);
     if (!saved) return;
 
-    setNewEntry({ title: "", company: "", location: "", startDate: "", endDate: "", current: false, description: "" });
+    setNewEntry({ title: "", company: "", location: "", startDate: "", endDate: "", isOffshore: false, current: false, description: "" });
     setShowForm(false);
   };
 
@@ -458,12 +498,83 @@ const StepWork = ({ data, onUpdate, onAdd, onRemove }) => {
                   />
                 </Field>
               </div>
+
               <div style={{ marginBottom: 12 }}>
-                <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: T.text, cursor: "pointer" }}>
-                  <input type="checkbox" checked={!!entry.current} onChange={e => onUpdate(entry.id, "current", e.target.checked)} style={{ width: 16, height: 16, accentColor: T.orange }} />
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    fontSize: 13,
+                    color: T.text,
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={!!entry.current}
+                    onChange={(e) =>
+                      onUpdate(entry.id, "current", e.target.checked)
+                    }
+                    style={{
+                      width: 16,
+                      height: 16,
+                      accentColor: T.orange,
+                    }}
+                  />
                   Currently working here
                 </label>
+
               </div>
+
+
+              {entry.current && (
+                <Field label="Notice Period" required>
+                  <Inp
+                    value={entry.noticePeriod || ""}
+                    onChange={(e) =>
+                      onUpdate(
+                        entry.id,
+                        "noticePeriod",
+                        e.target.value
+                      )
+                    }
+                    placeholder="e.g. Immediate, 15 Days, 30 Days"
+                  />
+                </Field>
+              )}
+              <div style={{ marginBottom: 12 }}>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    fontSize: 13,
+                    color: T.text,
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={!!entry.isOffshore}
+                    onChange={(e) =>
+                      onUpdate(
+                        entry.id,
+                        "isOffshore",
+                        e.target.checked
+                      )
+                    }
+                    style={{
+                      width: 16,
+                      height: 16,
+                      accentColor: T.orange,
+                    }}
+                  />
+                  Offshore Experience
+                </label>
+              </div>
+
+
               <Field label="Description">
                 <Textarea value={entry.description} onChange={e => onUpdate(entry.id, "description", e.target.value)} rows={3} />
               </Field>
@@ -507,6 +618,64 @@ const StepWork = ({ data, onUpdate, onAdd, onRemove }) => {
               Currently working here
             </label>
           </div>
+          {newEntry.current && (
+            <Field label="Notice Period" required>
+              <Inp
+                value={newEntry.noticePeriod || ""}
+                onChange={(e) =>
+                  setNewEntry((p) => ({
+                    ...p,
+                    noticePeriod: e.target.value,
+                  }))
+                }
+                placeholder="e.g. Immediate, 15 Days, 30 Days"
+              />
+            </Field>
+          )}
+
+          <div style={{ marginBottom: 12 }}>
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                fontSize: 13,
+                color: T.text,
+                cursor: "pointer",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={!!newEntry.isOffshore}
+                onChange={(e) =>
+                  setNewEntry((p) => ({
+                    ...p,
+                    isOffshore: e.target.checked,
+                  }))
+                }
+                style={{
+                  width: 16,
+                  height: 16,
+                  accentColor: T.orange,
+                }}
+              />
+              Offshore Experience
+            </label>
+          </div>
+
+          {/* <Field label="Description">
+    <Textarea
+      value={newEntry.description}
+      onChange={e =>
+        setNewEntry(p => ({
+          ...p,
+          description: e.target.value
+        }))
+      }
+      rows={3}
+    />
+  </Field> */}
+
           <Field label="Description"><Textarea value={newEntry.description} onChange={e => setNewEntry(p => ({ ...p, description: e.target.value }))} rows={3} /></Field>
           <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
             <Btn onClick={handleSave}>Save Entry</Btn>
@@ -612,6 +781,7 @@ const StepSkills = ({ data, onToggle, onUpdateSkill }) => {
     if (!customSkill.trim()) return;
     onToggle(customSkill.trim());
     setCustomSkill("");
+
   };
 
   return (
@@ -832,7 +1002,7 @@ const CompletionSummary = ({ percent, onEdit, router }) => (
     </div>
     <div>
       <Btn onClick={onEdit} variant="outline" style={{ marginRight: 12 }}>Edit Profile</Btn>
-      <Btn style={{ color: T.white }}  onClick={() => router.push("/jobs-list")}>
+      <Btn style={{ color: T.white }} onClick={() => router.push("/jobs-list")}>
         <span style={{ color: T.white }}>Browse Jobs</span>
         <i className="fi-rr-arrow-small-right" aria-hidden="true" style={{ color: T.white }} />
       </Btn>
@@ -917,14 +1087,85 @@ const formatFileSize = (bytes) => {
 };
 
 const CandidateProfilePage = () => {
+  const candidateId = useMemo(() => {
+    try {
+      return getCandidateId();
+    } catch {
+      return null;
+    }
+  }, []);
+
   const showToast = useToast();
   const router = useRouter();
-
   const [itiInfo, setItiInfo] = useState(null);
+  const [errors, setErrors] = useState({});
+
+  const validatePersonalInfo = () => {
+    const newErrors = {};
+
+    if (!profileData.firstName.trim()) {
+      newErrors.firstName = "Enter first name";
+    }
+
+    if (!profileData.lastName.trim()) {
+      newErrors.lastName = "Enter last name";
+    }
+
+    if (!profileData.mobile.trim()) {
+      newErrors.mobile = "Enter mobile number";
+    }
+
+    if (!profileData.email.trim()) {
+      newErrors.email = "Enter email address";
+    }
+
+    if (!profileData.trade.trim()) {
+      newErrors.trade = "Enter trade/job title";
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
 
   const [profileData, setProfileData] = useState(() => ({
     ...mockProfile,
     avatar: getStoredProfilePhotoPreview() || mockProfile.avatar,
+    salaryExpectation: "",
+    isITI: false,
+    passportNumber: "",
+    passportExpiry: "",
+    id: "",
+    firstName: "",
+    lastName: "",
+    fullName: "",
+    mobile: "",
+    email: "",
+    trade: "",
+    yearsOfExperience: "",
+    nationality: "",
+    dob: "",
+    gender: "",
+    city: "",
+    state: "",
+    pin: "",
+    address: "",
+    role: "",
+    category: "",
+    country: "IN",
+    hasDisability: false,
+    disabilityNote: "",
+    preferredWorkLocation: "",
+    jobType: "",
+    summary: "",
+    availableForWork: false,
+    completionHint: "",
+    sidebarBadges: [],
+    workHistory: [],
+    education: [],
+    selectedSkills: [],
+    skillMatrix: [],
+    languages: [],
   }));
   const [currentStep, setCurrentStep] = useState(1);
   const [done, setDone] = useState(false);
@@ -934,8 +1175,10 @@ const CandidateProfilePage = () => {
 
 
   const loadAvailability = useCallback(async () => {
+    if (!candidateId) return;
+
     try {
-      const response = await getAvailability(CANDIDATE_ID);
+      const response = await getAvailability();
 
       if (response.data.success) {
         setProfileData((prev) => ({
@@ -948,17 +1191,14 @@ const CandidateProfilePage = () => {
     } catch (error) {
       console.error("Failed to load availability", error);
     }
-  }, []);
+  }, [candidateId]);
   //load ITI info from API
-  const loadITIInfo = async () => {
+  const loadITIInfo = useCallback(async () => {
+    if (!candidateId) return;
+
     try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/candidate/profile/iti-info`,
-        {
-          params: {
-            candidateId: CANDIDATE_ID,
-          },
-        }
+      const response = await api.get(
+        `/api/candidate/profile/iti-info`
       );
 
       if (response.data.success) {
@@ -967,12 +1207,12 @@ const CandidateProfilePage = () => {
     } catch (error) {
       console.error(error);
     }
-  };
+  }, [candidateId]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadITIInfo();
-  }, []);
+  }, [loadITIInfo]);
 
 
   useEffect(() => {
@@ -1008,10 +1248,10 @@ const CandidateProfilePage = () => {
   }, [itiInfo]);
 
   const loadProfileCompletion = useCallback(async () => {
+    if (!candidateId) return;
+
     try {
-      const response = await getProfileCompletion(
-        CANDIDATE_ID
-      );
+      const response = await getProfileCompletion()
 
       if (response.data.success) {
         setProfileCompletion(
@@ -1024,7 +1264,7 @@ const CandidateProfilePage = () => {
         error
       );
     }
-  }, []);
+  }, [candidateId]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -1033,14 +1273,11 @@ const CandidateProfilePage = () => {
 
   //Loading profile data from API
   const loadPersonalInfo = useCallback(async () => {
+    if (!candidateId) return;
+
     try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/candidate/profile/personal-info`,
-        {
-          params: {
-            candidateId: CANDIDATE_ID,
-          },
-        }
+      const response = await api.get(
+        `/api/candidate/profile/personal-info?candidateId=${candidateId}`
       );
 
       console.log("PROFILE DATA", response.data);
@@ -1056,6 +1293,9 @@ const CandidateProfilePage = () => {
         const personalInfoData = {
           firstName: names[0] || "",
           lastName: names.slice(1).join(" ") || "",
+          mobile: profile.mobileNumber || "",
+          trade: profile.trade || profile.jobTitle || "",
+          nationality: profile.nationality || "",
           dob: profile.dateOfBirth
             ? profile.dateOfBirth.split("T")[0]
             : "",
@@ -1067,6 +1307,7 @@ const CandidateProfilePage = () => {
           summary: profile.professionalSummary || "",
           yearsOfExperience:
             profile.totalExperienceYears || 0,
+          salaryExpectation: profile.expectedSalary || profile.salaryExpectation || "",
         };
 
         setInitialPersonalInfo(personalInfoData);
@@ -1095,6 +1336,9 @@ const CandidateProfilePage = () => {
 
           yearsOfExperience:
             profile.totalExperienceYears || 0,
+          trade: profile.trade || profile.jobTitle || "",
+          nationality: profile.nationality || "",
+          salaryExpectation: profile.expectedSalary || profile.salaryExpectation || "",
 
           avatar:
             getStoredProfilePhotoPreview() ||
@@ -1117,7 +1361,7 @@ const CandidateProfilePage = () => {
       );
     }
 
-  }, []);
+  }, [candidateId]);
 
   useEffect(() => {
     console.log("API URL =", process.env.NEXT_PUBLIC_API_URL);
@@ -1129,9 +1373,46 @@ const CandidateProfilePage = () => {
 
   //Update profile data to API
   const savePersonalInfo = async () => {
+    console.log("Candidate ID:", candidateId);
+    if (!candidateId) {
+      showToast("Please log in again to save your profile.", "error");
+      return false;
+    }
+    const validatePersonalInfo = () => {
+      const newErrors = {};
+
+      if (!profileData.firstName.trim()) {
+        newErrors.firstName = "Enter first name";
+      }
+
+      if (!profileData.lastName.trim()) {
+        newErrors.lastName = "Enter last name";
+      }
+
+      if (!profileData.mobile.trim()) {
+        newErrors.mobile = "Enter mobile number";
+      }
+
+      if (!profileData.email.trim()) {
+        newErrors.email = "Enter email address";
+      }
+
+      if (!profileData.trade.trim()) {
+        newErrors.trade = "Enter trade/job title";
+      }
+
+      console.log("Validation Errors:", newErrors);
+
+      setErrors(newErrors);
+
+      return Object.keys(newErrors).length === 0;
+    };
     const currentPersonalInfo = {
       firstName: profileData.firstName,
       lastName: profileData.lastName,
+      mobile: profileData.mobile,
+      trade: profileData.trade,
+      nationality: profileData.nationality,
       dob: profileData.dob,
       gender: profileData.gender,
       email: profileData.email,
@@ -1141,17 +1422,36 @@ const CandidateProfilePage = () => {
       summary: profileData.summary,
       yearsOfExperience:
         profileData.yearsOfExperience,
+      salaryExpectation: profileData.salaryExpectation,
     };
 
-    if (
-      JSON.stringify(currentPersonalInfo) ===
-      JSON.stringify(initialPersonalInfo)
-    ) {
-      return true;
-    }
+    const personalChanged =
+      JSON.stringify(currentPersonalInfo) !==
+      JSON.stringify(initialPersonalInfo);
+
     try {
+      let savedMessage = "Profile saved successfully";
+      console.log("Current:", currentPersonalInfo);
+      console.log("Initial:", initialPersonalInfo);
+      console.log("Changed:", personalChanged);
+
+      if (!personalChanged) {
+        await updateAvailability({
+          availabilityStatus: profileData.availableForWork
+            ? "Open_To_Opportunities"
+            : "Not_Looking",
+        });
+
+        showToast(savedMessage, "success");
+        return true;
+      }
+
       const payload = {
         fullName: `${profileData.firstName} ${profileData.lastName}`.trim(),
+        mobileNumber: profileData.mobile || "",
+        trade: profileData.trade || "",
+        jobTitle: profileData.trade || "",
+        nationality: profileData.nationality || "",
         dateOfBirth: profileData.dob || null,
         gender: profileData.gender || "",
         email: profileData.email || "",
@@ -1159,6 +1459,8 @@ const CandidateProfilePage = () => {
         currentState: profileData.state || "",
         pincode: profileData.pin || "",
         professionalSummary: profileData.summary || "",
+        expectedSalary: Number(profileData.salaryExpectation) || 0,
+        salaryExpectation: Number(profileData.salaryExpectation) || 0,
         about: profileData.about || "",
         noticePeriod: profileData.noticePeriod || "",
         totalExperienceYears:
@@ -1168,18 +1470,26 @@ const CandidateProfilePage = () => {
       };
 
 
-      const response = await axios.put(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/candidate/profile/personal-info`,
-        payload,
-        {
-          params: {
-            candidateId: CANDIDATE_ID,
-          },
-        }
+      const response = await api.put(
+        `/api/candidate/profile/personal-info?candidateId=${candidateId}`,
+        payload
       );
 
       if (response.data.success) {
-        showToast(response.data.message, "success");
+        await updateAvailability(
+          {
+            availabilityStatus:
+              profileData.availableForWork
+                ? "Open_To_Opportunities"
+                : "Not_Looking"
+          }
+        );
+
+        savedMessage = response.data.message || savedMessage;
+
+        setInitialPersonalInfo(currentPersonalInfo);
+
+        showToast(savedMessage, "success");
 
         console.log(
           "Profile Completion:",
@@ -1191,24 +1501,14 @@ const CandidateProfilePage = () => {
 
       return false;    // <-- ADD THIS
     } catch (error) {
-      console.error(error);
+      console.log("STATUS:", error.response?.status);
+      console.log("ERROR DATA:", error.response?.data);
+      console.log("PAYLOAD:", payload);
 
-      showToast(
-        "Failed to update profile",
-        "error"
-      );
+      console.error("Failed to update profile", error);
 
       return false;
     }
-    await updateAvailability(
-      CANDIDATE_ID,
-      {
-        availabilityStatus:
-          profileData.availableForWork
-            ? "Open_To_Opportunities"
-            : "Not_Available",
-      }
-    );
   };
 
   // Upload profile photo to API
@@ -1218,13 +1518,10 @@ const CandidateProfilePage = () => {
 
       formData.append("photo", file);
 
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/candidate/profile/profile-photo`,
+      const response = await api.post(
+        `/api/candidate/profile/profile-photo`,
         formData,
         {
-          params: {
-            candidateId: CANDIDATE_ID,
-          },
           headers: {
             "Content-Type": "multipart/form-data",
           },
@@ -1271,10 +1568,10 @@ const CandidateProfilePage = () => {
 
   // Load work experience from API
   const loadWorkExperience = useCallback(async () => {
+    if (!candidateId) return;
+
     try {
-      const response = await getWorkExperience(
-        CANDIDATE_ID
-      );
+      const response = await getWorkExperience();
 
       if (response.data.success) {
 
@@ -1311,7 +1608,7 @@ const CandidateProfilePage = () => {
         error
       );
     }
-  }, []);
+  }, [candidateId]);
 
   // Work
 
@@ -1388,7 +1685,6 @@ const CandidateProfilePage = () => {
     try {
       await updateWorkExperience(
         work.id,
-        CANDIDATE_ID,
         buildWorkPayload(work)
       );
 
@@ -1422,10 +1718,7 @@ const CandidateProfilePage = () => {
     try {
       const payload = buildWorkPayload(entry);
 
-      await createWorkExperience(
-        CANDIDATE_ID,
-        payload
-      );
+      await createWorkExperience(payload)
 
       await loadWorkExperience();
 
@@ -1451,8 +1744,7 @@ const CandidateProfilePage = () => {
   const removeWork = async (workId) => {
     try {
       await deleteWorkExperience(
-        workId,
-        CANDIDATE_ID
+        workId
       );
 
       await loadWorkExperience();
@@ -1483,6 +1775,7 @@ const CandidateProfilePage = () => {
     endDate: work.current ? null : work.endDate || null,
     isCurrent: !!work.current,
     jobDescription: work.description || "",
+    noticePeriod: work.noticePeriod || "",
     isOffshore: work.isOffshore || false,
   });
 
@@ -1520,10 +1813,12 @@ const CandidateProfilePage = () => {
   // Load education from API
   const loadEducation = useCallback(
     async () => {
+      if (!candidateId) return;
+
       try {
         const response =
           await getEducation(
-            CANDIDATE_ID
+            candidateId
           );
 
         if (response.data.success) {
@@ -1552,7 +1847,7 @@ const CandidateProfilePage = () => {
         console.error(error);
       }
     },
-    []
+    [candidateId]
   );
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -1586,7 +1881,7 @@ const CandidateProfilePage = () => {
     try {
       await updateEducation(
         education.id,
-        CANDIDATE_ID,
+
         {
           qualificationDegree:
             education.title,
@@ -1622,9 +1917,17 @@ const CandidateProfilePage = () => {
 
   // Add new education entry
   const addEdu = async (entry) => {
+    const payload = {
+      qualificationDegree: entry.title,
+      instituteName: entry.institution,
+      yearDetails: entry.meta,
+      isAiVerified: false,
+      passoutYear: 0,
+      certificateNumber: ""
+    };
     try {
       await createEducation(
-        CANDIDATE_ID,
+
         {
           qualificationDegree: entry.title,
           instituteName: entry.institution,
@@ -1656,7 +1959,7 @@ const CandidateProfilePage = () => {
     try {
       await deleteEducation(
         educationId,
-        CANDIDATE_ID
+
       );
 
       await loadEducation();
@@ -1675,9 +1978,11 @@ const CandidateProfilePage = () => {
 
 
   const loadSkills = useCallback(async () => {
+    if (!candidateId) return;
+
     try {
       const response = await getSkills(
-        CANDIDATE_ID
+        candidateId
       );
 
       if (response.data.success) {
@@ -1710,7 +2015,7 @@ const CandidateProfilePage = () => {
         error
       );
     }
-  }, []);
+  }, [candidateId]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -1719,40 +2024,28 @@ const CandidateProfilePage = () => {
 
 
   //Add new skill to API
-  const addSkill = async (
-    skillName
-  ) => {
+  const addSkill = async (skillName) => {
     try {
-      await createSkill(
-        CANDIDATE_ID,
-        {
-          skillName,
-          proficiencyLevel:
-            "Beginner",
-          yearsOfExperience: 1,
-        }
-      );
+      await createSkill({
+        skillName,
+        proficiencyLevel: "Beginner",
+        yearsOfExperience: 1,
+      });
 
       await loadSkills();
 
-      showToast(
-        "Skill added",
-        "success"
-      );
+      showToast("Skill added", "success");
+
       return true;
     } catch (error) {
-      console.log(
-        error.response?.data
-      );
+      console.log("STATUS:", error.response?.status);
+      console.log("DATA:", error.response?.data);
 
-      showToast(
-        "Failed to add skill",
-        "error"
-      );
+      showToast("Failed to add skill", "error");
+
       return false;
     }
   };
-
   //Update existing skill in API
   const saveSkill = async (
     skill
@@ -1760,7 +2053,7 @@ const CandidateProfilePage = () => {
     try {
       await updateCandidateSkill(
         skill.id,
-        CANDIDATE_ID,
+        candidateId,
         {
           skillName: skill.name,
           proficiencyLevel:
@@ -1795,7 +2088,7 @@ const CandidateProfilePage = () => {
     try {
       await deleteSkill(
         skillId,
-        CANDIDATE_ID
+        candidateId
       );
 
       await loadSkills();
@@ -1819,9 +2112,11 @@ const CandidateProfilePage = () => {
   };
 
   const loadLanguages = useCallback(async () => {
+    if (!candidateId) return;
+
     try {
       const response = await getLanguages(
-        CANDIDATE_ID
+        candidateId
       );
 
       if (response.data.success) {
@@ -1863,7 +2158,7 @@ const CandidateProfilePage = () => {
         error
       );
     }
-  }, []);
+  }, [candidateId]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -1874,7 +2169,7 @@ const CandidateProfilePage = () => {
   const addLanguage = async (lang) => {
     try {
       await createLanguage(
-        CANDIDATE_ID,
+        candidateId,
         {
           languageName: lang.name,
           proficiencyLevel:
@@ -1922,7 +2217,7 @@ const CandidateProfilePage = () => {
     try {
       await updateLanguage(
         lang.id,
-        CANDIDATE_ID,
+        candidateId,
         {
           languageName: lang.name,
           proficiencyLevel:
@@ -1957,7 +2252,7 @@ const CandidateProfilePage = () => {
     try {
       await deleteLanguage(
         languageId,
-        CANDIDATE_ID
+        candidateId
       );
 
       await loadLanguages();
@@ -2053,10 +2348,15 @@ const CandidateProfilePage = () => {
   const updateLang = useCallback((name, field, value) => setProfileData(p => ({ ...p, languages: (p.languages || []).map(l => l.name === name ? { ...l, [field]: value } : l) })), []);
 
   const handleSaveStep = async () => {
+    console.log("Current Step:", currentStep);
     if (currentStep === 1) {
       const saved = await savePersonalInfo();
+      console.log("savePersonalInfo returned:", saved);
 
-      if (!saved) return;
+      if (!saved) {
+        console.log("NOT MOVING TO NEXT STEP");
+        return;
+      }
     }
 
     if (currentStep === 3) {
@@ -2124,6 +2424,7 @@ const CandidateProfilePage = () => {
         data={profileData}
         onChange={updateField}
         onPhotoUpload={uploadProfile}
+        errors={errors}
       />;
       case 2: return <StepDocuments data={profileData} onUpload={uploadDoc} onClear={clearDoc} />;
       case 3: return <StepWork data={profileData} onUpdate={updateWork} onAdd={addWork} onRemove={removeWork} />;
@@ -2137,9 +2438,6 @@ const CandidateProfilePage = () => {
       default: return null;
     }
   };
-
-
-
 
 
   return (
@@ -2170,13 +2468,13 @@ const CandidateProfilePage = () => {
                 <div style={{ padding: "32px 32px 24px" }}>
                   {done ? (
                     <CompletionSummary
-  percent={completionPercent}
-  onEdit={() => {
-    setDone(false);
-    setCurrentStep(1);
-  }}
-  router={router}
-/>
+                      percent={completionPercent}
+                      onEdit={() => {
+                        setDone(false);
+                        setCurrentStep(1);
+                      }}
+                      router={router}
+                    />
                   ) : (
                     stepContent()
                   )}

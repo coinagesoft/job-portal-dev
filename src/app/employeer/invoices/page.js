@@ -1,41 +1,41 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
-const invoices = [
-  {
-    invoiceNo: "SB/2026/001234",
-    date: "15 Mar 2026",
-    type: "Credit Purchase",
-    amount: "INR 4,999",
-    gst: "INR 900",
-    total: "INR 5,899",
-    downloadable: true
-  },
-  {
-    invoiceNo: "SB/2026/000891",
-    date: "10 Feb 2026",
-    type: "Top-up",
-    amount: "INR 2,499",
-    gst: "INR 450",
-    total: "INR 2,949",
-    downloadable: true
-  },
-  {
-    invoiceNo: "-",
-    date: "23 Jan 2026",
-    type: "Trial grant",
-    amount: "-",
-    gst: "-",
-    total: "Free",
-    downloadable: false
-  }
-];
+import {
+  getInvoices,
+  getInvoiceDetails,
+} from "@/services/recruiter/recruiterInvoiceService";
 
-export const metadata = {
-  title: "Employer Invoices - Job Portal",
-  description: "View billing history and download invoices."
-};
+
 
 const EmployerInvoicesPage = () => {
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const [fromDate, setFromDate] = useState("2026-01-01");
+
+  const [toDate, setToDate] = useState(new Date().toISOString().split("T")[0]);
+
+  const loadInvoices = async () => {
+    try {
+      setLoading(true);
+
+      const response = await getInvoices(fromDate, toDate);
+
+      setInvoices(response || []);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadInvoices();
+  }, []);
+
   return (
     <main className="main">
       <section className="section-box mt-50 mb-50">
@@ -45,13 +45,21 @@ const EmployerInvoicesPage = () => {
               <div className="row align-items-center">
                 <div className="col-xl-8 col-lg-8">
                   <h3 className="mb-5">Invoices & Transactions</h3>
-                  <span className="font-sm color-text-paragraph-2">Download GST-compliant billing records</span>
+                  <span className="font-sm color-text-paragraph-2">
+                    Download GST-compliant billing records
+                  </span>
                 </div>
                 <div className="col-xl-4 col-lg-4 text-lg-end mt-sm-15">
-                  <Link className="btn btn-border btn-sm mr-10 mb-5" href="/employeer/credit-wallet">
+                  <Link
+                    className="btn btn-border btn-sm mr-10 mb-5"
+                    href="/employeer/credit-wallet"
+                  >
                     Credit Wallet
                   </Link>
-                  <Link className="btn btn-default btn-sm mb-5" href="/employeer/buy-credits">
+                  <Link
+                    className="btn btn-default btn-sm mb-5"
+                    href="/employeer/buy-credits"
+                  >
                     Buy Credits
                   </Link>
                 </div>
@@ -63,14 +71,28 @@ const EmployerInvoicesPage = () => {
                 <div className="row align-items-end">
                   <div className="col-md-4 col-sm-12">
                     <label className="form-label mb-5">From</label>
-                    <input className="form-control" type="date" defaultValue="2026-01-01" />
+                    <input
+                      className="form-control"
+                      type="date"
+                      value={fromDate}
+                      onChange={(e) => setFromDate(e.target.value)}
+                    />
                   </div>
                   <div className="col-md-4 col-sm-12 mt-sm-10">
                     <label className="form-label mb-5">To</label>
-                    <input className="form-control" type="date" defaultValue="2026-04-06" />
+                    <input
+                      className="form-control"
+                      type="date"
+                      value={toDate}
+                      onChange={(e) => setToDate(e.target.value)}
+                    />
                   </div>
                   <div className="col-md-4 col-sm-12 mt-sm-10 text-md-end">
-                    <button className="btn btn-border btn-sm mt-20" type="button">
+                    <button
+                      className="btn btn-border btn-sm mt-20"
+                      type="button"
+                      onClick={loadInvoices}
+                    >
                       Filter
                     </button>
                   </div>
@@ -94,29 +116,56 @@ const EmployerInvoicesPage = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {invoices.map((invoice) => (
-                        <tr key={`${invoice.invoiceNo}-${invoice.date}`}>
-                          <td>
-                            <span className="font-sm">{invoice.invoiceNo}</span>
-                          </td>
-                          <td>{invoice.date}</td>
-                          <td>{invoice.type}</td>
-                          <td>{invoice.amount}</td>
-                          <td>{invoice.gst}</td>
-                          <td>
-                            <strong>{invoice.total}</strong>
-                          </td>
-                          <td>
-                            {invoice.downloadable ? (
-                              <button className="btn btn-border btn-sm" type="button">
-                                Download PDF
-                              </button>
-                            ) : (
-                              <span className="font-xs color-text-paragraph-2">-</span>
-                            )}
-                          </td>
+                      {loading ? (
+                        <tr>
+                          <td colSpan="7">Loading...</td>
                         </tr>
-                      ))}
+                      ) : invoices.length === 0 ? (
+                        <tr>
+                          <td colSpan="7">No invoices found</td>
+                        </tr>
+                      ) : (
+                        invoices.map((invoice) => (
+                          <tr key={invoice.invoiceId}>
+                            <td>{invoice.invoiceNumber}</td>
+
+                            <td>
+                              {new Date(
+                                invoice.invoiceDate,
+                              ).toLocaleDateString()}
+                            </td>
+
+                            <td>{invoice.transactionType}</td>
+
+                            <td>₹{invoice.amount}</td>
+
+                            <td>₹{invoice.gst}</td>
+
+                            <td>
+                              <strong>₹{invoice.total}</strong>
+                            </td>
+
+                            <td>
+                              {invoice.invoiceUrl ? (
+                                <button
+                                  className="btn btn-border btn-sm"
+                                  onClick={async () => {
+                                    const invoice = await getInvoiceDetails(
+                                      invoice.invoiceId,
+                                    );
+
+                                    window.open(invoice.invoiceUrl, "_blank");
+                                  }}
+                                >
+                                  Download PDF
+                                </button>
+                              ) : (
+                                "-"
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>

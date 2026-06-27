@@ -85,15 +85,27 @@ const handleSavedJobButtonHoverLeave = (event) => {
 
 const ProfileJobCard = ({ job, isListView, applyToDetails = false }) => {
   const formatSalary = (value) => {
-    const text = String(value || "").replace(/INR|\u20B9/gi, "").trim();
-    if (!text) return "";
-    return text.includes("$") ? text : `$${text}`;
+    if (!value) return "";
+
+    if (
+      value.toLowerCase() === "confidential"
+    ) {
+      return "Confidential";
+    }
+
+    const text = String(value)
+      .replace(/INR|\u20B9/gi, "")
+      .trim();
+
+    return text.includes("$")
+      ? text
+      : `₹${text}`;
   };
 
   const displayPrice = formatSalary(job.price);
   const visibleTags = applyToDetails
-  ? (job.tags || []).slice(0, 2)
-  : (job.tags || []);
+    ? (job.tags || []).slice(0, 2)
+    : (job.tags || []);
 
   return (
     <div
@@ -106,29 +118,45 @@ const ProfileJobCard = ({ job, isListView, applyToDetails = false }) => {
       <div className="row">
         <div className="col-lg-6 col-md-6 col-sm-12">
           <div className="card-grid-2-image-left">
-            <div className="image-box">
-              <Image 
-                src={job.logo} 
-                alt={job.company || "Company logo"} 
-                width={52} 
-                height={52}
+            {/* <div className="image-box"> */}
+            <div >
+
+              <img
+                src={job.logo}
+                alt={job.company || "Company logo"}
+                width={70}
+                height={70}
                 className="candidate-job-logo"
-                style={{ width: "52px", height: "52px", objectFit: "contain" }}
+                style={{
+                  width: "70px",
+                  height: "70px",
+                  objectFit: "contain"
+                }}
               />
             </div>
             <div className="right-info">
               <Link className="name-job" href="/company-details" title={`View ${job.company} details`} data-bs-toggle="tooltip">
                 {job.company}
               </Link>
-              <span className="location-small">{job.location}</span>
+              <span
+                className="location-small"
+                style={{
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  maxWidth: "180px",
+                  display: "block",
+                }}
+              >
+                {job.location}
+              </span>
             </div>
           </div>
         </div>
         {!isListView && (
           <div
-            className={`col-lg-6 text-start text-md-end col-md-6 col-sm-12 ${
-              applyToDetails ? "candidate-saved-job-tags-col" : "pr-60"
-            }`}
+            className={`col-lg-6 text-start text-md-end col-md-6 col-sm-12 ${applyToDetails ? "candidate-saved-job-tags-col" : "pr-60"
+              }`}
           >
             <div
               style={applyToDetails ? JOB_LIST_TAG_WRAP_STYLE : undefined}
@@ -169,7 +197,16 @@ const ProfileJobCard = ({ job, isListView, applyToDetails = false }) => {
             </span>
           )}
         </div>
-        <p className="font-sm color-text-paragraph mt-10">
+        <p
+          className="font-sm color-text-paragraph mt-10"
+          style={{
+            minHeight: "60px",
+            overflow: "hidden",
+            display: "-webkit-box",
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: "vertical",
+          }}
+        >
           {job.description}
         </p>
         <div className={`card-2-bottom mt-20${isListView ? " mt-30" : " mt-30"}`}>

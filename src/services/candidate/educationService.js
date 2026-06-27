@@ -1,48 +1,38 @@
 // services/candidate/educationService.js
 
 import api from "../api";
+import { getCandidateId } from "@/utils/authHelper";
 
-export const getEducation = (candidateId) =>
-  api.get("/api/candidate/profile/education", {
-    params: { candidateId },
-  });
+export const getEducation = () => {
+  const candidateId = getCandidateId();
 
-export const createEducation = (
-  candidateId,
-  payload
-) =>
-  api.post(
-    "/api/candidate/profile/education",
-    payload,
-    {
-      params: { candidateId },
-    }
+  return api.get(
+    `/api/candidate/profile/education?candidateId=${candidateId}`
   );
+};
 
-export const updateEducation = (
-  educationId,
-  candidateId,
-  payload
-) =>
-  api.put(
-    `/api/candidate/profile/education/${educationId}`,
-    payload,
-    {
-      params: {
-        candidateId,
-      },
-    }
-  );
+export const createEducation = (payload) => {
+  const candidateId = getCandidateId();
 
-export const deleteEducation = (
-  educationId,
-  candidateId
-) =>
-  api.delete(
-    `/api/candidate/profile/education/${educationId}`,
-    {
-      params: {
-        candidateId,
-      },
-    }
+  return api.post(
+    `/api/candidate/profile/education?candidateId=${candidateId}`,
+    payload
   );
+};
+
+export const updateEducation = (educationId, payload) => {
+  const candidateId = getCandidateId();
+
+  return api.put(
+    `/api/candidate/profile/education/${educationId}?candidateId=${candidateId}`,
+    payload
+  );
+};
+
+export const deleteEducation = (educationId) => {
+  const candidateId = getCandidateId();
+
+  return api.delete(
+    `/api/candidate/profile/education/${educationId}?candidateId=${candidateId}`
+  );
+};

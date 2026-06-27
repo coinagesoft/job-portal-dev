@@ -1,45 +1,40 @@
 import api from "../api";
+import { getCandidateId } from "@/utils/authHelper";
 
-export const getLanguages = (candidateId) =>
-  api.get(
-    "/api/candidate/profile/languages",
-    {
-      params: { candidateId },
-    }
-  );
+// GET
+export const getLanguages = () => {
+  const candidateId = getCandidateId();
 
-export const createLanguage = (
-  candidateId,
-  payload
-) =>
-  api.post(
-    "/api/candidate/profile/languages",
-    payload,
-    {
-      params: { candidateId },
-    }
+  return api.get(
+    `/api/candidate/profile/languages?candidateId=${candidateId}`
   );
+};
 
-export const updateLanguage = (
-  languageId,
-  candidateId,
-  payload
-) =>
-  api.put(
-    `/api/candidate/profile/languages/${languageId}`,
-    payload,
-    {
-      params: { candidateId },
-    }
-  );
+// CREATE
+export const createLanguage = (payload) => {
+  const candidateId = getCandidateId();
 
-export const deleteLanguage = (
-  languageId,
-  candidateId
-) =>
-  api.delete(
-    `/api/candidate/profile/languages/${languageId}`,
-    {
-      params: { candidateId },
-    }
+  return api.post(
+    `/api/candidate/profile/languages?candidateId=${candidateId}`,
+    payload
   );
+};
+
+// UPDATE
+export const updateLanguage = (languageId, payload) => {
+  const candidateId = getCandidateId();
+
+  return api.put(
+    `/api/candidate/profile/languages/${languageId}?candidateId=${candidateId}`,
+    payload
+  );
+};
+
+// DELETE
+export const deleteLanguage = (languageId) => {
+  const candidateId = getCandidateId();
+
+  return api.delete(
+    `/api/candidate/profile/languages/${languageId}?candidateId=${candidateId}`
+  );
+};

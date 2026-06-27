@@ -1,6 +1,7 @@
 ﻿"use client";
 import React from "react";
 import Link from "next/link";
+import { getAllJobs } from "@/services/candidate/allJobsService";
 
 const COMPANY_RELATED_TAGS = new Set([
   "Verified Employer",
@@ -24,7 +25,7 @@ const getJobDetailsHref = (jobId) =>
   jobId ? `/job-details?jobId=${jobId}` : "/job-details";
 
 const JobCardList = ({ job, onApplyNow, viewMode = "list" }) => {
-  const tags = toSafeTags(job.tags);
+  const tags = toSafeTags(job.skills);
   const companyTagsFromData = toSafeTags(job.companyTags);
   const jobTagsFromData = toSafeTags(job.jobTags);
   const derivedCompanyBadge = COMPANY_BADGE_BY_POSTED_BY[job.postedBy];
@@ -49,6 +50,8 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list" }) => {
   //   if (!text) return "";
   //   return text.includes("$") ? text : `$${text}`;
   // };
+  // 
+
 
   return (
     <>
@@ -89,16 +92,26 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list" }) => {
           <div className="col-lg-6 col-md-6 col-sm-12">
             <div className="card-grid-2-image-left">
               <div className="image-box">
-                <img
+                <img style={{
+                  width: "52px",
+                  height: "52px",
+                  overflow: "hidden",
+                  objectFit: "cover", borderRadius: "8px",
+                }}
                   src={job.companyLogoUrl || "/assets/imgs/brands/brand-10.png"}
                   alt="jobBox"
                 />
               </div>
               <div className="right-info">
-                <Link className="name-job" href="/company-details">
+                <Link className="name-job" href={`/company-details?employerId=${job.employerId}`}>
                   {job.companyName}
                 </Link>
-                <span className="location-small">{job.city}, {job.state}</span>
+                <span
+                  className="location-small"
+                  style={{ whiteSpace: "nowrap" }}
+                >
+                  {job.companyLocation}
+                </span>
               </div>
             </div>
           </div>
@@ -116,7 +129,7 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list" }) => {
               >
                 {companyTags.map((tag, index) => (
                   <span
-                    key={`company-tag-${job.id}-${index}`}
+                    key={`company-tag-${job.jobId}-${index}`}
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
@@ -211,7 +224,7 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list" }) => {
                 }}
               ></i>
 
-              AI Match: {job.aiMatch || 85}%
+              AI Match: {job.aiMatchPercentage || 85}%
             </div>
           </div>
           <div className="mt-5">
@@ -223,12 +236,12 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list" }) => {
               {job.timeAgo || "Recently Posted"}
             </span>
           </div>
-          <p className="font-sm color-text-paragraph mt-10">{job.shortDescription}</p>
+          <p className="font-sm color-text-paragraph mt-10">{job.description}</p>
           {viewMode === "list" && (
             <div className="mt-10">
               <span className="font-xs color-text-paragraph-2">
                 Openings: <strong>{job.vacancies}  1</strong> - Experience:{" "}
-                <strong>{job.experienceRequiredYears} Years</strong>
+                <strong>{job.experienceDisplay}</strong>
               </span>
               {jobTags.length > 0 && (
                 <div
@@ -241,7 +254,7 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list" }) => {
                 >
                   {jobTags.map((tag, index) => (
                     <span
-                      key={`job-tag-${job.id}-${index}`}
+                      key={`job-tag-${job.jobId}-${index}`}
                       style={{
                         display: "inline-flex",
                         alignItems: "center",

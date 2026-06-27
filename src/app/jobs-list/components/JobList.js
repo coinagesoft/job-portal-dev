@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { getJobs } from '@/services/jobList/jobsService';
+import { getAllJobs  } from '@/services/candidate/allJobsService';
 import JobCardList from './JobCardList';
 import { mockJobs } from './data';
 import ApplyJobModal from '@/app/Homepage/components/ApplyJobModal';
@@ -241,10 +241,15 @@ const openApplyModal = async (job) => {
       Sort: sortBy,
     };
 
-    const response = await getJobs(params);
+   const response = await getAllJobs();
 
-    setFilteredJobs(response.data.jobs || []);
-    setTotalFilteredCount(response.data.totalCount || 0);
+console.log("Response:", response);
+console.log("Data:", response.data);
+console.log("Filtered Jobs:", response.data || []);
+
+
+    setFilteredJobs(response.data || []);
+setTotalFilteredCount(response.data.length || 0);
   } catch (error) {
     console.error("Failed to load jobs", error);
   } finally {

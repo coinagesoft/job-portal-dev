@@ -30,16 +30,26 @@ console.log("AUTH INITIALIZER RUNNING");
         decoded[
           "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
         ];
+      const userId =
+        decoded[
+          "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
+        ];
+      const employerId = decoded.EmployerId;
+
+      if (roleClaim === "Candidate" && userId) {
+        localStorage.setItem("candidateId", userId);
+      }
+
+      if (employerId) {
+        localStorage.setItem("employerId", employerId);
+      }
 
       dispatch(
         setUser({
           user: {
-            userId:
-              decoded[
-                "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
-              ],
+            userId,
 
-            employerId: decoded.EmployerId,
+            employerId,
 
             role:
               roleClaim === "Recruiter"

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import JobDetailHero from './components/JobDetailHero';
 import JobOverview from './components/JobOverview';
@@ -11,7 +11,7 @@ import Newsletter from './components/Newsletter';
 import { detailedJob, mapApiJobToDetailedJob } from './data';
 import { getJobDetails } from '@/services/candidate/jobDetailsService';
 
-const JobDetailsPage = () => {
+const JobDetailsContent = () => {
   const searchParams = useSearchParams();
   const jobId = searchParams.get('jobId');
   const [job, setJob] = useState(detailedJob);
@@ -51,10 +51,16 @@ const JobDetailsPage = () => {
           </div>
         </div>
       </section>
-      <FeaturedJobs />
+     <FeaturedJobs similarJobs={job.similarJobs || []} />
       <Newsletter />
     </main>
   );
 };
+
+const JobDetailsPage = () => (
+  <Suspense fallback={null}>
+    <JobDetailsContent />
+  </Suspense>
+);
 
 export default JobDetailsPage;

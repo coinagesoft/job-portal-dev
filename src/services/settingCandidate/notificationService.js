@@ -1,33 +1,18 @@
 import api from "../api";
 
-export const getNotifications = (candidateId) =>
-  api.get("/api/candidate/settings/notifications", {
-    params: {
-      candidateId,
-    },
-  });
+export const getNotifications = () =>
+  api.get("/api/candidate/settings/notifications");
 
 export const updateNotifications = (
-  candidateId,
   payload
 ) =>
   api.put(
     "/api/candidate/settings/notifications",
-    payload,
-    {
-      params: {
-        candidateId,
-      },
-    }
+    payload
   );
 
-export const resetNotifications = (candidateId) =>
+export const resetNotifications = () =>
   api.put(
     "/api/candidate/settings/notifications/reset",
-    {},
-    {
-      params: {
-        candidateId,
-      },
-    }
+    {}
   );

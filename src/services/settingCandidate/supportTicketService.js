@@ -1,6 +1,6 @@
 import api from "../api";
 
-export const createTicket = (candidateId, payload) => {
+export const createTicket = (payload) => {
   const formData = new FormData();
 
   formData.append("Subject", payload.subject);
@@ -8,7 +8,7 @@ export const createTicket = (candidateId, payload) => {
   formData.append("Description", payload.description);
 
   return api.post(
-    `/api/candidate/settings/support/tickets/${candidateId}`    ,
+    `/api/candidate/settings/support/tickets`    ,
     formData,
     {
       headers: {
@@ -18,31 +18,27 @@ export const createTicket = (candidateId, payload) => {
   );
 };
 
-export const getTickets = (candidateId) =>
+export const getTickets = () =>
   api.get(
-    `/api/candidate/settings/support/tickets/${candidateId}`
+    `/api/candidate/settings/support/tickets`
   );
 
-export const getTicketSummary = (candidateId) =>
+export const getTicketSummary = () =>
   api.get(
-    `/api/candidate/settings/support/${candidateId}/summary`
+    `/api/candidate/settings/support/summary`
   );
 
-export const getThread = (ticketId, candidateId) =>
+export const getThread = (ticketId) =>
   api.get(
-    `/api/candidate/settings/support/thread/${ticketId}`,
-    {
-      params: { candidateId },
-    }
+    `/api/candidate/settings/support/thread/${ticketId}`
   );
 
 export const replyTicket = (
   ticketId,
-  candidateId,
   payload
 ) =>
   api.post(
-    `/api/candidate/settings/support/tickets/${ticketId}/reply/${candidateId}`,
+    `/api/candidate/settings/support/tickets/${ticketId}/reply`,
     payload
   );
 

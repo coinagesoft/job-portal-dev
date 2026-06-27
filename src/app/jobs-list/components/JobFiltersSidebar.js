@@ -1,19 +1,92 @@
 'use client';
-import React, { useState, useEffect } from 'react';
-import { filterCategories, filterOptions } from './filterData';
+import React, { useState, useEffect } from "react";
+import { filterCategories } from "./filterData";
+import { getJobFilterOptions } from "@/services/candidate/jobFilterService";
 
 const JobFiltersSidebar = ({ onFilterChange }) => {
+
+  const [filterOptions, setFilterOptions] = useState({});
+
+  useEffect(() => {
+    const loadFilters = async () => {
+      try {
+        const response = await getJobFilterOptions();
+
+        if (response.data.success) {
+          const data = response.data;
+
+          setFilterOptions({
+            tradeCategories: data.tradeCategories.map(item => ({
+              label: item,
+              count: null,
+            })),
+
+            roles: data.roles.map(item => ({
+              label: item,
+              count: null,
+            })),
+
+            cities: data.cities.map(item => ({
+              label: item,
+              count: null,
+            })),
+
+            states: data.states.map(item => ({
+              label: item,
+              count: null,
+            })),
+
+            locationTypes: data.locationTypes.map(item => ({
+              label: item,
+              count: null,
+            })),
+
+            employmentTypes: data.employmentTypes.map(item => ({
+              label: item,
+              count: null,
+            })),
+
+            educationLevels: data.educationLevels.map(item => ({
+              label: item,
+              count: null,
+            })),
+
+            departments: data.departments.map(item => ({
+              label: item,
+              count: null,
+            })),
+
+            skills: data.skills.map(item => ({
+              label: item,
+              count: null,
+            })),
+          });
+        }
+      } catch (error) {
+        console.error("Error loading filter options:", error);
+      }
+    };
+//     useEffect(() => {
+//   if (Object.keys(filterOptions).length > 0) {
+//     setFilters(buildDefaultFilters());
+//   }
+// }, [filterOptions]);
+
+    loadFilters();
+  }, []);
   const buildDefaultFilters = () =>
     Object.keys(filterOptions).reduce((acc, key) => {
       acc[key] = [];
       return acc;
     }, {});
 
-  const [filters, setFilters] = useState(buildDefaultFilters);
+const [filters, setFilters] = useState({});
 
-  useEffect(() => {
-    onFilterChange(filters);
-  }, [filters, onFilterChange]);
+useEffect(() => {
+  if (Object.keys(filterOptions).length > 0) {
+    setFilters(buildDefaultFilters());
+  }
+}, [filterOptions]);
 
   const handleCheckbox = (category, value) => {
     setFilters(prev => {

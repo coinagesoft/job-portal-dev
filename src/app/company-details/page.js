@@ -1,21 +1,30 @@
+"use client";
 import Link from "next/link";
 
-const companyInfo = {
-  name: "Horizon Marine Services",
-  tagline: "Trusted offshore and domestic workforce partner",
-  location: "Mumbai, India",
-  logo: "/assets/imgs/page/company/company.png",
-  banner: "/assets/imgs/page/company/img.png",
-  mapEmbed:
-    "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d120703.02652159374!2d72.8776559!3d19.0760907!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7b63f3f9f8f79%3A0x3f6453f9b6f5e231!2sMumbai%2C%20Maharashtra!5e0!3m2!1sen!2sin!4v1712832000000!5m2!1sen!2sin",
-  address: "406, Maritime House, Ballard Estate, Mumbai, Maharashtra 400001",
-  phone: "+91 22 4567 8900",
-  email: "hiring@horizonmarine.in",
-  field: "Marine Recruitment",
-  salaryBand: "35,000 - 75,000",
-  memberSince: "Jul 2012",
-  lastJobPosted: "2 days ago",
-};
+
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { getCompanyDetails } from "@/services/candidate/companyService";
+import { getAllJobs } from "@/services/candidate/allJobsService";
+
+// const companyInfo = {
+//   name: "Horizon Marine Services",
+//   tagline: "Trusted offshore and domestic workforce partner",
+//   location: "Mumbai, India",
+//   logo: "/assets/imgs/page/company/company.png",
+//   banner: "/assets/imgs/page/company/img.png",
+//   mapEmbed:
+//     "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d120703.02652159374!2d72.8776559!3d19.0760907!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7b63f3f9f8f79%3A0x3f6453f9b6f5e231!2sMumbai%2C%20Maharashtra!5e0!3m2!1sen!2sin!4v1712832000000!5m2!1sen!2sin",
+//   address: "406, Maritime House, Ballard Estate, Mumbai, Maharashtra 400001",
+//   phone: "+91 22 4567 8900",
+//   email: "hiring@horizonmarine.in",
+//   field: "Marine Recruitment",
+//   salaryBand: "35,000 - 75,000",
+//   memberSince: "Jul 2012",
+//   lastJobPosted: "2 days ago",
+// };
+
+
 
 const aboutParagraphs = [
   "Horizon Marine Services helps skilled workers and employers connect for offshore, shipyard, and domestic infrastructure projects across India and GCC routes.",
@@ -82,30 +91,90 @@ const latestJobs = [
   }
 ];
 
-export const metadata = {
-  title: "Company Details - Job Portal",
-  description: "Candidate-facing company details page."
-};
+// export const metadata = {
+//   title: "Company Details - Job Portal",
+//   description: "Candidate-facing company details page."
+// };
 
 const CompanyDetailsPage = () => {
+  const searchParams = useSearchParams();
+  const employerId = searchParams.get("employerId");
+
+  const [companyInfo, setCompanyInfo] = useState(null);
+  const [companyJobs, setCompanyJobs] = useState([]);
+
+  const fetchCompanyDetails = async () => {
+    try {
+      console.log("Employer ID:", employerId);
+
+      const data = await getCompanyDetails(employerId);
+      console.log("Company API Response:", data);
+
+
+      setCompanyInfo(data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const fetchCompanyJobs = async () => {
+    try {
+      const response = await getAllJobs();
+
+      const jobs = response.data.filter(
+        (job) => job.employerId === employerId
+      );
+
+      setCompanyJobs(jobs);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  // ✅ ALL HOOKS MUST COME BEFORE ANY RETURN
+  useEffect(() => {
+    if (employerId) {
+      fetchCompanyDetails();
+      fetchCompanyJobs();
+    }
+  }, [employerId]);
+
+  // ✅ Return AFTER useEffect
+  if (!companyInfo) {
+    return <div>Loading...</div>;
+  }
+
+
   return (
     <main className="main">
       <section className="section-box-2">
         <div className="container">
           <div className="banner-hero banner-image-single">
-            <img src={companyInfo.banner} alt={`${companyInfo.name} banner`} />
+            <img src={
+              companyInfo.coverImageUrl ||
+              "/assets/imgs/page/company/img.png"
+            } alt={`${companyInfo.companyName} banner`} />
           </div>
           <div className="box-company-profile">
             <div className="image-compay">
-              <img src={companyInfo.logo} alt={companyInfo.name} />
+              <img
+                src={companyInfo.companyLogoUrl}
+                alt={companyInfo.companyName}
+                style={{
+                  width: "85px",
+                  height: "85px",
+                  objectFit: "center",
+                  borderRadius: "8px",
+                }}
+              />
             </div>
             <div className="row mt-10">
               <div className="col-lg-8 col-md-12">
                 <h5 className="f-18">
-                  {companyInfo.name}
-                  <span className="card-location font-regular ml-20">{companyInfo.location}</span>
+                  {companyInfo.companyName}
+                  <span className="card-location font-regular ml-20">{companyInfo.fullLocation}</span>
                 </h5>
-                <p className="mt-5 font-md color-text-paragraph-2 mb-15">{companyInfo.tagline}</p>
+                <p className="mt-5 font-md color-text-paragraph-2 mb-15">{companyInfo.companyDescription}</p>
               </div>
               <div className="col-lg-4 col-md-12 text-lg-end">
                 <Link className="btn btn-call-icon btn-apply btn-apply-big" href="/jobs-list">
@@ -166,7 +235,7 @@ const CompanyDetailsPage = () => {
               <div className="content-single">
                 <div className="tab-content">
                   <div className="tab-pane fade show active" id="tab-about" role="tabpanel" aria-labelledby="tab-about">
-                    <h4>Welcome to {companyInfo.name}</h4>
+                    <h4>Welcome to {companyInfo.companyName}</h4>
                     {aboutParagraphs.map((paragraph) => (
                       <p key={paragraph}>{paragraph}</p>
                     ))}
@@ -198,7 +267,7 @@ const CompanyDetailsPage = () => {
               <div className="box-related-job content-page">
                 <h5 className="mb-30">Latest Jobs</h5>
                 <div className="box-list-jobs display-list">
-                  {latestJobs.map((job) => (
+                  {companyJobs.map((job) => (
                     <div className="col-xl-12 col-12" key={job.id}>
                       <div className="card-grid-2 hover-up cv-search-candidate-card">
                         <span className="flash"></span>
@@ -206,39 +275,46 @@ const CompanyDetailsPage = () => {
                           <div className="col-lg-6 col-md-6 col-sm-12">
                             <div className="card-grid-2-image-left">
                               <div className="image-box">
-                                <img src={job.logo} alt={job.company} />
+                                <img src={job.companyLogoUrl} style={{
+                                  width: "52px",
+                                  height: "52px",
+                                  objectFit: "contain",
+                                }} alt={job.companyName} />
                               </div>
                               <div className="right-info">
                                 <a className="name-job" href="#">
-                                  {job.company}
+                                  {job.companyName}
                                 </a>
-                                <span className="location-small">{job.location}</span>
+                                <span className="location-small" style={{ whiteSpace: "nowrap" }} >{job.companyLocation}</span>
                               </div>
                             </div>
                           </div>
                           <div className="col-lg-6 text-start text-md-end pr-60 col-md-6 col-sm-12">
                             <div className="pl-15 mb-15 mt-30">
-                              {job.tags.map((tag) => (
-                                <a key={`${job.id}-${tag}`} className="btn btn-grey-small mr-5" href="#">
-                                  {tag}
-                                </a>
+                              {job.skills?.map((skill, index) => (
+                                <span
+                                  key={index}
+                                  className="btn btn-grey-small mr-5"
+                                >
+                                  {skill}
+                                </span>
                               ))}
                             </div>
                           </div>
                         </div>
                         <div className="card-block-info">
                           <h4>
-                            <Link href="/job-details">{job.title}</Link>
+                            <Link href="/job-details">{job.jobTitle}</Link>
                           </h4>
                           <div className="mt-5">
-                            <span className="card-briefcase">{job.type}</span>
-                            <span className="card-time">{job.posted}</span>
+                            <span className="card-briefcase">{job.employmentType}</span>
+                            <span className="card-time">{job.timeAgo}</span>
                           </div>
-                          <p className="font-sm color-text-paragraph mt-10">{job.summary}</p>
+                          <p className="font-sm color-text-paragraph mt-10">{job.description}</p>
                           <div className="card-2-bottom mt-20">
                             <div className="row">
                               <div className="col-lg-7 col-7">
-                                <span className="card-text-price">{job.salary}</span>
+                                <span className="card-text-price">{job.salaryDisplay}</span>
                                 <span className="text-muted">/month</span>
                               </div>
                               <div className="col-lg-5 col-5 text-end">
@@ -270,16 +346,19 @@ const CompanyDetailsPage = () => {
                 <div className="sidebar-heading">
                   <div className="avatar-sidebar">
                     <div className="sidebar-info pl-0">
-                      <span className="sidebar-company">{companyInfo.name}</span>
-                      <span className="card-location">{companyInfo.location}</span>
+                      <span className="sidebar-company">{companyInfo.companyName}</span>
+                      <span className="card-location">{companyInfo.fullLocation}</span>
                     </div>
                   </div>
                 </div>
                 <div className="sidebar-list-job">
                   <div className="box-map">
                     <iframe
-                      src={companyInfo.mapEmbed}
-                      allowFullScreen=""
+                      src={
+                        companyInfo.mapEmbed ||
+                        "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d120703.02652159374!2d72.8776559!3d19.0760907!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7b63f3f9f8f79%3A0x3f6453f9b6f5e231!2sMumbai%2C%20Maharashtra!5e0!3m2!1sen!2sin!4v1712832000000!5m2!1sen!2sin"
+                      }
+                      allowFullScreen
                       loading="lazy"
                       referrerPolicy="no-referrer-when-downgrade"
                     />
@@ -293,7 +372,7 @@ const CompanyDetailsPage = () => {
                       </div>
                       <div className="sidebar-text-info">
                         <span className="text-description">Company field</span>
-                        <strong className="small-heading">{companyInfo.field}</strong>
+                        <strong className="small-heading">{companyInfo.industryType}</strong>
                       </div>
                     </li>
                     <li>
@@ -302,10 +381,10 @@ const CompanyDetailsPage = () => {
                       </div>
                       <div className="sidebar-text-info">
                         <span className="text-description">Location</span>
-                        <strong className="small-heading">{companyInfo.location} Remote Friendly</strong>
+                        <strong className="small-heading">{companyInfo.fullLocation} Remote Friendly</strong>
                       </div>
                     </li>
-                    <li>
+                    {/* <li>
                       <div className="sidebar-icon-item">
                         <i className="fi-rr-dollar"></i>
                       </div>
@@ -313,17 +392,17 @@ const CompanyDetailsPage = () => {
                         <span className="text-description">Salary</span>
                         <strong className="small-heading">{companyInfo.salaryBand}</strong>
                       </div>
-                    </li>
+                    </li> */}
                     <li>
                       <div className="sidebar-icon-item">
                         <i className="fi-rr-clock"></i>
                       </div>
                       <div className="sidebar-text-info">
-                        <span className="text-description">Member since</span>
-                        <strong className="small-heading">{companyInfo.memberSince}</strong>
+                        <span className="text-description">Year Established</span>
+                        <strong className="small-heading">{companyInfo.yearEstablished}</strong>
                       </div>
                     </li>
-                    <li>
+                    {/* <li>
                       <div className="sidebar-icon-item">
                         <i className="fi-rr-time-fast"></i>
                       </div>
@@ -331,12 +410,46 @@ const CompanyDetailsPage = () => {
                         <span className="text-description">Last Jobs Posted</span>
                         <strong className="small-heading">{companyInfo.lastJobPosted}</strong>
                       </div>
+                    </li>  */}
+                    <li>
+                      <div className="sidebar-icon-item">
+                        <i className="fi-rr-time-fast"></i>
+                      </div>
+                      <div className="sidebar-text-info">
+                        <span className="text-description">Company Size</span>
+                        <strong className="small-heading">{companyInfo.companySize}</strong>
+                      </div>
+                    </li>
+                    <li>
+                      <div className="sidebar-icon-item">
+                        <i className="fi-rr-globe"></i>
+                      </div>
+
+                      <div className="sidebar-text-info">
+                        <span className="text-description" style={{whiteSpace: "nowrap"}}>Company Website</span>
+
+                        <strong className="small-heading">
+                          <a
+                            href={`https://${companyInfo.websiteUrl}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              color: "inherit",
+                              textDecoration: "none",
+                              fontWeight: "inherit",
+                              
+                            }}
+                          >
+                            {companyInfo.websiteUrl}
+                          </a>
+                        </strong>
+                      </div>
                     </li>
                   </ul>
                 </div>
                 <div className="sidebar-list-job">
                   <ul className="ul-disc">
-                    <li>{companyInfo.address}</li>
+                    <li>{companyInfo.addressLine1}</li>
                     <li>Phone: {companyInfo.phone}</li>
                     <li>Email: {companyInfo.email}</li>
                   </ul>

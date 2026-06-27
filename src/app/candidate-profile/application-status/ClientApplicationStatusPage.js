@@ -255,14 +255,14 @@ const ClientApplicationStatusPage = () => {
     ];
   }, [applications]);
   const filteredApplications = useMemo(() => {
-  if (activeFilter === "All") {
-    return applications;
-  }
+    if (activeFilter === "All") {
+      return applications;
+    }
 
-  return applications.filter(
-    (item) => item.status === activeFilter
-  );
-}, [activeFilter, applications]);
+    return applications.filter(
+      (item) => item.status === activeFilter
+    );
+  }, [activeFilter, applications]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -290,9 +290,8 @@ const ClientApplicationStatusPage = () => {
 
       try {
         setLoading(true);
-
         const response =
-          await getMyApplications(candidateId);
+          await getMyApplications();
 
         const jobs =
           response?.data?.applications || [];

@@ -5,11 +5,36 @@ import api from "@/services/api";
  * Adjust this if you store these values differently (e.g. JWT decode, context/redux).
  */
 function getEmployerHeaders() {
-  return {
-    EmployerId: localStorage.getItem("employerId"),
-    UserId: localStorage.getItem("userId"),
-    IsSubUser: localStorage.getItem("isSubUser") === "true",
-  };
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    return {
+      EmployerId: null,
+      UserId: null,
+      IsSubUser: false,
+    };
+  }
+
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+
+    return {
+      EmployerId: payload.EmployerId,
+      UserId:
+        payload[
+          "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
+        ],
+      IsSubUser: false,
+    };
+  } catch (error) {
+    console.error("JWT decode failed", error);
+
+    return {
+      EmployerId: null,
+      UserId: null,
+      IsSubUser: false,
+    };
+  }
 }
 
 const candidateProfileService = {
@@ -19,9 +44,12 @@ const candidateProfileService = {
    */
   getFullProfile: async (candidateId) => {
     const { EmployerId } = getEmployerHeaders();
+
+    console.log("CandidateId:", candidateId);
+    console.log("EmployerId:", EmployerId);
     const { data } = await api.get(
       `/api/recruiter/candidates/${candidateId}/full-profile`,
-      { params: { employerId: EmployerId } }
+      { params: { employerId: EmployerId } },
     );
     return data;
   },
@@ -33,7 +61,7 @@ const candidateProfileService = {
     const { EmployerId } = getEmployerHeaders();
     const { data } = await api.get(
       `/api/recruiter/candidates/${candidateId}/unlock-status`,
-      { params: { employerId: EmployerId } }
+      { params: { employerId: EmployerId } },
     );
     return data;
   },
@@ -43,9 +71,13 @@ const candidateProfileService = {
    */
   getWallet: async () => {
     const { EmployerId } = getEmployerHeaders();
-    const { data } = await api.get("/api/employer/wallet", {
-      headers: { EmployerId },
+
+    const { data } = await api.get("/api/recruiter/wallet", {
+      headers: {
+        EmployerId,
+      },
     });
+
     return data;
   },
 
@@ -59,7 +91,7 @@ const candidateProfileService = {
     const { data } = await api.post(
       "/api/employer/candidate/unlock",
       { candidateId },
-      { headers }
+      { headers },
     );
     return data;
   },
@@ -74,7 +106,7 @@ const candidateProfileService = {
     const { data } = await api.post(
       "/api/employer/candidate/download-cv",
       { candidateId },
-      { headers }
+      { headers },
     );
     return data;
   },

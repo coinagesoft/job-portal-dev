@@ -1,16 +1,13 @@
 ﻿export const filterCategories = [
-  { label: "Work mode", type: "workMode" },
-  { label: "Department", type: "department" },
-  { label: "Experience", type: "experience" },
-  { label: "Salary", type: "salary" },
-  { label: "Companies", type: "companies" },
-  { label: "Industries", type: "industries" },
-  { label: "Role", type: "role" },
-  { label: "Education", type: "education" },
-  { label: "Posted by", type: "postedBy" },
-  { label: "Freshness", type: "freshness" },
-  { label: "Sort", type: "sort" },
-  { label: "Location", type: "location" }
+  { label: "Work Mode", type: "employmentModes" },
+  { label: "Department", type: "departments" },
+  { label: "Industries", type: "tradeCategories" },
+  { label: "Role", type: "roles" },
+  { label: "Education", type: "educationLevels" },
+  { label: "Location", type: "cities" },
+  { label: "Skills", type: "skills" },
+  { label: "Employment Type", type: "employmentTypes" },
+  { label: "Location Type", type: "locationTypes" }
 ];
 
 export const filterOptions = {

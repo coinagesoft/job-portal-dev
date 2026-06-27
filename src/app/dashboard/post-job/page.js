@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-
+// import { useSearchParams } from "next/navigation";
 import styles from "./post-job.module.css";
 
 import {
@@ -16,6 +16,8 @@ import {
   publishJob,
   saveDraft,
   getJobResume,
+  generateJobDescription,
+  getInlineSuggestion,
 } from "@/services/recruiter/recruiterJobPostService";
 
 /* ─── static data ─────────────────────────────────────────────────────────── */
@@ -191,7 +193,17 @@ function StepCard({
 }
 
 /* ─── Individual step content ─────────────────────────────────────────────── */
-function Step1({ go, jobForm, setJobForm, onSubmit }) {
+function Step1({
+  go,
+  jobForm,
+  setJobForm,
+  onSubmit,
+  handleGenerateJD,
+  loadingAI,
+  jdSuggestions,
+  ghostSuggestion,
+  handleJDTab,
+}) {
   return (
     <StepCard
       stepNum={1}
@@ -278,8 +290,17 @@ function Step1({ go, jobForm, setJobForm, onSubmit }) {
         </Field>
       </div>
       <Field label="Job Description" required>
+        <button
+          type="button"
+          className="btn btn-sm btn-default mb-10"
+          onClick={handleGenerateJD}
+        >
+          {loadingAI ? "Generating..." : "✨ Generate with AI"}
+        </button>
+
         <textarea
           className={styles.textarea}
+          rows={6}
           value={jobForm.JobDescription}
           onChange={(e) =>
             setJobForm((prev) => ({
@@ -287,7 +308,35 @@ function Step1({ go, jobForm, setJobForm, onSubmit }) {
               JobDescription: e.target.value,
             }))
           }
+          onKeyDown={handleJDTab}
         />
+
+        {ghostSuggestion && (
+          <div className={styles.inlineSuggestion}>
+            <span className={styles.tabHint}>Press TAB ↹</span>
+
+            <span className={styles.suggestionText}>{ghostSuggestion}</span>
+          </div>
+        )}
+
+        {jdSuggestions.length > 0 && (
+          <div className={styles.aiSuggestions}>
+            {jdSuggestions.map((suggestion, index) => (
+              <div
+                key={index}
+                className={styles.aiSuggestion}
+                onClick={() =>
+                  setJobForm((prev) => ({
+                    ...prev,
+                    JobDescription: prev.JobDescription + " " + suggestion,
+                  }))
+                }
+              >
+                {suggestion}
+              </div>
+            ))}
+          </div>
+        )}
       </Field>
     </StepCard>
   );
@@ -362,7 +411,7 @@ function Step2({ go, jobForm, setJobForm, onSubmit }) {
     </StepCard>
   );
 }
-function Step3({ go, jobForm, setJobForm, onSubmit }) {
+function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions }) {
   return (
     <StepCard
       stepNum={3}
@@ -412,6 +461,26 @@ function Step3({ go, jobForm, setJobForm, onSubmit }) {
             }))
           }
         />
+
+        {additionalJdSuggestions.length > 0 && (
+          <div className={styles.aiSuggestions}>
+            {additionalJdSuggestions.map((suggestion, index) => (
+              <div
+                key={index}
+                className={styles.aiSuggestion}
+                onClick={() =>
+                  setJobForm((prev) => ({
+                    ...prev,
+                    AdditionalJobDescription:
+                      prev.AdditionalJobDescription + " " + suggestion,
+                  }))
+                }
+              >
+                {suggestion}
+              </div>
+            ))}
+          </div>
+        )}
       </Field>
 
       <Field label="Licence / Documents Required">
@@ -751,7 +820,7 @@ function Step6({ go, jobForm, setJobForm, onSubmit }) {
       stepNum={6}
       title="Questions"
       subtitle="Screening questions"
-      onBack={() => go(5)} 
+      onBack={() => go(5)}
       onContinue={onSubmit}
     >
       {jobForm.questions.map((question, index) => (
@@ -941,14 +1010,27 @@ const STEP_VIEWS = [Step1, Step2, Step3, Step4, Step5, Step6, Step7];
 
 /* ─── Page ────────────────────────────────────────────────────────────────── */
 export default function DashboardPostJobPage() {
+  // const searchParams = useSearchParams();
+  const router = useRouter();
+  // const editJobId = searchParams.get("jobId");
+  const [editJobId, setEditJobId] = useState(null);
   const [activeStep, setActiveStep] = useState(1);
+  const [jdSuggestions, setJdSuggestions] = useState([]);
+  const [additionalJdSuggestions, setAdditionalJdSuggestions] = useState([]);
+  const [ghostSuggestion, setGhostSuggestion] = useState("");
 
+  const [loadingAI, setLoadingAI] = useState(false);
   const [jobId, setJobId] = useState(null);
 
   const [loading, setLoading] = useState(false);
   useEffect(() => {
-    loadDraft();
-  }, []);
+    if (editJobId) {
+      loadJobForEdit(editJobId);
+    } else {
+      loadDraft();
+    }
+  }, [editJobId]);
+
   const updateDraft = (response) => {
     localStorage.setItem(
       "jobDraft",
@@ -1012,6 +1094,104 @@ export default function DashboardPostJobPage() {
     PublishingTags: [],
     PublishNow: true,
   });
+
+  const handleGenerateJD = async () => {
+    try {
+      setLoadingAI(true);
+
+      const response = await generateJobDescription({
+        jobTitle: jobForm.JobTitle,
+        role: jobForm.Role,
+        tradeCategory: jobForm.TradeCategory,
+        experienceYears: jobForm.ExperienceRequiredYears,
+        jobType: jobForm.JobType,
+        employmentType: jobForm.EmploymentType,
+      });
+
+      setJobForm((prev) => ({
+        ...prev,
+        JobDescription: response.generatedDescription,
+        KeySkills: response.suggestedSkills || [],
+      }));
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoadingAI(false);
+    }
+  };
+
+  const fetchInlineSuggestions = async (currentText, target = "job") => {
+    if (!currentText || currentText.length < 20) {
+      return;
+    }
+
+    const shouldSuggest =
+      currentText.endsWith(" ") ||
+      currentText.endsWith(".") ||
+      currentText.endsWith(",");
+
+    if (!shouldSuggest) {
+      return;
+    }
+
+    try {
+      const response = await getInlineSuggestion({
+        jobTitle: jobForm.JobTitle,
+        role: jobForm.Role,
+        tradeCategory: jobForm.TradeCategory,
+        experienceYears: jobForm.ExperienceRequiredYears,
+        jobType: jobForm.JobType,
+        currentText,
+      });
+
+      if (target === "job") {
+        const suggestions = response.suggestions || [];
+
+        setJdSuggestions(suggestions);
+
+        setGhostSuggestion(suggestions.length > 0 ? suggestions[0] : "");
+      } else {
+        setAdditionalJdSuggestions(response.suggestions || []);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+  const handleJDTab = (e) => {
+    if (e.key === "Tab" && ghostSuggestion) {
+      e.preventDefault();
+
+      setJobForm((prev) => ({
+        ...prev,
+        JobDescription: prev.JobDescription.trimEnd() + " " + ghostSuggestion,
+      }));
+
+      setGhostSuggestion("");
+    }
+  };
+  useEffect(() => {
+  if (typeof window === "undefined") return;
+
+  const params = new URLSearchParams(window.location.search);
+
+  setEditJobId(params.get("jobId"));
+}, []);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchInlineSuggestions(jobForm.JobDescription, "job");
+    }, 1200);
+
+    return () => clearTimeout(timer);
+  }, [jobForm.JobDescription]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchInlineSuggestions(jobForm.AdditionalJobDescription, "additional");
+    }, 1200);
+
+    return () => clearTimeout(timer);
+  }, [jobForm.AdditionalJobDescription]);
+
   const handleStep1 = async () => {
     if (!jobForm.JobTitle.trim()) {
       alert("Job Title is required");
@@ -1208,7 +1388,9 @@ export default function DashboardPostJobPage() {
 
       localStorage.removeItem("jobDraft");
 
-      alert("Job Published Successfully!");
+      router.push("/employeer/job-list?success=job-published");
+
+      return;
     } catch (error) {
       console.log("STEP7 ERROR", error.response?.data);
 
@@ -1220,8 +1402,90 @@ export default function DashboardPostJobPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
- const ActiveStep =
-  STEP_VIEWS[activeStep - 1] || Step7;
+  const ActiveStep = STEP_VIEWS[activeStep - 1] || Step7;
+  const loadJobForEdit = async (jobId) => {
+    try {
+      const response = await getJobResume(jobId);
+
+      console.log("EDIT JOB RESPONSE", response);
+
+      setJobId(jobId);
+
+      setJobForm((prev) => ({
+        ...prev,
+
+        JobTitle: response.step1Data?.jobTitle || "",
+        TradeCategory: response.step1Data?.tradeCategory || "",
+        Role: response.step1Data?.role || "",
+        ExperienceRequiredYears:
+          response.step1Data?.experienceRequiredYears || 0,
+
+        JobType: response.step1Data?.jobType || "Normal_Job",
+
+        EmploymentType: response.step1Data?.employmentType || "Permanent",
+
+        JobDescription: response.step1Data?.jobDescription || "",
+
+        SalaryMin: response.step2Data?.salaryMin?.toString() || "",
+
+        SalaryMax: response.step2Data?.salaryMax?.toString() || "",
+
+        SalaryCurrency: response.step2Data?.salaryCurrency || "INR",
+
+        SalaryDisplayOption:
+          response.step2Data?.salaryDisplayOption || "Show_Range",
+
+        KeySkills: response.step3Data?.keySkills || [],
+
+        AdditionalJobDescription:
+          response.step3Data?.additionalJobDescription || "",
+
+        LicenceDocsRequired: response.step3Data?.licenceDocsRequired || "",
+
+        LanguageRequired: response.step3Data?.languageRequired || "",
+
+        Vacancies: response.step4Data?.vacancies || 1,
+
+        EducationRequired: response.step4Data?.educationRequired || "Any",
+
+        AgeMin: response.step4Data?.ageMin ?? "",
+
+        AgeMax: response.step4Data?.ageMax ?? "",
+
+        GenderPreferred: response.step4Data?.genderPreferred || "Any",
+
+        DisabilityEligible: response.step4Data?.disabilityEligible ?? false,
+
+        PassportRequired: response.step4Data?.passportRequired ?? false,
+
+        PassportValidityMonths:
+          response.step4Data?.passportValidityMonths ?? "",
+
+        LocationType: response.step5Data?.locationType || "Onshore",
+
+        OnshoreCity: response.step5Data?.onshoreCity || "",
+
+        OnshoreState: response.step5Data?.onshoreState || "",
+
+        OffshoreVesselName: response.step5Data?.offshoreVesselName || "",
+
+        OffshoreRegion: response.step5Data?.offshoreRegion || "",
+
+        Country: response.step5Data?.country || "India",
+
+        questions: response.step6Data?.questions || [],
+      }));
+
+      const nextStep =
+        response.stepStatus?.lastCompletedStep >= 7
+          ? 7
+          : response.stepStatus?.lastCompletedStep + 1;
+
+      setActiveStep(nextStep);
+    } catch (error) {
+      console.error(error);
+    }
+  };
   const loadDraft = async () => {
     try {
       const draft = localStorage.getItem("jobDraft");
@@ -1311,7 +1575,6 @@ export default function DashboardPostJobPage() {
             isMandatory: false,
           },
         ],
-        
       }));
     } catch (error) {
       console.error("Failed to load draft", error);
@@ -1383,6 +1646,12 @@ export default function DashboardPostJobPage() {
                                   ? handleStep7
                                   : () => {}
                   }
+                  handleGenerateJD={handleGenerateJD}
+                  loadingAI={loadingAI}
+                  jdSuggestions={jdSuggestions}
+                  additionalJdSuggestions={additionalJdSuggestions}
+                  ghostSuggestion={ghostSuggestion}
+                  handleJDTab={handleJDTab}
                 />
                 <div className={styles.bottomLink}>
                   <Link href="/dashboard">Back to Dashboard</Link>

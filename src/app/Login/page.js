@@ -105,6 +105,12 @@ export default function LoginPage() {
         "token",
         response.data.token
       );
+      if (response.data.userType === "Candidate" && response.data.userId) {
+        localStorage.setItem("candidateId", response.data.userId);
+      }
+      if (response.data.employerId) {
+        localStorage.setItem("employerId", response.data.employerId);
+      }
 
       showToast(
         response.data.message || "Login successful!",
@@ -169,6 +175,12 @@ export default function LoginPage() {
           "token",
           response.data.token
         );
+        if (response.data.userType === "Candidate" && response.data.userId) {
+          localStorage.setItem("candidateId", response.data.userId);
+        }
+        if (response.data.employerId) {
+          localStorage.setItem("employerId", response.data.employerId);
+        }
 
        if (response.data.userType === "Recruiter") {
   router.push("/employeer/cv-search");
@@ -675,7 +687,7 @@ const handleLinkedInLogin = () => {
                   e.currentTarget.style.transform = "translateY(0px)";
                 }}
               >
-                Don't have an account? Register
+                Don&apos;t have an account? Register
               </Link>
             </div>
           </form>

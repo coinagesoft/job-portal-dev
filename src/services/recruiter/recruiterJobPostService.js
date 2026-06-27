@@ -184,3 +184,21 @@ export const saveDraft = async (jobId) => {
 
   return response.data;
 };
+
+export const generateJobDescription = async (payload) => {
+  const response = await api.post(
+    "/api/recruiter/ai/job-description/auto-generate",
+    payload
+  );
+
+  return response.data;
+};
+
+export const getInlineSuggestion = async (payload) => {
+  const response = await api.post(
+    "/api/recruiter/ai/job-description/inline-suggest",
+    payload
+  );
+
+  return response.data;
+};

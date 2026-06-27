@@ -1,33 +1,26 @@
+// services/candidate/personalInfoService.js
+
 import api from "../api";
+import { getCandidateId } from "@/utils/authHelper"; // <-- ADD THIS
 
-export const getPersonalInfo = (candidateId) =>
-  api.get(
-    `/api/candidate/profile/personal-info`,
-    {
-      params: {
-        candidateId,
-      },
-    }
+export const getPersonalInfo = () => {
+  const candidateId = getCandidateId();
+
+  return api.get(
+    `/api/candidate/profile/personal-info?candidateId=${candidateId}`
   );
+};
 
-  export const updatePersonalInfo = (
-  candidateId,
-  payload
-) =>
-  api.put(
-    "/api/candidate/profile/personal-info",
-    payload,
-    {
-      params: { candidateId },
-    }
+export const updatePersonalInfo = (payload) => {
+  const candidateId = getCandidateId();
+
+  return api.put(
+    `/api/candidate/profile/personal-info?candidateId=${candidateId}`,
+    payload
   );
+};
 
-
-
-export const uploadProfilePhoto = (
-  candidateId,
-  file
-) => {
+export const uploadProfilePhoto = (file) => {
   const formData = new FormData();
 
   formData.append("photo", file);
@@ -36,9 +29,6 @@ export const uploadProfilePhoto = (
     "/api/candidate/profile/profile-photo",
     formData,
     {
-      params: {
-        candidateId,
-      },
       headers: {
         "Content-Type": "multipart/form-data",
       },

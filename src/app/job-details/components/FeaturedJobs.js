@@ -1,9 +1,9 @@
 'use client';
 import React from 'react';
 import Link from 'next/link';
-import { featuredJobs } from '../data.js';
+// import { featuredJobs } from '../data.js';
 
-const FeaturedJobs = () => {
+const FeaturedJobs = ({ similarJobs = [] }) => {
   const formatHourlyPrice = (value) => {
     const text = String(value || '').trim();
     if (!text) return '';
@@ -23,28 +23,33 @@ const FeaturedJobs = () => {
           <div className="box-swiper style-nav-top">
             <div className="swiper-container swiper-group-4 swiper">
               <div className="swiper-wrapper pb-10 pt-5">
-                {featuredJobs.map((job) => (
+                {similarJobs.map((job) => (
                   <div key={job.id} className="swiper-slide">
                     <div className="card-grid-2 hover-up cv-search-candidate-card">
                       <div className="card-grid-2-image-left">
                         <span className="flash"></span>
                         <div className="image-box">
-                          <img src={job.img} alt="jobBox" />
+                          <img
+                            src={job.companyLogoUrl || "/assets/imgs/page/homepage1/user3.png"}
+                            alt={job.companyName}
+                          />
                         </div>
                         <div className="right-info">
                           <Link className="name-job" href="/company-details">{job.company}</Link>
-                          <span className="location-small">{job.location}</span>
+                          <span className="location-small">{job.companyLocation}</span>
                         </div>
                       </div>
                       <div className="card-block-info">
                         <h6>
-                          <Link href="/job-details">{job.title}</Link>
+                          <Link href={`/job-details?jobId=${job.jobId}`}>
+                            {job.title}
+                          </Link>
                         </h6>
                         <div className="mt-5">
-                          <span className="card-briefcase">{job.type}</span>
+                          <span className="card-briefcase">{job.employmentType}</span>
                           <span className="card-time">
-                            <span>{job.time.split(' ')[0]}</span>
-                            <span>{job.time.split(' ')[1]} ago</span>
+                            <span>{job.timeAgo}</span>
+                            {/* <span>{job.time.split(' ')[1]} ago</span> */}
                           </span>
                         </div>
                         {job.desc && (
@@ -53,16 +58,20 @@ const FeaturedJobs = () => {
                           </p>
                         )}
                         <div className="mt-30">
-                          {job.tags.map((tag, idx) => (
-                            <a key={idx} className="btn btn-grey-small mr-5" href="/jobs-grid">
-                              {tag}
+                          {(job.skills || []).map((skill, idx) => (
+                            <a
+                              key={idx}
+                              className="btn btn-grey-small mr-5"
+                              href="#"
+                            >
+                              {skill}
                             </a>
                           ))}
                         </div>
                         <div className="card-2-bottom mt-30">
                           <div className="row">
                             <div className="col-lg-7 col-7">
-                              <span className="card-text-price">{formatHourlyPrice(job.price)}</span>
+                              <span className="card-text-price">{job.salaryDisplay}</span>
                               <span className="text-muted">/Hour</span>
                             </div>
                             <div className="col-lg-5 col-5 text-end">

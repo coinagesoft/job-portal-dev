@@ -1,11 +1,10 @@
 import api from "../api";
+import { getCandidateId } from "@/utils/authHelper";
 
-export const getMyApplications = (candidateId) =>
-  api.get(
-    "/api/candidate/jobs/my-applications",
-    {
-      params: {
-        candidateId,
-      },
-    }
+export const getMyApplications = () => {
+  const candidateId = getCandidateId();
+
+  return api.get(
+    `/api/candidate/jobs/GetAppliedJobs?candidateId=${candidateId}`
   );
+};

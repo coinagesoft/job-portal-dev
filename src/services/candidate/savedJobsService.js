@@ -1,12 +1,10 @@
 import api from "../api";
 
-export const saveJob = (jobId, candidateId) =>
+export const saveJob = (jobId) =>
   api.post(
     `/api/candidate/jobs/${jobId}/save`,
-    null,
-    {
-      params: {
-        candidateId,
-      },
-    }
+    null
   );
+
+  export const getSavedJobs = () =>
+  api.get("/api/candidate/jobs/saved");

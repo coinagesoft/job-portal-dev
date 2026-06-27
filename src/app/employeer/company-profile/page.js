@@ -2,25 +2,8 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useToast } from "@/components/Toast";
-
-const COMPANY = {
-  name: "Horizon Marine Services",
-  displayName: "Horizon Marine",
-  location: "Mumbai, Maharashtra",
-  tagline:
-    "Connecting skilled trade workers to offshore and industrial projects across India and beyond.",
-  industry: "Marine & Offshore Recruitment",
-  size: "51–200 employees",
-  founded: "2011",
-  website: "https://horizonmarine.in",
-  phone: "+91 22 4567 8900",
-  email: "hiring@horizonmarine.in",
-  address: "406, Maritime House, Ballard Estate, Mumbai – 400 001",
-  gstNo: "27AABCH1234M1ZP",
-  activeJobs: 14,
-  totalHired: 830,
-  avgTime: "12 days",
-};
+import { useEffect } from "react";
+import companyProfileService from "@/services/recruiter/companyProfileService";
 
 const trustBadges = [
   {
@@ -114,7 +97,7 @@ const people = [
 ];
 
 const EditFieldModal = ({ field, value, onClose, onSave }) => {
-  const [val, setVal] = useState(value);
+  const [val, setVal] = useState(value ?? "");
   return (
     <div
       style={{
@@ -164,7 +147,7 @@ const EditFieldModal = ({ field, value, onClose, onSave }) => {
             <label className="font-sm color-text-mutted mb-10">{field}</label>
             <input
               className="form-control"
-              value={val}
+              value={val ?? ""}
               onChange={(e) => setVal(e.target.value)}
             />
           </div>
@@ -198,15 +181,106 @@ const EditFieldModal = ({ field, value, onClose, onSave }) => {
 export default function EmployerCompanyProfilePage() {
   const showToast = useToast();
   const [activeTab, setActiveTab] = useState("about");
-  const [company, setCompany] = useState(COMPANY);
+  const [company, setCompany] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [editModal, setEditModal] = useState(null);
-  const [description, setDescription] = useState(
-    "Horizon Marine Services is a leading marine and offshore recruitment agency specialising in placing skilled trade workers — welders, electricians, riggers, and vessel crew — across Gulf, Indian Ocean, and South-East Asia projects. We hold valid POE and RPSL licences and maintain full compliance with the Ministry of External Affairs mandate for overseas worker placements.",
-  );
+  const [description, setDescription] = useState("");
+  useEffect(() => {
+    loadCompanyProfile();
+  }, []);
 
-  const handleSaveField = (field, val) => {
-    setCompany((prev) => ({ ...prev, [field]: val }));
-    showToast(`${field} updated successfully!`, "success");
+  const loadCompanyProfile = async () => {
+    try {
+      setLoading(true);
+
+      const data = await companyProfileService.getCompanyProfile();
+
+      setCompany({
+        name: data.legalName ?? "",
+        displayName: data.companyDisplayName ?? "",
+        location: `${data.city ?? ""}, ${data.state ?? ""}`,
+        industry: data.industryType ?? "",
+        size: data.companySize ?? "",
+        founded: data.yearEstablished ?? "",
+        companyLogoUrl: data.companyLogoUrl ?? "",
+        website: data.websiteUrl ?? "",
+        phone: data.contactPhone ?? "",
+        email: data.contactEmailPublic ?? "",
+        gstNo: data.gstn ?? "",
+        tradeName: data.tradeName ?? "",
+        addressLine1: data.addressLine1 ?? "",
+        addressLine2: data.addressLine2 ?? "",
+        city: data.city ?? "",
+        state: data.state ?? "",
+        pincode: data.pincode ?? "",
+        country: data.country ?? "",
+        contactPersonName: data.contactPersonName ?? "",
+        designation: data.designation ?? "",
+        operatingHours: data.operatingHours ?? "",
+      });
+
+      setDescription(data.companyDescription || "");
+    } catch (error) {
+      console.error(error);
+      showToast("Failed to load company profile", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDescriptionBlur = async () => {
+    try {
+      if (description === company.companyDescription) {
+        return;
+      }
+
+      await companyProfileService.updateCompanyProfileField(
+        "CompanyDescription",
+        description,
+      );
+
+      setCompany((prev) => ({
+        ...prev,
+        companyDescription: description,
+      }));
+
+      showToast("Company description updated successfully", "success");
+    } catch (error) {
+      console.error(error);
+
+      showToast(
+        error?.response?.data?.message ||
+          "Failed to update company description",
+        "error",
+      );
+    }
+  };
+
+  const handleSaveField = async (field, val) => {
+    try {
+      const apiField = fieldApiMap[field];
+
+      if (!apiField) {
+        showToast("Field not supported", "warning");
+        return;
+      }
+
+      await companyProfileService.updateCompanyProfileField(apiField, val);
+
+      setCompany((prev) => ({
+        ...prev,
+        [field]: val,
+      }));
+
+      showToast("Updated successfully", "success");
+    } catch (error) {
+      console.error(error);
+
+      showToast(
+        error?.response?.data?.message || "Failed to update profile",
+        "error",
+      );
+    }
   };
 
   const fieldRows = [
@@ -220,6 +294,22 @@ export default function EmployerCompanyProfilePage() {
     { label: "GST Number", key: "gstNo" },
   ];
 
+  const fieldApiMap = {
+    displayName: "CompanyDisplayName",
+    website: "WebsiteUrl",
+    size: "CompanySize",
+    founded: "YearEstablished",
+    phone: "ContactPhone",
+    email: "ContactEmailPublic",
+    companyDescription: "CompanyDescription",
+  };
+  if (loading) {
+    return (
+      <div className="container py-5 text-center">
+        Loading company profile...
+      </div>
+    );
+  }
   return (
     <main className="main">
       {/* Banner */}
@@ -241,8 +331,19 @@ export default function EmployerCompanyProfilePage() {
           <div className="box-company-profile">
             <div className="image-compay">
               <img
-                src="/assets/imgs/page/company/company.png"
-                alt="company logo"
+                src={
+                  company?.companyLogoUrl ||
+                  "/assets/imgs/page/company/company.png"
+                }
+                alt={company?.displayName}
+                style={{
+                  width: "110px",
+                  height: "100px",
+                  objectFit: "cover",
+                  borderRadius: "5px",
+                  border: "1px solid #eee",
+                  marginbottom: "20px",
+                }}
               />
             </div>
             <div className="row mt-10">
@@ -329,8 +430,9 @@ export default function EmployerCompanyProfilePage() {
                     <textarea
                       className="form-control"
                       rows="5"
-                      value={description}
+                      value={description ?? ""}
                       onChange={(e) => setDescription(e.target.value)}
+                      onBlur={handleDescriptionBlur}
                     />
                     <p className="font-xs color-text-paragraph-2 mb-0 mt-5">
                       Keep this summary concise and role-focused so candidates
@@ -338,141 +440,144 @@ export default function EmployerCompanyProfilePage() {
                     </p>
                   </div>
 
-                 <h4
-  className="mt-30"
-  style={{
-    color: "#122359",
-    fontWeight: 700,
-    marginBottom: "20px",
-  }}
->
-  Company Details
-</h4>
+                  <h4
+                    className="mt-30"
+                    style={{
+                      color: "#122359",
+                      fontWeight: 700,
+                      marginBottom: "20px",
+                    }}
+                  >
+                    Company Details
+                  </h4>
 
-<div
-  style={{
-    background: "#ffffff",
-    borderRadius: "20px",
-    border: "1px solid rgba(18,35,89,0.06)",
-    overflow: "hidden",
-    boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
-    marginBottom: "28px",
-  }}
->
-  {fieldRows.map((row, index) => (
-    <div
-  key={row.key}
-  style={{
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "18px",
-    padding: "18px 22px",
-    borderBottom:
-      index !== fieldRows.length - 1
-        ? "1px solid rgba(18,35,89,0.06)"
-        : "none",
-    transition: "all .35s ease",
-    border: "1px solid transparent",
-    position: "relative",
-    background: "#ffffff",
-  }}
-    onMouseEnter={(e) => {
-  e.currentTarget.style.background =
-    "#fffaf2";
+                  <div
+                    style={{
+                      background: "#ffffff",
+                      borderRadius: "20px",
+                      border: "1px solid rgba(18,35,89,0.06)",
+                      overflow: "hidden",
+                      boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
+                      marginBottom: "28px",
+                    }}
+                  >
+                    {fieldRows.map((row, index) => (
+                      <div
+                        key={row.key}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: "18px",
+                          padding: "18px 22px",
+                          borderBottom:
+                            index !== fieldRows.length - 1
+                              ? "1px solid rgba(18,35,89,0.06)"
+                              : "none",
+                          transition: "all .35s ease",
+                          border: "1px solid transparent",
+                          position: "relative",
+                          background: "#ffffff",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = "#fffaf2";
 
-  e.currentTarget.style.transform =
-    "translateY(-3px)";
+                          e.currentTarget.style.transform = "translateY(-3px)";
 
-  e.currentTarget.style.borderColor =
-    "rgba(255,153,0,0.28)";
+                          e.currentTarget.style.borderColor =
+                            "rgba(255,153,0,0.28)";
 
-  e.currentTarget.style.boxShadow =
-    "0 12px 28px rgba(255,163,0,0.10)";
-}}
+                          e.currentTarget.style.boxShadow =
+                            "0 12px 28px rgba(255,163,0,0.10)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = "#ffffff";
 
-onMouseLeave={(e) => {
-  e.currentTarget.style.background =
-    "#ffffff";
+                          e.currentTarget.style.transform = "translateY(0px)";
 
-  e.currentTarget.style.transform =
-    "translateY(0px)";
+                          e.currentTarget.style.borderColor = "transparent";
 
-  e.currentTarget.style.borderColor =
-    "transparent";
+                          e.currentTarget.style.boxShadow = "none";
+                        }}
+                      >
+                        <div
+                          style={{
+                            minWidth: "180px",
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: "12px",
+                              fontWeight: 700,
+                              textTransform: "uppercase",
+                              letterSpacing: ".5px",
+                              color: "#ff9900",
+                              marginBottom: "4px",
+                            }}
+                          >
+                            {row.label}
+                          </div>
 
-  e.currentTarget.style.boxShadow =
-    "none";
-}}
-    >
-      <div
-        style={{
-          minWidth: "180px",
-        }}
-      >
-        <div
-          style={{
-            fontSize: "12px",
-            fontWeight: 700,
-            textTransform: "uppercase",
-            letterSpacing: ".5px",
-            color: "#ff9900",
-            marginBottom: "4px",
-          }}
-        >
-          {row.label}
-        </div>
+                          <div
+                            style={{
+                              color: "#122359",
+                              fontSize: "15px",
+                              fontWeight: 600,
+                              wordBreak: "break-word",
+                            }}
+                          >
+                            {row.key === "website" ? (
+                              <a
+                                href={`https://${company.website?.replace(/^https?:\/\//, "")}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  color: "#122359",
+                                  textDecoration: "underline",
+                                }}
+                              >
+                                {company.website}
+                              </a>
+                            ) : (
+                              company[row.key]
+                            )}
+                          </div>
+                        </div>
 
-        <div
-          style={{
-            color: "#122359",
-            fontSize: "15px",
-            fontWeight: 600,
-            wordBreak: "break-word",
-          }}
-        >
-          {company[row.key]}
-        </div>
-      </div>
-
-      <button
-        className="btn btn-border btn-sm"
-        style={{
-          borderRadius: "10px",
-          padding: "8px 14px",
-          fontWeight: 600,
-          minWidth: "90px",
-          transition: "all .25s ease",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background =
-            "#122359";
-          e.currentTarget.style.color =
-            "#ffffff";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background =
-            "#ffffff";
-          e.currentTarget.style.color =
-            "#122359";
-        }}
-        onClick={() =>
-          setEditModal({
-            field: row.label,
-            key: row.key,
-            value: company[row.key],
-          })
-        }
-      >
-        <i
-          className="fi fi-rr-edit"
-          style={{ marginRight: "5px" }}
-        />
-        Edit
-      </button>
-    </div>
-  ))}
-</div>
+                        <button
+                          className="btn btn-border btn-sm"
+                          style={{
+                            borderRadius: "10px",
+                            padding: "8px 14px",
+                            fontWeight: 600,
+                            minWidth: "90px",
+                            transition: "all .25s ease",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = "#122359";
+                            e.currentTarget.style.color = "#ffffff";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = "#ffffff";
+                            e.currentTarget.style.color = "#122359";
+                          }}
+                          onClick={() =>
+                            setEditModal({
+                              field: row.label,
+                              key: row.key,
+                              value: company[row.key] ?? "",
+                            })
+                          }
+                        >
+                          <i
+                            className="fi fi-rr-edit"
+                            style={{ marginRight: "5px" }}
+                          />
+                          Edit
+                        </button>
+                      </div>
+                    ))}
+                  </div>
 
                   {/* <h4>Trust Badges & Compliance</h4>
                   <div
@@ -543,306 +648,300 @@ onMouseLeave={(e) => {
                 </div>
               )}
 
-         {activeTab === "recruitments" && (
-  <div>
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: "24px",
-        flexWrap: "wrap",
-        gap: "12px",
-      }}
-    >
-      <h4
-        style={{
-          margin: 0,
-          color: "#122359",
-          fontWeight: 800,
-        }}
-      >
-        Active Recruitments
-      </h4>
-
-      <button
-        className="btn btn-default btn-sm"
-        style={{
-          borderRadius: "12px",
-          fontWeight: 700,
-          padding: "10px 18px",
-          boxShadow: "0 8px 18px rgba(255,163,0,0.18)",
-        }}
-        onClick={() =>
-          showToast("Redirecting to post a new job…", "info")
-        }
-      >
-        <i
-          className="fi fi-rr-plus"
-          style={{ marginRight: "6px" }}
-        />
-        Post New Job
-      </button>
-    </div>
-
-    <div className="box-list-jobs display-list">
-      {recruitmentCards.map((job) => (
-        <div className="col-xl-12 col-12" key={job.id}>
-          <div
-            className="card-grid-2 hover-up cv-search-candidate-card"
-            style={{
-              marginBottom: "20px",
-            }}
-          >
-            <div
-              className="card-block-info"
-              style={{
-                padding: "26px",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                  flexWrap: "wrap",
-                  gap: "14px",
-                }}
-              >
+              {activeTab === "recruitments" && (
                 <div>
-                  <h4
-                    style={{
-                      margin: "0 0 8px",
-                      fontSize: "22px",
-                      fontWeight: 700,
-                      color: "#122359",
-                      transition: "all .25s ease",
-                    }}
-                  >
-                    <Link href="/employeer/applicants">
-                      {job.title}
-                    </Link>
-                  </h4>
-
                   <div
-                    className="mt-5"
                     style={{
                       display: "flex",
+                      justifyContent: "space-between",
                       alignItems: "center",
-                      gap: "10px",
+                      marginBottom: "24px",
                       flexWrap: "wrap",
+                      gap: "12px",
                     }}
                   >
-                    <span className="card-briefcase">
-                      {job.type}
-                    </span>
-
-                    <span className="card-time">
-                      {job.posted}
-                    </span>
-
-                    <span
-                      className="card-location"
+                    <h4
                       style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "5px",
-                        marginLeft: 0,
+                        margin: 0,
+                        color: "#122359",
+                        fontWeight: 800,
                       }}
                     >
+                      Active Recruitments
+                    </h4>
+
+                    <button
+                      className="btn btn-default btn-sm"
+                      style={{
+                        borderRadius: "12px",
+                        fontWeight: 700,
+                        padding: "10px 18px",
+                        boxShadow: "0 8px 18px rgba(255,163,0,0.18)",
+                      }}
+                      onClick={() =>
+                        showToast("Redirecting to post a new job…", "info")
+                      }
+                    >
                       <i
-                        className="fi fi-rr-marker"
-                        style={{
-                          fontSize: "12px",
-                          color: "#66789c",
-                          lineHeight: 1,
-                        }}
+                        className="fi fi-rr-plus"
+                        style={{ marginRight: "6px" }}
                       />
-                      {job.location}
-                    </span>
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    textAlign: "right",
-                    minWidth: "150px",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontWeight: 800,
-                      color: "#122359",
-                      fontSize: "20px",
-                      marginBottom: "5px",
-                    }}
-                  >
-                    {job.salary}
+                      Post New Job
+                    </button>
                   </div>
 
-                  <div
-                    style={{
-                      fontSize: "13px",
-                      color: "#66789c",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {job.applicants} applicants
+                  <div className="box-list-jobs display-list">
+                    {recruitmentCards.map((job) => (
+                      <div className="col-xl-12 col-12" key={job.id}>
+                        <div
+                          className="card-grid-2 hover-up cv-search-candidate-card"
+                          style={{
+                            marginBottom: "20px",
+                          }}
+                        >
+                          <div
+                            className="card-block-info"
+                            style={{
+                              padding: "26px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "flex-start",
+                                flexWrap: "wrap",
+                                gap: "14px",
+                              }}
+                            >
+                              <div>
+                                <h4
+                                  style={{
+                                    margin: "0 0 8px",
+                                    fontSize: "22px",
+                                    fontWeight: 700,
+                                    color: "#122359",
+                                    transition: "all .25s ease",
+                                  }}
+                                >
+                                  <Link href="/employeer/applicants">
+                                    {job.title}
+                                  </Link>
+                                </h4>
+
+                                <div
+                                  className="mt-5"
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "10px",
+                                    flexWrap: "wrap",
+                                  }}
+                                >
+                                  <span className="card-briefcase">
+                                    {job.type}
+                                  </span>
+
+                                  <span className="card-time">
+                                    {job.posted}
+                                  </span>
+
+                                  <span
+                                    className="card-location"
+                                    style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: "5px",
+                                      marginLeft: 0,
+                                    }}
+                                  >
+                                    <i
+                                      className="fi fi-rr-marker"
+                                      style={{
+                                        fontSize: "12px",
+                                        color: "#66789c",
+                                        lineHeight: 1,
+                                      }}
+                                    />
+                                    {job.location}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div
+                                style={{
+                                  textAlign: "right",
+                                  minWidth: "150px",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    fontWeight: 800,
+                                    color: "#122359",
+                                    fontSize: "20px",
+                                    marginBottom: "5px",
+                                  }}
+                                >
+                                  {job.salary}
+                                </div>
+
+                                <div
+                                  style={{
+                                    fontSize: "13px",
+                                    color: "#66789c",
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  {job.applicants} applicants
+                                </div>
+                              </div>
+                            </div>
+
+                            <div
+                              style={{
+                                marginTop: "16px",
+                                display: "flex",
+                                gap: "8px",
+                                flexWrap: "wrap",
+                              }}
+                            >
+                              {job.tags.map((tag) => (
+                                <span
+                                  key={tag}
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    padding: "7px 14px",
+                                    borderRadius: "999px",
+                                    background: "#fff7ea",
+                                    border: "1px solid rgba(255,163,0,0.18)",
+                                    color: "#ff9900",
+                                    fontSize: "12px",
+                                    fontWeight: 700,
+                                    lineHeight: 1,
+                                    transition: "all .25s ease",
+                                    boxShadow:
+                                      "0 4px 10px rgba(255,163,0,0.08)",
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform =
+                                      "translateY(-2px)";
+                                    e.currentTarget.style.background =
+                                      "#ffa300";
+                                    e.currentTarget.style.color = "#ffffff";
+                                    e.currentTarget.style.boxShadow =
+                                      "0 10px 18px rgba(255,163,0,0.22)";
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform =
+                                      "translateY(0px)";
+                                    e.currentTarget.style.background =
+                                      "#fff7ea";
+                                    e.currentTarget.style.color = "#ff9900";
+                                    e.currentTarget.style.boxShadow =
+                                      "0 4px 10px rgba(255,163,0,0.08)";
+                                  }}
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+
+                            <div
+                              className="card-2-bottom mt-20"
+                              style={{
+                                paddingTop: "20px",
+                                borderTop: "1px solid rgba(18,35,89,0.06)",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: "flex",
+                                  gap: "10px",
+                                  flexWrap: "wrap",
+                                }}
+                              >
+                                <Link
+                                  href="/employeer/applicants"
+                                  className="btn btn-default"
+                                  style={{
+                                    background: "#ffa300",
+                                    borderColor: "#ffa300",
+                                    color: "#ffffff",
+                                    borderRadius: "12px",
+                                    padding: "10px 18px",
+                                    fontWeight: 700,
+                                    fontSize: "13px",
+                                    transition: "all .25s ease",
+                                    boxShadow:
+                                      "0 8px 20px rgba(255,163,0,0.22)",
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "6px",
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform =
+                                      "translateY(-2px)";
+                                    e.currentTarget.style.boxShadow =
+                                      "0 14px 28px rgba(255,163,0,0.32)";
+                                    e.currentTarget.style.background =
+                                      "#ff9900";
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform =
+                                      "translateY(0px)";
+                                    e.currentTarget.style.boxShadow =
+                                      "0 8px 20px rgba(255,163,0,0.22)";
+                                    e.currentTarget.style.background =
+                                      "#ffa300";
+                                  }}
+                                >
+                                  <i className="fi fi-rr-users" />
+                                  View Applicants
+                                </Link>
+
+                                <button
+                                  className="btn btn-border btn-sm"
+                                  style={{
+                                    borderRadius: "12px",
+                                    fontWeight: 700,
+                                    padding: "10px 16px",
+                                  }}
+                                  onClick={() =>
+                                    showToast(
+                                      `Editing job: "${job.title}"`,
+                                      "info",
+                                    )
+                                  }
+                                >
+                                  Edit Job
+                                </button>
+
+                                <button
+                                  className="btn btn-grey-small"
+                                  style={{
+                                    borderRadius: "12px",
+                                    fontWeight: 700,
+                                    padding: "10px 16px",
+                                  }}
+                                  onClick={() =>
+                                    showToast(
+                                      `Job "${job.title}" paused.`,
+                                      "warning",
+                                    )
+                                  }
+                                >
+                                  Pause
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              </div>
-
-              <div
-                style={{
-                  marginTop: "16px",
-                  display: "flex",
-                  gap: "8px",
-                  flexWrap: "wrap",
-                }}
-              >
-                {job.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      padding: "7px 14px",
-                      borderRadius: "999px",
-                      background: "#fff7ea",
-                      border:
-                        "1px solid rgba(255,163,0,0.18)",
-                      color: "#ff9900",
-                      fontSize: "12px",
-                      fontWeight: 700,
-                      lineHeight: 1,
-                      transition: "all .25s ease",
-                      boxShadow:
-                        "0 4px 10px rgba(255,163,0,0.08)",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform =
-                        "translateY(-2px)";
-                      e.currentTarget.style.background =
-                        "#ffa300";
-                      e.currentTarget.style.color =
-                        "#ffffff";
-                      e.currentTarget.style.boxShadow =
-                        "0 10px 18px rgba(255,163,0,0.22)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform =
-                        "translateY(0px)";
-                      e.currentTarget.style.background =
-                        "#fff7ea";
-                      e.currentTarget.style.color =
-                        "#ff9900";
-                      e.currentTarget.style.boxShadow =
-                        "0 4px 10px rgba(255,163,0,0.08)";
-                    }}
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-
-              <div
-                className="card-2-bottom mt-20"
-                style={{
-                  paddingTop: "20px",
-                  borderTop:
-                    "1px solid rgba(18,35,89,0.06)",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "10px",
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <Link
-                    href="/employeer/applicants"
-                    className="btn btn-default"
-                    style={{
-                      background: "#ffa300",
-                      borderColor: "#ffa300",
-                      color: "#ffffff",
-                      borderRadius: "12px",
-                      padding: "10px 18px",
-                      fontWeight: 700,
-                      fontSize: "13px",
-                      transition: "all .25s ease",
-                      boxShadow:
-                        "0 8px 20px rgba(255,163,0,0.22)",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "6px",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform =
-                        "translateY(-2px)";
-                      e.currentTarget.style.boxShadow =
-                        "0 14px 28px rgba(255,163,0,0.32)";
-                      e.currentTarget.style.background =
-                        "#ff9900";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform =
-                        "translateY(0px)";
-                      e.currentTarget.style.boxShadow =
-                        "0 8px 20px rgba(255,163,0,0.22)";
-                      e.currentTarget.style.background =
-                        "#ffa300";
-                    }}
-                  >
-                    <i className="fi fi-rr-users" />
-                    View Applicants
-                  </Link>
-
-                  <button
-                    className="btn btn-border btn-sm"
-                    style={{
-                      borderRadius: "12px",
-                      fontWeight: 700,
-                      padding: "10px 16px",
-                    }}
-                    onClick={() =>
-                      showToast(
-                        `Editing job: "${job.title}"`,
-                        "info",
-                      )
-                    }
-                  >
-                    
-                    Edit Job
-                  </button>
-
-                  <button
-                    className="btn btn-grey-small"
-                    style={{
-                      borderRadius: "12px",
-                      fontWeight: 700,
-                      padding: "10px 16px",
-                    }}
-                    onClick={() =>
-                      showToast(
-                        `Job "${job.title}" paused.`,
-                        "warning",
-                      )
-                    }
-                  >
-                    
-                    Pause
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-)}
+              )}
 
               {activeTab === "people" && (
                 <div>

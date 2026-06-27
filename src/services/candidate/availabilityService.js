@@ -1,18 +1,19 @@
 import api from "../api";
+import { getCandidateId } from "@/utils/authHelper";
 
-export const getAvailability = (candidateId) =>
-  api.get("/api/candidate/profile/availability", {
-    params: { candidateId },
-  });
+export const getAvailability = () => {
+  const candidateId = getCandidateId();
 
-export const updateAvailability = (
-  candidateId,
-  payload
-) =>
-  api.put(
-    "/api/candidate/profile/availability",
-    payload,
-    {
-      params: { candidateId },
-    }
+  return api.get(
+    `/api/candidate/profile/availability?candidateId=${candidateId}`
   );
+};
+
+export const updateAvailability = (payload) => {
+  const candidateId = getCandidateId();
+
+  return api.put(
+    `/api/candidate/profile/availability?candidateId=${candidateId}`,
+    payload
+  );
+};
