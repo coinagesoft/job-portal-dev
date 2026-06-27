@@ -2,12 +2,12 @@
 import Link from "next/link";
 
 import { useEffect, useState } from "react";
-import { searchCandidates, getCvSearchDashboard, getFilterOptions } from "@/services/recruiter/recruiterCvSearchService";
-
-
-
-
-
+import {
+  searchCandidates,
+  getCvSearchDashboard,
+  getFilterOptions,
+} from "@/services/recruiter/recruiterCvSearchService";
+import candidateProfileService from "@/services/recruiter/Candidateprofileservice";
 
 const getQueryValue = (value, fallback = "") => {
   if (Array.isArray(value)) return value[0] ?? fallback;
@@ -18,7 +18,6 @@ const parseInteger = (value) => {
   const parsed = Number.parseInt(getQueryValue(value, ""), 10);
   return Number.isFinite(parsed) ? parsed : null;
 };
-
 
 const isChecked = (value) => {
   const checkedValue = String(getQueryValue(value, "")).toLowerCase();
@@ -44,9 +43,7 @@ const tokenizeSearch = (value) =>
 const formatLocation = (candidate) =>
   `${candidate.currentCity}, ${candidate.currentState}`;
 
-const formatExperience = (candidate) =>
-  `${candidate.experienceYears} yrs exp`;
-
+const formatExperience = (candidate) => `${candidate.experienceYears} yrs exp`;
 
 const availabilityLabel = (availability) =>
   availability === "available" ? "Available now" : "Not available";
@@ -69,8 +66,6 @@ const certificationTooltip = (type) =>
       : type === "Offshore"
         ? "Candidate has offshore experience"
         : type;
-
-
 
 const buildActiveFilterTags = (filters, tokenCount) => {
   const tags = [];
@@ -113,9 +108,7 @@ const createProfileHighlightTags = (candidate) => {
   }
 
   // Available
-  if (
-    candidate.availabilityStatus?.toLowerCase() === "available"
-  ) {
+  if (candidate.availabilityStatus?.toLowerCase() === "available") {
     tags.push({
       label: "Ready to Join",
       tone: "ready",
@@ -163,14 +156,12 @@ const createProfileHighlightTags = (candidate) => {
   }
 
   // Skills
-  (candidate.skills ?? [])
-    .slice(0, 2)
-    .forEach((skill) => {
-      tags.push({
-        label: skill,
-        tone: "neutral",
-      });
+  (candidate.skills ?? []).slice(0, 2).forEach((skill) => {
+    tags.push({
+      label: skill,
+      tone: "neutral",
     });
+  });
 
   // Remove duplicates
   const dedupe = new Set();
@@ -186,7 +177,6 @@ const createProfileHighlightTags = (candidate) => {
     })
     .slice(0, 6);
 };
-
 
 const EmployerCvSearchPage = () => {
   const [cvCandidates, setCvCandidates] = useState([]);
@@ -206,7 +196,7 @@ const EmployerCvSearchPage = () => {
     unlockedProfilesOnly: false,
     sortBy: "KeywordMatch",
     pageNumber: 1,
-    pageSize: 10
+    pageSize: 10,
   });
 
   const resetFilters = async () => {
@@ -236,7 +226,24 @@ const EmployerCvSearchPage = () => {
       console.error(error);
     }
   };
+  const handleDownloadCv = async (candidateId) => {
+    try {
+      const result = await candidateProfileService.downloadCv(candidateId);
 
+      if (result?.Success) {
+        console.log("Download CV Response:", result);
+
+        if (result.cvUrl) {
+          window.open(result.cvUrl, "_blank", "noopener,noreferrer");
+        }
+      } else {
+        alert(result?.Message || "Unable to download CV");
+      }
+    } catch (error) {
+      console.error(error);
+      alert(error?.response?.data?.Message || "Unable to download CV");
+    }
+  };
   const loadCandidates = async () => {
     try {
       setLoading(true);
@@ -245,11 +252,9 @@ const EmployerCvSearchPage = () => {
 
       setCvCandidates(response.candidates);
       setTotalCandidates(response.totalCandidates);
-    }
-    catch (error) {
+    } catch (error) {
       console.error(error);
-    }
-    finally {
+    } finally {
       setLoading(false);
     }
   };
@@ -278,7 +283,6 @@ const EmployerCvSearchPage = () => {
     loadFilterOptions();
   }, []);
 
-
   useEffect(() => {
     if (
       filters.minExperience !== "" &&
@@ -292,12 +296,6 @@ const EmployerCvSearchPage = () => {
       }));
     }
   }, [filters.minExperience, filters.maxExperience]);
-
-
-
-
-
-
 
   return (
     <main className="main">
@@ -329,11 +327,13 @@ const EmployerCvSearchPage = () => {
                     >
                       <option value="">Any trade</option>
 
-                      {(filterOptions?.tradeCategories ?? []).map((tradeOption) => (
-                        <option key={tradeOption} value={tradeOption}>
-                          {tradeOption}
-                        </option>
-                      ))}
+                      {(filterOptions?.tradeCategories ?? []).map(
+                        (tradeOption) => (
+                          <option key={tradeOption} value={tradeOption}>
+                            {tradeOption}
+                          </option>
+                        ),
+                      )}
                     </select>
                   </div>
 
@@ -453,13 +453,18 @@ const EmployerCvSearchPage = () => {
                   ) : null}
 
                   {cvCandidates.map((candidate) => {
-                    const profileHighlightTags = createProfileHighlightTags(candidate);
+                    const profileHighlightTags =
+                      createProfileHighlightTags(candidate);
 
                     return (
-                      <div className="col-xl-12 col-12" key={candidate.candidateId}>
+                      <div
+                        className="col-xl-12 col-12"
+                        key={candidate.candidateId}
+                      >
                         <div
-                          className={`card-grid-2 hover-up cv-search-candidate-card ${candidate.isUnlocked ? "is-unlocked" : ""
-                            }`}
+                          className={`card-grid-2 hover-up cv-search-candidate-card ${
+                            candidate.isUnlocked ? "is-unlocked" : ""
+                          }`}
                         >
                           <div className="row">
                             <div className="col-lg-7 col-md-7 col-sm-12">
@@ -479,19 +484,21 @@ const EmployerCvSearchPage = () => {
                                     className="name-job"
                                     href={`/employeer/candidate-profile/${candidate.candidateId}`}
                                   >
-                                    {candidate.fullName} - {candidate.primaryTrade}
+                                    {candidate.fullName} -{" "}
+                                    {candidate.primaryTrade}
                                   </Link>
 
                                   <span className="location-small d-block">
-                                    {formatExperience(candidate)} - {formatLocation(candidate)}
+                                    {formatExperience(candidate)} -{" "}
+                                    {formatLocation(candidate)}
                                   </span>
 
                                   {candidate.availabilityStatus?.toLowerCase() ===
                                     "available" && (
-                                      <span className="available-now-text">
-                                        Available now
-                                      </span>
-                                    )}
+                                    <span className="available-now-text">
+                                      Available now
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -544,11 +551,13 @@ const EmployerCvSearchPage = () => {
                               <div className="row align-items-center">
                                 <div className="col-lg-7 col-7">
                                   <span className="card-text-price">
-                                    Keyword match: {candidate.keywordMatchPercentage}%
+                                    Keyword match:{" "}
+                                    {candidate.keywordMatchPercentage}%
                                   </span>
 
                                   <span className="font-xs color-text-mutted ml-10">
-                                    Band {candidate.band} - {candidate.unlockCredits} cr
+                                    Band {candidate.band} -{" "}
+                                    {candidate.unlockCredits} cr
                                   </span>
                                 </div>
 
@@ -567,6 +576,11 @@ const EmployerCvSearchPage = () => {
                                         className="btn btn-border"
                                         type="button"
                                         style={CANDIDATE_ACTION_BUTTON_STYLE}
+                                        onClick={() =>
+                                          handleDownloadCv(
+                                            candidate.candidateId,
+                                          )
+                                        }
                                       >
                                         Download CV
                                       </button>
@@ -616,7 +630,6 @@ const EmployerCvSearchPage = () => {
                         >
                           Reset
                         </button>
-
                       </h5>
                     </div>
 
@@ -631,7 +644,7 @@ const EmployerCvSearchPage = () => {
                           onChange={(e) =>
                             setFilters({
                               ...filters,
-                              keyword: e.target.value
+                              keyword: e.target.value,
                             })
                           }
                           placeholder="Trade, skill, name, location"
@@ -653,16 +666,17 @@ const EmployerCvSearchPage = () => {
                           onChange={(e) =>
                             setFilters({
                               ...filters,
-                              tradeCategory: e.target.value
+                              tradeCategory: e.target.value,
                             })
                           }
                         >
                           <option value="">Any trade</option>
-                          {filterOptions?.tradeCategories ?? [].map((tradeOption) => (
-                            <option key={tradeOption} value={tradeOption}>
-                              {tradeOption}
-                            </option>
-                          ))}
+                          {filterOptions?.tradeCategories ??
+                            [].map((tradeOption) => (
+                              <option key={tradeOption} value={tradeOption}>
+                                {tradeOption}
+                              </option>
+                            ))}
                         </select>
                       </div>
                     </div>
@@ -681,7 +695,7 @@ const EmployerCvSearchPage = () => {
                             onChange={(e) =>
                               setFilters({
                                 ...filters,
-                                minExperience: e.target.value
+                                minExperience: e.target.value,
                               })
                             }
                             placeholder="Min"
@@ -698,7 +712,7 @@ const EmployerCvSearchPage = () => {
                             onChange={(e) =>
                               setFilters({
                                 ...filters,
-                                maxExperience: e.target.value
+                                maxExperience: e.target.value,
                               })
                             }
                             placeholder="Max"
@@ -718,7 +732,7 @@ const EmployerCvSearchPage = () => {
                           onChange={(e) =>
                             setFilters({
                               ...filters,
-                              location: e.target.value
+                              location: e.target.value,
                             })
                           }
                           placeholder="City or state"
@@ -736,7 +750,7 @@ const EmployerCvSearchPage = () => {
                           onChange={(e) =>
                             setFilters({
                               ...filters,
-                              availabilityStatus: e.target.value
+                              availabilityStatus: e.target.value,
                             })
                           }
                         >
@@ -760,7 +774,7 @@ const EmployerCvSearchPage = () => {
                                 onChange={(e) =>
                                   setFilters({
                                     ...filters,
-                                    itiCertifiedOnly: e.target.checked
+                                    itiCertifiedOnly: e.target.checked,
                                   })
                                 }
                               />
@@ -780,7 +794,7 @@ const EmployerCvSearchPage = () => {
                                 onChange={(e) =>
                                   setFilters({
                                     ...filters,
-                                    passportValidOnly: e.target.checked
+                                    passportValidOnly: e.target.checked,
                                   })
                                 }
                               />
@@ -794,7 +808,13 @@ const EmployerCvSearchPage = () => {
                                 type="checkbox"
                                 name="offshore"
                                 value="1"
-                                defaultChecked={filters.offshoreOnly}
+                                checked={filters.offshoreOnly}
+                                onChange={(e) =>
+                                  setFilters({
+                                    ...filters,
+                                    offshoreOnly: e.target.checked,
+                                  })
+                                }
                               />
                               <span className="text-small">
                                 Offshore experience
@@ -812,7 +832,7 @@ const EmployerCvSearchPage = () => {
                                 onChange={(e) =>
                                   setFilters({
                                     ...filters,
-                                    unlockedProfilesOnly: e.target.checked
+                                    unlockedProfilesOnly: e.target.checked,
                                   })
                                 }
                               />
@@ -836,7 +856,7 @@ const EmployerCvSearchPage = () => {
                           onChange={(e) =>
                             setFilters({
                               ...filters,
-                              sortBy: e.target.value
+                              sortBy: e.target.value,
                             })
                           }
                         >
@@ -844,9 +864,7 @@ const EmployerCvSearchPage = () => {
                             Keyword match score
                           </option>
 
-                          <option value="Newest">
-                            Newest profile update
-                          </option>
+                          <option value="Newest">Newest profile update</option>
 
                           <option value="Experience">
                             Experience high to low

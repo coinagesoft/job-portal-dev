@@ -7,6 +7,11 @@ import { useEffect, useState } from "react";
 import {
   getJobDashboard,
   getRecruiterJobs,
+  pauseJob,
+  resumeJob,
+  closeJob,
+  archiveJob,
+  
 } from "@/services/recruiter/recruiterJobListService";
 
 /* ── reusable pill tag ── */
@@ -51,25 +56,72 @@ const EmployerJobListPage = () => {
   const showToast = useToast();
   const [activeStatus, setActiveStatus] = useState("Active");
   const [activeType, setActiveType] = useState("All Types");
+
+
+
   const [dashboard, setDashboard] = useState(null);
- useEffect(() => {
-  if (typeof window === "undefined") return;
+  useEffect(() => {
+    if (typeof window === "undefined") return;
 
-  const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(window.location.search);
 
-  const success = params.get("success");
+    const success = params.get("success");
 
-  if (success === "job-published") {
-    showToast("Job published successfully", "success");
+    if (success === "job-published") {
+      showToast("Job published successfully", "success");
 
-    window.history.replaceState(
-      {},
-      "",
-      window.location.pathname
-    );
-  }
-}, []);
- 
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
+  const handlePause = async (jobId) => {
+    try {
+      const res = await pauseJob(jobId);
+
+      showToast(res.message, "success");
+
+      await loadData();
+    } catch (err) {
+      showToast(err.response?.data?.message || "Unable to pause job", "error");
+    }
+  };
+
+  const handleClose = async (jobId) => {
+    try {
+      const res = await closeJob(jobId);
+
+      showToast(res.message, "success");
+
+      await loadData();
+    } catch (err) {
+      showToast(err.response?.data?.message || "Unable to close job", "error");
+    }
+  };
+  const handleResume = async (jobId) => {
+    try {
+      const res = await resumeJob(jobId);
+
+      showToast(res.message, "success");
+
+      await loadData();
+    } catch (err) {
+      showToast(err.response?.data?.message || "Unable to resume job", "error");
+    }
+  };
+
+  const handleArchive = async (jobId) => {
+    try {
+      const res = await archiveJob(jobId);
+
+      showToast(res.message, "success");
+
+      await loadData();
+    } catch (err) {
+      showToast(
+        err.response?.data?.message || "Unable to archive job",
+        "error",
+      );
+    }
+  };
   const JOB_STATUS_TABS = [
     {
       label: "Active",
@@ -232,7 +284,7 @@ const EmployerJobListPage = () => {
                     setActiveType(tab.label);
 
                     const response = await getRecruiterJobs({
-                      status: activeStatus === "All" ? "" : activeStatus,
+                      status: activeStatus,
                       jobType: tab.label === "All Types" ? "" : tab.label,
                     });
 
@@ -350,12 +402,20 @@ const EmployerJobListPage = () => {
                                 background:
                                   job.jobStatus === "Active"
                                     ? "#DCFCE7"
-                                    : "#FEF3C7",
+                                    : job.jobStatus === "Paused"
+                                      ? "#FEF3C7"
+                                      : job.jobStatus === "Closed"
+                                        ? "#FEE2E2"
+                                        : "#E5E7EB",
 
                                 color:
                                   job.jobStatus === "Active"
                                     ? "#166534"
-                                    : "#92400E",
+                                    : job.jobStatus === "Paused"
+                                      ? "#92400E"
+                                      : job.jobStatus === "Closed"
+                                        ? "#B91C1C"
+                                        : "#374151",
                                 fontSize: 11,
                                 fontWeight: 700,
                               }}
@@ -568,6 +628,52 @@ const EmployerJobListPage = () => {
                               />
                               Applicants
                             </Link>
+                            {job.jobStatus === "Active" && (
+                              <>
+                                <button
+                                  className="btn btn-warning btn-sm"
+                                  onClick={() => handlePause(job.jobId)}
+                                >
+                                  Pause
+                                </button>
+
+                                <button
+                                  className="btn btn-danger btn-sm"
+                                  onClick={() => handleClose(job.jobId)}
+                                >
+                                  Close
+                                </button>
+                              </>
+                            )}
+
+                            {job.jobStatus === "Paused" && (
+                              <>
+                                <button
+                                  className="btn btn-success btn-sm"
+                                  onClick={() => handleResume(job.jobId)}
+                                >
+                                  Resume
+                                </button>
+
+                                <button
+                                  className="btn btn-dark btn-sm"
+                                  onClick={() => handleArchive(job.jobId)}
+                                >
+                                  Archive
+                                </button>
+                              </>
+                            )}
+
+                            {job.jobStatus === "Closed" && (
+                              <button
+                                className="btn btn-danger btn-sm"
+                                onClick={() => handleArchive(job.jobId)}
+                              >
+                                Archive
+                              </button>
+                            )}
+
+                           
                           </div>
                         </div>
                       </div>
@@ -579,6 +685,7 @@ const EmployerJobListPage = () => {
           </div>
         </div>
       </section>
+    
     </main>
   );
 };

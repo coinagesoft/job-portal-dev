@@ -90,29 +90,46 @@ load contact information.
   // ---------------------------------------------
   // Download cv
   // ---------------------------------------------
-  const handleDownloadcv = async () => {
-    setDownloading(true);
-    setActionMessage(null);
-    try {
-      const result = await candidateProfileService.downloadcv(candidateId);
-      if (result.Success) {
-        setActionMessage({ type: "success", text: result.Message });
-        if (result.cvUrl) {
-          window.open(result.cvUrl, "_blank", "noopener,noreferrer");
-        }
-        await loadData(); // refresh wallet balance
-      } else {
-        setActionMessage({ type: "error", text: result.Message });
-      }
-    } catch (err) {
+  const handleDownloadCv = async () => {
+  setDownloading(true);
+  setActionMessage(null);
+
+  try {
+    const result = await candidateProfileService.downloadCv(candidateId);
+
+    if (!result?.Success) {
       setActionMessage({
         type: "error",
-        text: err.response?.data?.Message || "cv download failed.",
+        text: result?.Message || "Unable to download CV",
       });
-    } finally {
-      setDownloading(false);
+      return;
     }
-  };
+
+    setActionMessage({
+      type: "success",
+      text: result.Message,
+    });
+
+    // If backend returns URL
+    if (result.cvUrl) {
+      window.open(result.cvUrl, "_blank", "noopener,noreferrer");
+    }
+
+    // refresh wallet credits
+    await loadData();
+
+  } catch (err) {
+    setActionMessage({
+      type: "error",
+      text:
+        err.response?.data?.Message ||
+        err.message ||
+        "Unable to download CV",
+    });
+  } finally {
+    setDownloading(false);
+  }
+};
 
   // ---------------------------------------------
   // Loading / error states
@@ -235,16 +252,10 @@ load contact information.
                   <button
                     className="btn btn-outline-custom btn-lg"
                     type="button"
-                    title={
-                      isUnlocked
-                        ? "Download candidate cv"
-                        : "Unlock required before downloading cv"
-                    }
-                    style={{ whiteSpace: "nowrap" }}
                     disabled={!isUnlocked || !cv?.cvAvailable || downloading}
-                    onClick={handleDownloadcv}
+                    onClick={handleDownloadCv}
                   >
-                    {downloading ? "Downloading..." : "Download cv"}
+                    {downloading ? "Downloading..." : "Download CV"}
                   </button>
                 </div>
 

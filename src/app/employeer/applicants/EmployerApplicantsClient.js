@@ -16,7 +16,7 @@ import {
   getNotes,
 } from "@/services/recruiter/recruiterApplicantsService";
 import { getWallet } from "@/services/recruiter/recruiterCreditWalletService";
-
+import { getJobStats } from "@/services/recruiter/recruiterJobListService";
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 const screeningFilters = [

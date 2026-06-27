@@ -53,3 +53,72 @@ export const getRecruiterJobs = async ({
 
   return response.data;
 };
+
+export const pauseJob = async (jobId) => {
+  const employerId = getEmployerId();
+
+  const { data } = await api.patch(
+    `/api/recruiter/jobs/${jobId}/pause`,
+    {},
+    {
+      params: { employerId },
+    }
+  );
+
+  return data;
+};
+
+export const resumeJob = async (jobId) => {
+  const employerId = getEmployerId();
+
+  const { data } = await api.patch(
+    `/api/recruiter/jobs/${jobId}/resume`,
+    {},
+    {
+      params: { employerId },
+    }
+  );
+
+  return data;
+};
+
+export const closeJob = async (jobId) => {
+  const employerId = getEmployerId();
+
+  const { data } = await api.patch(
+    `/api/recruiter/jobs/${jobId}/close`,
+    {},
+    {
+      params: { employerId },
+    }
+  );
+
+  return data;
+};
+
+export const archiveJob = async (jobId) => {
+  const employerId = getEmployerId();
+
+  const { data } = await api.patch(
+    `/api/recruiter/jobs/${jobId}/archive`,
+    {},
+    {
+      params: { employerId },
+    }
+  );
+
+  return data;
+};
+
+export const getJobStats = async (jobId) => {
+  const employerId = getEmployerId();
+
+  const { data } = await api.get(
+    `/api/recruiter/jobs/${jobId}/stats`,
+    {
+      params: { employerId },
+    }
+  );
+
+  return data;
+};
