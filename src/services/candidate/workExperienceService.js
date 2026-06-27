@@ -3,6 +3,8 @@
 import api from "../api";
 import { getCandidateId } from "@/utils/authHelper";
 
+
+
 export const getWorkExperience = () => {
   const candidateId = getCandidateId();
 

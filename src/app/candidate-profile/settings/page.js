@@ -30,7 +30,7 @@ const SETTINGS_SHORTCUTS = [
     href: "/candidate-profile/settings/help-support",
   },
 ];
-
+  
 const SECURITY_ITEMS = [];
 
 const CandidateSettingsPage = () => {

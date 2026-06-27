@@ -16,7 +16,7 @@ const JobDetailHero = ({ job = detailedJob }) => {
         </div>
         <div className="row mt-10">
           <div className="col-lg-8 col-md-12">
-            <h3>{job.title}</h3>
+            <h3>{job.jobTitle}</h3>
             <div className="mt-0 mb-15">
               <span className="card-briefcase">{job.type}</span>
               <span className="card-time">{job.time}</span>

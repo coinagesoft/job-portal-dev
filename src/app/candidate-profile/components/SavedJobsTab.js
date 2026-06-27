@@ -16,75 +16,75 @@ const SavedJobsTab = () => {
     loadSavedJobs();
   }, []);
 
- const loadSavedJobs = async () => {
-  try {
-    setLoading(true);
+  const loadSavedJobs = async () => {
+    try {
+      setLoading(true);
 
-    const [savedResponse, allJobsResponse] = await Promise.all([
-      getSavedJobs(),
-      getAllJobs(),
-    ]);
+      const [savedResponse, allJobsResponse] = await Promise.all([
+        getSavedJobs(),
+        getAllJobs(),
+      ]);
 
-    if (savedResponse?.data?.success) {
-      const allJobs = allJobsResponse?.data || [];
+      if (savedResponse?.data?.success) {
+        const allJobs = allJobsResponse?.data || [];
 
-      const formattedJobs = savedResponse.data.savedJobs.map((job) => {
-        // Find matching job from All_Jobs API
-        const matchedJob = allJobs.find(
-          (item) => item.jobId === job.jobId
-        );
+        const formattedJobs = savedResponse.data.savedJobs.map((job) => {
+          // Find matching job from All_Jobs API
+          const matchedJob = allJobs.find(
+            (item) => item.jobId === job.jobId
+          );
 
-        return {
-          id: job.savedJobId,
-          jobId: job.jobId,
+          return {
+            id: job.savedJobId,
+            jobId: job.jobId,
 
-          // Take logo from All_Jobs API
-          logo:
-            matchedJob?.companyLogoUrl ||
-            "/assets2/imgs/brands/brand-1.png",
+            // Take logo from All_Jobs API
+            logo:
+              matchedJob?.companyLogoUrl ||
+              "/assets2/imgs/brands/brand-1.png",
 
-          company: job.companyName,
+            company: job.companyName,
 
-         location:
-  matchedJob?.jobLocation ||
-  matchedJob?.companyLocation ||
-  job.locationDisplay ||
-  [job.city, job.state].filter(Boolean).join(", "),
+            location:
+              matchedJob?.jobLocation ||
+              matchedJob?.companyLocation ||
+              job.locationDisplay ||
+              [job.city, job.state].filter(Boolean).join(", "),
 
-          title: job.jobTitle,
+            title: job.jobTitle,
 
-          type: job.employmentType,
+            type: job.employmentType,
 
-          experience:
-            job.experienceDisplay ||
-            "Experience not specified",
+            experience:
+              job.experienceDisplay ||
+              "Experience not specified",
 
-       description:
-  matchedJob?.description ||
-  job.role ||
-  "No description available",
+            description:
+              matchedJob?.description ||
+              job.role ||
+              "No description available",
 
-          price: job.salaryDisplay,
+            price: job.salaryDisplay,
 
-          priceUnit: "",
+            priceUnit: "",
 
-          tags:
-            job.keySkills?.length > 0
-              ? job.keySkills
-              : job.tags || [],
+            tags:
+              job.keySkills?.length > 0
+                ? job.keySkills
+                : job.tags || [],
 
-          time: job.timeAgo || "Recently",
-        };
-      });
+            time: job.timeAgo || "Recently",
+          };
+        });
 
-      setSavedJobs(formattedJobs);
+        setSavedJobs(formattedJobs);
+      }
+    } catch (error) {
+      console.error("Saved Jobs Error:", error);
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error("Saved Jobs Error:", error);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const totalPages = Math.max(
     1,
@@ -160,11 +160,10 @@ const SavedJobsTab = () => {
               <li key={page}>
                 <button
                   type="button"
-                  className={`pager-number ${
-                    currentPage === page
+                  className={`pager-number ${currentPage === page
                       ? "active"
                       : ""
-                  }`}
+                    }`}
                   onClick={() =>
                     handlePageChange(page)
                   }

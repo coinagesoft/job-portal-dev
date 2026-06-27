@@ -1,21 +1,21 @@
 // services/candidate/personalInfoService.js
 
 import api from "../api";
-import { getCandidateId } from "@/utils/authHelper"; // <-- ADD THIS
 
 export const getPersonalInfo = () => {
-  const candidateId = getCandidateId();
+  return api.get("/api/candidate/profile/personal-info");
+};
 
-  return api.get(
-    `/api/candidate/profile/personal-info?candidateId=${candidateId}`
+export const createPersonalInfo = (payload) => {
+  return api.post(
+    "/api/candidate/profile/personal-info",
+    payload
   );
 };
 
 export const updatePersonalInfo = (payload) => {
-  const candidateId = getCandidateId();
-
   return api.put(
-    `/api/candidate/profile/personal-info?candidateId=${candidateId}`,
+    "/api/candidate/profile/personal-info",
     payload
   );
 };

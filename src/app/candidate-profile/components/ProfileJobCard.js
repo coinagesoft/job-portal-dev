@@ -9,7 +9,10 @@ const JOB_LIST_CARD_STYLE = {
   overflow: "hidden",
   transition: "all 0.35s ease",
   background: "#ffffff",
-  boxShadow: "0 4px 14px rgba(18,35,89,0.04)"
+  boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
+  minHeight: "350px", // Add this
+  display: "flex",
+  flexDirection: "column",
 };
 
 const JOB_LIST_TAG_WRAP_STYLE = {
@@ -119,17 +122,17 @@ const ProfileJobCard = ({ job, isListView, applyToDetails = false }) => {
         <div className="col-lg-6 col-md-6 col-sm-12">
           <div className="card-grid-2-image-left">
             {/* <div className="image-box"> */}
-            <div >
+            <div style={{ marginRight: "12px" }}>
 
               <img
                 src={job.logo}
                 alt={job.company || "Company logo"}
-                width={70}
-                height={70}
+                width={52}
+                height={52}
                 className="candidate-job-logo"
                 style={{
-                  width: "70px",
-                  height: "70px",
+                  width: "52px",
+                  height: "52px",
                   objectFit: "contain"
                 }}
               />
@@ -179,7 +182,15 @@ const ProfileJobCard = ({ job, isListView, applyToDetails = false }) => {
           </div>
         )}
       </div>
-      <div className={`card-block-info${applyToDetails ? " candidate-saved-job-card-info" : ""}`}>
+      <div
+        className={`card-block-info${applyToDetails ? " candidate-saved-job-card-info" : ""
+          }`}
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
         <h4 className={applyToDetails ? "candidate-saved-job-title" : undefined}>
           <Link href="/job-details">{job.title}</Link>
         </h4>
@@ -209,7 +220,11 @@ const ProfileJobCard = ({ job, isListView, applyToDetails = false }) => {
         >
           {job.description}
         </p>
-        <div className={`card-2-bottom mt-20${isListView ? " mt-30" : " mt-30"}`}>
+        <div
+          className={`card-2-bottom mt-20${isListView ? " mt-30" : " mt-30"
+            }`}
+          style={{ marginTop: "auto" }}
+        >
           <div className="row">
             <div className="col-lg-7 col-7">
               {applyToDetails && displayPrice ? (
@@ -251,3 +266,4 @@ const ProfileJobCard = ({ job, isListView, applyToDetails = false }) => {
 };
 
 export default ProfileJobCard;
+  

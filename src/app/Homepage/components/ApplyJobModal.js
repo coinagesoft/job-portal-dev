@@ -3,13 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSelector } from "react-redux";
-import { mockProfile } from "@/app/candidate-profile/components/data";
+// import { mockProfile } from "@/app/candidate-profile/components/data";
 
 import { applyJob } from "@/services/candidate/applyJobService";
 import { useToast } from "@/components/Toast";
 
 import { getProfileSummary } from "@/services/candidate/profileSummaryService";
 import { getCandidateId } from "@/utils/authHelper";
+import { getSkills } from "@/services/candidate/skillsService";
+import { getWorkExperience } from "@/services/candidate/workExperienceService";
 
 
 const getDefaultQuestions = (job) => {
@@ -45,6 +47,8 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
   const [submitted, setSubmitted] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [error, setError] = useState("");
+  const [skills, setSkills] = useState([]);
+  const [workHistory, setWorkHistory] = useState([]);
 
   const showToast = useToast();
 
@@ -56,26 +60,26 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
     profile?.fullName || "";
 
   const employerQuestions = useMemo(() => {
-    if (
-      Array.isArray(job?.screeningQuestions) &&
-      job.screeningQuestions.length > 0
-    ) {
-      return job.screeningQuestions.map(
-        (question, index) => ({
-          id: `question-${index}`,
-          label: question.questionText,
-          type:
-            question.answerType?.toLowerCase() === "yesno"
-              ? "radio"
-              : "text",
-          required: question.isMandatory,
-          options: ["Yes", "No"],
-        })
-      );
-    }
+  if (
+    Array.isArray(job?.screeningQuestions) &&
+    job.screeningQuestions.length > 0
+  ) {
+    return job.screeningQuestions.map(
+      (question, index) => ({
+        id: `question-${index}`,
+        label: question.questionText,
+        type:
+          question.answerType?.toLowerCase() === "yesno"
+            ? "radio"
+            : "text",
+        required: question.isMandatory,
+        options: ["Yes", "No"],
+      })
+    );
+  }
 
-    return getDefaultQuestions(job);
-  }, [job]);
+  return [];
+}, [job]);
 
 
   useEffect(() => {
@@ -87,7 +91,7 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
 
       try {
         const response =
-          await getProfileSummary(candidateId);
+          await getProfileSummary();
 
         setProfile(response.data.data);
       } catch (error) {
@@ -99,6 +103,49 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
     };
 
     loadProfile();
+  }, [candidateId]);
+
+  useEffect(() => {
+    const loadSkills = async () => {
+      try {
+        const response = await getSkills();
+
+        // console.log("SKILLS:", response.data);
+
+
+        setSkills(response.data.data.skills || []);
+      } catch (error) {
+        console.error(
+          "Failed to load skills:",
+          error
+        );
+      }
+    };
+
+    if (candidateId) {
+      loadSkills();
+    }
+  }, [candidateId]);
+
+  useEffect(() => {
+    const loadWorkExperience = async () => {
+      try {
+        const response = await getWorkExperience();
+
+        console.log("WORK EXPERIENCE:", response.data);
+
+        setWorkHistory(response.data.data || []);
+      } catch (error) {
+        console.error(
+          "Failed to load work experience:",
+          error
+        );
+      }
+    };
+
+    if (candidateId) {
+      loadWorkExperience();
+    }
   }, [candidateId]);
 
   useEffect(() => {
@@ -162,8 +209,8 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
   };
 
   const submitApplication = async () => {
-   console.log("Candidate ID:", candidateId);
-console.log("Job ID:", job.jobId);
+    console.log("Candidate ID:", candidateId);
+    console.log("Job ID:", job.jobId);
 
     if (!validateBeforeSubmit()) return;
     console.log("JOB DATA:", job);
@@ -196,7 +243,7 @@ console.log("Job ID:", job.jobId);
 
         certificateConfirmations: [],
       };
-          console.log("Payload:", payload);
+      console.log("Payload:", payload);
 
 
       console.log(
@@ -231,17 +278,17 @@ console.log("Job ID:", job.jobId);
         );
       }
     } catch (error) {
-  console.log("FULL ERROR:", error);
-  console.log("ERROR RESPONSE:", error.response);
-  console.log("ERROR DATA:", error.response?.data);
-  console.log("STATUS:", error.response?.status);
+      console.log("FULL ERROR:", error);
+      console.log("ERROR RESPONSE:", error.response);
+      console.log("ERROR DATA:", error.response?.data);
+      console.log("STATUS:", error.response?.status);
 
-  showToast(
-    error.response?.data?.message ||
-    "Failed to apply",
-    "error"
-  );
-}
+      showToast(
+        error.response?.data?.message ||
+        "Failed to apply",
+        "error"
+      );
+    }
   };
   if (!showModal) return null;
 
@@ -381,24 +428,44 @@ console.log("Job ID:", job.jobId);
 
                           <div className="mb-10">
                             <strong>{candidateName}</strong>
+
                             <p className="font-xs mb-0">
-                              {mockProfile.trade} - {mockProfile.yearsOfExperience} years - {mockProfile.city}, {mockProfile.state}
+                              {profile?.professionalSummary || "No role added"} -{" "}
+                              {profile?.totalExperienceYears || 0} years -{" "}
+                              {profile?.currentCity}, {profile?.currentState}
                             </p>
                           </div>
 
                           <div className="mb-10">
                             <p className="font-xs fw-600 mb-5">Summary</p>
-                            <p className="font-xs mb-0">{mockProfile.summary}</p>
+
+                            <p className="font-xs mb-0">
+                              {profile?.about ||
+                                profile?.professionalSummary ||
+                                "No professional summary available"}
+                            </p>
                           </div>
 
                           <div className="mb-10">
                             <p className="font-xs fw-600 mb-5">Work Experience</p>
-                            {mockProfile.workHistory.slice(0, 2).map((entry) => (
-                              <div key={entry.id} style={{ marginBottom: "8px" }}>
+                            {workHistory.slice(0, 2).map((entry) => (
+                              <div
+                                key={entry.workExperienceId}
+                                style={{ marginBottom: "8px" }}
+                              >
                                 <p className="font-xs mb-0">
-                                  <strong>{entry.title}</strong> - {entry.company}
+                                  <strong>{entry.jobTitle}</strong>
+                                  {" - "}
+                                  {entry.companyName}
                                 </p>
-                                <small>{entry.startDate || ""} to {entry.current ? "Present" : entry.endDate || ""}</small>
+
+                                <small>
+                                  {entry.startDate}
+                                  {" to "}
+                                  {entry.currentlyWorking
+                                    ? "Present"
+                                    : entry.endDate}
+                                </small>
                               </div>
                             ))}
                           </div>
@@ -406,9 +473,13 @@ console.log("Job ID:", job.jobId);
                           <div className="mb-0">
                             <p className="font-xs fw-600 mb-5">Core Skills</p>
                             <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                              {mockProfile.selectedSkills.slice(0, 8).map((skill) => (
-                                <span key={skill} className="badge bg-light text-dark">
-                                  {skill}
+                              {/* console.log("SKILLS:", response.data); */}
+                              {skills.slice(0, 8).map((skill) => (
+                                <span
+                                  key={skill.skillId}
+                                  className="badge bg-light text-dark"
+                                >
+                                  {skill.skillName}
                                 </span>
                               ))}
                             </div>

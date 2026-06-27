@@ -9,11 +9,34 @@ import Newsletter from './components/Newsletter';
 import FilterButton from './components/FilterButton';
 import JobFilterSheet from './components/JobFilterSheet';
 import { useSearchParams } from 'next/navigation';
+import { getAllJobs } from "@/services/candidate/allJobsService";
 
 const JobsListPageClient = () => {
   const searchParams = useSearchParams();
   const [filters, setFilters] = useState({});
   const [showFilterSheet, setShowFilterSheet] = useState(false);
+  const [jobs, setJobs] = useState([]);
+const [loading, setLoading] = useState(true);
+
+useEffect(() => {
+  const fetchJobs = async () => {
+    try {
+      const response = await getAllJobs();
+
+      console.log("ALL JOBS:", response.data);
+
+      setJobs(response.data || []);
+      // OR setJobs(response.data.data || []);
+      // depending on your API response structure
+    } catch (error) {
+      console.error("Failed to fetch jobs:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchJobs();
+}, []);
 
   const filtersFromQuery = useMemo(() => {
     const queryFilters = {};
@@ -71,7 +94,7 @@ const JobsListPageClient = () => {
   return (
     <>
       <Preloader />
-      <HeroSearch />
+      <HeroSearch jobs={jobs} />
       <section className="section-box mt-30">
         <div className="container">
           <div className="row flex-row-reverse">

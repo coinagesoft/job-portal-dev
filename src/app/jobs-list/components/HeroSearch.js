@@ -4,7 +4,7 @@ import React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { mockJobs } from "./data";
 
-const HeroSearch = () => {
+const HeroSearch = ({ jobs = [] }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -84,11 +84,11 @@ const HeroSearch = () => {
         <div className="banner-hero banner-single banner-single-bg jobs-list-hero-graphic-orange">
           <div className="block-banner text-center">
             <h3 className="animate__animated animate__fadeInUp">
-              <span className="color-brand-2">
-                22 Jobs
-              </span>{" "}
-              Available Now
-            </h3>
+  <span className="color-brand-2">
+    {jobs.length} Jobs
+  </span>{" "}
+  Available Now
+</h3>
 
             <div
               className="font-sm color-text-paragraph-2 mt-10 wow animate__animated animate__fadeInUp"
