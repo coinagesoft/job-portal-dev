@@ -1,4 +1,8 @@
 import jwtDecode from "jwt-decode";
+<<<<<<< HEAD
+=======
+
+>>>>>>> d42e423 (New changes)
 const NAME_IDENTIFIER_CLAIM =
   "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier";
 
