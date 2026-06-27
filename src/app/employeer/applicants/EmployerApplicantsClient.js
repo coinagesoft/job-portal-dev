@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import React, { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/components/Toast";
 import {
@@ -58,18 +59,14 @@ const formatDate = (iso) => {
  *  slot 1 → trade / certification tag  (is-brand)
  *  slot 2 → unlock / shortlist status  (is-info)
  *  slot 3 → experience badge           (is-success)
- *
- * Also build the "certificates" pill row from skills data if available.
  */
 function buildProfileTags(applicant) {
   const tags = [];
 
-  // Slot 1 – primary trade (replaces "6G Certified" etc.)
   if (applicant.primaryTrade) {
     tags.push({ label: applicant.primaryTrade, toneClass: "is-brand" });
   }
 
-  // Slot 2 – unlock / cv status (replaces "Relocation: Yes")
   if (applicant.isUnlocked) {
     tags.push({ label: "Profile Unlocked", toneClass: "is-info" });
   } else if (applicant.cvDownloaded) {
@@ -78,7 +75,6 @@ function buildProfileTags(applicant) {
     tags.push({ label: "Shortlisted", toneClass: "is-info" });
   }
 
-  // Slot 3 – experience (replaces "Notice: 20 days")
   if (applicant.experienceYears > 0) {
     tags.push({ label: `${applicant.experienceYears} yrs exp`, toneClass: "is-success" });
   }
@@ -91,26 +87,26 @@ const Modal = ({ title, onClose, children }) => (
   <div
     style={{
       position: "fixed", inset: 0, zIndex: 9999,
-      background: "rgba(0,0,0,0.55)",
+      background: "rgba(18,35,89,0.55)",
       display: "flex", alignItems: "center", justifyContent: "center",
       padding: "20px",
     }}
   >
     <div
       style={{
-        background: "#fff", borderRadius: "12px", width: "100%", maxWidth: "540px",
-        boxShadow: "0 20px 60px rgba(0,0,0,0.25)", maxHeight: "90vh", overflow: "auto",
+        background: "#fff", borderRadius: "16px", width: "100%", maxWidth: "540px",
+        boxShadow: "0 24px 60px rgba(18,35,89,0.28)", maxHeight: "90vh", overflow: "auto",
       }}
     >
       <div
         style={{
-          padding: "18px 24px 14px", borderBottom: "1px solid #eee",
+          padding: "18px 24px 14px", borderBottom: "1px solid #f0f1f5",
           display: "flex", alignItems: "center", justifyContent: "space-between",
         }}
       >
-        <h5 style={{ margin: 0, color: "#122359", fontSize: "15px" }}>{title}</h5>
+        <h5 style={{ margin: 0, color: "#122359", fontSize: "15px", fontWeight: 800 }}>{title}</h5>
         <button onClick={onClose}
-          style={{ background: "none", border: "none", fontSize: "22px", cursor: "pointer", color: "#666" }}>
+          style={{ background: "none", border: "none", fontSize: "22px", cursor: "pointer", color: "#66789c", lineHeight: 1 }}>
           ×
         </button>
       </div>
@@ -122,6 +118,11 @@ const Modal = ({ title, onClose, children }) => (
 /* ─── Main Component ─────────────────────────────────────── */
 const EmployerApplicantsClient = () => {
   const showToast = useToast();
+
+  // Job filter coming from the Job List page (?jobId=...&jobTitle=...)
+  const searchParams = useSearchParams();
+  const jobId = searchParams.get("jobId") || "";
+  const jobTitleFromUrl = searchParams.get("jobTitle") || "";
 
   const [dashboard, setDashboard]       = useState(null);
   const [applicantList, setApplicantList] = useState([]);
@@ -155,7 +156,7 @@ const EmployerApplicantsClient = () => {
       setLoading(true);
       const [dash, listRes, walletRes] = await Promise.all([
         getApplicantsDashboard(),
-        getApplicants({ status: status || undefined, search: search || undefined, pageNumber: page, pageSize: PAGE_SIZE }),
+        getApplicants({ jobId: jobId || undefined, status: status || undefined, search: search || undefined, pageNumber: page, pageSize: PAGE_SIZE }),
         getWallet(),
       ]);
       setDashboard(dash);
@@ -168,9 +169,9 @@ const EmployerApplicantsClient = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [jobId]);
 
-  useEffect(() => { loadData(activeStatus, searchText, pageNumber); }, [activeStatus, pageNumber]);
+  useEffect(() => { loadData(activeStatus, searchText, pageNumber); }, [activeStatus, pageNumber, jobId]);
 
   /* ── Status tabs ── */
   const statusTabs = dashboard ? [
@@ -260,95 +261,99 @@ const EmployerApplicantsClient = () => {
           <div className="content-page">
 
             {/* ── Credit balance banner ── */}
-            <div style={{
-              display: "flex", alignItems: "center", gap: "10px",
-              marginBottom: "16px", padding: "10px 16px",
-              background: "#fef9ec", border: "1px solid #fcd34d", borderRadius: "8px",
-            }}>
-              <i className="fi fi-sr-bolt" style={{ color: "#f59e0b" }}></i>
-              <span className="font-sm" style={{ color: "#92400e" }}>
-                <strong>CV Download Credits:</strong>{" "}
-                {credits !== null ? credits : "—"} remaining — 1 credit deducted per CV download
+            <div className="ea-credit-banner">
+              <span className="ea-credit-icon"><i className="fi fi-rr-credit-card" /></span>
+              <span className="ea-credit-text">
+                <strong>{credits !== null ? credits : "—"}</strong> CV download credit
+                {credits === 1 ? "" : "s"} remaining
+                <span className="ea-credit-sub"> · 1 credit per CV download</span>
               </span>
-              <Link href="/employeer/buy-credits" className="btn btn-border btn-xs ml-auto" style={{ marginLeft: "auto" }}>
-                Buy Credits
+              <Link href="/employeer/buy-credits" className="ea-btn ea-btn-ghost ea-btn-xs">
+                <i className="fi fi-rr-plus" /> Buy credits
               </Link>
             </div>
 
             {/* ── Page header ── */}
-            <div className="box-filters-job">
-              <div className="row align-items-center">
-                <div className="col-xl-8 col-lg-8">
-                  <h3 className="mb-5">Applicants</h3>
-                  <span className="font-sm color-text-paragraph-2">
-                    {totalRecords} applicant{totalRecords !== 1 ? "s" : ""} total
-                  </span>
-                </div>
-                <div className="col-xl-4 col-lg-4 text-lg-end mt-sm-15">
-                  <Link className="btn btn-border btn-sm mr-10 mb-10" href="/employeer/job-list">
-                    Back to Job list
-                  </Link>
-                  <span className="badge bg-primary">{totalRecords} Applicants</span>
-                </div>
+            <div className="ea-header">
+              <div>
+                <h3>Applicants</h3>
+                <span className="ea-sub">
+                  {totalRecords} applicant{totalRecords !== 1 ? "s" : ""}
+                  {jobId ? " for this job" : " across all jobs"}
+                </span>
               </div>
+              <Link className="ea-btn ea-btn-ghost" href="/employeer/job-list">
+                <i className="fi fi-rr-arrow-left" /> Back to job list
+              </Link>
             </div>
 
+            {/* ── Job filter banner (when arriving from Job List) ── */}
+            {jobId && (
+              <div className="ea-jobfilter">
+                <span className="ea-jobfilter-icon"><i className="fi fi-rr-filter" /></span>
+                <span className="ea-jobfilter-text">
+                  Showing applicants for <strong>{jobTitleFromUrl || "selected job"}</strong>
+                </span>
+                <Link href="/employeer/applicants" className="ea-btn ea-btn-ghost ea-btn-xs">
+                  <i className="fi fi-rr-cross-small" /> View all applicants
+                </Link>
+              </div>
+            )}
+
             {/* ── Status tabs ── */}
-            <div className="candidate-status-filter mt-20 mb-20">
+            <div className="ea-card ea-tabs" role="tablist" aria-label="Filter by status">
               {statusTabs.map((tab) => (
                 <button
                   key={tab.label}
-                  className={`candidate-status-filter-btn ${activeStatus === tab.value ? "active" : ""}`}
+                  role="tab"
+                  aria-selected={activeStatus === tab.value}
+                  className={`ea-tab ${activeStatus === tab.value ? "is-active" : ""}`}
                   type="button"
                   onClick={() => { setActiveStatus(tab.value); setPageNumber(1); }}
                 >
                   <span>{tab.label}</span>
-                  <span className="candidate-status-filter-count">{tab.count}</span>
+                  <span className="ea-count">{tab.count}</span>
                 </button>
               ))}
             </div>
 
-            {/* ── Filter bar ── */}
-            <div className="box-filters-job mb-20 employer-applicants-form">
-              <div className="row align-items-center">
-                <div className="col-xl-8 col-lg-8">
-                  <h6 className="mb-5">Filter Applicants</h6>
-                  <span className="font-sm color-text-paragraph-2">
-                    Use candidate profile filters to shortlist faster.
-                  </span>
+            {/* ── Search + quick filters toolbar ── */}
+            <div className="ea-card ea-toolbar">
+              <form onSubmit={handleSearch} className="ea-toolbar-row">
+                <div className="ea-search">
+                  <i className="fi fi-rr-search" />
+                  <input
+                    placeholder="Search by name, trade, or city…"
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    aria-label="Search applicants"
+                  />
                 </div>
-                <div className="col-xl-4 col-lg-4 text-lg-end mt-sm-15">
-                  <button className="btn btn-border btn-sm mr-10 mb-10" type="button"
-                    onClick={() => { setSearchText(""); setActiveStatus(""); setPageNumber(1); loadData("","",1); showToast("Filters reset.", "info"); }}>
-                    Reset
-                  </button>
-                  <button className="btn btn-default btn-sm mb-10" type="button" onClick={handleSearch}>
-                    Apply Filters
-                  </button>
-                </div>
-              </div>
-              <div className="employer-applicants-filter-tags">
+                <button className="ea-btn ea-btn-primary" type="submit">
+                  <i className="fi fi-rr-search" /> Search
+                </button>
+                <button
+                  className="ea-btn ea-btn-ghost"
+                  type="button"
+                  onClick={() => { setSearchText(""); setActiveStatus(""); setPageNumber(1); loadData("", "", 1); showToast("Filters reset.", "info"); }}
+                >
+                  <i className="fi fi-rr-refresh" /> Reset
+                </button>
+              </form>
+
+              <div className="ea-chips">
+                <span className="ea-chips-label">Quick filters</span>
                 {screeningFilters.map((filter) => (
-                  <button key={filter.label}
-                    className={`employer-applicants-tag ${filter.toneClass} ${filter.isActive ? "is-active" : ""}`}
-                    type="button">
+                  <button
+                    key={filter.label}
+                    type="button"
+                    className={`ea-chip ${filter.isActive ? "is-active" : ""}`}
+                  >
                     {filter.label}
                   </button>
                 ))}
               </div>
             </div>
-
-            {/* ── Search box ── */}
-            <form onSubmit={handleSearch} className="mb-20" style={{ display: "flex", gap: "8px" }}>
-              <input
-                className="form-control"
-                placeholder="Search by name, trade, city…"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                style={{ maxWidth: "360px" }}
-              />
-              <button className="btn btn-border btn-sm" type="submit">Search</button>
-            </form>
 
             {/* ── Loading ── */}
             {loading && (
@@ -359,13 +364,18 @@ const EmployerApplicantsClient = () => {
               </div>
             )}
 
-            {/* ── Applicant cards ── */}
-            {!loading && (
-              <div className="box-list-jobs display-list">
-                {applicantList.length === 0 && (
-                  <div className="text-center mt-40 mb-40 color-text-paragraph-2">No applicants found.</div>
-                )}
+            {/* ── Empty state ── */}
+            {!loading && applicantList.length === 0 && (
+              <div className="ea-card ea-empty">
+                <span className="ea-empty-icon"><i className="fi fi-rr-inbox" /></span>
+                <h6>No applicants found</h6>
+                <p>{jobId ? "No one has applied to this job yet, or none match your filters." : "Try clearing your filters or search."}</p>
+              </div>
+            )}
 
+            {/* ── Applicant cards ── */}
+            {!loading && applicantList.length > 0 && (
+              <div className="box-list-jobs display-list">
                 {applicantList.map((applicant) => {
                   const statusInfo   = STATUS_DISPLAY[applicant.applicationStatus] || { label: applicant.applicationStatus, statusClass: "is-applied" };
                   const profileTags  = buildProfileTags(applicant);
@@ -386,39 +396,33 @@ const EmployerApplicantsClient = () => {
                                   />
                                 </div>
                                 <div className="right-info">
-                                  {/* Name */}
                                   <Link className="name-job" href={`/employeer/candidate-profile/${applicant.candidateId}`}>
                                     {applicant.candidateName}
                                   </Link>
 
-                                  {/* Meta line — same format as static */}
                                   <span className="location-small">
                                     {[
                                       applicant.primaryTrade,
                                       applicant.experienceYears ? `${applicant.experienceYears} yrs` : null,
                                       applicant.currentCity,
                                       applicant.appliedAt ? `Applied ${formatDate(applicant.appliedAt)}` : null,
-                                    ].filter(Boolean).join(" | ")}
+                                    ].filter(Boolean).join(" · ")}
                                   </span>
 
-                                  {/* Job title — replaces "End Client" row */}
-                                  <div style={{ marginTop: "4px" }}>
-                                    <span className="font-xs" style={{ color: "#555" }}>
-                                      <strong>Job:</strong> {applicant.jobTitle}
-                                    </span>
+                                  <div className="ea-jobline">
+                                    <i className="fi fi-rr-briefcase" />
+                                    <span>{applicant.jobTitle}</span>
                                   </div>
 
-                                  {/* ── Badge row — same structure as static ── */}
+                                  {/* ── Badge row ── */}
                                   <div className="employer-applicants-tag-row mt-10">
-                                    {/* Bolt badge — static had "AI Match %" here */}
                                     {applicant.experienceYears >= 3 && (
                                       <span className="employer-applicants-tag is-success"
                                         style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                                        <i className="fi fi-sr-bolt" style={{ fontSize: "10px" }}></i>
+                                        <i className="fi fi-rr-star" style={{ fontSize: "10px" }}></i>
                                         {applicant.experienceYears}+ yrs
                                       </span>
                                     )}
-                                    {/* Profile tags: trade, unlock/shortlist, exp */}
                                     {profileTags.map((tag) => (
                                       <span key={tag.label} className={`employer-applicants-tag ${tag.toneClass}`}>
                                         {tag.label}
@@ -426,57 +430,52 @@ const EmployerApplicantsClient = () => {
                                     ))}
                                   </div>
 
-                                  {/* ── Certificate pills row ── */}
-                                  {/* Show city+state as location pills — same visual slot as certificates */}
-                                  <div style={{ marginTop: "8px" }}>
-                                    <span className="font-xs color-text-paragraph-2" style={{ marginRight: "6px" }}>
-                                      Location:
-                                    </span>
-                                    {applicant.currentCity && (
-                                      <span className="certificate-pill">{applicant.currentCity}</span>
-                                    )}
-                                    {applicant.currentState && (
-                                      <span className="certificate-pill">{applicant.currentState}</span>
-                                    )}
-                                  </div>
+                                  {/* ── Location pills ── */}
+                                  {(applicant.currentCity || applicant.currentState) && (
+                                    <div className="ea-location-row">
+                                      <span className="ea-location-label">Location</span>
+                                      {applicant.currentCity && (
+                                        <span className="certificate-pill">{applicant.currentCity}</span>
+                                      )}
+                                      {applicant.currentState && (
+                                        <span className="certificate-pill">{applicant.currentState}</span>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </div>
 
                             {/* ── Right: status + actions ── */}
-                            <div className="col-lg-4 col-md-12 col-sm-12 text-lg-end mt-md-15 mt-sm-15">
+                            <div className="col-lg-4 col-md-12 col-sm-12 ea-right-col">
                               <span className={`employer-applicants-status ${statusInfo.statusClass}`}>
                                 {statusInfo.label}
                               </span>
-                              <div style={{
-                                marginTop: "8px",
-                                display: "flex", flexDirection: "column",
-                                gap: "6px", alignItems: "flex-end",
-                              }}>
-                                {/* Download CV */}
-                                <button className="btn btn-border btn-sm" type="button"
-                                  onClick={() => handleDownloadCV(applicant)}>
-                                  ⬇ Download CV
-                                </button>
-                                {/* Change Status */}
-                                <button className="btn btn-grey-small btn-sm" type="button"
+
+                              <div className="ea-actions">
+                                <button className="btn btn-default btn-sm" type="button"
                                   onClick={() => {
                                     setStatusPopup(applicant);
                                     setSelectedStatus(applicant.applicationStatus);
                                     setInterviewDate(""); setRejectReason("");
                                   }}>
-                                  Change Status
+                                  <i className="fi fi-rr-refresh" /> Change status
                                 </button>
-                                {/* View Questions / Detail */}
+
+                                <button className="btn btn-border btn-sm" type="button"
+                                  onClick={() => handleDownloadCV(applicant)}>
+                                  <i className="fi fi-rr-download" /> Download CV
+                                </button>
+
                                 <button className="btn btn-border btn-sm" type="button"
                                   onClick={() => handleViewDetail(applicant.applicationId)}
                                   disabled={detailLoading}>
-                                  {detailLoading ? "Loading…" : "View Questions"}
+                                  <i className="fi fi-rr-eye" /> {detailLoading ? "Loading…" : "View details"}
                                 </button>
-                                {/* Notes */}
+
                                 <button className="btn btn-border btn-sm" type="button"
                                   onClick={() => handleOpenNotes(applicant)}>
-                                  📝 Notes
+                                  <i className="fi fi-rr-comment-alt" /> Notes
                                 </button>
                               </div>
                             </div>
@@ -492,14 +491,16 @@ const EmployerApplicantsClient = () => {
 
             {/* ── Pagination ── */}
             {!loading && totalPages > 1 && (
-              <div className="paginations mt-20" style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
-                <button className="btn btn-border btn-sm" disabled={pageNumber <= 1}
-                  onClick={() => setPageNumber((p) => p - 1)}>← Prev</button>
-                <span className="font-sm" style={{ lineHeight: "36px" }}>
-                  Page {pageNumber} of {totalPages}
-                </span>
-                <button className="btn btn-border btn-sm" disabled={pageNumber >= totalPages}
-                  onClick={() => setPageNumber((p) => p + 1)}>Next →</button>
+              <div className="ea-pagination">
+                <button className="ea-btn ea-btn-ghost ea-btn-sm" disabled={pageNumber <= 1}
+                  onClick={() => setPageNumber((p) => p - 1)}>
+                  <i className="fi fi-rr-angle-left" /> Prev
+                </button>
+                <span className="ea-page-info">Page {pageNumber} of {totalPages}</span>
+                <button className="ea-btn ea-btn-ghost ea-btn-sm" disabled={pageNumber >= totalPages}
+                  onClick={() => setPageNumber((p) => p + 1)}>
+                  Next <i className="fi fi-rr-angle-right" />
+                </button>
               </div>
             )}
 
@@ -517,7 +518,6 @@ const EmployerApplicantsClient = () => {
             </div>
           )}
 
-          {/* Work History */}
           {detailPopup.workHistories?.length > 0 && (
             <div style={{ marginBottom: "16px" }}>
               <p style={{ fontWeight: 600, fontSize: "13px", marginBottom: "8px", color: "#374151" }}>Work History</p>
@@ -534,7 +534,6 @@ const EmployerApplicantsClient = () => {
             </div>
           )}
 
-          {/* Skills & Languages */}
           {detailPopup.skills?.length > 0 && (
             <div style={{ marginBottom: "16px" }}>
               <p style={{ fontWeight: 600, fontSize: "13px", marginBottom: "8px", color: "#374151" }}>Skills & Languages</p>
@@ -548,7 +547,6 @@ const EmployerApplicantsClient = () => {
             </div>
           )}
 
-          {/* Education */}
           {detailPopup.educations?.length > 0 && (
             <div style={{ marginBottom: "16px" }}>
               <p style={{ fontWeight: 600, fontSize: "13px", marginBottom: "8px", color: "#374151" }}>Education</p>
@@ -573,14 +571,13 @@ const EmployerApplicantsClient = () => {
             </div>
           )}
 
-          {/* CV download */}
           {detailPopup.cvs?.length > 0 && (
             <div>
               <p style={{ fontWeight: 600, fontSize: "13px", marginBottom: "8px", color: "#374151" }}>CV</p>
               {detailPopup.cvs.map((cv) => (
                 <a key={cv.cvId} href={`${BASE_URL}${cv.cvFileUrl}`} target="_blank" rel="noopener noreferrer"
                   className="btn btn-border btn-sm mr-10">
-                  ⬇ Download CV
+                  <i className="fi fi-rr-download" style={{ marginRight: 5 }} /> Download CV
                 </a>
               ))}
             </div>
@@ -654,6 +651,189 @@ const EmployerApplicantsClient = () => {
           </div>
         </Modal>
       )}
+
+      {/* ══ Scoped styles — match Jobbox theme (navy #122359 / gold #ffa300) ══ */}
+      <style jsx>{`
+        /* Credit banner */
+        .ea-credit-banner {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 18px;
+          margin-bottom: 20px;
+          background: #fffaf0;
+          border: 1px solid #ffe2a8;
+          border-radius: 14px;
+        }
+        .ea-credit-icon {
+          width: 34px; height: 34px; flex-shrink: 0;
+          display: inline-flex; align-items: center; justify-content: center;
+          border-radius: 10px; background: #fff1d6; color: #ff9900; font-size: 15px;
+        }
+        .ea-credit-text { font-size: 13px; color: #6b4e12; }
+        .ea-credit-text strong { color: #122359; font-size: 14px; }
+        .ea-credit-sub { color: #9a8350; }
+
+        /* Header */
+        .ea-header {
+          display: flex; align-items: flex-end; justify-content: space-between;
+          gap: 16px; flex-wrap: wrap; margin-bottom: 18px;
+        }
+        .ea-header :global(h3) { color: #122359; font-weight: 800; margin: 0 0 4px; }
+        .ea-sub { color: #66789c; font-size: 14px; }
+
+        /* Job filter banner */
+        .ea-jobfilter {
+          display: flex; align-items: center; flex-wrap: wrap; gap: 12px;
+          padding: 12px 18px; margin-bottom: 18px;
+          background: #eef4ff; border: 1px solid #cdddff; border-radius: 14px;
+        }
+        .ea-jobfilter-icon {
+          width: 32px; height: 32px; flex-shrink: 0;
+          display: inline-flex; align-items: center; justify-content: center;
+          border-radius: 9px; background: #dde9ff; color: #2a55e5; font-size: 14px;
+        }
+        .ea-jobfilter-text { font-weight: 600; color: #122359; font-size: 14px; }
+        .ea-jobfilter-text strong { color: #2a55e5; }
+        .ea-jobfilter :global(.ea-btn) { margin-left: auto; }
+
+        /* Shared card shell — matches verification/company cards */
+        .ea-card {
+          background: #ffffff;
+          border: 1px solid rgba(18, 35, 89, 0.07);
+          border-radius: 18px;
+          box-shadow: 0 4px 14px rgba(18, 35, 89, 0.04);
+        }
+
+        /* Status tabs */
+        .ea-tabs {
+          display: flex; gap: 8px; padding: 10px;
+          margin-bottom: 18px; overflow-x: auto;
+        }
+        .ea-tabs::-webkit-scrollbar { height: 6px; }
+        .ea-tabs::-webkit-scrollbar-thumb { background: #e6e9f2; border-radius: 999px; }
+        .ea-tab {
+          flex: 0 0 auto; display: inline-flex; align-items: center; gap: 8px;
+          border: 1px solid rgba(18, 35, 89, 0.10); background: #fff; color: #122359;
+          border-radius: 999px; padding: 9px 16px; font-weight: 700; font-size: 13px;
+          cursor: pointer; transition: all 0.25s ease; white-space: nowrap;
+        }
+        .ea-tab:hover {
+          transform: translateY(-2px); border-color: #ff9900;
+          box-shadow: 0 8px 18px rgba(255, 163, 0, 0.12);
+        }
+        .ea-tab:focus-visible { outline: 2px solid #ffa300; outline-offset: 2px; }
+        .ea-count {
+          display: inline-flex; align-items: center; justify-content: center;
+          min-width: 22px; height: 20px; padding: 0 6px; border-radius: 999px;
+          background: #f1f4fb; color: #66789c; font-size: 11px; font-weight: 800;
+          transition: all 0.25s ease;
+        }
+        .ea-tab.is-active {
+          background: #122359; border-color: #122359; color: #fff;
+          box-shadow: 0 8px 20px rgba(18, 35, 89, 0.18);
+        }
+        .ea-tab.is-active .ea-count { background: #ffa300; color: #122359; }
+
+        /* Toolbar */
+        .ea-toolbar { padding: 18px 20px; margin-bottom: 22px; }
+        .ea-toolbar-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .ea-search { position: relative; flex: 1 1 320px; }
+        .ea-search :global(i) {
+          position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+          color: #9aa7c2; font-size: 14px; pointer-events: none;
+        }
+        .ea-search input {
+          width: 100%; height: 44px; border: 1px solid rgba(18, 35, 89, 0.14);
+          border-radius: 12px; padding: 0 14px 0 38px; font-size: 14px;
+          color: #122359; background: #fff; transition: all 0.2s ease;
+        }
+        .ea-search input::placeholder { color: #9aa7c2; }
+        .ea-search input:focus {
+          outline: none; border-color: #ffa300;
+          box-shadow: 0 0 0 3px rgba(255, 163, 0, 0.15);
+        }
+
+        /* Quick-filter chips */
+        .ea-chips {
+          display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+          margin-top: 16px; padding-top: 16px;
+          border-top: 1px dashed rgba(18, 35, 89, 0.10);
+        }
+        .ea-chips-label {
+          font-size: 12px; font-weight: 700; color: #66789c;
+          text-transform: uppercase; letter-spacing: 0.4px; margin-right: 4px;
+        }
+        .ea-chip {
+          border: 1px solid rgba(18, 35, 89, 0.12); background: #fff; color: #4f5e64;
+          border-radius: 999px; padding: 6px 14px; font-size: 12px; font-weight: 600;
+          cursor: pointer; transition: all 0.25s ease;
+        }
+        .ea-chip:hover { border-color: #ffc151; color: #122359; transform: translateY(-1px); }
+        .ea-chip.is-active { background: #fff7ea; border-color: #ffc151; color: #ff9900; }
+
+        /* Buttons (toolbar / header / pagination) */
+        .ea-btn {
+          height: 44px; border-radius: 12px; padding: 0 18px;
+          font-weight: 700; font-size: 14px; display: inline-flex;
+          align-items: center; gap: 7px; cursor: pointer;
+          transition: all 0.25s ease; border: 1px solid transparent;
+          text-decoration: none; white-space: nowrap;
+        }
+        .ea-btn:focus-visible { outline: 2px solid #ffa300; outline-offset: 2px; }
+        .ea-btn-xs { height: 34px; padding: 0 12px; font-size: 12px; border-radius: 10px; }
+        .ea-btn-sm { height: 40px; padding: 0 16px; font-size: 13px; }
+        .ea-btn-primary { background: #ffa300; color: #122359; border-color: #ffa300; }
+        .ea-btn-primary:hover {
+          background: #ff9900; transform: translateY(-2px);
+          box-shadow: 0 10px 22px rgba(255, 163, 0, 0.28);
+        }
+        .ea-btn-ghost { background: #fff; color: #122359; border-color: rgba(18, 35, 89, 0.14); }
+        .ea-btn-ghost:hover { border-color: #ffa300; color: #ff9900; transform: translateY(-2px); }
+        .ea-btn[disabled] { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        /* Card: job line + location + action column */
+        .ea-jobline {
+          display: inline-flex; align-items: center; gap: 6px;
+          margin-top: 6px; font-size: 12px; color: #4f5e64; font-weight: 600;
+        }
+        .ea-jobline :global(i) { color: #ff9900; font-size: 12px; }
+        .ea-location-row { margin-top: 10px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+        .ea-location-label {
+          font-size: 11px; font-weight: 700; color: #9aa7c2;
+          text-transform: uppercase; letter-spacing: 0.4px; margin-right: 6px;
+        }
+        .ea-right-col {
+          display: flex; flex-direction: column; align-items: flex-end;
+          gap: 12px; margin-top: 4px;
+        }
+        .ea-actions { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 220px; }
+        .ea-actions :global(.btn) {
+          width: 100%; justify-content: center; border-radius: 12px !important;
+          font-weight: 700; display: inline-flex; align-items: center; gap: 6px;
+        }
+        @media (max-width: 991px) {
+          .ea-right-col { align-items: stretch; margin-top: 16px; }
+          .ea-actions { max-width: none; }
+        }
+
+        /* Empty state */
+        .ea-empty { padding: 48px 24px; text-align: center; }
+        .ea-empty-icon {
+          width: 64px; height: 64px; margin: 0 auto 14px;
+          display: inline-flex; align-items: center; justify-content: center;
+          border-radius: 18px; background: #f1f4fb; color: #9aa7c2; font-size: 26px;
+        }
+        .ea-empty :global(h6) { color: #122359; font-weight: 800; margin: 0 0 6px; }
+        .ea-empty :global(p) { color: #66789c; font-size: 14px; margin: 0; }
+
+        /* Pagination */
+        .ea-pagination {
+          display: flex; align-items: center; justify-content: center;
+          gap: 14px; margin-top: 24px;
+        }
+        .ea-page-info { font-size: 13px; font-weight: 700; color: #66789c; }
+      `}</style>
     </main>
   );
 };

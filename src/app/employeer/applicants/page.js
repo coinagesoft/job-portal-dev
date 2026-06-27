@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import EmployerApplicantsClient from "./EmployerApplicantsClient";
 
 export const metadata = {
@@ -5,6 +6,10 @@ export const metadata = {
   description: "Track and manage candidate applications.",
 };
 
-const EmployerApplicantsPage = () => <EmployerApplicantsClient />;
+const EmployerApplicantsPage = () => (
+  <Suspense fallback={null}>
+    <EmployerApplicantsClient />
+  </Suspense>
+);
 
 export default EmployerApplicantsPage;

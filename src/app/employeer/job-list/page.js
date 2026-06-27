@@ -614,7 +614,7 @@ const EmployerJobListPage = () => {
                             </Link>
 
                             <Link
-                              href={`/employeer/job-applicants/${job.jobId}`}
+                              href={`/employeer/applicants?jobId=${job.jobId}&jobTitle=${encodeURIComponent(job.jobTitle || "")}`}
                               className="btn btn-border btn-sm"
                               style={{
                                 borderRadius: 10,

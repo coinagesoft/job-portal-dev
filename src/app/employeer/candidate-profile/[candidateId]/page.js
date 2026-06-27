@@ -3,21 +3,38 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import candidateProfileService from "@/services/recruiter/Candidateprofileservice.js";
 
+/* Format a DateOnly ("2015-06-01") or ISO date to "Jun 2015" */
+const fmtMonthYear = (d) => {
+  if (!d) return "";
+  const dt = new Date(d);
+  if (isNaN(dt.getTime())) return String(d);
+  return dt.toLocaleDateString("en-IN", { month: "short", year: "numeric" });
+};
+
+const fmtDate = (d) => {
+  if (!d) return "";
+  const dt = new Date(d);
+  if (isNaN(dt.getTime())) return String(d);
+  return dt.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+};
+
+const fmtSalary = (n) =>
+  n == null ? null : `₹${Number(n).toLocaleString("en-IN")}`;
+
 const EmployerCandidateProfilePage = () => {
   const { candidateId } = useParams();
 
-  const [profile, setProfile] = useState(null); // RecruiterCandidateProfileResponseDto
-  const [wallet, setWallet] = useState(null); // WalletsummaryDto
+  const [profile, setProfile] = useState(null);
+  const [wallet, setWallet] = useState(null);
   const [candidateDetails, setCandidateDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [candidateContact, setCandidateContact] = useState(null);
   const [unlocking, setUnlocking] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [actionMessage, setActionMessage] = useState(null);
 
   // ---------------------------------------------
-  // Load profile + wallet
+  // Load profile + wallet (+ contact if unlocked)
   // ---------------------------------------------
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -25,27 +42,27 @@ const EmployerCandidateProfilePage = () => {
     try {
       const [profileRes, walletRes] = await Promise.all([
         candidateProfileService.getFullProfile(candidateId),
-        candidateProfileService.getWallet(),
+        candidateProfileService.getWallet().catch(() => null),
       ]);
 
       setProfile(profileRes);
-
       setWallet(walletRes);
 
-      /*
-If profile is already unlocked,
-load contact information.
-*/
+      const unlocked =
+        profileRes?.unlockStatus?.isUnlocked ?? profileRes?.overview?.isUnlocked;
 
-      if (profileRes.overview?.isUnlocked) {
-        const details =
-          await candidateProfileService.getCandidateDetails(candidateId);
-
+      if (unlocked) {
+        const details = await candidateProfileService
+          .getCandidateDetails(candidateId)
+          .catch(() => null);
         setCandidateDetails(details);
+      } else {
+        setCandidateDetails(null);
       }
     } catch (err) {
       setError(
-        err.response?.data?.Message ||
+        err.response?.data?.message ||
+          err.response?.data?.Message ||
           err.message ||
           "Failed to load candidate profile.",
       );
@@ -66,21 +83,27 @@ load contact information.
     setActionMessage(null);
     try {
       const result = await candidateProfileService.unlockCandidate(candidateId);
-      if (result.Success) {
-        setActionMessage({ type: "success", text: result.Message });
+      if (result?.success) {
+        setActionMessage({
+          type: "success",
+          text:
+            result.message ||
+            `Profile unlocked. ${result.creditsDeducted ?? 0} credit(s) used.`,
+        });
         await loadData();
-
-        const details =
-          await candidateProfileService.getCandidateDetails(candidateId);
-
-        setCandidateDetails(details);
       } else {
-        setActionMessage({ type: "error", text: result.Message });
+        setActionMessage({
+          type: "error",
+          text: result?.message || "Unlock failed.",
+        });
       }
     } catch (err) {
       setActionMessage({
         type: "error",
-        text: err.response?.data?.Message || "Unlock failed.",
+        text:
+          err.response?.data?.message ||
+          err.response?.data?.Message ||
+          "Unlock failed.",
       });
     } finally {
       setUnlocking(false);
@@ -88,48 +111,46 @@ load contact information.
   };
 
   // ---------------------------------------------
-  // Download cv
+  // Download CV
   // ---------------------------------------------
   const handleDownloadCv = async () => {
-  setDownloading(true);
-  setActionMessage(null);
+    setDownloading(true);
+    setActionMessage(null);
+    try {
+      const result = await candidateProfileService.downloadCv(candidateId);
 
-  try {
-    const result = await candidateProfileService.downloadCv(candidateId);
+      if (!result?.success) {
+        setActionMessage({
+          type: "error",
+          text: result?.message || "Unable to download CV.",
+        });
+        return;
+      }
 
-    if (!result?.Success) {
+      setActionMessage({
+        type: "success",
+        text:
+          result.message ||
+          `CV ready. ${result.creditsDeducted ?? 0} credit(s) used.`,
+      });
+
+      const url = result.cvUrl || candidateDetails?.cvUrl;
+      if (url) window.open(url, "_blank", "noopener,noreferrer");
+
+      await loadData();
+    } catch (err) {
       setActionMessage({
         type: "error",
-        text: result?.Message || "Unable to download CV",
+        text:
+          err.response?.data?.message ||
+          err.response?.data?.Message ||
+          err.message ||
+          "Unable to download CV.",
       });
-      return;
+    } finally {
+      setDownloading(false);
     }
-
-    setActionMessage({
-      type: "success",
-      text: result.Message,
-    });
-
-    // If backend returns URL
-    if (result.cvUrl) {
-      window.open(result.cvUrl, "_blank", "noopener,noreferrer");
-    }
-
-    // refresh wallet credits
-    await loadData();
-
-  } catch (err) {
-    setActionMessage({
-      type: "error",
-      text:
-        err.response?.data?.Message ||
-        err.message ||
-        "Unable to download CV",
-    });
-  } finally {
-    setDownloading(false);
-  }
-};
+  };
 
   // ---------------------------------------------
   // Loading / error states
@@ -138,7 +159,10 @@ load contact information.
     return (
       <main className="main">
         <div className="container mt-50 mb-50 text-center">
-          <p>Loading candidate profile...</p>
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading…</span>
+          </div>
+          <p className="mt-15 color-text-paragraph-2">Loading candidate profile…</p>
         </div>
       </main>
     );
@@ -154,35 +178,37 @@ load contact information.
     );
   }
 
-  const {
-    overview,
-    summary,
-    skills,
-    languages,
-    educations,
-    workHistories,
-    cv,
-    unlockStatus,
-  } = profile;
+  // ---------------------------------------------
+  // Safe destructure (all camelCase from API)
+  // ---------------------------------------------
+  const overview = profile.overview || {};
+  const summary = profile.summary || {};
+  const skills = profile.skills || [];
+  const languages = profile.languages || [];
+  const educations = profile.educations || [];
+  const workHistories = profile.workHistories || [];
+  const cv = profile.cv || null;
+  const unlockStatus = profile.unlockStatus || {};
 
-  const isUnlocked = unlockStatus.IsUnlocked;
+  const isUnlocked = unlockStatus.isUnlocked ?? overview.isUnlocked ?? false;
+  const cvAvailable = !!cv?.cvAvailable;
 
   return (
     <main className="main">
       <section className="section-box-2">
         <div className="container">
           <div className="banner-hero banner-image-single">
-            <img
+            {/* <img
               src="/assets/imgs/page/blue-collar/welding.jpg"
               alt="candidate banner"
-            />
+            /> */}
           </div>
 
           <div className="box-company-profile">
             <div className="image-compay">
               <img
                 src={
-                  overview.ProfilePhotoUrl ||
+                  overview.profilePhotoUrl ||
                   "/assets/imgs/page/candidates/candidate-profile.png"
                 }
                 alt="candidate profile"
@@ -192,16 +218,18 @@ load contact information.
             <div className="row mt-10">
               <div className="col-lg-8 col-md-12">
                 <h5 className="f-18">
-                  {overview.FullName}
+                  {overview.fullName}
                   <span className="card-location font-regular ml-20">
-                    {overview.CurrentCity}
-                    {overview.CurrentState ? `, ${overview.CurrentState}` : ""}
+                    {overview.currentCity}
+                    {overview.currentState ? `, ${overview.currentState}` : ""}
                   </span>
                 </h5>
 
                 <p className="mt-0 font-md color-text-paragraph-2 mb-15">
-                  {overview.PrimaryTrade} - {overview.TotalExperienceYears}{" "}
-                  years experience
+                  {overview.primaryTrade}
+                  {overview.totalExperienceYears != null
+                    ? ` · ${overview.totalExperienceYears} years experience`
+                    : ""}
                 </p>
 
                 <div className="mt-10 mb-15">
@@ -212,9 +240,9 @@ load contact information.
                       alt="rating star"
                     />
                   ))}
-                  {overview.AiMatchScore != null && (
+                  {overview.aiMatchScore != null && (
                     <span className="font-xs color-text-mutted ml-10">
-                      {overview.AiMatchScore}% match
+                      {overview.aiMatchScore}% match
                     </span>
                   )}
                   <img
@@ -225,10 +253,15 @@ load contact information.
                 </div>
 
                 <div className="candidate-tags-wrap">
-                  {summary.ItiCertified && (
+                  {summary.itiCertified && (
                     <span className="candidate-profile-tag">ITI Certified</span>
                   )}
                   <span className="candidate-profile-tag">KYC Verified</span>
+                  {overview.availabilityStatus && (
+                    <span className="candidate-profile-tag">
+                      {overview.availabilityStatus}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -245,17 +278,17 @@ load contact information.
                     {isUnlocked
                       ? "Profile Unlocked"
                       : unlocking
-                        ? "Unlocking..."
+                        ? "Unlocking…"
                         : "Unlock Profile"}
                   </button>
 
                   <button
                     className="btn btn-outline-custom btn-lg"
                     type="button"
-                    disabled={!isUnlocked || !cv?.cvAvailable || downloading}
+                    disabled={!isUnlocked || !cvAvailable || downloading}
                     onClick={handleDownloadCv}
                   >
-                    {downloading ? "Downloading..." : "Download CV"}
+                    {downloading ? "Downloading…" : "Download CV"}
                   </button>
                 </div>
 
@@ -297,7 +330,7 @@ load contact information.
                   aria-controls="tab-skills"
                   aria-selected="false"
                 >
-                  skills
+                  Skills
                 </a>
               </li>
               <li>
@@ -334,17 +367,14 @@ load contact information.
                     <h4>Employer Candidate View</h4>
                     <p>
                       {isUnlocked
-                        ? "This profile is unlocked. Contact details, cv, and full work records are available."
-                        : "This profile is currently locked for employer view. Contact details, complete cv, and full work records are hidden until unlock."}
+                        ? "This profile is unlocked. Contact details, CV, and full work records are available."
+                        : "This profile is currently locked for employer view. Contact details, complete CV, and full work records are hidden until unlock."}
                     </p>
 
                     {!isUnlocked && (
-                      <div
-                        className="alert alert-warning mt-20 mb-20"
-                        role="alert"
-                      >
+                      <div className="alert alert-warning mt-20 mb-20" role="alert">
                         <strong>Profile locked.</strong> Unlock is irreversible.
-                        Credits deducted after confirmation.
+                        Credits are deducted after confirmation.
                       </div>
                     )}
 
@@ -366,9 +396,7 @@ load contact information.
                                 Information visible before unlock
                               </p>
                             </div>
-                            <span className="visibility-badge success">
-                              Visible
-                            </span>
+                            <span className="visibility-badge success">Visible</span>
                           </div>
 
                           <div className="visibility-card-body">
@@ -377,12 +405,8 @@ load contact information.
                                 <i className="fi-rr-user"></i>
                               </div>
                               <div>
-                                <span className="visibility-label">
-                                  Candidate Name
-                                </span>
-                                <h6 className="visibility-value">
-                                  {overview.FullName}
-                                </h6>
+                                <span className="visibility-label">Candidate Name</span>
+                                <h6 className="visibility-value">{overview.fullName}</h6>
                               </div>
                             </div>
 
@@ -391,11 +415,9 @@ load contact information.
                                 <i className="fi-rr-briefcase"></i>
                               </div>
                               <div>
-                                <span className="visibility-label">
-                                  Current Role
-                                </span>
+                                <span className="visibility-label">Current Role</span>
                                 <h6 className="visibility-value">
-                                  {overview.PrimaryTrade}
+                                  {overview.primaryTrade || "Not specified"}
                                 </h6>
                               </div>
                             </div>
@@ -405,12 +427,9 @@ load contact information.
                                 <i className="fi-rr-time-fast"></i>
                               </div>
                               <div>
-                                <span className="visibility-label">
-                                  Experience
-                                </span>
+                                <span className="visibility-label">Experience</span>
                                 <h6 className="visibility-value">
-                                  {overview.TotalExperienceYears} Years
-                                  Experience
+                                  {overview.totalExperienceYears ?? 0} Years Experience
                                 </h6>
                               </div>
                             </div>
@@ -420,13 +439,11 @@ load contact information.
                                 <i className="fi-rr-marker"></i>
                               </div>
                               <div>
-                                <span className="visibility-label">
-                                  Current Location
-                                </span>
+                                <span className="visibility-label">Current Location</span>
                                 <h6 className="visibility-value">
-                                  {overview.CurrentCity}
-                                  {overview.CurrentState
-                                    ? `, ${overview.CurrentState}`
+                                  {overview.currentCity}
+                                  {overview.currentState
+                                    ? `, ${overview.currentState}`
                                     : ""}
                                 </h6>
                               </div>
@@ -437,11 +454,9 @@ load contact information.
                                 <i className="fi-rr-id-badge"></i>
                               </div>
                               <div>
-                                <span className="visibility-label">
-                                  Availability Status
-                                </span>
+                                <span className="visibility-label">Availability Status</span>
                                 <h6 className="visibility-value text-success">
-                                  {overview.AvailabilityStatus}
+                                  {overview.availabilityStatus || "Not specified"}
                                 </h6>
                               </div>
                             </div>
@@ -451,11 +466,9 @@ load contact information.
                                 <i className="fi-rr-credit-card"></i>
                               </div>
                               <div>
-                                <span className="visibility-label">
-                                  Notice Period
-                                </span>
+                                <span className="visibility-label">Notice Period</span>
                                 <h6 className="visibility-value">
-                                  {overview.NoticePeriod || "Not specified"}
+                                  {overview.noticePeriod || "Not specified"}
                                 </h6>
                               </div>
                             </div>
@@ -494,13 +507,11 @@ load contact information.
                                 <i className="fi-rr-dollar"></i>
                               </div>
                               <div>
-                                <span className="visibility-label">
-                                  Expected Salary
-                                </span>
+                                <span className="visibility-label">Expected Salary</span>
                                 <h6 className="visibility-value">
                                   {isUnlocked
-                                    ? (summary.PreferredSalary ??
-                                      "Not specified")
+                                    ? fmtSalary(summary.preferredSalary) ||
+                                      "Not specified"
                                     : "Hidden"}
                                 </h6>
                               </div>
@@ -511,13 +522,13 @@ load contact information.
                                 <i className="fi-rr-document"></i>
                               </div>
                               <div>
-                                <span className="visibility-label">
-                                  Resume Download
-                                </span>
+                                <span className="visibility-label">Resume Download</span>
                                 <h6 className="visibility-value">
-                                  {cv?.CanDownloadcv
-                                    ? "Available"
-                                    : "Unlock Required"}
+                                  {!cvAvailable
+                                    ? "Not generated yet"
+                                    : cv?.canDownloadCv
+                                      ? "Available"
+                                      : "Unlock Required"}
                                 </h6>
                               </div>
                             </div>
@@ -527,13 +538,12 @@ load contact information.
                                 <i className="fi-rr-id-badge"></i>
                               </div>
                               <div>
-                                <span className="visibility-label">
-                                  Disability Status
-                                </span>
+                                <span className="visibility-label">Disability Status</span>
                                 <h6 className="visibility-value">
                                   {isUnlocked
-                                    ? summary.DisabilityStatus ||
-                                      "None declared"
+                                    ? summary.disabilityStatus
+                                      ? summary.disabilityNote || "Declared"
+                                      : "None declared"
                                     : "Protected"}
                                 </h6>
                               </div>
@@ -544,12 +554,10 @@ load contact information.
                                 <i className="fi-rr-credit-card"></i>
                               </div>
                               <div>
-                                <span className="visibility-label">
-                                  Unlock Access
-                                </span>
+                                <span className="visibility-label">Unlock Access</span>
                                 <h6 className="visibility-value">
                                   {isUnlocked
-                                    ? `Expires ${unlockStatus.ExpiryDate ?? "—"}`
+                                    ? `Expires ${fmtDate(unlockStatus.expiryDate) || "—"}`
                                     : "Unlock to view"}
                                 </h6>
                               </div>
@@ -565,7 +573,7 @@ load contact information.
                                 disabled={unlocking}
                               >
                                 {unlocking
-                                  ? "Unlocking..."
+                                  ? "Unlocking…"
                                   : "Unlock Full Candidate Profile"}
                               </button>
                             </div>
@@ -574,27 +582,27 @@ load contact information.
                       </div>
                     </div>
 
-                    {summary.About && (
+                    {summary.about && (
                       <>
                         <h4 className="mt-30">About</h4>
-                        <p>{summary.About}</p>
+                        <p>{summary.about}</p>
                       </>
                     )}
 
-                    {summary.Professionalsummary && (
+                    {summary.professionalSummary && (
                       <>
                         <h4 className="mt-20">Professional summary</h4>
-                        <p>{summary.Professionalsummary}</p>
+                        <p>{summary.professionalSummary}</p>
                       </>
                     )}
 
-                    {summary.ItiCertified && (
+                    {summary.itiCertified && (
                       <>
                         <h4 className="mt-20">ITI Details</h4>
                         <ul>
-                          <li>Trade: {summary.ItiTrade}</li>
-                          <li>College: {summary.ItiCollege}</li>
-                          <li>Marks: {summary.ItiMarks}</li>
+                          {summary.itiTrade && <li>Trade: {summary.itiTrade}</li>}
+                          {summary.itiCollege && <li>College: {summary.itiCollege}</li>}
+                          {summary.itiMarks && <li>Marks: {summary.itiMarks}</li>}
                         </ul>
                       </>
                     )}
@@ -609,24 +617,24 @@ load contact information.
                   >
                     <h4>Core skills</h4>
                     <p>
-                      skills shown here are visible in pre-unlock mode to
-                      support shortlisting decisions before spending credits.
+                      Skills shown here are visible in pre-unlock mode to support
+                      shortlisting decisions before spending credits.
                     </p>
                     <div className="mt-20">
                       {skills.length === 0 && <p>No skills listed.</p>}
-                      {skills.map((skill) => (
+                      {skills.map((skill, idx) => (
                         <span
-                          key={skill.SkillName}
+                          key={`${skill.skillName}-${idx}`}
                           className="btn btn-grey-small mr-10 mb-10"
                           title={
-                            skill.SkillRole
-                              ? `${skill.SkillRole} - ${skill.YearsOfExperience ?? 0} yrs`
-                              : `${skill.YearsOfExperience ?? 0} yrs`
+                            skill.skillRole
+                              ? `${skill.skillRole} · ${skill.yearsOfExperience ?? 0} yrs`
+                              : `${skill.yearsOfExperience ?? 0} yrs`
                           }
                         >
-                          {skill.SkillName}
-                          {skill.YearsOfExperience != null
-                            ? ` (${skill.YearsOfExperience} yrs)`
+                          {skill.skillName}
+                          {skill.yearsOfExperience != null
+                            ? ` (${skill.yearsOfExperience} yrs)`
                             : ""}
                         </span>
                       ))}
@@ -634,14 +642,14 @@ load contact information.
 
                     {languages.length > 0 && (
                       <>
-                        <h4 className="mt-30">languages</h4>
+                        <h4 className="mt-30">Languages</h4>
                         <ul>
-                          {languages.map((lang) => (
-                            <li key={lang.Language}>
-                              <strong>{lang.Language}</strong> — Read:{" "}
-                              {lang.CanRead ? "Yes" : "No"}, Write:{" "}
-                              {lang.CanWrite ? "Yes" : "No"}, Speak:{" "}
-                              {lang.CanSpeak ? "Yes" : "No"}
+                          {languages.map((lang, idx) => (
+                            <li key={`${lang.language}-${idx}`}>
+                              <strong>{lang.language}</strong> — Read:{" "}
+                              {lang.canRead ? "Yes" : "No"}, Write:{" "}
+                              {lang.canWrite ? "Yes" : "No"}, Speak:{" "}
+                              {lang.canSpeak ? "Yes" : "No"}
                             </li>
                           ))}
                         </ul>
@@ -653,17 +661,18 @@ load contact information.
                         <h4 className="mt-30">Education</h4>
                         <ul>
                           {educations.map((edu) => (
-                            <li key={edu.EducationId}>
-                              <strong>{edu.EducationLevel}</strong> -{" "}
-                              {edu.InstituteName} ({edu.PassoutYear})
-                              {edu.IsAiVerified && (
+                            <li key={edu.educationId}>
+                              <strong>{edu.educationLevel}</strong>
+                              {edu.instituteName ? ` - ${edu.instituteName}` : ""}
+                              {edu.passoutYear ? ` (${edu.passoutYear})` : ""}
+                              {edu.isAiVerified && (
                                 <span className="badge bg-success ml-10">
                                   AI Verified
                                 </span>
                               )}
-                              {edu.CertificateUrl && (
+                              {edu.certificateUrl && (
                                 <a
-                                  href={edu.CertificateUrl}
+                                  href={edu.certificateUrl}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="ml-10"
@@ -687,20 +696,17 @@ load contact information.
                   >
                     <h4>Work Experience Snapshot</h4>
                     <p>
-                      Full work details are shown after unlock. Current snapshot
-                      includes role, company, and timeline.
+                      Current snapshot includes role, company, and timeline.
                     </p>
                     <ul>
-                      {workHistories.length === 0 && (
-                        <li>No work history listed.</li>
-                      )}
+                      {workHistories.length === 0 && <li>No work history listed.</li>}
                       {workHistories.map((item) => (
-                        <li key={item.WorkId}>
-                          <strong>{item.JobTitle}</strong> at {item.CompanyName}{" "}
-                          ({item.StartDate} -{" "}
-                          {item.IsCurrent ? "Present" : item.EndDate}) -{" "}
-                          {item.WorkLocation}
-                          {item.IsOffshore ? " (Offshore)" : ""}
+                        <li key={item.workId}>
+                          <strong>{item.jobTitle}</strong> at {item.companyName} (
+                          {fmtMonthYear(item.startDate)} -{" "}
+                          {item.isCurrent ? "Present" : fmtMonthYear(item.endDate)})
+                          {item.workLocation ? ` - ${item.workLocation}` : ""}
+                          {item.isOffshore ? " (Offshore)" : ""}
                         </li>
                       ))}
                     </ul>
@@ -711,11 +717,11 @@ load contact information.
               <div className="box-related-job content-page">
                 <h3 className="mb-30">Work History</h3>
                 <div className="box-list-jobs display-list">
+                  {workHistories.length === 0 && (
+                    <p className="color-text-paragraph-2">No work history listed.</p>
+                  )}
                   {workHistories.map((item) => (
-                    <div
-                      className="col-xl-12 col-12"
-                      key={`work-card-${item.WorkId}`}
-                    >
+                    <div className="col-xl-12 col-12" key={`work-card-${item.workId}`}>
                       <div className="card-grid-2 hover-up">
                         <div className="row">
                           <div className="col-lg-6 col-md-6 col-sm-12">
@@ -728,10 +734,10 @@ load contact information.
                               </div>
                               <div className="right-info">
                                 <a className="name-job" href="#">
-                                  {item.CompanyName}
+                                  {item.companyName}
                                 </a>
                                 <span className="location-small">
-                                  {item.WorkLocation}
+                                  {item.workLocation}
                                 </span>
                               </div>
                             </div>
@@ -739,22 +745,24 @@ load contact information.
                           <div className="col-lg-6 text-start text-md-end pr-60 col-md-6 col-sm-12">
                             <div className="pl-15 mb-15 mt-30">
                               <span className="btn btn-grey-small mr-5">
-                                {item.IsCurrent ? "Current" : "Past"}
+                                {item.isCurrent ? "Current" : "Past"}
                               </span>
                               <span className="btn btn-grey-small mr-5">
-                                {item.StartDate} -{" "}
-                                {item.IsCurrent ? "Present" : item.EndDate}
+                                {fmtMonthYear(item.startDate)} -{" "}
+                                {item.isCurrent ? "Present" : fmtMonthYear(item.endDate)}
                               </span>
                             </div>
                           </div>
                         </div>
                         <div className="card-block-info">
                           <h4>
-                            <a href="#">{item.JobTitle}</a>
+                            <a href="#">{item.jobTitle}</a>
                           </h4>
-                          <p className="font-sm color-text-paragraph mt-10">
-                            {item.JobDescription}
-                          </p>
+                          {item.jobDescription && (
+                            <p className="font-sm color-text-paragraph mt-10">
+                              {item.jobDescription}
+                            </p>
+                          )}
                           <div className="card-2-bottom mt-20">
                             <div className="row">
                               <div className="col-lg-7 col-7">
@@ -762,7 +770,7 @@ load contact information.
                                   Status:
                                   <span className="text-success">
                                     {" "}
-                                    {item.IsOffshore ? "Offshore" : "Onshore"}
+                                    {item.isOffshore ? "Offshore" : "Onshore"}
                                   </span>
                                 </span>
                               </div>
@@ -780,7 +788,7 @@ load contact information.
             {/* ===================== SIDEBAR ===================== */}
             <div className="col-lg-4 col-md-12 col-sm-12 col-12 pl-40 pl-lg-15 mt-lg-30">
               <div className="sidebar-border">
-                <h5 className="f-18">overview</h5>
+                <h5 className="f-18">Overview</h5>
                 <div className="sidebar-list-job">
                   <ul>
                     <li>
@@ -790,7 +798,7 @@ load contact information.
                       <div className="sidebar-text-info">
                         <span className="text-description">Experience</span>
                         <strong className="small-heading">
-                          {overview.TotalExperienceYears} years
+                          {overview.totalExperienceYears ?? 0} years
                         </strong>
                       </div>
                     </li>
@@ -801,7 +809,7 @@ load contact information.
                       <div className="sidebar-text-info">
                         <span className="text-description">Trade</span>
                         <strong className="small-heading">
-                          {overview.PrimaryTrade}
+                          {overview.primaryTrade || "—"}
                         </strong>
                       </div>
                     </li>
@@ -810,14 +818,10 @@ load contact information.
                         <i className="fi-rr-marker"></i>
                       </div>
                       <div className="sidebar-text-info">
-                        <span className="text-description">
-                          Current Location
-                        </span>
+                        <span className="text-description">Current Location</span>
                         <strong className="small-heading">
-                          {overview.CurrentCity}
-                          {overview.CurrentState
-                            ? `, ${overview.CurrentState}`
-                            : ""}
+                          {overview.currentCity}
+                          {overview.currentState ? `, ${overview.currentState}` : ""}
                         </strong>
                       </div>
                     </li>
@@ -826,11 +830,9 @@ load contact information.
                         <i className="fi-rr-dollar"></i>
                       </div>
                       <div className="sidebar-text-info">
-                        <span className="text-description">
-                          Credits in Wallet
-                        </span>
+                        <span className="text-description">Credits in Wallet</span>
                         <strong className="small-heading">
-                          {wallet ? wallet.AvailableCredits : "—"} credits
+                          {wallet ? wallet.availableCredits : "—"} credits
                         </strong>
                       </div>
                     </li>
@@ -838,21 +840,24 @@ load contact information.
                 </div>
 
                 <div className="sidebar-list-job">
-                  <h6 className="mb-10">Contact & cv Access</h6>
+                  <h6 className="mb-10">Contact &amp; CV Access</h6>
                   <ul className="ul-disc">
                     <li>
-                      Mobile :
-                      {isUnlocked
-                        ? `${candidateDetails?.countryCode}
- ${candidateDetails?.mobileNumber}`
+                      Mobile:{" "}
+                      {isUnlocked && candidateDetails
+                        ? `${candidateDetails.countryCode || ""} ${candidateDetails.mobileNumber || ""}`.trim() ||
+                          "Not provided"
                         : "+91 XXXXXXXXXX"}
                     </li>
                     <li>
-                      Email :{isUnlocked ? candidateDetails?.email : "Hidden"}
+                      Email:{" "}
+                      {isUnlocked
+                        ? candidateDetails?.email || "Not provided"
+                        : "Hidden"}
                     </li>
                     <li>
-                      cv:{" "}
-                      {cv?.cvAvailable
+                      CV:{" "}
+                      {cvAvailable
                         ? isUnlocked
                           ? "Available for download"
                           : "Available after unlock"
@@ -860,8 +865,8 @@ load contact information.
                     </li>
                     <li>
                       Unlock expiry window:{" "}
-                      {unlockStatus.ExpiryDate
-                        ? unlockStatus.ExpiryDate
+                      {unlockStatus.expiryDate
+                        ? fmtDate(unlockStatus.expiryDate)
                         : "Not unlocked"}
                     </li>
                   </ul>
@@ -891,11 +896,13 @@ load contact information.
                     <input
                       className="input-newsletter"
                       type="text"
-                      value=""
+                      defaultValue=""
                       placeholder="Enter your email here"
-                      readOnly
                     />
-                    <button className="btn btn-default font-heading icon-send-letter">
+                    <button
+                      type="button"
+                      className="btn btn-default font-heading icon-send-letter"
+                    >
                       Get Updates
                     </button>
                   </form>
