@@ -1,5 +1,5 @@
 import api from "@/services/api";
-import jwtDecode from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 
 const getEmployerId = () => {
   const token = localStorage.getItem("token");
@@ -22,8 +22,9 @@ export const searchCandidates = async (searchParams) => {
       ...searchParams,
     },
   });
+return response.data;
 
-  return response.data;
+  
 };
 
 export const getCvSearchDashboard = async () => {
