@@ -9,15 +9,13 @@ export const saveJobDetails = async (payload) => {
 
   const response = await api.patch(
     "/api/recruiter/jobs/step1-job-details",
-    formData
+    formData,
   );
 
   return response.data;
 };
 export const getJobResume = async (jobId) => {
-  const response = await api.get(
-    `/api/recruiter/jobs/${jobId}/resume`
-  );
+  const response = await api.get(`/api/recruiter/jobs/${jobId}/resume`);
 
   return response.data;
 };
@@ -31,7 +29,7 @@ export const saveCompensation = async (jobId, payload) => {
 
   const response = await api.patch(
     `/api/recruiter/jobs/${jobId}/step2-compensation`,
-    formData
+    formData,
   );
 
   return response.data;
@@ -46,48 +44,33 @@ export const saveSkills = async (jobId, payload) => {
 
   formData.append(
     "AdditionalJobDescription",
-    payload.AdditionalJobDescription || ""
+    payload.AdditionalJobDescription || "",
   );
 
-  formData.append(
-    "LicenceDocsRequired",
-    payload.LicenceDocsRequired || ""
-  );
+  formData.append("LicenceDocsRequired", payload.LicenceDocsRequired || "");
 
-  formData.append(
-    "LanguageRequired",
-    payload.LanguageRequired || ""
-  );
+  formData.append("LanguageRequired", payload.LanguageRequired || "");
 
   const response = await api.patch(
     `/api/recruiter/jobs/${jobId}/step3-skills`,
-    formData
+    formData,
   );
 
   return response.data;
 };
 
-export const saveEligibility = async (
-  jobId,
-  payload
-) => {
+export const saveEligibility = async (jobId, payload) => {
   const formData = new FormData();
 
-  Object.entries(payload).forEach(
-    ([key, value]) => {
-      if (
-        value !== null &&
-        value !== undefined &&
-        value !== ""
-      ) {
-        formData.append(key, value);
-      }
+  Object.entries(payload).forEach(([key, value]) => {
+    if (value !== null && value !== undefined && value !== "") {
+      formData.append(key, value);
     }
-  );
+  });
 
   const response = await api.patch(
     `/api/recruiter/jobs/${jobId}/step4-eligibility`,
-    formData
+    formData,
   );
 
   return response.data;
@@ -101,7 +84,7 @@ export const saveLocation = async (jobId, payload) => {
 
   const response = await api.patch(
     `/api/recruiter/jobs/${jobId}/step5-location`,
-    formData
+    formData,
   );
 
   return response.data;
@@ -124,50 +107,30 @@ export const saveQuestions = async (jobId, payload) => {
 
   const response = await api.patch(
     `/api/recruiter/jobs/${jobId}/step6-questions`,
-    formData
+    formData,
   );
 
   return response.data;
 };
 
-export const publishJob = async (
-  payload
-) => {
+export const publishJob = async (payload) => {
   const formData = new FormData();
 
-  formData.append(
-    "JobId",
-    payload.JobId
+  formData.append("JobId", payload.JobId);
+  formData.append("ApplicationDeadline", payload.ApplicationDeadline);
+  formData.append("CompanyVisibility", payload.CompanyVisibility);
+  formData.append("JobType", payload.JobType);
+
+  payload.PublishingTags?.forEach(tag =>
+    formData.append("PublishingTags", tag)
   );
 
-  formData.append(
-    "ApplicationDeadline",
-    payload.ApplicationDeadline
-  );
+  formData.append("PublishNow", String(payload.PublishNow));
 
-  formData.append(
-    "CompanyVisibility",
-    payload.CompanyVisibility
-  );
-
-  formData.append(
-    "JobType",
-    payload.JobType
-  );
-
-  formData.append(
-    "PublishNow",
-    payload.PublishNow
-  );
-
-  payload.PublishingTags?.forEach(
-    (tag) => {
-      formData.append(
-        "PublishingTags",
-        tag
-      );
-    }
-  );
+  console.log("===== STEP 7 REQUEST =====");
+  for (const pair of formData.entries()) {
+    console.log(pair[0], pair[1]);
+  }
 
   const response = await api.patch(
     "/api/recruiter/jobs/step7-publish",
@@ -178,9 +141,7 @@ export const publishJob = async (
 };
 
 export const saveDraft = async (jobId) => {
-  const response = await api.put(
-    `/api/recruiter/jobs/${jobId}/save-draft`
-  );
+  const response = await api.put(`/api/recruiter/jobs/${jobId}/save-draft`);
 
   return response.data;
 };
@@ -188,7 +149,7 @@ export const saveDraft = async (jobId) => {
 export const generateJobDescription = async (payload) => {
   const response = await api.post(
     "/api/recruiter/ai/job-description/auto-generate",
-    payload
+    payload,
   );
 
   return response.data;
@@ -197,7 +158,7 @@ export const generateJobDescription = async (payload) => {
 export const getInlineSuggestion = async (payload) => {
   const response = await api.post(
     "/api/recruiter/ai/job-description/inline-suggest",
-    payload
+    payload,
   );
 
   return response.data;

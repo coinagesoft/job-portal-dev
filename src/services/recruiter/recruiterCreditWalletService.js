@@ -116,3 +116,53 @@ export const allocateCredits = async (subUserId, credits) => {
   );
   return data;
 };
+
+/**
+ * POST /api/recruiter/credit-plans/create-order
+ */
+export const createCreditPlanOrder = async (planId) => {
+  const { data } = await api.post(
+    "/api/recruiter/plans/create-order",
+    {
+      planId,
+    },
+    {
+      headers: employerHeader(),
+    }
+  );
+
+  return data;
+};
+
+/**
+ * POST /api/recruiter/credit-plans/verify-payment
+ */
+export const verifyCreditPlanPayment = async ({
+  transactionId,
+  razorpayOrderId,
+  razorpayPaymentId,
+  razorpaySignature,
+}) => {
+  const { data } = await api.post(
+    "/api/recruiter/plans/verify-payment",
+    {
+      transactionId,
+      razorpayOrderId,
+      razorpayPaymentId,
+      razorpaySignature,
+    },
+    {
+      headers: employerHeader(),
+    }
+  );
+
+  return data;
+};
+
+export const getCreditPlans = async () => {
+  const { data } = await api.get("/api/recruiter/plans", {
+    headers: employerHeader(),
+  });
+
+  return data;
+};
