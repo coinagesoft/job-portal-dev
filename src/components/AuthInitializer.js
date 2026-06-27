@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { jwtDecode } from "jwt-decode";
+import jwtDecode from "jwt-decode";
 import {
   setUser,
   setInitialized

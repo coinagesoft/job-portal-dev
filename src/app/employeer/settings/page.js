@@ -1,29 +1,69 @@
 "use client";
 
-import { useState } from "react";
 import { useToast } from "@/components/Toast";
+import { useEffect, useState } from "react";
 
+import {
+  getAccountSettings,
+  updateAccountSettings,
+} from "@/services/recruiter/employerSettingsService";
 const LANGUAGES = [
-  "English", "Hindi", "Marathi", "Bengali", "Tamil", "Telugu",
-  "Kannada", "Malayalam", "Gujarati", "Punjabi", "Urdu", "Odia",
-  "Arabic", "French", "German",
+  "English",
+  "Hindi",
+  "Marathi",
+  "Bengali",
+  "Tamil",
+  "Telugu",
+  "Kannada",
+  "Malayalam",
+  "Gujarati",
+  "Punjabi",
+  "Urdu",
+  "Odia",
+  "Arabic",
+  "French",
+  "German",
 ];
 
 const SETTINGS_TABS = [
-  { key: "account",     label: "Account Details", icon: "fi-rr-user"     },
-  { key: "language",    label: "Language",         icon: "fi-rr-globe"    },
-  { key: "security",    label: "Security",         icon: "fi-rr-lock"     },
-  { key: "preferences", label: "Preferences",      icon: "fi-rr-settings" },
-  { key: "danger",      label: "Delete Account",   icon: "fi-rr-trash"    },
+  { key: "account", label: "Account Details", icon: "fi-rr-user" },
+  { key: "language", label: "Language", icon: "fi-rr-globe" },
+  { key: "security", label: "Security", icon: "fi-rr-lock" },
+  { key: "preferences", label: "Preferences", icon: "fi-rr-settings" },
+  { key: "danger", label: "Delete Account", icon: "fi-rr-trash" },
 ];
 
 const NOTIFICATION_PREFS = [
-  { label: "New applicant alerts",    desc: "Get notified when candidates apply to your jobs.",           enabled: true  },
-  { label: "Credit expiry reminders", desc: "Receive alerts before your credit pack expires.",            enabled: true  },
-  { label: "Job status updates",      desc: "Track when jobs go active, paused or closed.",              enabled: true  },
-  { label: "Invoice notifications",   desc: "Billing and payment confirmations straight to your inbox.", enabled: true  },
-  { label: "Platform updates",        desc: "New features, improvements and portal announcements.",       enabled: false },
-  { label: "Marketing emails",        desc: "Promotional offers and hiring tips from our team.",          enabled: false },
+  {
+    label: "New applicant alerts",
+    desc: "Get notified when candidates apply to your jobs.",
+    enabled: true,
+  },
+  {
+    label: "Credit expiry reminders",
+    desc: "Receive alerts before your credit pack expires.",
+    enabled: true,
+  },
+  {
+    label: "Job status updates",
+    desc: "Track when jobs go active, paused or closed.",
+    enabled: true,
+  },
+  {
+    label: "Invoice notifications",
+    desc: "Billing and payment confirmations straight to your inbox.",
+    enabled: true,
+  },
+  {
+    label: "Platform updates",
+    desc: "New features, improvements and portal announcements.",
+    enabled: false,
+  },
+  {
+    label: "Marketing emails",
+    desc: "Promotional offers and hiring tips from our team.",
+    enabled: false,
+  },
 ];
 
 /* ── Shared card shell ── */
@@ -45,18 +85,38 @@ const Card = ({ children, style = {} }) => (
 
 /* ── Section icon header ── */
 const SectionHeader = ({ icon, title, subtitle, danger = false }) => (
-  <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
-    <div style={{
-      width: 48, height: 48, borderRadius: 16, flexShrink: 0,
-      background: danger
-        ? "linear-gradient(135deg,#a32d2d,#c0392b)"
-        : "linear-gradient(135deg,#122359,#1e3a8a)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-    }}>
-      <i className={icon} style={{ color: danger ? "#fff" : "#ffa300", fontSize: 18 }} />
+  <div
+    style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}
+  >
+    <div
+      style={{
+        width: 48,
+        height: 48,
+        borderRadius: 16,
+        flexShrink: 0,
+        background: danger
+          ? "linear-gradient(135deg,#a32d2d,#c0392b)"
+          : "linear-gradient(135deg,#122359,#1e3a8a)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <i
+        className={icon}
+        style={{ color: danger ? "#fff" : "#ffa300", fontSize: 18 }}
+      />
     </div>
     <div>
-      <h5 style={{ margin: 0, color: danger ? "#a32d2d" : "#122359", fontWeight: 800 }}>{title}</h5>
+      <h5
+        style={{
+          margin: 0,
+          color: danger ? "#a32d2d" : "#122359",
+          fontWeight: 800,
+        }}
+      >
+        {title}
+      </h5>
       <p style={{ margin: 0, color: "#66789c", fontSize: 13 }}>{subtitle}</p>
     </div>
   </div>
@@ -68,16 +128,30 @@ const Toggle = ({ enabled, onToggle }) => (
     type="button"
     onClick={onToggle}
     style={{
-      width: 46, height: 26, borderRadius: 999, border: "none",
+      width: 46,
+      height: 26,
+      borderRadius: 999,
+      border: "none",
       background: enabled ? "#ffa300" : "#dbe4f0",
-      position: "relative", transition: "all .25s ease", flexShrink: 0, cursor: "pointer",
+      position: "relative",
+      transition: "all .25s ease",
+      flexShrink: 0,
+      cursor: "pointer",
     }}
   >
-    <span style={{
-      width: 20, height: 20, borderRadius: "50%", background: "#fff",
-      position: "absolute", top: 3, left: enabled ? 23 : 3,
-      transition: "all .25s ease", boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
-    }} />
+    <span
+      style={{
+        width: 20,
+        height: 20,
+        borderRadius: "50%",
+        background: "#fff",
+        position: "absolute",
+        top: 3,
+        left: enabled ? 23 : 3,
+        transition: "all .25s ease",
+        boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
+      }}
+    />
   </button>
 );
 
@@ -85,6 +159,16 @@ const EmployerSettingsPage = () => {
   const showToast = useToast();
   const [activeTab, setActiveTab] = useState("account");
   const [saved, setSaved] = useState(false);
+  const [account, setAccount] = useState({
+    contactPersonName: "",
+    designation: "",
+    email: "",
+    mobileNumber: "",
+    countryCode: "+91",
+    timeZone: "",
+  });
+
+  const [loading, setLoading] = useState(false);
 
   const [language, setLanguage] = useState("English");
   const [secondaryLanguage, setSecondaryLanguage] = useState("");
@@ -92,10 +176,27 @@ const EmployerSettingsPage = () => {
 
   const [notifPrefs, setNotifPrefs] = useState(NOTIFICATION_PREFS);
 
-  const handleSave = () => {
-    setSaved(true);
-    showToast("Account settings saved successfully.", "success");
-    setTimeout(() => setSaved(false), 2500);
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+
+      await updateAccountSettings(account);
+      await fetchAccount();
+
+      setSaved(true);
+
+      showToast("Account updated successfully", "success");
+
+      setTimeout(() => {
+        setSaved(false);
+      }, 2500);
+    } catch (error) {
+      console.log(error);
+
+      showToast("Failed to update account", "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleLangSave = () => {
@@ -106,24 +207,52 @@ const EmployerSettingsPage = () => {
 
   const toggleNotif = (index) => {
     setNotifPrefs((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, enabled: !item.enabled } : item))
+      prev.map((item, i) =>
+        i === index ? { ...item, enabled: !item.enabled } : item,
+      ),
     );
     showToast("Preference updated", "info");
   };
+  const fetchAccount = async () => {
+    try {
+      setLoading(true);
+
+      const response = await getAccountSettings();
+
+      setAccount(response);
+    } catch (error) {
+      console.log(error);
+
+      showToast("Failed to fetch account details", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    fetchAccount();
+  }, []);
 
   return (
     <main className="main">
       <section className="section-box mt-50 mb-50">
         <div className="container">
           <div className="content-page">
-
             {/* ── Page Header ── */}
             <div className="box-filters-job mb-25">
               <div className="row align-items-center">
                 <div className="col-12">
-                  <h3 style={{ color: "#122359", fontWeight: 800, marginBottom: 6 }}>Settings</h3>
+                  <h3
+                    style={{
+                      color: "#122359",
+                      fontWeight: 800,
+                      marginBottom: 6,
+                    }}
+                  >
+                    Settings
+                  </h3>
                   <span className="font-sm color-text-paragraph-2">
-                    Manage your account preferences, language, security, and notifications.
+                    Manage your account preferences, language, security, and
+                    notifications.
                   </span>
                 </div>
               </div>
@@ -131,7 +260,11 @@ const EmployerSettingsPage = () => {
 
             {/* ── Top Tab Navigation ── */}
             <div className="box-nav-tabs mb-5">
-              <ul className="nav" role="tablist" style={{ flexWrap: "wrap", gap: 6 }}>
+              <ul
+                className="nav"
+                role="tablist"
+                style={{ flexWrap: "wrap", gap: 6 }}
+              >
                 {SETTINGS_TABS.map((tab) => {
                   const isActive = activeTab === tab.key;
                   const isDanger = tab.key === "danger";
@@ -141,23 +274,41 @@ const EmployerSettingsPage = () => {
                         className={`btn btn-border mr-5 mb-5${isActive ? " active" : ""}`}
                         onClick={() => setActiveTab(tab.key)}
                         style={{
-                          border: isDanger && isActive ? "2px solid #e02020"
-                            : isActive ? "2px solid #ffa300"
-                            : isDanger ? "1px solid #f3c3c3" : undefined,
-                          color: isDanger && isActive ? "#e02020"
-                            : isActive ? "#ffa300"
-                            : isDanger ? "#c0392b" : undefined,
-                          display: "inline-flex", alignItems: "center", gap: 7,
-                          fontSize: 13, padding: "8px 16px",
+                          border:
+                            isDanger && isActive
+                              ? "2px solid #e02020"
+                              : isActive
+                                ? "2px solid #ffa300"
+                                : isDanger
+                                  ? "1px solid #f3c3c3"
+                                  : undefined,
+                          color:
+                            isDanger && isActive
+                              ? "#e02020"
+                              : isActive
+                                ? "#ffa300"
+                                : isDanger
+                                  ? "#c0392b"
+                                  : undefined,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 7,
+                          fontSize: 13,
+                          padding: "8px 16px",
                         }}
                       >
                         <i
                           className={tab.icon}
                           style={{
                             fontSize: 13,
-                            color: isDanger && isActive ? "#e02020"
-                              : isActive ? "#ffa300"
-                              : isDanger ? "#c0392b" : "#9ca3af",
+                            color:
+                              isDanger && isActive
+                                ? "#e02020"
+                                : isActive
+                                  ? "#ffa300"
+                                  : isDanger
+                                    ? "#c0392b"
+                                    : "#9ca3af",
                           }}
                         />
                         {tab.label}
@@ -180,56 +331,148 @@ const EmployerSettingsPage = () => {
                   subtitle="Update your contact and timezone information"
                 />
                 <div className="row">
-                  {[
-                    { label: "Contact Name",  type: "text",  defaultValue: "Arjun Mehta"                  },
-                    { label: "Designation",   type: "text",  defaultValue: "Account Owner"                },
-                    { label: "Email Address", type: "email", defaultValue: "arjun.mehta@horizonmarine.in" },
-                    { label: "Mobile Number", type: "tel",   defaultValue: "+91 98765 43210", hint: "Changes require OTP verification" },
-                  ].map((field) => (
-                    <div className="col-lg-6 col-12 mb-15" key={field.label}>
-                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, fontWeight: 600, color: "#66789c" }}>
-                        {field.label}
-                      </label>
-                      <input
-                        className="form-control"
-                        type={field.type}
-                        defaultValue={field.defaultValue}
-                        style={{ height: 44, fontSize: 13, borderRadius: 12, border: "1px solid rgba(18,35,89,0.12)" }}
-                      />
-                      {field.hint && (
-                        <p style={{ margin: "5px 0 0", fontSize: 11, color: "#94a3b8" }}>{field.hint}</p>
-                      )}
-                    </div>
-                  ))}
+                  {}
                   <div className="col-lg-6 col-12 mb-15">
-                    <label style={{ display: "block", marginBottom: 6, fontSize: 13, fontWeight: 600, color: "#66789c" }}>
+                    <label>Contact Name</label>
+
+                    <input
+                      className="form-control"
+                      type="text"
+                      value={account.contactPersonName}
+                      onChange={(e) =>
+                        setAccount({
+                          ...account,
+                          contactPersonName: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="col-lg-6 col-12 mb-15">
+                    <label>Designation</label>
+
+                    <input
+                      className="form-control"
+                      type="text"
+                      value={account.designation}
+                      onChange={(e) =>
+                        setAccount({
+                          ...account,
+                          designation: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="col-lg-6 col-12 mb-15">
+                    <label>Email</label>
+
+                    <input
+                      className="form-control"
+                      type="email"
+                      value={account.email}
+                      onChange={(e) =>
+                        setAccount({
+                          ...account,
+                          email: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="col-lg-6 col-12 mb-15">
+                    <label>Country Code</label>
+
+                    <input
+                      className="form-control"
+                      value={account.countryCode}
+                      onChange={(e) =>
+                        setAccount({
+                          ...account,
+                          countryCode: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="col-lg-6 col-12 mb-15">
+                    <label>Mobile Number</label>
+
+                    <input
+                      className="form-control"
+                      type="tel"
+                      value={account.mobileNumber}
+                      onChange={(e) =>
+                        setAccount({
+                          ...account,
+                          mobileNumber: e.target.value,
+                        })
+                      }
+                    />
+
+                    <p>Changes require OTP verification</p>
+                  </div>
+
+                  <div className="col-lg-6 col-12 mb-15">
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: 6,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: "#66789c",
+                      }}
+                    >
                       Time Zone
                     </label>
                     <select
                       className="form-control form-select"
-                      defaultValue="Asia/Kolkata"
-                      style={{ height: 44, fontSize: 13, borderRadius: 12, border: "1px solid rgba(18,35,89,0.12)" }}
+                      value={account.timeZone}
+                      onChange={(e) =>
+                        setAccount({
+                          ...account,
+                          timeZone: e.target.value,
+                        })
+                      }
+                      style={{
+                        height: 44,
+                        fontSize: 13,
+                        borderRadius: 12,
+                        border: "1px solid rgba(18,35,89,0.12)",
+                      }}
                     >
                       <option value="Asia/Kolkata">Asia / Kolkata (IST)</option>
                       <option value="Asia/Dubai">Asia / Dubai (GST)</option>
                       <option value="UTC">UTC</option>
-                      <option value="America/New_York">America / New York (EST)</option>
+                      <option value="America/New_York">
+                        America / New York (EST)
+                      </option>
                     </select>
                   </div>
                 </div>
-                <div style={{ borderTop: "1px solid rgba(18,35,89,0.06)", marginTop: 8, paddingTop: 20, display: "flex", gap: 10 }}>
+                <div
+                  style={{
+                    borderTop: "1px solid rgba(18,35,89,0.06)",
+                    marginTop: 8,
+                    paddingTop: 20,
+                    display: "flex",
+                    gap: 10,
+                  }}
+                >
                   <button
                     className="btn btn-default"
                     type="button"
                     onClick={handleSave}
-                    style={{ borderRadius: 12, fontWeight: 700, boxShadow: "0 8px 20px rgba(255,163,0,0.18)" }}
+                    disabled={loading}
+                    style={{
+                      borderRadius: 12,
+                      fontWeight: 700,
+                      boxShadow: "0 8px 20px rgba(255,163,0,0.18)",
+                    }}
                   >
-                    {saved ? "✓ Saved" : "Save Changes"}
+                    {loading ? "Saving..." : saved ? "✓ Saved" : "Save Changes"}
                   </button>
                   <button
                     className="btn btn-border"
                     type="button"
-                    style={{ borderRadius: 12, fontWeight: 700 }}
+                    disabled={loading}
+                    onClick={fetchAccount}
                   >
                     Cancel
                   </button>
@@ -249,69 +492,151 @@ const EmployerSettingsPage = () => {
                 />
                 <div className="row">
                   <div className="col-lg-6 col-12 mb-20">
-                    <label style={{ display: "block", marginBottom: 6, fontSize: 13, fontWeight: 600, color: "#66789c" }}>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: 6,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: "#66789c",
+                      }}
+                    >
                       Primary Language <span style={{ color: "#e03" }}>*</span>
                     </label>
                     <select
                       className="form-control form-select"
                       value={language}
                       onChange={(e) => setLanguage(e.target.value)}
-                      style={{ height: 44, fontSize: 13, borderRadius: 12, border: "1px solid rgba(18,35,89,0.12)" }}
+                      style={{
+                        height: 44,
+                        fontSize: 13,
+                        borderRadius: 12,
+                        border: "1px solid rgba(18,35,89,0.12)",
+                      }}
                     >
-                      {LANGUAGES.map((lang) => <option key={lang} value={lang}>{lang}</option>)}
+                      {LANGUAGES.map((lang) => (
+                        <option key={lang} value={lang}>
+                          {lang}
+                        </option>
+                      ))}
                     </select>
-                    <p style={{ margin: "5px 0 0", fontSize: 11, color: "#94a3b8" }}>
+                    <p
+                      style={{
+                        margin: "5px 0 0",
+                        fontSize: 11,
+                        color: "#94a3b8",
+                      }}
+                    >
                       Used for portal interface and system notifications.
                     </p>
                   </div>
                   <div className="col-lg-6 col-12 mb-20">
-                    <label style={{ display: "block", marginBottom: 6, fontSize: 13, fontWeight: 600, color: "#66789c" }}>
-                      Secondary Language <span style={{ fontSize: 11, fontWeight: 400 }}>(Optional)</span>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: 6,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: "#66789c",
+                      }}
+                    >
+                      Secondary Language{" "}
+                      <span style={{ fontSize: 11, fontWeight: 400 }}>
+                        (Optional)
+                      </span>
                     </label>
                     <select
                       className="form-control form-select"
                       value={secondaryLanguage}
                       onChange={(e) => setSecondaryLanguage(e.target.value)}
-                      style={{ height: 44, fontSize: 13, borderRadius: 12, border: "1px solid rgba(18,35,89,0.12)" }}
+                      style={{
+                        height: 44,
+                        fontSize: 13,
+                        borderRadius: 12,
+                        border: "1px solid rgba(18,35,89,0.12)",
+                      }}
                     >
                       <option value="">-- None --</option>
-                      {LANGUAGES.filter((l) => l !== language).map((lang) => <option key={lang} value={lang}>{lang}</option>)}
+                      {LANGUAGES.filter((l) => l !== language).map((lang) => (
+                        <option key={lang} value={lang}>
+                          {lang}
+                        </option>
+                      ))}
                     </select>
-                    <p style={{ margin: "5px 0 0", fontSize: 11, color: "#94a3b8" }}>
+                    <p
+                      style={{
+                        margin: "5px 0 0",
+                        fontSize: 11,
+                        color: "#94a3b8",
+                      }}
+                    >
                       Shown as alternate in candidate-facing job listings.
                     </p>
                   </div>
                 </div>
 
                 {/* Current setting preview */}
-                <div style={{
-                  padding: "16px 20px", borderRadius: 16, marginBottom: 24,
-                  background: "#fff7ea", border: "1px solid rgba(255,163,0,0.18)",
-                }}>
-                  <p style={{ margin: "0 0 4px", fontWeight: 700, color: "#122359", fontSize: 13 }}>
+                <div
+                  style={{
+                    padding: "16px 20px",
+                    borderRadius: 16,
+                    marginBottom: 24,
+                    background: "#fff7ea",
+                    border: "1px solid rgba(255,163,0,0.18)",
+                  }}
+                >
+                  <p
+                    style={{
+                      margin: "0 0 4px",
+                      fontWeight: 700,
+                      color: "#122359",
+                      fontSize: 13,
+                    }}
+                  >
                     Current Language Setting
                   </p>
                   <p style={{ margin: 0, color: "#66789c", fontSize: 13 }}>
-                    Portal language: <strong style={{ color: "#122359" }}>{language}</strong>
+                    Portal language:{" "}
+                    <strong style={{ color: "#122359" }}>{language}</strong>
                     {secondaryLanguage && (
-                      <> &nbsp;·&nbsp; Secondary: <strong style={{ color: "#122359" }}>{secondaryLanguage}</strong></>
+                      <>
+                        {" "}
+                        &nbsp;·&nbsp; Secondary:{" "}
+                        <strong style={{ color: "#122359" }}>
+                          {secondaryLanguage}
+                        </strong>
+                      </>
                     )}
                   </p>
                 </div>
 
-                <div style={{ borderTop: "1px solid rgba(18,35,89,0.06)", paddingTop: 20, display: "flex", gap: 10 }}>
+                <div
+                  style={{
+                    borderTop: "1px solid rgba(18,35,89,0.06)",
+                    paddingTop: 20,
+                    display: "flex",
+                    gap: 10,
+                  }}
+                >
                   <button
                     className="btn btn-default"
                     type="button"
                     onClick={handleLangSave}
-                    style={{ borderRadius: 12, fontWeight: 700, boxShadow: "0 8px 20px rgba(255,163,0,0.18)" }}
+                    style={{
+                      borderRadius: 12,
+                      fontWeight: 700,
+                      boxShadow: "0 8px 20px rgba(255,163,0,0.18)",
+                    }}
                   >
                     {langSaved ? "✓ Saved" : "Save Language"}
                   </button>
                   <button
                     className="btn btn-border"
                     type="button"
-                    onClick={() => { setLanguage("English"); setSecondaryLanguage(""); }}
+                    onClick={() => {
+                      setLanguage("English");
+                      setSecondaryLanguage("");
+                    }}
                     style={{ borderRadius: 12, fontWeight: 700 }}
                   >
                     Reset to Default
@@ -334,51 +659,104 @@ const EmployerSettingsPage = () => {
                   />
 
                   {/* OTP info row */}
-                  <div style={{
-                    padding: "16px 20px", borderRadius: 16, marginBottom: 24,
-                    background: "#fff7ea", border: "1px solid rgba(255,163,0,0.18)",
-                  }}>
-                    <p style={{ margin: "0 0 4px", fontWeight: 700, color: "#122359", fontSize: 14 }}>
+                  <div
+                    style={{
+                      padding: "16px 20px",
+                      borderRadius: 16,
+                      marginBottom: 24,
+                      background: "#fff7ea",
+                      border: "1px solid rgba(255,163,0,0.18)",
+                    }}
+                  >
+                    <p
+                      style={{
+                        margin: "0 0 4px",
+                        fontWeight: 700,
+                        color: "#122359",
+                        fontSize: 14,
+                      }}
+                    >
                       OTP-based Login Active
                     </p>
                     <p style={{ margin: 0, color: "#66789c", fontSize: 13 }}>
-                      Your account uses mobile OTP for authentication. No password is required.
+                      Your account uses mobile OTP for authentication. No
+                      password is required.
                     </p>
                   </div>
 
                   {/* 2FA */}
-                  <h6 style={{ color: "#122359", fontWeight: 800, marginBottom: 14 }}>Two-Factor Authentication</h6>
+                  <h6
+                    style={{
+                      color: "#122359",
+                      fontWeight: 800,
+                      marginBottom: 14,
+                    }}
+                  >
+                    Two-Factor Authentication
+                  </h6>
                   <div
                     className="candidate-notification-point"
                     style={{
-                      display: "flex", alignItems: "center", justifyContent: "space-between",
-                      gap: 14, padding: "16px 18px", borderRadius: 18,
-                      border: "1px solid rgba(18,35,89,0.06)", marginBottom: 24,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 14,
+                      padding: "16px 18px",
+                      borderRadius: 18,
+                      border: "1px solid rgba(18,35,89,0.06)",
+                      marginBottom: 24,
                       background: "#ffffff",
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                      <div style={{
-                        width: 44, height: 44, borderRadius: 14, background: "#fff7ea",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        color: "#ff9900", fontSize: 18, flexShrink: 0,
-                      }}>
+                    <div
+                      style={{ display: "flex", alignItems: "center", gap: 14 }}
+                    >
+                      <div
+                        style={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: 14,
+                          background: "#fff7ea",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "#ff9900",
+                          fontSize: 18,
+                          flexShrink: 0,
+                        }}
+                      >
                         <i className="fi-rr-mobile" />
                       </div>
                       <div>
-                        <p style={{ margin: "0 0 4px", fontWeight: 700, color: "#122359", fontSize: 14 }}>
+                        <p
+                          style={{
+                            margin: "0 0 4px",
+                            fontWeight: 700,
+                            color: "#122359",
+                            fontSize: 14,
+                          }}
+                        >
                           Mobile OTP
                         </p>
-                        <p style={{ margin: 0, color: "#66789c", fontSize: 13 }}>
+                        <p
+                          style={{ margin: 0, color: "#66789c", fontSize: 13 }}
+                        >
                           OTP sent to +91 98765 43210 on every login
                         </p>
                       </div>
                     </div>
-                    <span style={{
-                      display: "inline-flex", alignItems: "center", padding: "6px 14px",
-                      borderRadius: 999, background: "#ecfdf3", color: "#0BAB7C",
-                      fontSize: 12, fontWeight: 700,
-                    }}>
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        padding: "6px 14px",
+                        borderRadius: 999,
+                        background: "#ecfdf3",
+                        color: "#0BAB7C",
+                        fontSize: 12,
+                        fontWeight: 700,
+                      }}
+                    >
                       Enabled
                     </span>
                   </div>
@@ -386,67 +764,155 @@ const EmployerSettingsPage = () => {
 
                 {/* Active Sessions — card-per-session like sub-user cards */}
                 <div style={{ marginBottom: 8 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 10 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 20,
+                      flexWrap: "wrap",
+                      gap: 10,
+                    }}
+                  >
                     <div>
-                      <h5 style={{ color: "#122359", fontWeight: 800, marginBottom: 4 }}>Active Sessions</h5>
-                      <p style={{ margin: 0, color: "#66789c", fontSize: 13 }}>Devices currently signed in to your account.</p>
+                      <h5
+                        style={{
+                          color: "#122359",
+                          fontWeight: 800,
+                          marginBottom: 4,
+                        }}
+                      >
+                        Active Sessions
+                      </h5>
+                      <p style={{ margin: 0, color: "#66789c", fontSize: 13 }}>
+                        Devices currently signed in to your account.
+                      </p>
                     </div>
-                    <span style={{
-                      display: "inline-flex", alignItems: "center", padding: "6px 12px",
-                      borderRadius: 999, background: "#EAF4FF", border: "1px solid #B9DCFF",
-                      color: "#1D4ED8", fontSize: 12, fontWeight: 600,
-                    }}>
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        padding: "6px 12px",
+                        borderRadius: 999,
+                        background: "#EAF4FF",
+                        border: "1px solid #B9DCFF",
+                        color: "#1D4ED8",
+                        fontSize: 12,
+                        fontWeight: 600,
+                      }}
+                    >
                       2 active
                     </span>
                   </div>
 
                   {[
-                    { device: "Chrome on Windows 11", location: "Mumbai, IN", time: "Now",        icon: "fi-rr-computer", current: true  },
-                    { device: "Safari on iPhone 15",  location: "Mumbai, IN", time: "2 days ago", icon: "fi-rr-mobile",   current: false },
+                    {
+                      device: "Chrome on Windows 11",
+                      location: "Mumbai, IN",
+                      time: "Now",
+                      icon: "fi-rr-computer",
+                      current: true,
+                    },
+                    {
+                      device: "Safari on iPhone 15",
+                      location: "Mumbai, IN",
+                      time: "2 days ago",
+                      icon: "fi-rr-mobile",
+                      current: false,
+                    },
                   ].map((session) => (
                     <div
                       key={session.device}
                       className="subuser-hover-card"
                       style={{
-                        background: "#ffffff", borderRadius: 22,
+                        background: "#ffffff",
+                        borderRadius: 22,
                         boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
-                        padding: 22, marginBottom: 16,
-                        display: "flex", alignItems: "center", justifyContent: "space-between",
-                        gap: 20, flexWrap: "wrap",
+                        padding: 22,
+                        marginBottom: 16,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 20,
+                        flexWrap: "wrap",
                       }}
                     >
-                      <div style={{ display: "flex", alignItems: "center", gap: 16, flex: 1, minWidth: 220 }}>
-                        <div style={{
-                          width: 52, height: 52, borderRadius: 16, flexShrink: 0,
-                          background: "#fff7ea", display: "flex", alignItems: "center",
-                          justifyContent: "center", color: "#ff9900", fontSize: 20,
-                        }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 16,
+                          flex: 1,
+                          minWidth: 220,
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 52,
+                            height: 52,
+                            borderRadius: 16,
+                            flexShrink: 0,
+                            background: "#fff7ea",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#ff9900",
+                            fontSize: 20,
+                          }}
+                        >
                           <i className={session.icon} />
                         </div>
                         <div>
-                          <p style={{ margin: "0 0 4px", fontWeight: 700, color: "#122359", fontSize: 14 }}>
+                          <p
+                            style={{
+                              margin: "0 0 4px",
+                              fontWeight: 700,
+                              color: "#122359",
+                              fontSize: 14,
+                            }}
+                          >
                             {session.device}
                           </p>
-                          <p style={{ margin: 0, color: "#66789c", fontSize: 13 }}>
+                          <p
+                            style={{
+                              margin: 0,
+                              color: "#66789c",
+                              fontSize: 13,
+                            }}
+                          >
                             {session.location} &nbsp;·&nbsp; {session.time}
                           </p>
                         </div>
                       </div>
                       {session.current ? (
-                        <span style={{
-                          display: "inline-flex", alignItems: "center", padding: "6px 14px",
-                          borderRadius: 999, background: "#ecfdf3", color: "#0BAB7C",
-                          fontSize: 12, fontWeight: 700,
-                        }}>
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            padding: "6px 14px",
+                            borderRadius: 999,
+                            background: "#ecfdf3",
+                            color: "#0BAB7C",
+                            fontSize: 12,
+                            fontWeight: 700,
+                          }}
+                        >
                           Current Session
                         </span>
                       ) : (
                         <button
                           className="btn btn-border btn-sm"
                           type="button"
-                          style={{ borderRadius: 10, fontWeight: 700, fontSize: 12 }}
+                          style={{
+                            borderRadius: 10,
+                            fontWeight: 700,
+                            fontSize: 12,
+                          }}
                         >
-                          <i className="fi-rr-cross-circle" style={{ marginRight: 5 }} />
+                          <i
+                            className="fi-rr-cross-circle"
+                            style={{ marginRight: 5 }}
+                          />
                           Revoke
                         </button>
                       )}
@@ -465,24 +931,51 @@ const EmployerSettingsPage = () => {
                 <div
                   className="subuser-hover-card"
                   style={{
-                    background: "#ffffff", borderRadius: 24,
+                    background: "#ffffff",
+                    borderRadius: 24,
                     boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
-                    padding: 28, marginBottom: 24,
+                    padding: 28,
+                    marginBottom: 24,
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 10 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      marginBottom: 20,
+                      flexWrap: "wrap",
+                      gap: 10,
+                    }}
+                  >
                     <div>
-                      <h5 style={{ margin: "0 0 4px", color: "#122359", fontWeight: 800 }}>Email Notifications</h5>
+                      <h5
+                        style={{
+                          margin: "0 0 4px",
+                          color: "#122359",
+                          fontWeight: 800,
+                        }}
+                      >
+                        Email Notifications
+                      </h5>
                       <p style={{ margin: 0, color: "#66789c", fontSize: 13 }}>
                         Control which employer alerts you want to receive.
                       </p>
                     </div>
-                    <span style={{
-                      display: "inline-flex", alignItems: "center", padding: "6px 12px",
-                      borderRadius: 999, background: "#EAF4FF", border: "1px solid #B9DCFF",
-                      color: "#1D4ED8", fontSize: 12, fontWeight: 600,
-                    }}>
-                      {notifPrefs.filter(p => p.enabled).length} enabled
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        padding: "6px 12px",
+                        borderRadius: 999,
+                        background: "#EAF4FF",
+                        border: "1px solid #B9DCFF",
+                        color: "#1D4ED8",
+                        fontSize: 12,
+                        fontWeight: 600,
+                      }}
+                    >
+                      {notifPrefs.filter((p) => p.enabled).length} enabled
                     </span>
                   </div>
 
@@ -491,21 +984,42 @@ const EmployerSettingsPage = () => {
                       key={pref.label}
                       className="candidate-notification-point"
                       style={{
-                        display: "flex", alignItems: "center", justifyContent: "space-between",
-                        gap: 14, padding: "16px 18px", borderRadius: 18,
-                        border: "1px solid rgba(18,35,89,0.06)", marginBottom: 12,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 14,
+                        padding: "16px 18px",
+                        borderRadius: 18,
+                        border: "1px solid rgba(18,35,89,0.06)",
+                        marginBottom: 12,
                         background: "#ffffff",
                       }}
                     >
                       <div>
-                        <div style={{ color: "#122359", fontWeight: 700, marginBottom: 4, fontSize: 14 }}>
+                        <div
+                          style={{
+                            color: "#122359",
+                            fontWeight: 700,
+                            marginBottom: 4,
+                            fontSize: 14,
+                          }}
+                        >
                           {pref.label}
                         </div>
-                        <div style={{ color: "#66789c", fontSize: 12, lineHeight: 1.6 }}>
+                        <div
+                          style={{
+                            color: "#66789c",
+                            fontSize: 12,
+                            lineHeight: 1.6,
+                          }}
+                        >
                           {pref.desc}
                         </div>
                       </div>
-                      <Toggle enabled={pref.enabled} onToggle={() => toggleNotif(i)} />
+                      <Toggle
+                        enabled={pref.enabled}
+                        onToggle={() => toggleNotif(i)}
+                      />
                     </div>
                   ))}
                 </div>
@@ -514,21 +1028,44 @@ const EmployerSettingsPage = () => {
                 <div
                   className="subuser-hover-card"
                   style={{
-                    background: "#ffffff", borderRadius: 24,
+                    background: "#ffffff",
+                    borderRadius: 24,
                     boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
-                    padding: 28, marginBottom: 24,
+                    padding: 28,
+                    marginBottom: 24,
                   }}
                 >
-                  <h5 style={{ margin: "0 0 20px", color: "#122359", fontWeight: 800 }}>Display</h5>
+                  <h5
+                    style={{
+                      margin: "0 0 20px",
+                      color: "#122359",
+                      fontWeight: 800,
+                    }}
+                  >
+                    Display
+                  </h5>
                   <div className="row">
                     <div className="col-lg-6 col-12 mb-15">
-                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, fontWeight: 600, color: "#66789c" }}>
+                      <label
+                        style={{
+                          display: "block",
+                          marginBottom: 6,
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: "#66789c",
+                        }}
+                      >
                         Items per page
                       </label>
                       <select
                         className="form-control form-select"
                         defaultValue="10"
-                        style={{ height: 44, fontSize: 13, borderRadius: 12, border: "1px solid rgba(18,35,89,0.12)" }}
+                        style={{
+                          height: 44,
+                          fontSize: 13,
+                          borderRadius: 12,
+                          border: "1px solid rgba(18,35,89,0.12)",
+                        }}
                       >
                         <option value="10">10</option>
                         <option value="25">25</option>
@@ -536,13 +1073,26 @@ const EmployerSettingsPage = () => {
                       </select>
                     </div>
                     <div className="col-lg-6 col-12 mb-15">
-                      <label style={{ display: "block", marginBottom: 6, fontSize: 13, fontWeight: 600, color: "#66789c" }}>
+                      <label
+                        style={{
+                          display: "block",
+                          marginBottom: 6,
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: "#66789c",
+                        }}
+                      >
                         Date Format
                       </label>
                       <select
                         className="form-control form-select"
                         defaultValue="dd-mmm-yyyy"
-                        style={{ height: 44, fontSize: 13, borderRadius: 12, border: "1px solid rgba(18,35,89,0.12)" }}
+                        style={{
+                          height: 44,
+                          fontSize: 13,
+                          borderRadius: 12,
+                          border: "1px solid rgba(18,35,89,0.12)",
+                        }}
                       >
                         <option value="dd-mmm-yyyy">DD MMM YYYY</option>
                         <option value="dd/mm/yyyy">DD/MM/YYYY</option>
@@ -550,12 +1100,22 @@ const EmployerSettingsPage = () => {
                       </select>
                     </div>
                   </div>
-                  <div style={{ borderTop: "1px solid rgba(18,35,89,0.06)", paddingTop: 20, marginTop: 8 }}>
+                  <div
+                    style={{
+                      borderTop: "1px solid rgba(18,35,89,0.06)",
+                      paddingTop: 20,
+                      marginTop: 8,
+                    }}
+                  >
                     <button
                       className="btn btn-default"
                       type="button"
                       onClick={handleSave}
-                      style={{ borderRadius: 12, fontWeight: 700, boxShadow: "0 8px 20px rgba(255,163,0,0.18)" }}
+                      style={{
+                        borderRadius: 12,
+                        fontWeight: 700,
+                        boxShadow: "0 8px 20px rgba(255,163,0,0.18)",
+                      }}
                     >
                       {saved ? "✓ Saved" : "Save Preferences"}
                     </button>
@@ -573,9 +1133,11 @@ const EmployerSettingsPage = () => {
                 <div
                   className="subuser-hover-card"
                   style={{
-                    background: "#fff8f8", borderRadius: 24,
+                    background: "#fff8f8",
+                    borderRadius: 24,
                     boxShadow: "0 4px 14px rgba(160,0,0,0.04)",
-                    padding: "22px 28px", marginBottom: 24,
+                    padding: "22px 28px",
+                    marginBottom: 24,
                     border: "1px solid rgba(224,32,32,0.14) !important",
                   }}
                 >
@@ -585,13 +1147,20 @@ const EmployerSettingsPage = () => {
                     subtitle="These actions are permanent and cannot be undone. Please proceed with caution."
                     danger
                   />
-                  <div style={{
-                    padding: "14px 18px", borderRadius: 14,
-                    background: "#fff5f5", border: "1px solid rgba(224,32,32,0.16)",
-                    color: "#c0392b", fontSize: 13, fontWeight: 600,
-                  }}>
+                  <div
+                    style={{
+                      padding: "14px 18px",
+                      borderRadius: 14,
+                      background: "#fff5f5",
+                      border: "1px solid rgba(224,32,32,0.16)",
+                      color: "#c0392b",
+                      fontSize: 13,
+                      fontWeight: 600,
+                    }}
+                  >
                     <i className="fi-rr-info" style={{ marginRight: 7 }} />
-                    Deleted accounts cannot be recovered. All jobs, applicants, and billing data will be permanently removed.
+                    Deleted accounts cannot be recovered. All jobs, applicants,
+                    and billing data will be permanently removed.
                   </div>
                 </div>
 
@@ -604,7 +1173,8 @@ const EmployerSettingsPage = () => {
                     title: "Deactivate Account",
                     desc: "Temporarily disable your account. Your jobs and data will be hidden but not deleted. You can reactivate at any time by contacting support.",
                     tag: "Reversible",
-                    tagBg: "#ecfdf3", tagColor: "#0BAB7C",
+                    tagBg: "#ecfdf3",
+                    tagColor: "#0BAB7C",
                     btnLabel: "Deactivate Account",
                     btnClass: "btn-border",
                   },
@@ -615,7 +1185,8 @@ const EmployerSettingsPage = () => {
                     title: "Delete All Jobs",
                     desc: "Permanently delete all posted jobs and their applicant data. This action cannot be undone.",
                     tag: "Irreversible",
-                    tagBg: "#fff0f0", tagColor: "#e02020",
+                    tagBg: "#fff0f0",
+                    tagColor: "#e02020",
                     btnLabel: "Delete All Jobs",
                     btnClass: "btn-border",
                   },
@@ -626,7 +1197,8 @@ const EmployerSettingsPage = () => {
                     title: "Delete Account",
                     desc: "Permanently delete your employer account, all jobs, applicants, and billing history. This cannot be reversed.",
                     tag: "Permanent",
-                    tagBg: "#fff0f0", tagColor: "#c0392b",
+                    tagBg: "#fff0f0",
+                    tagColor: "#c0392b",
                     btnLabel: "Delete Account",
                     btnClass: "btn-danger",
                   },
@@ -635,44 +1207,110 @@ const EmployerSettingsPage = () => {
                     key={action.title}
                     className="subuser-hover-card"
                     style={{
-                      background: "#ffffff", borderRadius: 22,
+                      background: "#ffffff",
+                      borderRadius: 22,
                       boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
-                      padding: 24, marginBottom: 16,
+                      padding: 24,
+                      marginBottom: 16,
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 20, flexWrap: "wrap" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        justifyContent: "space-between",
+                        gap: 20,
+                        flexWrap: "wrap",
+                      }}
+                    >
                       {/* Left */}
-                      <div style={{ display: "flex", gap: 16, flex: 1, minWidth: 260 }}>
-                        <div style={{
-                          width: 52, height: 52, borderRadius: 16, flexShrink: 0,
-                          background: action.iconBg, display: "flex",
-                          alignItems: "center", justifyContent: "center",
-                          color: action.iconColor, fontSize: 20,
-                        }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: 16,
+                          flex: 1,
+                          minWidth: 260,
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 52,
+                            height: 52,
+                            borderRadius: 16,
+                            flexShrink: 0,
+                            background: action.iconBg,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: action.iconColor,
+                            fontSize: 20,
+                          }}
+                        >
                           <i className={action.icon} />
                         </div>
                         <div style={{ flex: 1 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 6 }}>
-                            <h5 style={{ margin: 0, color: "#122359", fontWeight: 700 }}>{action.title}</h5>
-                            <span style={{
-                              display: "inline-flex", alignItems: "center", padding: "4px 10px",
-                              borderRadius: 999, background: action.tagBg, color: action.tagColor,
-                              fontSize: 11, fontWeight: 700,
-                            }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 10,
+                              flexWrap: "wrap",
+                              marginBottom: 6,
+                            }}
+                          >
+                            <h5
+                              style={{
+                                margin: 0,
+                                color: "#122359",
+                                fontWeight: 700,
+                              }}
+                            >
+                              {action.title}
+                            </h5>
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                padding: "4px 10px",
+                                borderRadius: 999,
+                                background: action.tagBg,
+                                color: action.tagColor,
+                                fontSize: 11,
+                                fontWeight: 700,
+                              }}
+                            >
                               {action.tag}
                             </span>
                           </div>
-                          <p style={{ margin: 0, color: "#66789c", fontSize: 13, lineHeight: 1.7 }}>
+                          <p
+                            style={{
+                              margin: 0,
+                              color: "#66789c",
+                              fontSize: 13,
+                              lineHeight: 1.7,
+                            }}
+                          >
                             {action.desc}
                           </p>
                         </div>
                       </div>
                       {/* Button */}
-                      <div style={{ display: "flex", alignItems: "center", paddingTop: 4 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          paddingTop: 4,
+                        }}
+                      >
                         <button
                           className={`btn ${action.btnClass} btn-sm`}
                           type="button"
-                          style={{ borderRadius: 10, fontWeight: 700, fontSize: 12, whiteSpace: "nowrap" }}
+                          style={{
+                            borderRadius: 10,
+                            fontWeight: 700,
+                            fontSize: 12,
+                            whiteSpace: "nowrap",
+                          }}
                         >
                           {action.btnLabel}
                         </button>
@@ -682,7 +1320,6 @@ const EmployerSettingsPage = () => {
                 ))}
               </>
             )}
-
           </div>
         </div>
       </section>

@@ -3,15 +3,15 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import candidateProfileService from "@/services/recruiter/Candidateprofileservice.js";
 
-
 const EmployerCandidateProfilePage = () => {
   const { candidateId } = useParams();
 
   const [profile, setProfile] = useState(null); // RecruiterCandidateProfileResponseDto
-  const [wallet, setWallet] = useState(null); // WalletSummaryDto
+  const [wallet, setWallet] = useState(null); // WalletsummaryDto
+  const [candidateDetails, setCandidateDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  const [candidateContact, setCandidateContact] = useState(null);
   const [unlocking, setUnlocking] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [actionMessage, setActionMessage] = useState(null);
@@ -27,13 +27,27 @@ const EmployerCandidateProfilePage = () => {
         candidateProfileService.getFullProfile(candidateId),
         candidateProfileService.getWallet(),
       ]);
+
       setProfile(profileRes);
+
       setWallet(walletRes);
+
+      /*
+If profile is already unlocked,
+load contact information.
+*/
+
+      if (profileRes.overview?.isUnlocked) {
+        const details =
+          await candidateProfileService.getCandidateDetails(candidateId);
+
+        setCandidateDetails(details);
+      }
     } catch (err) {
       setError(
         err.response?.data?.Message ||
           err.message ||
-          "Failed to load candidate profile."
+          "Failed to load candidate profile.",
       );
     } finally {
       setLoading(false);
@@ -54,7 +68,12 @@ const EmployerCandidateProfilePage = () => {
       const result = await candidateProfileService.unlockCandidate(candidateId);
       if (result.Success) {
         setActionMessage({ type: "success", text: result.Message });
-        await loadData(); // refresh unlock status, summary, cv, wallet
+        await loadData();
+
+        const details =
+          await candidateProfileService.getCandidateDetails(candidateId);
+
+        setCandidateDetails(details);
       } else {
         setActionMessage({ type: "error", text: result.Message });
       }
@@ -69,17 +88,17 @@ const EmployerCandidateProfilePage = () => {
   };
 
   // ---------------------------------------------
-  // Download CV
+  // Download cv
   // ---------------------------------------------
-  const handleDownloadCv = async () => {
+  const handleDownloadcv = async () => {
     setDownloading(true);
     setActionMessage(null);
     try {
-      const result = await candidateProfileService.downloadCv(candidateId);
+      const result = await candidateProfileService.downloadcv(candidateId);
       if (result.Success) {
         setActionMessage({ type: "success", text: result.Message });
-        if (result.CvUrl) {
-          window.open(result.CvUrl, "_blank", "noopener,noreferrer");
+        if (result.cvUrl) {
+          window.open(result.cvUrl, "_blank", "noopener,noreferrer");
         }
         await loadData(); // refresh wallet balance
       } else {
@@ -88,7 +107,7 @@ const EmployerCandidateProfilePage = () => {
     } catch (err) {
       setActionMessage({
         type: "error",
-        text: err.response?.data?.Message || "CV download failed.",
+        text: err.response?.data?.Message || "cv download failed.",
       });
     } finally {
       setDownloading(false);
@@ -118,10 +137,18 @@ const EmployerCandidateProfilePage = () => {
     );
   }
 
-  const { Overview, Summary, Skills, Languages, Educations, WorkHistories, Cv, UnlockStatus } =
-    profile;
+  const {
+    overview,
+    summary,
+    skills,
+    languages,
+    educations,
+    workHistories,
+    cv,
+    unlockStatus,
+  } = profile;
 
-  const isUnlocked = UnlockStatus.IsUnlocked;
+  const isUnlocked = unlockStatus.IsUnlocked;
 
   return (
     <main className="main">
@@ -138,7 +165,7 @@ const EmployerCandidateProfilePage = () => {
             <div className="image-compay">
               <img
                 src={
-                  Overview.ProfilePhotoUrl ||
+                  overview.ProfilePhotoUrl ||
                   "/assets/imgs/page/candidates/candidate-profile.png"
                 }
                 alt="candidate profile"
@@ -148,16 +175,16 @@ const EmployerCandidateProfilePage = () => {
             <div className="row mt-10">
               <div className="col-lg-8 col-md-12">
                 <h5 className="f-18">
-                  {Overview.FullName}
+                  {overview.FullName}
                   <span className="card-location font-regular ml-20">
-                    {Overview.CurrentCity}
-                    {Overview.CurrentState ? `, ${Overview.CurrentState}` : ""}
+                    {overview.CurrentCity}
+                    {overview.CurrentState ? `, ${overview.CurrentState}` : ""}
                   </span>
                 </h5>
 
                 <p className="mt-0 font-md color-text-paragraph-2 mb-15">
-                  {Overview.PrimaryTrade} - {Overview.TotalExperienceYears} years
-                  experience
+                  {overview.PrimaryTrade} - {overview.TotalExperienceYears}{" "}
+                  years experience
                 </p>
 
                 <div className="mt-10 mb-15">
@@ -168,9 +195,9 @@ const EmployerCandidateProfilePage = () => {
                       alt="rating star"
                     />
                   ))}
-                  {Overview.AiMatchScore != null && (
+                  {overview.AiMatchScore != null && (
                     <span className="font-xs color-text-mutted ml-10">
-                      {Overview.AiMatchScore}% match
+                      {overview.AiMatchScore}% match
                     </span>
                   )}
                   <img
@@ -181,7 +208,7 @@ const EmployerCandidateProfilePage = () => {
                 </div>
 
                 <div className="candidate-tags-wrap">
-                  {Summary.ItiCertified && (
+                  {summary.ItiCertified && (
                     <span className="candidate-profile-tag">ITI Certified</span>
                   )}
                   <span className="candidate-profile-tag">KYC Verified</span>
@@ -201,8 +228,8 @@ const EmployerCandidateProfilePage = () => {
                     {isUnlocked
                       ? "Profile Unlocked"
                       : unlocking
-                      ? "Unlocking..."
-                      : "Unlock Profile"}
+                        ? "Unlocking..."
+                        : "Unlock Profile"}
                   </button>
 
                   <button
@@ -210,14 +237,14 @@ const EmployerCandidateProfilePage = () => {
                     type="button"
                     title={
                       isUnlocked
-                        ? "Download candidate CV"
-                        : "Unlock required before downloading CV"
+                        ? "Download candidate cv"
+                        : "Unlock required before downloading cv"
                     }
                     style={{ whiteSpace: "nowrap" }}
-                    disabled={!isUnlocked || !Cv?.CvAvailable || downloading}
-                    onClick={handleDownloadCv}
+                    disabled={!isUnlocked || !cv?.cvAvailable || downloading}
+                    onClick={handleDownloadcv}
                   >
-                    {downloading ? "Downloading..." : "Download CV"}
+                    {downloading ? "Downloading..." : "Download cv"}
                   </button>
                 </div>
 
@@ -247,7 +274,7 @@ const EmployerCandidateProfilePage = () => {
                   aria-controls="tab-short-bio"
                   aria-selected="true"
                 >
-                  Candidate Summary
+                  Candidate summary
                 </a>
               </li>
               <li>
@@ -259,7 +286,7 @@ const EmployerCandidateProfilePage = () => {
                   aria-controls="tab-skills"
                   aria-selected="false"
                 >
-                  Skills
+                  skills
                 </a>
               </li>
               <li>
@@ -286,7 +313,7 @@ const EmployerCandidateProfilePage = () => {
             <div className="col-lg-8 col-md-12 col-sm-12 col-12">
               <div className="content-single">
                 <div className="tab-content">
-                  {/* ===================== SUMMARY TAB ===================== */}
+                  {/* ===================== summary TAB ===================== */}
                   <div
                     className="tab-pane fade show active"
                     id="tab-short-bio"
@@ -296,12 +323,15 @@ const EmployerCandidateProfilePage = () => {
                     <h4>Employer Candidate View</h4>
                     <p>
                       {isUnlocked
-                        ? "This profile is unlocked. Contact details, CV, and full work records are available."
-                        : "This profile is currently locked for employer view. Contact details, complete CV, and full work records are hidden until unlock."}
+                        ? "This profile is unlocked. Contact details, cv, and full work records are available."
+                        : "This profile is currently locked for employer view. Contact details, complete cv, and full work records are hidden until unlock."}
                     </p>
 
                     {!isUnlocked && (
-                      <div className="alert alert-warning mt-20 mb-20" role="alert">
+                      <div
+                        className="alert alert-warning mt-20 mb-20"
+                        role="alert"
+                      >
                         <strong>Profile locked.</strong> Unlock is irreversible.
                         Credits deducted after confirmation.
                       </div>
@@ -325,7 +355,9 @@ const EmployerCandidateProfilePage = () => {
                                 Information visible before unlock
                               </p>
                             </div>
-                            <span className="visibility-badge success">Visible</span>
+                            <span className="visibility-badge success">
+                              Visible
+                            </span>
                           </div>
 
                           <div className="visibility-card-body">
@@ -334,8 +366,12 @@ const EmployerCandidateProfilePage = () => {
                                 <i className="fi-rr-user"></i>
                               </div>
                               <div>
-                                <span className="visibility-label">Candidate Name</span>
-                                <h6 className="visibility-value">{Overview.FullName}</h6>
+                                <span className="visibility-label">
+                                  Candidate Name
+                                </span>
+                                <h6 className="visibility-value">
+                                  {overview.FullName}
+                                </h6>
                               </div>
                             </div>
 
@@ -344,9 +380,11 @@ const EmployerCandidateProfilePage = () => {
                                 <i className="fi-rr-briefcase"></i>
                               </div>
                               <div>
-                                <span className="visibility-label">Current Role</span>
+                                <span className="visibility-label">
+                                  Current Role
+                                </span>
                                 <h6 className="visibility-value">
-                                  {Overview.PrimaryTrade}
+                                  {overview.PrimaryTrade}
                                 </h6>
                               </div>
                             </div>
@@ -356,9 +394,12 @@ const EmployerCandidateProfilePage = () => {
                                 <i className="fi-rr-time-fast"></i>
                               </div>
                               <div>
-                                <span className="visibility-label">Experience</span>
+                                <span className="visibility-label">
+                                  Experience
+                                </span>
                                 <h6 className="visibility-value">
-                                  {Overview.TotalExperienceYears} Years Experience
+                                  {overview.TotalExperienceYears} Years
+                                  Experience
                                 </h6>
                               </div>
                             </div>
@@ -368,10 +409,14 @@ const EmployerCandidateProfilePage = () => {
                                 <i className="fi-rr-marker"></i>
                               </div>
                               <div>
-                                <span className="visibility-label">Current Location</span>
+                                <span className="visibility-label">
+                                  Current Location
+                                </span>
                                 <h6 className="visibility-value">
-                                  {Overview.CurrentCity}
-                                  {Overview.CurrentState ? `, ${Overview.CurrentState}` : ""}
+                                  {overview.CurrentCity}
+                                  {overview.CurrentState
+                                    ? `, ${overview.CurrentState}`
+                                    : ""}
                                 </h6>
                               </div>
                             </div>
@@ -385,7 +430,7 @@ const EmployerCandidateProfilePage = () => {
                                   Availability Status
                                 </span>
                                 <h6 className="visibility-value text-success">
-                                  {Overview.AvailabilityStatus}
+                                  {overview.AvailabilityStatus}
                                 </h6>
                               </div>
                             </div>
@@ -395,9 +440,11 @@ const EmployerCandidateProfilePage = () => {
                                 <i className="fi-rr-credit-card"></i>
                               </div>
                               <div>
-                                <span className="visibility-label">Notice Period</span>
+                                <span className="visibility-label">
+                                  Notice Period
+                                </span>
                                 <h6 className="visibility-value">
-                                  {Overview.NoticePeriod || "Not specified"}
+                                  {overview.NoticePeriod || "Not specified"}
                                 </h6>
                               </div>
                             </div>
@@ -441,7 +488,8 @@ const EmployerCandidateProfilePage = () => {
                                 </span>
                                 <h6 className="visibility-value">
                                   {isUnlocked
-                                    ? Summary.PreferredSalary ?? "Not specified"
+                                    ? (summary.PreferredSalary ??
+                                      "Not specified")
                                     : "Hidden"}
                                 </h6>
                               </div>
@@ -456,7 +504,7 @@ const EmployerCandidateProfilePage = () => {
                                   Resume Download
                                 </span>
                                 <h6 className="visibility-value">
-                                  {Cv?.CanDownloadCv
+                                  {cv?.CanDownloadcv
                                     ? "Available"
                                     : "Unlock Required"}
                                 </h6>
@@ -473,7 +521,8 @@ const EmployerCandidateProfilePage = () => {
                                 </span>
                                 <h6 className="visibility-value">
                                   {isUnlocked
-                                    ? Summary.DisabilityStatus || "None declared"
+                                    ? summary.DisabilityStatus ||
+                                      "None declared"
                                     : "Protected"}
                                 </h6>
                               </div>
@@ -489,7 +538,7 @@ const EmployerCandidateProfilePage = () => {
                                 </span>
                                 <h6 className="visibility-value">
                                   {isUnlocked
-                                    ? `Expires ${UnlockStatus.ExpiryDate ?? "—"}`
+                                    ? `Expires ${unlockStatus.ExpiryDate ?? "—"}`
                                     : "Unlock to view"}
                                 </h6>
                               </div>
@@ -514,47 +563,47 @@ const EmployerCandidateProfilePage = () => {
                       </div>
                     </div>
 
-                    {Summary.About && (
+                    {summary.About && (
                       <>
                         <h4 className="mt-30">About</h4>
-                        <p>{Summary.About}</p>
+                        <p>{summary.About}</p>
                       </>
                     )}
 
-                    {Summary.ProfessionalSummary && (
+                    {summary.Professionalsummary && (
                       <>
-                        <h4 className="mt-20">Professional Summary</h4>
-                        <p>{Summary.ProfessionalSummary}</p>
+                        <h4 className="mt-20">Professional summary</h4>
+                        <p>{summary.Professionalsummary}</p>
                       </>
                     )}
 
-                    {Summary.ItiCertified && (
+                    {summary.ItiCertified && (
                       <>
                         <h4 className="mt-20">ITI Details</h4>
                         <ul>
-                          <li>Trade: {Summary.ItiTrade}</li>
-                          <li>College: {Summary.ItiCollege}</li>
-                          <li>Marks: {Summary.ItiMarks}</li>
+                          <li>Trade: {summary.ItiTrade}</li>
+                          <li>College: {summary.ItiCollege}</li>
+                          <li>Marks: {summary.ItiMarks}</li>
                         </ul>
                       </>
                     )}
                   </div>
 
-                  {/* ===================== SKILLS TAB ===================== */}
+                  {/* ===================== skills TAB ===================== */}
                   <div
                     className="tab-pane fade"
                     id="tab-skills"
                     role="tabpanel"
                     aria-labelledby="tab-skills"
                   >
-                    <h4>Core Skills</h4>
+                    <h4>Core skills</h4>
                     <p>
-                      Skills shown here are visible in pre-unlock mode to
+                      skills shown here are visible in pre-unlock mode to
                       support shortlisting decisions before spending credits.
                     </p>
                     <div className="mt-20">
-                      {Skills.length === 0 && <p>No skills listed.</p>}
-                      {Skills.map((skill) => (
+                      {skills.length === 0 && <p>No skills listed.</p>}
+                      {skills.map((skill) => (
                         <span
                           key={skill.SkillName}
                           className="btn btn-grey-small mr-10 mb-10"
@@ -572,11 +621,11 @@ const EmployerCandidateProfilePage = () => {
                       ))}
                     </div>
 
-                    {Languages.length > 0 && (
+                    {languages.length > 0 && (
                       <>
-                        <h4 className="mt-30">Languages</h4>
+                        <h4 className="mt-30">languages</h4>
                         <ul>
-                          {Languages.map((lang) => (
+                          {languages.map((lang) => (
                             <li key={lang.Language}>
                               <strong>{lang.Language}</strong> — Read:{" "}
                               {lang.CanRead ? "Yes" : "No"}, Write:{" "}
@@ -588,11 +637,11 @@ const EmployerCandidateProfilePage = () => {
                       </>
                     )}
 
-                    {Educations.length > 0 && (
+                    {educations.length > 0 && (
                       <>
                         <h4 className="mt-30">Education</h4>
                         <ul>
-                          {Educations.map((edu) => (
+                          {educations.map((edu) => (
                             <li key={edu.EducationId}>
                               <strong>{edu.EducationLevel}</strong> -{" "}
                               {edu.InstituteName} ({edu.PassoutYear})
@@ -627,16 +676,19 @@ const EmployerCandidateProfilePage = () => {
                   >
                     <h4>Work Experience Snapshot</h4>
                     <p>
-                      Full work details are shown after unlock. Current
-                      snapshot includes role, company, and timeline.
+                      Full work details are shown after unlock. Current snapshot
+                      includes role, company, and timeline.
                     </p>
                     <ul>
-                      {WorkHistories.length === 0 && <li>No work history listed.</li>}
-                      {WorkHistories.map((item) => (
+                      {workHistories.length === 0 && (
+                        <li>No work history listed.</li>
+                      )}
+                      {workHistories.map((item) => (
                         <li key={item.WorkId}>
-                          <strong>{item.JobTitle}</strong> at {item.CompanyName} (
-                          {item.StartDate} - {item.IsCurrent ? "Present" : item.EndDate}
-                          ) - {item.WorkLocation}
+                          <strong>{item.JobTitle}</strong> at {item.CompanyName}{" "}
+                          ({item.StartDate} -{" "}
+                          {item.IsCurrent ? "Present" : item.EndDate}) -{" "}
+                          {item.WorkLocation}
                           {item.IsOffshore ? " (Offshore)" : ""}
                         </li>
                       ))}
@@ -648,8 +700,11 @@ const EmployerCandidateProfilePage = () => {
               <div className="box-related-job content-page">
                 <h3 className="mb-30">Work History</h3>
                 <div className="box-list-jobs display-list">
-                  {WorkHistories.map((item) => (
-                    <div className="col-xl-12 col-12" key={`work-card-${item.WorkId}`}>
+                  {workHistories.map((item) => (
+                    <div
+                      className="col-xl-12 col-12"
+                      key={`work-card-${item.WorkId}`}
+                    >
                       <div className="card-grid-2 hover-up">
                         <div className="row">
                           <div className="col-lg-6 col-md-6 col-sm-12">
@@ -714,7 +769,7 @@ const EmployerCandidateProfilePage = () => {
             {/* ===================== SIDEBAR ===================== */}
             <div className="col-lg-4 col-md-12 col-sm-12 col-12 pl-40 pl-lg-15 mt-lg-30">
               <div className="sidebar-border">
-                <h5 className="f-18">Overview</h5>
+                <h5 className="f-18">overview</h5>
                 <div className="sidebar-list-job">
                   <ul>
                     <li>
@@ -724,7 +779,7 @@ const EmployerCandidateProfilePage = () => {
                       <div className="sidebar-text-info">
                         <span className="text-description">Experience</span>
                         <strong className="small-heading">
-                          {Overview.TotalExperienceYears} years
+                          {overview.TotalExperienceYears} years
                         </strong>
                       </div>
                     </li>
@@ -735,7 +790,7 @@ const EmployerCandidateProfilePage = () => {
                       <div className="sidebar-text-info">
                         <span className="text-description">Trade</span>
                         <strong className="small-heading">
-                          {Overview.PrimaryTrade}
+                          {overview.PrimaryTrade}
                         </strong>
                       </div>
                     </li>
@@ -748,8 +803,10 @@ const EmployerCandidateProfilePage = () => {
                           Current Location
                         </span>
                         <strong className="small-heading">
-                          {Overview.CurrentCity}
-                          {Overview.CurrentState ? `, ${Overview.CurrentState}` : ""}
+                          {overview.CurrentCity}
+                          {overview.CurrentState
+                            ? `, ${overview.CurrentState}`
+                            : ""}
                         </strong>
                       </div>
                     </li>
@@ -770,18 +827,21 @@ const EmployerCandidateProfilePage = () => {
                 </div>
 
                 <div className="sidebar-list-job">
-                  <h6 className="mb-10">Contact & CV Access</h6>
+                  <h6 className="mb-10">Contact & cv Access</h6>
                   <ul className="ul-disc">
                     <li>
-                      Mobile:{" "}
-                      {/* Mobile/Email come from /api/employer/candidate/{id}, not full-profile.
-                          If you want these shown here too, say so and I'll add that call. */}
-                      {isUnlocked ? "Unlocked - see contact endpoint" : "+91 XXXXXXXXXX (locked)"}
+                      Mobile :
+                      {isUnlocked
+                        ? `${candidateDetails?.countryCode}
+ ${candidateDetails?.mobileNumber}`
+                        : "+91 XXXXXXXXXX"}
                     </li>
-                    <li>Email: {isUnlocked ? "Unlocked" : "Hidden (locked)"}</li>
                     <li>
-                      CV:{" "}
-                      {Cv?.CvAvailable
+                      Email :{isUnlocked ? candidateDetails?.email : "Hidden"}
+                    </li>
+                    <li>
+                      cv:{" "}
+                      {cv?.cvAvailable
                         ? isUnlocked
                           ? "Available for download"
                           : "Available after unlock"
@@ -789,8 +849,8 @@ const EmployerCandidateProfilePage = () => {
                     </li>
                     <li>
                       Unlock expiry window:{" "}
-                      {UnlockStatus.ExpiryDate
-                        ? UnlockStatus.ExpiryDate
+                      {unlockStatus.ExpiryDate
+                        ? unlockStatus.ExpiryDate
                         : "Not unlocked"}
                     </li>
                   </ul>

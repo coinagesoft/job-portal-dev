@@ -53,7 +53,24 @@ const candidateProfileService = {
     );
     return data;
   },
+/**
+ * GET /api/recruiter/candidate/{candidateId}
+ * Returns contact information after unlock
+ */
+getCandidateDetails: async (candidateId) => {
+  const { EmployerId } = getEmployerHeaders();
 
+  const { data } = await api.get(
+    `/api/recruiter/candidate/${candidateId}`,
+    {
+      headers: {
+        EmployerId,
+      },
+    }
+  );
+
+  return data;
+},
   /**
    * GET /api/recruiter/candidates/{candidateId}/unlock-status?employerId=...
    */
@@ -86,15 +103,31 @@ const candidateProfileService = {
    * headers: EmployerId, UserId, IsSubUser
    * body: { candidateId }
    */
-  unlockCandidate: async (candidateId) => {
-    const headers = getEmployerHeaders();
-    const { data } = await api.post(
-      "/api/employer/candidate/unlock",
-      { candidateId },
-      { headers },
-    );
-    return data;
-  },
+unlockCandidate: async (candidateId) => {
+  const headers = getEmployerHeaders();
+
+  const { data } = await api.post(
+    "/api/recruiter/candidate/unlock",
+    { candidateId },
+    { headers }
+  );
+
+  return data;
+},
+getCandidateDetails: async (candidateId) => {
+  const { EmployerId } = getEmployerHeaders();
+
+  const { data } = await api.get(
+    `/api/recruiter/candidate/${candidateId}`,
+    {
+      headers: {
+        EmployerId,
+      },
+    }
+  );
+
+  return data;
+},
 
   /**
    * POST /api/employer/candidate/download-cv
@@ -104,7 +137,7 @@ const candidateProfileService = {
   downloadCv: async (candidateId) => {
     const headers = getEmployerHeaders();
     const { data } = await api.post(
-      "/api/employer/candidate/download-cv",
+      "/api/recruiter/candidate/download-cv",
       { candidateId },
       { headers },
     );

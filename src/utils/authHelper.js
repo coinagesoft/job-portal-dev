@@ -1,5 +1,4 @@
-import { jwtDecode } from "jwt-decode";
-
+import jwtDecode from "jwt-decode";
 const NAME_IDENTIFIER_CLAIM =
   "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier";
 
