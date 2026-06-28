@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { getAllJobs  } from '@/services/candidate/allJobsService';
+import { searchJobs } from '@/services/candidate/searchJobsService';
 import JobCardList from './JobCardList';
 import { mockJobs } from './data';
 import ApplyJobModal from '@/app/Homepage/components/ApplyJobModal';
@@ -228,34 +229,64 @@ const openApplyModal = async (job) => {
 
 
   const loadJobs = async () => {
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    const params = {
-      Keyword: filters.keyword || "",
-      Location: filters.locationSingle || "",
-      TradeCategory: filters.industries?.[0] || "",
-      Role: filters.role?.[0] || "",
-      Page: currentPage,
-      PageSize: showPerPage,
-      Sort: sortBy,
-    };
+      const first = (v) => (Array.isArray(v) ? v[0] : v) || "";
 
-   const response = await getAllJobs();
+      // Salary range labels like "45K - 60K" / "80K+" → min/max rupees
+      const salaryLabel = first(filters.salary);
+      const salaryNums = String(salaryLabel).match(/\d+/g)?.map((n) => Number(n) * 1000) || [];
+      const salaryMin = salaryNums[0];
+      const salaryMax = salaryNums[1];
 
-console.log("Response:", response);
-console.log("Data:", response.data);
-console.log("Filtered Jobs:", response.data || []);
+      // Experience labels like "1-3 Years" / "Fresher (0-1 yr)" / "10+ Years"
+      const expLabel = first(filters.experience);
+      const expNums = String(expLabel).match(/\d+/g)?.map(Number) || [];
+      const expMin = expNums[0];
+      const expMax = expNums[1];
 
+      const sortMap = {
+        "Newest Post": "newest",
+        "Oldest Post": "oldest",
+        "Rating Post": "newest",
+      };
 
-    setFilteredJobs(response.data || []);
-setTotalFilteredCount(response.data.length || 0);
-  } catch (error) {
-    console.error("Failed to load jobs", error);
-  } finally {
-    setLoading(false);
-  }
-};
+      const params = {
+        Keyword: filters.keyword || "",
+        Location: filters.locationSingle || first(filters.cities),
+        TradeCategory: first(filters.tradeCategories) || first(filters.industries),
+        Role: first(filters.roles) || first(filters.role),
+        EmploymentType: first(filters.employmentTypes),
+        LocationType: first(filters.locationTypes),
+        EducationLevel: first(filters.educationLevels),
+        SalaryMin: salaryMin,
+        SalaryMax: salaryMax,
+        ExperienceYearsMin: expMin,
+        ExperienceYearsMax: expMax,
+        Page: currentPage,
+        PageSize: showPerPage,
+        Sort: sortMap[sortBy] || "newest",
+      };
+
+      const response = await searchJobs(params);
+      const data = response.data || {};
+      const jobsList = (data.jobs || []).map((job) => ({
+        ...job,
+        // JobCardList reads salaryDisplay; the list API returns salaryRange.
+        salaryDisplay: job.salaryDisplay || job.salaryRange,
+      }));
+
+      setFilteredJobs(jobsList);
+      setTotalFilteredCount(data.totalCount ?? jobsList.length);
+    } catch (error) {
+      console.error("Failed to load jobs", error);
+      setFilteredJobs([]);
+      setTotalFilteredCount(0);
+    } finally {
+      setLoading(false);
+    }
+  };
 useEffect(() => {
   loadJobs();
 }, [filters, currentPage, showPerPage, sortBy]);

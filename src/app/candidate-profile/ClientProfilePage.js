@@ -61,6 +61,7 @@ import api from "@/services/api";
 
 import React, { useCallback, useMemo, useState, useEffect } from "react";
 import { mockProfile } from "./components/data.js";
+import MyDocuments from "./components/MyDocuments";
 import { useToast } from "@/components/Toast";
 
 
@@ -2441,7 +2442,7 @@ const CandidateProfilePage = () => {
         onPhotoUpload={uploadProfile}
         errors={errors}
       />;
-      case 2: return <StepDocuments data={profileData} onUpload={uploadDoc} onClear={clearDoc} />;
+      case 2: return <MyDocuments />;
       case 3: return <StepWork data={profileData} onUpdate={updateWork} onAdd={addWork} onRemove={removeWork} />;
       case 4: return <StepEducation data={profileData} onUpdate={updateEdu} onAdd={addEdu} onRemove={removeEdu} />;
       case 5: return <StepSkills
@@ -2699,4 +2700,4 @@ const handleDocumentClear = async (docKey) => {
   );
 };
 
-export default CandidateProfilePage;  
+export default CandidateProfilePage;

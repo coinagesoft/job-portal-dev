@@ -8,6 +8,7 @@ import {
   getFilterOptions,
 } from "@/services/recruiter/recruiterCvSearchService";
 import candidateProfileService from "@/services/recruiter/Candidateprofileservice";
+import { getRecruiterJobs } from "@/services/recruiter/recruiterJobListService";
 
 const getQueryValue = (value, fallback = "") => {
   if (Array.isArray(value)) return value[0] ?? fallback;
@@ -100,7 +101,7 @@ const createProfileHighlightTags = (candidate) => {
   const tags = [];
 
   // Top match
-  if (candidate.keywordMatchPercentage >= 85) {
+  if ((candidate.aiMatchScore ?? candidate.keywordMatchPercentage) >= 85) {
     tags.push({
       label: "Top Match",
       tone: "standout",
@@ -184,6 +185,7 @@ const EmployerCvSearchPage = () => {
   const [dashboard, setDashboard] = useState(null);
   const [filterOptions, setFilterOptions] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [jobs, setJobs] = useState([]);
   const [filters, setFilters] = useState({
     keyword: "",
     tradeCategory: "",
@@ -197,6 +199,7 @@ const EmployerCvSearchPage = () => {
     sortBy: "KeywordMatch",
     pageNumber: 1,
     pageSize: 10,
+    jobId: "",
   });
 
   const resetFilters = async () => {
@@ -213,6 +216,7 @@ const EmployerCvSearchPage = () => {
       sortBy: "KeywordMatch",
       pageNumber: 1,
       pageSize: 10,
+      jobId: "",
     };
 
     setFilters(defaultFilters);
@@ -226,22 +230,32 @@ const EmployerCvSearchPage = () => {
       console.error(error);
     }
   };
-  const handleDownloadCv = async (candidateId) => {
+  const handleDownloadCv = async (candidateId, candidateName = "Candidate") => {
     try {
+      // 1. Record/validate the download (unlock + credit) — camelCase response.
       const result = await candidateProfileService.downloadCv(candidateId);
 
-      if (result?.Success) {
-        console.log("Download CV Response:", result);
+      if (!result?.success) {
+        alert(result?.message || "Unable to download CV");
+        return;
+      }
 
-        if (result.cvUrl) {
-          window.open(result.cvUrl, "_blank", "noopener,noreferrer");
-        }
-      } else {
-        alert(result?.Message || "Unable to download CV");
+      // 2. Stream the watermarked PDF (company name + date), built in memory.
+      const dl = await candidateProfileService.downloadWatermarkedCv(
+        candidateId,
+        candidateName,
+      );
+
+      if (!dl?.success) {
+        alert(dl?.message || "Unable to download the watermarked CV.");
       }
     } catch (error) {
       console.error(error);
-      alert(error?.response?.data?.Message || "Unable to download CV");
+      alert(
+        error?.response?.data?.message ||
+          error?.response?.data?.Message ||
+          "Unable to download CV",
+      );
     }
   };
   const loadCandidates = async () => {
@@ -250,6 +264,34 @@ const EmployerCvSearchPage = () => {
 
       const response = await searchCandidates(filters);
 
+      setCvCandidates(response.candidates);
+      setTotalCandidates(response.totalCandidates);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadJobs = async () => {
+    try {
+      const response = await getRecruiterJobs({ pageSize: 100 });
+      setJobs(response?.jobs ?? []);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  // Selecting a job switches the list into AI-ranked mode: the search is
+  // re-run with the jobId so every candidate comes back with an AI match
+  // score (aiMatchScore) and the job title it was scored against.
+  const handleJobChange = async (jobId) => {
+    const next = { ...filters, jobId, pageNumber: 1, sortBy: jobId ? "AiMatch" : "KeywordMatch" };
+    setFilters(next);
+
+    try {
+      setLoading(true);
+      const response = await searchCandidates(next);
       setCvCandidates(response.candidates);
       setTotalCandidates(response.totalCandidates);
     } catch (error) {
@@ -281,6 +323,7 @@ const EmployerCvSearchPage = () => {
     loadCandidates();
     loadDashboard();
     loadFilterOptions();
+    loadJobs();
   }, []);
 
   useEffect(() => {
@@ -334,6 +377,22 @@ const EmployerCvSearchPage = () => {
                           </option>
                         ),
                       )}
+                    </select>
+                  </div>
+
+                  <div className="box-industry">
+                    <select
+                      className="form-input mr-10 select-active input-industry"
+                      value={filters.jobId}
+                      onChange={(e) => handleJobChange(e.target.value)}
+                      title="Rank candidates by AI match against one of your jobs"
+                    >
+                      <option value="">AI match: select a job…</option>
+                      {jobs.map((job) => (
+                        <option key={job.jobId} value={job.jobId}>
+                          {job.jobTitle}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
@@ -402,8 +461,8 @@ const EmployerCvSearchPage = () => {
                         <strong>{totalCandidates}</strong> candidates found
                       </span>
                       <p className="font-xs color-text-paragraph-2 mt-5 mb-0">
-                        Keyword match uses role, skills, certifications, and
-                        location relevance.
+                        AI match scores each candidate against the selected
+                        job using skills, trade, experience, and location.
                       </p>
                     </div>
                     <div className="col-xl-5 col-lg-5 text-lg-end mt-sm-15">
@@ -476,6 +535,11 @@ const EmployerCvSearchPage = () => {
                                       "/assets/imgs/page/candidates/candidate-profile.png"
                                     }
                                     alt={candidate.fullName}
+                                    onError={(e) => {
+                                      e.currentTarget.onerror = null;
+                                      e.currentTarget.src =
+                                        "/assets/imgs/page/candidates/candidate-profile.png";
+                                    }}
                                   />
                                 </div>
 
@@ -551,8 +615,16 @@ const EmployerCvSearchPage = () => {
                               <div className="row align-items-center">
                                 <div className="col-lg-7 col-7">
                                   <span className="card-text-price">
-                                    Keyword match:{" "}
-                                    {candidate.keywordMatchPercentage}%
+                                    {candidate.aiMatchedJobTitle ? (
+                                      <>
+                                        AI matched: {candidate.aiMatchScore}%{" "}
+                                        <span className="font-xs color-text-mutted">
+                                          vs {candidate.aiMatchedJobTitle}
+                                        </span>
+                                      </>
+                                    ) : (
+                                      "Select a job for AI match"
+                                    )}
                                   </span>
 
                                   <span className="font-xs color-text-mutted ml-10">
@@ -579,6 +651,7 @@ const EmployerCvSearchPage = () => {
                                         onClick={() =>
                                           handleDownloadCv(
                                             candidate.candidateId,
+                                            candidate.fullName,
                                           )
                                         }
                                       >
@@ -861,7 +934,7 @@ const EmployerCvSearchPage = () => {
                           }
                         >
                           <option value="KeywordMatch">
-                            Keyword match score
+                            AI match score
                           </option>
 
                           <option value="Newest">Newest profile update</option>

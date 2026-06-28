@@ -6,6 +6,7 @@ import { useSelector } from "react-redux";
 // import { mockProfile } from "@/app/candidate-profile/components/data";
 
 import { applyJob } from "@/services/candidate/applyJobService";
+import { getApplyQuestions } from "@/services/candidate/applyQuestionsService";
 import { useToast } from "@/components/Toast";
 
 import { getProfileSummary } from "@/services/candidate/profileSummaryService";
@@ -49,6 +50,15 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
   const [error, setError] = useState("");
   const [skills, setSkills] = useState([]);
   const [workHistory, setWorkHistory] = useState([]);
+  // Apply requirements + screening questions fetched from the API.
+  const [applyDetails, setApplyDetails] = useState(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+  // Candidate confirmations for required languages / certificates / passport.
+  const [confirmations, setConfirmations] = useState({
+    languages: {},
+    certificates: {},
+    passport: false,
+  });
 
   const showToast = useToast();
 
@@ -60,26 +70,56 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
     profile?.fullName || "";
 
   const employerQuestions = useMemo(() => {
-  if (
-    Array.isArray(job?.screeningQuestions) &&
-    job.screeningQuestions.length > 0
-  ) {
-    return job.screeningQuestions.map(
-      (question, index) => ({
-        id: `question-${index}`,
-        label: question.questionText,
-        type:
-          question.answerType?.toLowerCase() === "yesno"
-            ? "radio"
-            : "text",
-        required: question.isMandatory,
-        options: ["Yes", "No"],
-      })
-    );
-  }
+    // Prefer screening questions from the apply-questions API; fall back to
+    // whatever was passed on the job prop. The API returns plain strings.
+    const source =
+      (Array.isArray(applyDetails?.screeningQuestions) &&
+        applyDetails.screeningQuestions.length > 0 &&
+        applyDetails.screeningQuestions) ||
+      (Array.isArray(job?.screeningQuestions) && job.screeningQuestions) ||
+      [];
 
-  return [];
-}, [job]);
+    return source.map((question, index) => {
+      const text =
+        typeof question === "string"
+          ? question
+          : question.questionText || question.label || "";
+      const required =
+        typeof question === "string" ? true : question.isMandatory ?? true;
+
+      return {
+        id: `question-${index}`,
+        label: text,
+        type: "text",
+        required,
+      };
+    });
+  }, [applyDetails, job]);
+
+  // Required language / certificate / passport gates from the API.
+  const requiredLanguages = applyDetails?.languagesRequired ?? [];
+  const requiredCertificates = applyDetails?.certificatesRequired ?? [];
+  const passportRequired = applyDetails?.passportRequired ?? false;
+
+  // Fetch screening questions + requirements when the modal opens.
+  useEffect(() => {
+    if (!showModal || !job?.jobId) return;
+
+    const loadApplyDetails = async () => {
+      try {
+        setLoadingDetails(true);
+        const response = await getApplyQuestions(job.jobId);
+        setApplyDetails(response.data);
+      } catch (err) {
+        console.error("Failed to load apply questions", err);
+        setApplyDetails(null);
+      } finally {
+        setLoadingDetails(false);
+      }
+    };
+
+    loadApplyDetails();
+  }, [showModal, job?.jobId]);
 
 
   useEffect(() => {
@@ -164,9 +204,31 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
     setSubmitted(false);
     setCurrentStep(1);
     setError("");
+    setConfirmations({ languages: {}, certificates: {}, passport: false });
     if (typeof setShowModal === "function") {
       setShowModal(false);
     }
+  };
+
+  const toggleLanguage = (name, checked) => {
+    setConfirmations((prev) => ({
+      ...prev,
+      languages: { ...prev.languages, [name]: checked },
+    }));
+    if (error) setError("");
+  };
+
+  const toggleCertificate = (name, checked) => {
+    setConfirmations((prev) => ({
+      ...prev,
+      certificates: { ...prev.certificates, [name]: checked },
+    }));
+    if (error) setError("");
+  };
+
+  const togglePassport = (checked) => {
+    setConfirmations((prev) => ({ ...prev, passport: checked }));
+    if (error) setError("");
   };
 
   const handleAnswer = (questionId, value) => {
@@ -174,15 +236,43 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
     if (error) setError("");
   };
 
-  const validateBeforeSubmit = () => {
+  const checkRequiredGates = () => {
     for (const question of employerQuestions) {
       if (!question.required) continue;
       const answer = String(answers[question.id] || "").trim();
       if (!answer) {
-        setCurrentStep(1);
         setError("Please answer all required employer screening questions.");
         return false;
       }
+    }
+
+    if (passportRequired && !confirmations.passport) {
+      setError("This job requires a valid passport. Please confirm you have one.");
+      return false;
+    }
+
+    for (const lang of requiredLanguages) {
+      if (!confirmations.languages[lang]) {
+        setError(`Please confirm you can communicate in ${lang}.`);
+        return false;
+      }
+    }
+
+    for (const cert of requiredCertificates) {
+      if (!confirmations.certificates[cert]) {
+        setError(`Please confirm you hold the required certificate: ${cert}.`);
+        return false;
+      }
+    }
+
+    setError("");
+    return true;
+  };
+
+  const validateBeforeSubmit = () => {
+    if (!checkRequiredGates()) {
+      setCurrentStep(1);
+      return false;
     }
 
     if (!consent) {
@@ -196,14 +286,7 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
   };
 
   const goToCvPreview = () => {
-    for (const question of employerQuestions) {
-      if (!question.required) continue;
-      const answer = String(answers[question.id] || "").trim();
-      if (!answer) {
-        setError("Please answer all required employer screening questions.");
-        return;
-      }
-    }
+    if (!checkRequiredGates()) return;
     setError("");
     setCurrentStep(2);
   };
@@ -227,46 +310,29 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
       }
 
       const payload = {
-        passportGatePassed: true,
+        passportGatePassed: passportRequired ? confirmations.passport : true,
         ageConfirmed: true,
 
-        motivationMessage: "",
+        motivationMessage: answers.motivation || "",
 
-        screeningAnswers: employerQuestions.map(
-          (question) => ({
-            questionText: question.label,
-            answer: answers[question.id] || "",
-          })
-        ),
-
-        languageConfirmations: [],
-
-        certificateConfirmations: [],
-      };
-      console.log("Payload:", payload);
-
-
-      console.log(
-        "SCREENING ANSWERS:",
-        employerQuestions.map((question) => ({
+        screeningAnswers: employerQuestions.map((question) => ({
           questionText: question.label,
           answer: answers[question.id] || "",
-        }))
+        })),
 
+        languageConfirmations: requiredLanguages.map((name) => ({
+          name,
+          confirmed: !!confirmations.languages[name],
+        })),
 
-      );
-      console.log("JOB INSIDE MODAL", job);
-      console.log(
-        "EMPLOYER QUESTIONS INSIDE MODAL",
-        job?.employerQuestions
-      );
-      console.log("Apply Payload", payload);
-      console.log(JSON.stringify(payload, null, 2));
+        certificateConfirmations: requiredCertificates.map((name) => ({
+          name,
+          confirmed: !!confirmations.certificates[name],
+        })),
+      };
+      console.log("Apply Payload", JSON.stringify(payload, null, 2));
 
-      const response = await applyJob(
-        job.jobId,
-        payload
-      );
+      const response = await applyJob(job.jobId, payload);
 
       if (response?.data?.success) {
         setSubmitted(true);
@@ -366,7 +432,16 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
 
                         <div className="mb-15">
                           <h6 className="mb-10">Employer screening questions</h6>
-                          {employerQuestions.map((question) => (
+                          {loadingDetails ? (
+                            <p className="font-sm color-text-paragraph-2">
+                              Loading questions…
+                            </p>
+                          ) : employerQuestions.length === 0 ? (
+                            <p className="font-sm color-text-paragraph-2">
+                              This employer has no screening questions. You can proceed.
+                            </p>
+                          ) : (
+                            employerQuestions.map((question) => (
                             <div key={question.id} className="mb-15 apply-job-question-block">
                               <label className="font-sm fw-600 color-text-mutted mb-8 d-block">
                                 {question.label}
@@ -398,7 +473,62 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
                                 />
                               )}
                             </div>
-                          ))}
+                            ))
+                          )}
+                        </div>
+
+                        {(passportRequired ||
+                          requiredLanguages.length > 0 ||
+                          requiredCertificates.length > 0) && (
+                          <div className="mb-15">
+                            <h6 className="mb-10">Requirements to confirm</h6>
+
+                            {passportRequired && (
+                              <label className="mb-8" style={{ display: "flex", gap: "8px" }}>
+                                <input
+                                  type="checkbox"
+                                  checked={confirmations.passport}
+                                  onChange={(e) => togglePassport(e.target.checked)}
+                                />
+                                <span className="font-sm">
+                                  I have a valid passport (required for this job) *
+                                </span>
+                              </label>
+                            )}
+
+                            {requiredLanguages.map((lang) => (
+                              <label key={`lang-${lang}`} className="mb-8" style={{ display: "flex", gap: "8px" }}>
+                                <input
+                                  type="checkbox"
+                                  checked={!!confirmations.languages[lang]}
+                                  onChange={(e) => toggleLanguage(lang, e.target.checked)}
+                                />
+                                <span className="font-sm">I can communicate in {lang} *</span>
+                              </label>
+                            ))}
+
+                            {requiredCertificates.map((cert) => (
+                              <label key={`cert-${cert}`} className="mb-8" style={{ display: "flex", gap: "8px" }}>
+                                <input
+                                  type="checkbox"
+                                  checked={!!confirmations.certificates[cert]}
+                                  onChange={(e) => toggleCertificate(cert, e.target.checked)}
+                                />
+                                <span className="font-sm">I hold the {cert} certificate *</span>
+                              </label>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="mb-15">
+                          <h6 className="mb-10">Why are you a good fit? (optional)</h6>
+                          <textarea
+                            className="form-control"
+                            rows={2}
+                            placeholder="A short message to the employer"
+                            value={answers.motivation || ""}
+                            onChange={(event) => handleAnswer("motivation", event.target.value)}
+                          />
                         </div>
 
                         {error ? <p className="font-xs mb-10" style={{ color: "#a32d2d" }}>{error}</p> : null}
