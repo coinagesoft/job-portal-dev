@@ -52,3 +52,71 @@ export const updateAccountSettings = async (data) => {
 
   return response.data;
 };
+/* ---------------- NOTIFICATION SETTINGS ---------------- */
+
+export const getNotificationSettings = async () => {
+  const employerId = getEmployerId();
+  const response = await api.get(
+    `/api/recruiter/settings/notifications/${employerId}`,
+  );
+  return response.data;
+};
+
+export const updateNotificationSettings = async (payload) => {
+  const employerId = getEmployerId();
+  const fd = new FormData();
+  fd.append("NewApplicantAlerts", payload.newApplicantAlerts);
+  fd.append("CreditBillingAlerts", payload.creditBillingAlerts);
+  fd.append("JobStatusUpdates", payload.jobStatusUpdates);
+  fd.append("SystemMessages", payload.systemMessages);
+  const response = await api.patch(
+    `/api/recruiter/settings/notifications/${employerId}`,
+    fd,
+    { headers: { "Content-Type": "multipart/form-data" } },
+  );
+  return response.data;
+};
+
+/* ---------------- PREFERENCES ---------------- */
+
+export const getPreferences = async () => {
+  const employerId = getEmployerId();
+  const response = await api.get(
+    `/api/recruiter/settings/preferences/${employerId}`,
+  );
+  return response.data;
+};
+
+export const updatePreferences = async (payload) => {
+  const employerId = getEmployerId();
+  const fd = new FormData();
+  if (payload.primaryLanguage != null) fd.append("PrimaryLanguage", payload.primaryLanguage);
+  if (payload.secondaryLanguage != null) fd.append("SecondaryLanguage", payload.secondaryLanguage);
+  if (payload.itemsPerPage != null) fd.append("ItemsPerPage", payload.itemsPerPage);
+  if (payload.dateFormat != null) fd.append("DateFormat", payload.dateFormat);
+  if (payload.marketingEmailsEnabled != null) fd.append("MarketingEmailsEnabled", payload.marketingEmailsEnabled);
+  if (payload.platformUpdatesEnabled != null) fd.append("PlatformUpdatesEnabled", payload.platformUpdatesEnabled);
+  const response = await api.patch(
+    `/api/recruiter/settings/preferences/${employerId}`,
+    fd,
+    { headers: { "Content-Type": "multipart/form-data" } },
+  );
+  return response.data;
+};
+
+/* ---------------- SESSIONS ---------------- */
+
+export const getSessions = async () => {
+  const employerId = getEmployerId();
+  const response = await api.get(
+    `/api/recruiter/settings/sessions/${employerId}`,
+  );
+  return response.data;
+};
+
+export const revokeSession = async (sessionId) => {
+  const response = await api.patch(
+    `/api/recruiter/settings/sessions/revoke/${sessionId}`,
+  );
+  return response.data;
+};

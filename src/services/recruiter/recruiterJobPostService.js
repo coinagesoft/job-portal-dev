@@ -246,3 +246,20 @@ export const getInlineSuggestion = async (payload) => {
   );
   return response.data;
 };
+// GET /api/recruiter/jobs/search-roles?q=...  → role autocomplete suggestions
+export const searchRoles = async (q) => {
+  const response = await api.get(`/api/recruiter/jobs/search-roles`, {
+    params: { q },
+  });
+  return response.data;
+};
+
+// POST /api/recruiter/ai/job-description/suggest-skills  → AI-suggested skills
+// payload: { jobTitle, tradeCategory, department }
+export const suggestSkills = async (payload) => {
+  const response = await api.post(
+    `/api/recruiter/ai/job-description/suggest-skills`,
+    payload,
+  );
+  return response.data;
+};

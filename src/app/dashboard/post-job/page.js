@@ -487,7 +487,7 @@ function Step2({ go, jobForm, setJobForm, onSubmit }) {
 }
 
 /* ─── STEP 3 – Skills & JD ────────────────────────────────────────────────── */
-function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions }) {
+function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, handleGenerateAdditionalJD, loadingAI }) {
   return (
     <StepCard
       stepNum={3}
@@ -554,6 +554,14 @@ function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions }) {
 
       {/* Additional Job Description */}
       <Field label="Additional Job Description">
+        <button
+          type="button"
+          className="btn btn-sm btn-default mb-10"
+          onClick={handleGenerateAdditionalJD}
+          disabled={loadingAI}
+        >
+          {loadingAI ? "Generating…" : "✨ Generate with AI"}
+        </button>
         <textarea
           className={styles.textarea}
           rows={5}
@@ -1428,11 +1436,48 @@ export default function DashboardPostJobPage() {
       });
       setJobForm((p) => ({
         ...p,
-        JobDescription: response.generatedDescription,
-        KeySkills: response.suggestedSkills ?? [],
+        JobDescription: response.generatedDescription || "",
+        KeyResponsibilities: response.responsibilities?.length
+          ? response.responsibilities
+          : p.KeyResponsibilities,
+        KeySkills: response.suggestedSkills ?? p.KeySkills,
+        // Step-3 additional JD = Requirements + What We Offer.
+        AdditionalJobDescription:
+          response.additionalDescription || p.AdditionalJobDescription,
+        Step3KeyResponsibilities: response.requirements?.length
+          ? response.requirements
+          : p.Step3KeyResponsibilities,
       }));
     } catch (error) {
       console.error("generateJD:", error);
+    } finally {
+      setLoadingAI(false);
+    }
+  };
+
+  const handleGenerateAdditionalJD = async () => {
+    try {
+      setLoadingAI(true);
+      const response = await generateJobDescription({
+        jobTitle: jobForm.JobTitle,
+        role: jobForm.Role,
+        tradeCategory: jobForm.TradeCategory,
+        experienceMinYears: jobForm.ExperienceMinYears,
+        experienceMaxYears: jobForm.ExperienceMaxYears,
+        jobType: jobForm.JobType,
+        employmentType: jobForm.EmploymentType,
+      });
+      setJobForm((p) => ({
+        ...p,
+        AdditionalJobDescription:
+          response.additionalDescription || p.AdditionalJobDescription,
+        Step3KeyResponsibilities: response.requirements?.length
+          ? response.requirements
+          : p.Step3KeyResponsibilities,
+        KeySkills: p.KeySkills?.length ? p.KeySkills : response.suggestedSkills ?? [],
+      }));
+    } catch (error) {
+      console.error("generateAdditionalJD:", error);
     } finally {
       setLoadingAI(false);
     }
@@ -1723,6 +1768,7 @@ export default function DashboardPostJobPage() {
                   setJobForm={setJobForm}
                   onSubmit={stepHandlers[activeStep - 1] ?? (() => {})}
                   handleGenerateJD={handleGenerateJD}
+                  handleGenerateAdditionalJD={handleGenerateAdditionalJD}
                   loadingAI={loadingAI}
                   jdSuggestions={jdSuggestions}
                   additionalJdSuggestions={additionalJdSuggestions}

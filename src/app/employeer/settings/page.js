@@ -6,6 +6,12 @@ import { useEffect, useState } from "react";
 import {
   getAccountSettings,
   updateAccountSettings,
+  getNotificationSettings,
+  updateNotificationSettings,
+  getPreferences,
+  updatePreferences,
+  getSessions,
+  revokeSession,
 } from "@/services/recruiter/employerSettingsService";
 const LANGUAGES = [
   "English",
@@ -35,16 +41,19 @@ const SETTINGS_TABS = [
 
 const NOTIFICATION_PREFS = [
   {
+    key: "newApplicantAlerts",
     label: "New applicant alerts",
     desc: "Get notified when candidates apply to your jobs.",
     enabled: true,
   },
   {
-    label: "Credit expiry reminders",
-    desc: "Receive alerts before your credit pack expires.",
+    key: "creditBillingAlerts",
+    label: "Credit & billing alerts",
+    desc: "Receive alerts before your credit pack expires and on billing.",
     enabled: true,
   },
   {
+    key: "jobStatusUpdates",
     label: "Job status updates",
     desc: "Track when jobs go active, paused or closed.",
     enabled: true,
@@ -55,6 +64,7 @@ const NOTIFICATION_PREFS = [
     enabled: true,
   },
   {
+    key: "systemMessages",
     label: "Platform updates",
     desc: "New features, improvements and portal announcements.",
     enabled: false,
@@ -175,6 +185,7 @@ const EmployerSettingsPage = () => {
   const [langSaved, setLangSaved] = useState(false);
 
   const [notifPrefs, setNotifPrefs] = useState(NOTIFICATION_PREFS);
+  const [sessions, setSessions] = useState([]);
 
   const handleSave = async () => {
     try {
@@ -199,19 +210,108 @@ const EmployerSettingsPage = () => {
     }
   };
 
-  const handleLangSave = () => {
-    setLangSaved(true);
-    showToast("Language preference saved.", "success");
-    setTimeout(() => setLangSaved(false), 2500);
+  const handleLangSave = async () => {
+    try {
+      await updatePreferences({
+        primaryLanguage: language,
+        secondaryLanguage: secondaryLanguage,
+      });
+      setLangSaved(true);
+      showToast("Language preference saved.", "success");
+      setTimeout(() => setLangSaved(false), 2500);
+    } catch (error) {
+      console.log(error);
+      showToast("Failed to save preferences.", "error");
+    }
   };
 
-  const toggleNotif = (index) => {
-    setNotifPrefs((prev) =>
-      prev.map((item, i) =>
-        i === index ? { ...item, enabled: !item.enabled } : item,
-      ),
+  const toggleNotif = async (index) => {
+    const next = notifPrefs.map((item, i) =>
+      i === index ? { ...item, enabled: !item.enabled } : item,
     );
-    showToast("Preference updated", "info");
+    setNotifPrefs(next);
+
+    // Persist only the backend-backed toggles.
+    const payload = {
+      newApplicantAlerts: false,
+      creditBillingAlerts: false,
+      jobStatusUpdates: false,
+      systemMessages: false,
+    };
+    next.forEach((p) => {
+      if (p.key) payload[p.key] = p.enabled;
+    });
+
+    try {
+      await updateNotificationSettings(payload);
+      showToast("Preference updated", "info");
+    } catch (error) {
+      console.log(error);
+      setNotifPrefs(notifPrefs); // revert on failure
+      showToast("Could not save preference.", "error");
+    }
+  };
+
+  const loadNotifPrefs = async () => {
+    try {
+      const data = await getNotificationSettings();
+      setNotifPrefs((prev) =>
+        prev.map((p) =>
+          p.key && data?.[p.key] !== undefined
+            ? { ...p, enabled: !!data[p.key] }
+            : p,
+        ),
+      );
+    } catch (error) {
+      console.log("notif settings load skipped", error);
+    }
+  };
+
+  const loadPreferences = async () => {
+    try {
+      const data = await getPreferences();
+      if (data?.primaryLanguage) setLanguage(data.primaryLanguage);
+      if (data?.secondaryLanguage) setSecondaryLanguage(data.secondaryLanguage);
+    } catch (error) {
+      console.log("preferences load skipped", error);
+    }
+  };
+
+  const loadSessions = async () => {
+    try {
+      const data = await getSessions();
+      const list = data?.sessions || [];
+      setSessions(
+        list.map((s) => ({
+          sessionId: s.sessionId,
+          device: [s.browser, s.operatingSystem].filter(Boolean).join(" on ") ||
+            s.deviceName || "Unknown device",
+          location: s.location || s.ipAddress || "",
+          time: s.lastSeenAt
+            ? new Date(s.lastSeenAt).toLocaleString()
+            : "",
+          icon: /mobile|iphone|android/i.test(
+            `${s.deviceName} ${s.operatingSystem}`,
+          )
+            ? "fi-rr-mobile"
+            : "fi-rr-computer",
+          current: s.isCurrentSession,
+        })),
+      );
+    } catch (error) {
+      console.log("sessions load skipped", error);
+    }
+  };
+
+  const handleRevokeSession = async (sessionId) => {
+    try {
+      await revokeSession(sessionId);
+      setSessions((prev) => prev.filter((s) => s.sessionId !== sessionId));
+      showToast("Session revoked.", "success");
+    } catch (error) {
+      console.log(error);
+      showToast("Could not revoke session.", "error");
+    }
   };
   const fetchAccount = async () => {
     try {
@@ -230,6 +330,10 @@ const EmployerSettingsPage = () => {
   };
   useEffect(() => {
     fetchAccount();
+    loadNotifPrefs();
+    loadPreferences();
+    loadSessions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -801,28 +905,13 @@ const EmployerSettingsPage = () => {
                         fontWeight: 600,
                       }}
                     >
-                      2 active
+                      {sessions.length} active
                     </span>
                   </div>
 
-                  {[
-                    {
-                      device: "Chrome on Windows 11",
-                      location: "Mumbai, IN",
-                      time: "Now",
-                      icon: "fi-rr-computer",
-                      current: true,
-                    },
-                    {
-                      device: "Safari on iPhone 15",
-                      location: "Mumbai, IN",
-                      time: "2 days ago",
-                      icon: "fi-rr-mobile",
-                      current: false,
-                    },
-                  ].map((session) => (
+                  {sessions.map((session) => (
                     <div
-                      key={session.device}
+                      key={session.sessionId}
                       className="subuser-hover-card"
                       style={{
                         background: "#ffffff",
@@ -903,6 +992,7 @@ const EmployerSettingsPage = () => {
                         <button
                           className="btn btn-border btn-sm"
                           type="button"
+                          onClick={() => handleRevokeSession(session.sessionId)}
                           style={{
                             borderRadius: 10,
                             fontWeight: 700,
