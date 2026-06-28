@@ -143,6 +143,54 @@ getCandidateDetails: async (candidateId) => {
     );
     return data;
   },
+
+  /**
+   * GET /api/recruiter/candidate/{candidateId}/cv/download  (header: EmployerId)
+   * Streams a watermarked PDF (company name + date). Only works when the
+   * profile is unlocked. Triggers a browser download; nothing is stored server-side.
+   * Returns { success, message } — on failure the server sends JSON instead of a PDF.
+   */
+  downloadWatermarkedCv: async (candidateId, candidateName = "Candidate") => {
+    const { EmployerId } = getEmployerHeaders();
+
+    try {
+      const response = await api.get(
+        `/api/recruiter/candidate/${candidateId}/cv/download`,
+        {
+          headers: { EmployerId },
+          responseType: "blob",
+        },
+      );
+
+      // If the profile is locked / no CV, the server returns JSON, not a PDF.
+      const contentType = response.headers?.["content-type"] || "";
+      if (contentType.includes("application/json")) {
+        const text = await response.data.text();
+        const parsed = JSON.parse(text);
+        return { success: false, message: parsed.message || "Unable to download CV." };
+      }
+
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${candidateName.replace(/[^a-z0-9]+/gi, "_")}_CV.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      return { success: true };
+    } catch (error) {
+      // axios with responseType blob wraps error bodies as blobs too
+      let message = "Unable to download CV.";
+      try {
+        const text = await error?.response?.data?.text?.();
+        if (text) message = JSON.parse(text).message || message;
+      } catch (_) {}
+      return { success: false, message };
+    }
+  },
 };
 
 export default candidateProfileService;

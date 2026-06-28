@@ -127,15 +127,28 @@ const EmployerCandidateProfilePage = () => {
         return;
       }
 
+      // Deliver the actual file as a watermarked PDF (company name + date),
+      // generated in memory on the server and streamed straight to the browser.
+      const candidateName = profile?.overview?.fullName || "Candidate";
+      const dl = await candidateProfileService.downloadWatermarkedCv(
+        candidateId,
+        candidateName,
+      );
+
+      if (!dl?.success) {
+        setActionMessage({
+          type: "error",
+          text: dl?.message || "Unable to download the watermarked CV.",
+        });
+        return;
+      }
+
       setActionMessage({
         type: "success",
         text:
           result.message ||
-          `CV ready. ${result.creditsDeducted ?? 0} credit(s) used.`,
+          `CV downloaded. ${result.creditsDeducted ?? 0} credit(s) used.`,
       });
-
-      const url = result.cvUrl || candidateDetails?.cvUrl;
-      if (url) window.open(url, "_blank", "noopener,noreferrer");
 
       await loadData();
     } catch (err) {
