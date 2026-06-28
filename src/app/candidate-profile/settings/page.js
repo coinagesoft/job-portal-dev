@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 import Link from "next/link";
 import { useToast } from "@/components/Toast";
+import { getCandidateId } from "@/utils/authHelper";
 
 import {
   getPreferences,
@@ -44,8 +45,7 @@ const CandidateSettingsPage = () => {
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [lastPasswordUpdatedAt, setLastPasswordUpdatedAt] = useState("");
   const [lastLoginAt, setLastLoginAt] = useState("");
-  const candidateId =
-    "2e51baf0-cf8a-4b3f-b2de-4dfc92b8c222";
+  const candidateId = getCandidateId();
 
   useEffect(() => {
     loadPreferences();

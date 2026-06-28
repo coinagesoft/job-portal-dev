@@ -2,6 +2,7 @@
 
 
 import { useToast } from "@/components/Toast";
+import { getCandidateId } from "@/utils/authHelper";
 import SettingsPageShell from "../components/SettingsPageShell";
 
 import { useEffect, useMemo, useState } from "react";
@@ -50,8 +51,7 @@ const DEFAULT_SETTINGS = {
 
 const CandidateNotificationsSettingsPage = () => {
   const showToast = useToast();
-  const candidateId =
-  "2e51baf0-cf8a-4b3f-b2de-4dfc92b8c222";
+  const candidateId = getCandidateId();
  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
 
 useEffect(() => {

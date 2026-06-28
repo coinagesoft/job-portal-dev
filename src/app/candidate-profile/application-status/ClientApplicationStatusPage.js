@@ -8,6 +8,7 @@ import { useSelector } from 'react-redux';
 import { useToast } from '@/components/Toast';
 // import { mockApplicationStatuses } from '../components/data';
 import { getMyApplications } from "@/services/candidate/myApplicationsService";
+import { acknowledgeNote, withdrawApplication } from "@/services/candidate/applicationActionsService";
 
 const FILTERS = ['All', 'Applied', 'In Review', 'Shortlisted', 'Interview', 'Rejected'];
 const ACK_STORAGE_KEY = 'candidate_application_message_acknowledged';
@@ -114,7 +115,7 @@ const handleSavedJobButtonHoverLeave = (event) => {
 const getJobDetailsHref = (jobId) =>
   jobId ? `/job-details?jobId=${jobId}` : '/job-details';
 
-const ApplicationStatusCard = ({ application, isAcknowledged, onAcknowledge }) => {
+const ApplicationStatusCard = ({ application, isAcknowledged, onAcknowledge, onWithdraw }) => {
   const statusClass = STATUS_CLASS_MAP[application.status] || 'applied';
 
   return (
@@ -201,6 +202,21 @@ const ApplicationStatusCard = ({ application, isAcknowledged, onAcknowledge }) =
                     Acknowledge Message
                   </button>
                 )}
+                {onWithdraw &&
+                  !['Rejected', 'Hired', 'Withdrawn'].includes(application.status) && (
+                    <button
+                      type="button"
+                      className="candidate-status-ack-btn"
+                      style={{
+                        background: 'transparent',
+                        color: '#b23b3b',
+                        border: '1px solid #e89999',
+                      }}
+                      onClick={() => onWithdraw(application.id, application.company)}
+                    >
+                      Withdraw
+                    </button>
+                  )}
               </div>
             </div>
           </div>
@@ -334,12 +350,37 @@ const ClientApplicationStatusPage = () => {
     window.localStorage.setItem(ACK_STORAGE_KEY, JSON.stringify(acknowledgedMessages));
   }, [ackStateReady, acknowledgedMessages]);
 
-  const handleAcknowledge = (applicationId, companyName) => {
+  const handleAcknowledge = async (applicationId, companyName) => {
+    // Optimistically mark acknowledged (also cached in localStorage), then persist.
     setAcknowledgedMessages((prev) => {
       if (prev[applicationId]) return prev;
       return { ...prev, [applicationId]: true };
     });
-    showToast(`Recruiter note acknowledged for ${companyName}.`, 'success');
+    try {
+      await acknowledgeNote(applicationId);
+      showToast(`Recruiter note acknowledged for ${companyName}.`, 'success');
+    } catch (error) {
+      console.error('Failed to acknowledge note', error);
+      showToast('Could not save acknowledgment. Please try again.', 'error');
+    }
+  };
+
+  const handleWithdraw = async (applicationId, companyName) => {
+    if (typeof window !== 'undefined' &&
+        !window.confirm(`Withdraw your application to ${companyName}?`)) {
+      return;
+    }
+    try {
+      await withdrawApplication(applicationId);
+      setApplications((prev) => prev.filter((a) => a.id !== applicationId));
+      showToast(`Application to ${companyName} withdrawn.`, 'success');
+    } catch (error) {
+      console.error('Failed to withdraw application', error);
+      showToast(
+        error?.response?.data?.message || 'Could not withdraw application.',
+        'error',
+      );
+    }
   };
 
   useEffect(() => {
@@ -423,6 +464,7 @@ const ClientApplicationStatusPage = () => {
                     application={application}
                     isAcknowledged={Boolean(acknowledgedMessages[application.id])}
                     onAcknowledge={handleAcknowledge}
+                    onWithdraw={handleWithdraw}
                   />
                 </div>
               ))}
