@@ -977,15 +977,17 @@ function Step5({ go, jobForm, setJobForm, onSubmit }) {
 
 /* ─── STEP 6 – Screening Questions ───────────────────────────────────────── */
 function Step6({ go, jobForm, setJobForm, onSubmit }) {
-  const addQuestion = () => {
-    setJobForm((p) => ({
-      ...p,
-      questions: [
-        ...p.questions,
-        { questionText: "", answerType: "string", isMandatory: false },
-      ],
-    }));
-  };
+ const addQuestion = () => {
+  setJobForm((p) => ({
+    ...p,
+    questions: [
+      ...p.questions,
+      {
+        questionText: "",
+      },
+    ],
+  }));
+};
 
   const removeQuestion = (index) => {
     setJobForm((p) => ({
@@ -1032,32 +1034,9 @@ function Step6({ go, jobForm, setJobForm, onSubmit }) {
             />
           </Field>
 
-          <Field label="Answer Type">
-            <select
-              className={`${styles.control} ${styles.selectControl}`}
-              value={question.answerType}
-              onChange={(e) =>
-                updateQuestion(index, "answerType", e.target.value)
-              }
-            >
-              <option value="string">Text</option>
-              <option value="number">Number</option>
-              <option value="boolean">Yes / No</option>
-            </select>
-          </Field>
+         
 
-          <Field label="Mandatory">
-            <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <input
-                type="checkbox"
-                checked={question.isMandatory}
-                onChange={(e) =>
-                  updateQuestion(index, "isMandatory", e.target.checked)
-                }
-              />
-              Required answer
-            </label>
-          </Field>
+         
 
           {jobForm.questions.length > 1 && (
             <button
@@ -1268,7 +1247,11 @@ export default function DashboardPostJobPage() {
     OffshoreCountry: "",
 
     // Step 6
-    questions: [{ questionText: "", answerType: "string", isMandatory: false }],
+  questions: [
+  {
+    questionText: "",
+  },
+],
 
     // Step 7
     ApplicationDeadline: "",
@@ -1378,7 +1361,9 @@ export default function DashboardPostJobPage() {
     // Step 6
     questions: response.step6Data?.questions?.length
       ? response.step6Data.questions
-      : [{ questionText: "", answerType: "string", isMandatory: false }],
+      : [{
+  questionText: "",
+}],
 
     // Step 7 – publishing data isn't returned in resume, keep defaults
     ApplicationDeadline: "",
@@ -1658,21 +1643,27 @@ export default function DashboardPostJobPage() {
     }
   };
 
-  const handleStep6 = async () => {
-    setLoading(true);
-    try {
-      const response = await saveQuestions(jobId, {
-        questions: jobForm.questions,
-      });
-      updateDraft(response);
-      go(7);
-    } catch (error) {
-      console.error("Step 6:", error?.response?.data ?? error);
-      alert("Failed to save questions. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+const handleStep6 = async () => {
+  setLoading(true);
+
+  try {
+    const response = await saveQuestions(jobId, {
+      questions: jobForm.questions
+        .filter((q) => q.questionText.trim() !== "")
+        .map((q) => ({
+          questionText: q.questionText,
+        })),
+    });
+
+    updateDraft(response);
+    go(7);
+  } catch (error) {
+    console.error("Step 6:", error?.response?.data ?? error);
+    alert("Failed to save questions. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleStep7 = async () => {
     if (!jobForm.ApplicationDeadline)

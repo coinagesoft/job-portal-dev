@@ -2,7 +2,7 @@
 import { useToast } from '@/components/Toast';
 'use client';
 import React, { useState, useEffect } from "react";
-import Image from "next/image";
+// import Image from "next/image";
 import { mockProfile } from "./data";
 
 const MyProfileTab = () => {
