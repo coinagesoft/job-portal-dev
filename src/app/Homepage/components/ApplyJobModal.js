@@ -578,9 +578,9 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
 
                           <div className="mb-10">
                             <p className="font-xs fw-600 mb-5">Work Experience</p>
-                            {workHistory.slice(0, 2).map((entry) => (
+                            {workHistory.slice(0, 2).map((entry, wi) => (
                               <div
-                                key={entry.workExperienceId}
+                                key={entry.workExperienceId || entry.id || wi}
                                 style={{ marginBottom: "8px" }}
                               >
                                 <p className="font-xs mb-0">
@@ -604,9 +604,9 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
                             <p className="font-xs fw-600 mb-5">Core Skills</p>
                             <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
                               {/* console.log("SKILLS:", response.data); */}
-                              {skills.slice(0, 8).map((skill) => (
+                              {skills.slice(0, 8).map((skill, si) => (
                                 <span
-                                  key={skill.skillId}
+                                  key={skill.skillId || skill.id || si}
                                   className="badge bg-light text-dark"
                                 >
                                   {skill.skillName}

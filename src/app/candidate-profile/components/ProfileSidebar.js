@@ -1,4 +1,4 @@
-import Image from "next/image";
+// import Image from "next/image";
 
 // Sidebar navigation order must match the content sections in ProfileTabs.
 const SECTION_MENU = [

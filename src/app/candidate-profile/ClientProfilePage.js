@@ -1213,9 +1213,9 @@ const CandidateProfilePage = () => {
     if (!candidateId) return;
 
     try {
-      const response = await api.get(
-        `/api/candidate/profile/iti-info`
-      );
+    const response = await api.get(
+  `/api/candidate/profile/iti-info?candidateId=${candidateId}`
+);
 
       if (response.data.success) {
         setItiInfo(response.data.data);

@@ -167,26 +167,20 @@ export const saveLocation = async (jobId, payload) => {
    NOTE: API expects each question as a JSON-stringified object in the array.
 ───────────────────────────────────────────────────────────────────────────── */
 export const saveQuestions = async (jobId, payload) => {
-  const formData = new FormData();
-
-  (payload.questions ?? []).forEach((q) => {
-    formData.append(
-      "Questions",
-      JSON.stringify({
-        questionText: q.questionText,
-        answerType: q.answerType,
-        isMandatory: Boolean(q.isMandatory),
-      })
-    );
-  });
-
   const response = await api.patch(
     `/api/recruiter/jobs/${jobId}/step6-questions`,
-    formData
+    {
+      questions: payload.questions,
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
   );
+
   return response.data;
 };
-
 /* ─────────────────────────────────────────────────────────────────────────────
    STEP 7 – Publish
    PATCH /api/recruiter/jobs/step7-publish
