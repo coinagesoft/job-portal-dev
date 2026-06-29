@@ -224,6 +224,8 @@ const EmployerCandidateProfilePage = () => {
                   overview.profilePhotoUrl ||
                   "/assets/imgs/page/candidates/candidate-profile.png"
                 }
+                style={{width:'85px',height:'85px'}}
+                className="mt-3"
                 alt="candidate profile"
               />
             </div>
