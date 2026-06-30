@@ -3048,40 +3048,49 @@ const uploadProfile = async (file, previewUrl) => {
     }
   };
   //Update existing skill in API
-  const saveSkill = async (skill) => {
-    try {
-     await updateCandidateSkill(skill.id, {
-  skillName: skill.name,
-  proficiencyLevel: skill.proficiency || "Beginner",
-  yearsOfExperience: Number(skill.years) || 0,
-});
+const saveSkill = async (skill) => {
+  try {
+    const payload = {
+      skillName: skill.name,
+      proficiencyLevel: skill.proficiency || "Beginner",
+      yearsOfExperience: Number(skill.years) || 0,
+    };
 
-      showToast("Skill updated", "success");
-      return true;
-    } catch (error) {
-      console.log(error.response?.data);
+    console.log("Skill Id:", skill.id);
+    console.log("Payload:", payload);
 
-      showToast("Failed to update skill", "error");
-      return false;
-    }
-  };
+    await updateCandidateSkill(skill.id, payload);
+
+    await loadSkills();
+
+    showToast("Skill updated", "success");
+    return true;
+  } catch (error) {
+    console.log("STATUS:", error.response?.status);
+    console.log("DATA:", error.response?.data);
+    console.log("HEADERS:", error.config?.headers);
+    console.log("REQUEST DATA:", error.config?.data);
+
+    showToast("Failed to update skill", "error");
+    return false;
+  }
+};
 
   //Remove skill from API
   const removeSkill = async (skillId) => {
-    try {
-     await deleteSkill(skillId);
+  try {
+    await deleteSkill(skillId);
 
-      await loadSkills();
+    await loadSkills();
 
-      showToast("Skill removed", "success");
-      return true;
-    } catch (error) {
-      console.log(error.response?.data);
-
-      showToast("Failed to remove skill", "error");
-      return false;
-    }
-  };
+    showToast("Skill removed", "success");
+    return true;
+  } catch (error) {
+    console.log(error.response?.data);
+    showToast("Failed to remove skill", "error");
+    return false;
+  }
+};
 
   const loadLanguages = useCallback(async () => {
     if (!candidateId) return;
