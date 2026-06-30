@@ -173,7 +173,7 @@ const EmployerSubUserPage = () => {
                 </span>
               </div>
 
-              <button
+              {/* <button
                 className="btn btn-default btn-sm"
                 style={{
                   borderRadius: "12px",
@@ -188,7 +188,7 @@ const EmployerSubUserPage = () => {
                   style={{ marginRight: "6px" }}
                 />
                 Invite sub-user
-              </button>
+              </button> */}
             </div>
 
             {/* Info Card */}
