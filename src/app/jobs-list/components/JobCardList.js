@@ -177,7 +177,8 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) 
               </Link>
             </h4>
 
-            {/* AI MATCH */}
+            {/* AI MATCH (only when a real per-candidate score exists) */}
+            {job.aiMatchPercentage != null && (
             <div
               style={{
                 display: "inline-flex",
@@ -206,8 +207,9 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) 
                 }}
               ></i>
 
-              AI Match: {job.aiMatchPercentage || 85}%
+              AI Match: {job.aiMatchPercentage}%
             </div>
+            )}
           </div>
           <div className="mt-5">
             <span className="card-briefcase">
@@ -300,4 +302,4 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) 
   );
 };
 
-export default JobCardList; 
+export default JobCardList;

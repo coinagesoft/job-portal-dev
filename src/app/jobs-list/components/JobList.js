@@ -8,6 +8,7 @@ import ApplyJobModal from '@/app/Homepage/components/ApplyJobModal';
 import Pagination from './Pagination';
 import { getJobDetails } from "@/services/candidate/jobDetailsService";
 import { getMyApplications } from "@/services/candidate/myApplicationsService";
+import { getCandidateId } from "@/utils/authHelper";
 
 const toSafeArray = (value) => (Array.isArray(value) ? value : []);
 
@@ -140,6 +141,8 @@ const JobList = ({ filters = {} }) => {
         Page: currentPage,
         PageSize: showPerPage,
         Sort: sortMap[sortBy] || "newest",
+        // when logged in, backend returns a per-candidate AI match score
+        candidateId: getCandidateId() || undefined,
       };
 
       const response = await searchJobs(params);
