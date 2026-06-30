@@ -78,3 +78,11 @@ export const getRolePermissions = async (
 
   return data;
 };
+// POST /api/recruiter/sub-users/accept-invite?token={token}
+export const acceptInvite = async (token) => {
+  const { data } = await api.post(
+    `/api/recruiter/sub-users/accept-invite?token=${encodeURIComponent(token)}`
+  );
+
+  return data;
+};
