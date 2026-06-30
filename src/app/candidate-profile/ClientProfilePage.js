@@ -3131,13 +3131,13 @@ const uploadProfile = async (file, previewUrl) => {
   // Add new language to API
   const addLanguage = async (lang) => {
     try {
-      await createLanguage(candidateId, {
-        languageName: lang.name,
-        proficiencyLevel: lang.proficiency,
-        canRead: lang.reading,
-        canWrite: lang.writing,
-        canSpeak: lang.speaking,
-      });
+      await createLanguage({
+  languageName: lang.name,
+  proficiencyLevel: lang.proficiency,
+  canRead: lang.reading,
+  canWrite: lang.writing,
+  canSpeak: lang.speaking,
+});
 
       await loadLanguages();
 
@@ -3164,13 +3164,13 @@ const uploadProfile = async (file, previewUrl) => {
     }
 
     try {
-      await updateLanguage(lang.id, candidateId, {
-        languageName: lang.name,
-        proficiencyLevel: lang.proficiency,
-        canRead: lang.reading,
-        canWrite: lang.writing,
-        canSpeak: lang.speaking,
-      });
+    await updateLanguage(lang.id, {
+  languageName: lang.name,
+  proficiencyLevel: lang.proficiency,
+  canRead: lang.reading,
+  canWrite: lang.writing,
+  canSpeak: lang.speaking,
+});
 
       await loadLanguages();
 
@@ -3186,7 +3186,7 @@ const uploadProfile = async (file, previewUrl) => {
   // Remove language from API
   const removeLanguage = async (languageId) => {
     try {
-      await deleteLanguage(languageId, candidateId);
+     await deleteLanguage(languageId);
 
       await loadLanguages();
 
