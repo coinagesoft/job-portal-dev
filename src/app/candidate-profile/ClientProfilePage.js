@@ -3050,11 +3050,11 @@ const uploadProfile = async (file, previewUrl) => {
   //Update existing skill in API
   const saveSkill = async (skill) => {
     try {
-      await updateCandidateSkill(skill.id, candidateId, {
-        skillName: skill.name,
-        proficiencyLevel: skill.proficiency || "Beginner",
-        yearsOfExperience: Number(skill.years) || 0,
-      });
+     await updateCandidateSkill(skill.id, {
+  skillName: skill.name,
+  proficiencyLevel: skill.proficiency || "Beginner",
+  yearsOfExperience: Number(skill.years) || 0,
+});
 
       showToast("Skill updated", "success");
       return true;
@@ -3069,7 +3069,7 @@ const uploadProfile = async (file, previewUrl) => {
   //Remove skill from API
   const removeSkill = async (skillId) => {
     try {
-      await deleteSkill(skillId, candidateId);
+     await deleteSkill(skillId);
 
       await loadSkills();
 
