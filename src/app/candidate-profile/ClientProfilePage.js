@@ -2630,21 +2630,18 @@ const CandidateProfilePage = () => {
   };
 
   // Upload profile photo to API
-  const uploadProfile = async (file, previewUrl) => {
-    try {
-      const formData = new FormData();
+ // Upload profile photo to API
+const uploadProfile = async (file, previewUrl) => {
+  try {
+    const formData = new FormData();
+    formData.append("photo", file);
 
-      formData.append("photo", file);
-
-      const response = await api.post(
-        `/api/candidate/profile/profile-photo`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        },
-      );
+    const response = await api.post(
+      `/api/candidate/profile/profile-photo?candidateId=${candidateId}`,  // ← add ?candidateId=
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } },
+    );
+    // ... rest unchanged
 
       console.log("PHOTO UPLOADED", response.data);
 
