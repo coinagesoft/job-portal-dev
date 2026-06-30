@@ -7,6 +7,7 @@ import { mockJobs } from './data';
 import ApplyJobModal from '@/app/Homepage/components/ApplyJobModal';
 import Pagination from './Pagination';
 import { getJobDetails } from "@/services/candidate/jobDetailsService";
+import { getMyApplications } from "@/services/candidate/myApplicationsService";
 
 const toSafeArray = (value) => (Array.isArray(value) ? value : []);
 
@@ -30,21 +31,6 @@ const parseRelativeAgeInDays = (value) => {
   return Number.MAX_SAFE_INTEGER;
 };
 
-const inferEducation = (job) => {
-  if (job.education) return job.education;
-
-  const title = String(job.title || '').toLowerCase();
-  const department = String(job.department || '').toLowerCase();
-
-  if (title.includes('welder') || title.includes('electrician') || title.includes('fitter') || title.includes('technician')) {
-    return 'ITI / Diploma';
-  }
-  if (title.includes('driver') || title.includes('assistant') || title.includes('operator')) return '10th / 12th';
-  if (title.includes('supervisor') || title.includes('foreman')) return 'Any Graduate';
-  if (department.includes('safety') || department.includes('construction')) return 'Trade Certificate';
-  return 'ITI / Diploma';
-};
-
 const extractSalaryLpa = (salaryRange) => {
   const text = String(salaryRange || '');
   const values = text.match(/\d+/g)?.map((value) => Number.parseInt(value, 10)) || [];
@@ -57,175 +43,62 @@ const extractSalaryLpa = (salaryRange) => {
 const JobList = ({ filters = {} }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [filteredJobs, setFilteredJobs] = useState([]);
-const [totalFilteredCount, setTotalFilteredCount] = useState(0);
-const [loading, setLoading] = useState(false);
+  const [totalFilteredCount, setTotalFilteredCount] = useState(0);
+  const [loading, setLoading] = useState(false);
   const [showPerPage, setShowPerPage] = useState(12);
   const [sortBy, setSortBy] = useState('Newest Post');
   const [viewMode, setViewMode] = useState('list');
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [activeJob, setActiveJob] = useState(null);
+  const [appliedJobIds, setAppliedJobIds] = useState(() => new Set());
 
   React.useEffect(() => {
     setCurrentPage(1);
   }, [filters, sortBy, showPerPage]);
 
-  // React.useEffect(() => {
-  //   let result = [...jobs];
-  //   const keyword = String(filters.keyword || '').trim().toLowerCase();
-
-  //   if (keyword) {
-  //     result = result.filter((job) => {
-  //       const haystack = [
-  //         job.title,
-  //         job.company,
-  //         job.location,
-  //         job.type,
-  //         job.desc,
-  //         job.role,
-  //         job.department,
-  //         ...(job.tags || []),
-  //         ...(job.industries || [])
-  //       ]
-  //         .join(' ')
-  //         .toLowerCase();
-
-  //       return haystack.includes(keyword);
-  //     });
-  //   }
-
-  //   if (toSafeArray(filters.workMode).length > 0) {
-  //     result = result.filter((job) => filters.workMode.includes(job.workMode));
-  //   }
-
-  //   if (toSafeArray(filters.department).length > 0) {
-  //     result = result.filter((job) => filters.department.includes(job.department));
-  //   }
-
-  //   if (toSafeArray(filters.experience).length > 0) {
-  //     result = result.filter((job) => filters.experience.includes(job.experience));
-  //   }
-
-  //   if (toSafeArray(filters.salary).length > 0) {
-  //     result = result.filter((job) => filters.salary.includes(job.salaryRange));
-  //   }
-
-  //   if (toSafeArray(filters.companies).length > 0) {
-  //     result = result.filter((job) => filters.companies.includes(job.company));
-  //   }
-
-  //   if (toSafeArray(filters.industries).length > 0) {
-  //     result = result.filter((job) =>
-  //       filters.industries.some(
-  //         (industry) =>
-  //           (job.industries || []).some((jobIndustry) => jobIndustry === industry) ||
-  //           (job.tags || []).some((tag) =>
-  //             tag.toLowerCase().includes(industry.toLowerCase().split(' / ')[0].toLowerCase())
-  //           )
-  //       )
-  //     );
-  //   }
-
-  //   if (toSafeArray(filters.role).length > 0) {
-  //     result = result.filter((job) => filters.role.includes(job.role));
-  //   }
-
-  //   if (toSafeArray(filters.location).length > 0) {
-  //     result = result.filter((job) => filters.location.some((location) => job.location.includes(location)));
-  //   }
-
-  //   if (toSafeArray(filters.education).length > 0) {
-  //     result = result.filter((job) => filters.education.includes(inferEducation(job)));
-  //   }
-
-  //   if (toSafeArray(filters.postedBy).length > 0) {
-  //     result = result.filter((job) => filters.postedBy.includes(job.postedBy));
-  //   }
-
-  //   if (toSafeArray(filters.freshness).length > 0) {
-  //     const freshnessThresholdByLabel = {
-  //       'Last 24 hours': 1,
-  //       'Last 3 days': 3,
-  //       'Last 7 days': 7,
-  //       'Last 30 days': 30,
-  //     };
-
-  //     result = result.filter((job) => {
-  //       const ageInDays = parseRelativeAgeInDays(job.time);
-  //       return filters.freshness.some((label) => {
-  //         const threshold = freshnessThresholdByLabel[label];
-  //         return typeof threshold === 'number' ? ageInDays <= threshold : false;
-  //       });
-  //     });
-  //   }
-
-  //   if (filters.locationSingle) {
-  //     result = result.filter((job) => job.location.includes(filters.locationSingle));
-  //   }
-
-  //   if (toSafeArray(filters.industry).length > 0) {
-  //     result = result.filter((job) =>
-  //       filters.industry.some((industry) =>
-  //         (job.tags || []).some((tag) => tag.toLowerCase().includes(industry.toLowerCase()))
-  //       )
-  //     );
-  //   }
-
-  //   if (toSafeArray(filters.salaryRanges).length > 0) {
-  //     result = result.filter((job) =>
-  //       filters.salaryRanges.some(
-  //         (range) => job.salaryRange?.includes(range.split('$')[1]) || range === 'All'
-  //       )
-  //     );
-  //   }
-
-  //   const activeSort = toSafeArray(filters.sort).length > 0 ? filters.sort[0] : sortBy;
-  //   if (activeSort === 'Date (Newest)' || activeSort === 'Newest Post') {
-  //     result.sort((a, b) => parseRelativeAgeInDays(a.time) - parseRelativeAgeInDays(b.time));
-  //   } else if (activeSort === 'Oldest Post') {
-  //     result.sort((a, b) => parseRelativeAgeInDays(b.time) - parseRelativeAgeInDays(a.time));
-  //   } else if (activeSort === 'Salary (High-Low)' || activeSort === 'Salary (High–Low)') {
-  //     result.sort((a, b) => extractSalaryLpa(b.salaryRange).max - extractSalaryLpa(a.salaryRange).max);
-  //   } else if (activeSort === 'Salary (Low-High)' || activeSort === 'Salary (Low–High)') {
-  //     result.sort((a, b) => extractSalaryLpa(a.salaryRange).min - extractSalaryLpa(b.salaryRange).min);
-  //   }
-
-  //   setTotalFilteredCount(result.length);
-
-  //   const totalPages = Math.max(1, Math.ceil(result.length / showPerPage));
-  //   const safeCurrentPage = Math.min(currentPage, totalPages);
-  //   if (safeCurrentPage !== currentPage) {
-  //     setCurrentPage(safeCurrentPage);
-  //     return;
-  //   }
-
-  //   const startIndex = (currentPage - 1) * showPerPage;
-  //   setFilteredJobs(result.slice(startIndex, startIndex + showPerPage));
-  // }, [jobs, filters, sortBy, currentPage, showPerPage]);
-
   const showingFrom = totalFilteredCount === 0 ? 0 : (currentPage - 1) * showPerPage + 1;
   const showingTo = totalFilteredCount === 0 ? 0 : Math.min(currentPage * showPerPage, totalFilteredCount);
   const totalPages = Math.max(1, Math.ceil(totalFilteredCount / showPerPage));
 
-const openApplyModal = async (job) => {
-  try {
-    const response = await getJobDetails(
-      job.jobId
-    );
+  // Load the candidate's already-applied job ids so the card can show "Applied".
+  const loadAppliedJobs = async () => {
+    try {
+      const res = await getMyApplications();
+      const ids = (res?.data?.applications || [])
+        .map((a) => a.jobId)
+        .filter(Boolean);
+      setAppliedJobIds(new Set(ids));
+    } catch (error) {
+      // not logged in / no applications — leave the set empty
+      console.log("applied jobs load skipped", error?.message || error);
+    }
+  };
 
-    console.log(
-      "JOB DETAILS RESPONSE",
-      response.data
-    );
+  useEffect(() => {
+    loadAppliedJobs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    setActiveJob(response.data);
-    setShowApplyModal(true);
-  } catch (error) {
-    console.error(
-      "Failed to load job details",
-      error
-    );
-  }
-};
+  const openApplyModal = async (job) => {
+    try {
+      const response = await getJobDetails(
+        job.jobId
+      );
+
+      console.log(
+        "JOB DETAILS RESPONSE",
+        response.data
+      );
+
+      setActiveJob(response.data);
+      setShowApplyModal(true);
+    } catch (error) {
+      console.error(
+        "Failed to load job details",
+        error
+      );
+    }
+  };
 
 
   const loadJobs = async () => {
@@ -287,9 +160,9 @@ const openApplyModal = async (job) => {
       setLoading(false);
     }
   };
-useEffect(() => {
-  loadJobs();
-}, [filters, currentPage, showPerPage, sortBy]);
+  useEffect(() => {
+    loadJobs();
+  }, [filters, currentPage, showPerPage, sortBy]);
 
   return (
     <div className="content-page">
@@ -363,14 +236,23 @@ useEffect(() => {
             key={job.jobId}
             className={viewMode === 'grid' ? 'col-xl-4 col-lg-6 col-md-6 col-sm-12 col-12' : 'col-xl-12 col-12'}
           >
-            <JobCardList job={job} viewMode={viewMode} onApplyNow={openApplyModal} />
+            <JobCardList
+              job={job}
+              viewMode={viewMode}
+              onApplyNow={openApplyModal}
+              isApplied={appliedJobIds.has(job.jobId)}
+            />
           </div>
         ))}
       </div>
       {totalPages > 1 ? (
         <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       ) : null}
-      <ApplyJobModal showModal={showApplyModal} setShowModal={setShowApplyModal} job={activeJob} />
+      <ApplyJobModal
+        showModal={showApplyModal}
+        setShowModal={(v) => { setShowApplyModal(v); if (!v) loadAppliedJobs(); }}
+        job={activeJob}
+      />
     </div>
   );
 };

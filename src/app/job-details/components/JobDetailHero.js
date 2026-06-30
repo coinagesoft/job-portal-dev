@@ -1,12 +1,31 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ApplyJobModal from '@/app/Homepage/components/ApplyJobModal';
 import { detailedJob } from '../data.js';
+import { getMyApplications } from '@/services/candidate/myApplicationsService';
 
 const JobDetailHero = ({ job = detailedJob }) => {
   const [showModal, setShowModal] = useState(false);
+  const [isApplied, setIsApplied] = useState(false);
 
   const toggleModal = () => setShowModal(!showModal);
+
+  // Check whether the candidate has already applied to this job.
+  const checkApplied = async () => {
+    if (!job?.jobId) return;
+    try {
+      const res = await getMyApplications();
+      const ids = (res?.data?.applications || []).map((a) => a.jobId);
+      setIsApplied(ids.includes(job.jobId));
+    } catch (error) {
+      console.log('applied check skipped', error?.message || error);
+    }
+  };
+
+  useEffect(() => {
+    checkApplied();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [job?.jobId]);
 
   return (
     <section className="section-box-2">
@@ -23,17 +42,33 @@ const JobDetailHero = ({ job = detailedJob }) => {
             </div>
           </div>
           <div className="col-lg-4 col-md-12 text-lg-end">
-            <div className="btn btn-apply-icon btn-apply btn-apply-big hover-up" onClick={toggleModal}>
-              Apply now
-            </div>
+            {isApplied ? (
+              <div
+                className="btn btn-apply-icon btn-apply btn-apply-big"
+                style={{ opacity: 0.6, cursor: 'default', pointerEvents: 'none' }}
+                aria-disabled="true"
+              >
+                Applied
+              </div>
+            ) : (
+              <div
+                className="btn btn-apply-icon btn-apply btn-apply-big hover-up"
+                onClick={toggleModal}
+              >
+                Apply now
+              </div>
+            )}
           </div>
         </div>
         <div className="border-bottom pt-10 pb-10"></div>
       </div>
-      <ApplyJobModal showModal={showModal} setShowModal={setShowModal} job={job} />
+      <ApplyJobModal
+        showModal={showModal}
+        setShowModal={(v) => { setShowModal(v); if (!v) checkApplied(); }}
+        job={job}
+      />
     </section>
   );
 };
 
 export default JobDetailHero;
-

@@ -1,5 +1,5 @@
 import api from "@/services/api";
-import {jwtDecode} from "jwt-decode";
+import jwtDecode from "jwt-decode";
 
 const getEmployerId = () => {
   const token = localStorage.getItem("token");

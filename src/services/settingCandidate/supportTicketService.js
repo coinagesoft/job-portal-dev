@@ -1,48 +1,40 @@
 import api from "../api";
 
-export const createTicket = (payload) => {
+// POST /api/candidate/settings/support/tickets/{candidateId}   (multipart/form-data)
+export const createTicket = (candidateId, payload) => {
   const formData = new FormData();
-
   formData.append("Subject", payload.subject);
   formData.append("Category", payload.category);
   formData.append("Description", payload.description);
 
   return api.post(
-    `/api/candidate/settings/support/tickets`    ,
+    `/api/candidate/settings/support/tickets/${candidateId}`,
     formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
+    { headers: { "Content-Type": "multipart/form-data" } },
   );
 };
 
-export const getTickets = () =>
-  api.get(
-    `/api/candidate/settings/support/tickets`
-  );
+// GET /api/candidate/settings/support/tickets/{candidateId}
+export const getTickets = (candidateId) =>
+  api.get(`/api/candidate/settings/support/tickets/${candidateId}`);
 
-export const getTicketSummary = () =>
-  api.get(
-    `/api/candidate/settings/support/summary`
-  );
+// GET /api/candidate/settings/support/{candidateId}/summary
+export const getTicketSummary = (candidateId) =>
+  api.get(`/api/candidate/settings/support/${candidateId}/summary`);
 
-export const getThread = (ticketId) =>
-  api.get(
-    `/api/candidate/settings/support/thread/${ticketId}`
-  );
+// GET /api/candidate/settings/support/thread/{ticketId}?candidateId={candidateId}
+export const getThread = (ticketId, candidateId) =>
+  api.get(`/api/candidate/settings/support/thread/${ticketId}`, {
+    params: { candidateId },
+  });
 
-export const replyTicket = (
-  ticketId,
-  payload
-) =>
+// POST /api/candidate/settings/support/tickets/{ticketId}/reply/{candidateId}
+export const replyTicket = (ticketId, candidateId, payload) =>
   api.post(
-    `/api/candidate/settings/support/tickets/${ticketId}/reply`,
-    payload
+    `/api/candidate/settings/support/tickets/${ticketId}/reply/${candidateId}`,
+    payload,
   );
 
+// PATCH /api/candidate/settings/support/tickets/{ticketId}/resolve
 export const resolveTicket = (ticketId) =>
-  api.patch(
-    `/api/candidate/settings/support/tickets/${ticketId}/resolve`
-  );
+  api.patch(`/api/candidate/settings/support/tickets/${ticketId}/resolve`);

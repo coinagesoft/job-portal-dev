@@ -24,7 +24,7 @@ const toSafeTags = (value) =>
 const getJobDetailsHref = (jobId) =>
   jobId ? `/job-details?jobId=${jobId}` : "/job-details";
 
-const JobCardList = ({ job, onApplyNow, viewMode = "list" }) => {
+const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) => {
   const tags = toSafeTags(job.skills);
   const companyTagsFromData = toSafeTags(job.companyTags);
   const jobTagsFromData = toSafeTags(job.jobTags);
@@ -44,14 +44,6 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list" }) => {
     jobTagsFromData.length > 0
       ? jobTagsFromData
       : tags.filter((tag) => !COMPANY_RELATED_TAGS.has(tag));
-
-  // const formatHourlyPrice = (value) => {
-  //   const text = String(value || "").trim();
-  //   if (!text) return "";
-  //   return text.includes("$") ? text : `$${text}`;
-  // };
-  // 
-
 
   return (
     <>
@@ -87,7 +79,6 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list" }) => {
             "0 4px 14px rgba(18,35,89,0.04)";
         }}
       >
-        {/* <span className="flash"></span> */}
         <div className="row">
           <div className="col-lg-6 col-md-6 col-sm-12">
             <div className="card-grid-2-image-left">
@@ -192,26 +183,17 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list" }) => {
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
-
                 gap: 6,
-
                 padding: "6px 14px",
-
                 borderRadius: 999,
-
                 background:
                   "linear-gradient(135deg, #fff4df 0%, #ffe7ba 100%)",
-
                 border:
                   "1px solid rgba(255, 163, 0, 0.22)",
-
                 color: "#ff9900",
-
                 fontSize: 12,
                 fontWeight: 700,
-
                 width: "fit-content",
-
                 boxShadow:
                   "0 6px 16px rgba(255,153,0,0.08)",
               }}
@@ -282,17 +264,33 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list" }) => {
                 <span className="card-text-price">
                   {job.salaryDisplay}
                 </span>
-                {/* <span className="text-muted">/Hour</span> */}
               </div>
               <div className="col-lg-5 col-5 text-end">
-                <button
-                  type="button"
-                  className="btn btn-apply-now"
-                  style={{ color: "#ffffff" }}
-                  onClick={() => onApplyNow?.(job)}
-                >
-                  Apply now
-                </button>
+                {isApplied ? (
+                  <button
+                    type="button"
+                    className="btn btn-apply-now"
+                    disabled
+                    style={{
+                      color: "#ffffff",
+                      opacity: 0.6,
+                      cursor: "default",
+                      pointerEvents: "none",
+                    }}
+                    aria-disabled="true"
+                  >
+                    Applied
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn btn-apply-now"
+                    style={{ color: "#ffffff" }}
+                    onClick={() => onApplyNow?.(job)}
+                  >
+                    Apply now
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -302,4 +300,4 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list" }) => {
   );
 };
 
-export default JobCardList;
+export default JobCardList; 
