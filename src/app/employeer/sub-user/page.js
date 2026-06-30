@@ -8,6 +8,8 @@ import {
   deactivateSubUser,
   reactivateSubUser,
   resendInvite,
+  deleteSubUser,
+  getRolePermissions,
 } from "@/services/recruiter/recruiterSubUserService";
 
 import { useToast } from "@/components/Toast";
@@ -87,6 +89,55 @@ const EmployerSubUserPage = () => {
     countryCode: "+91",
     role: "Recruiter",
   });
+
+  // Maps the visible permission labels to the API/DTO keys.
+  const PERMISSION_FIELDS = [
+    { label: "Search candidates", key: "canSearchCandidates" },
+    { label: "Can unlock profiles", key: "canUnlockProfiles" },
+    { label: "Post jobs", key: "canPostJobs" },
+    { label: "Manage applications", key: "canManageApplications" },
+  ];
+
+  const [permissions, setPermissions] = useState({
+    canSearchCandidates: false,
+    canUnlockProfiles: false,
+    canPostJobs: false,
+    canManageApplications: false,
+  });
+
+  // Pull the default permission set for a role from the backend.
+  const applyRolePermissions = async (role) => {
+    try {
+      const data = await getRolePermissions(role);
+      const p = data?.permissions || {};
+      setPermissions({
+        canSearchCandidates: !!p.canSearchCandidates,
+        canUnlockProfiles: !!p.canUnlockProfiles,
+        canPostJobs: !!p.canPostJobs,
+        canManageApplications: !!p.canManageApplications,
+      });
+    } catch (error) {
+      console.error("Failed to load role permissions", error);
+    }
+  };
+
+  const resetInviteForm = () => {
+    setEditingUser(null);
+    setInviteForm({
+      subUserName: "",
+      subUserEmail: "",
+      subUserMobile: "",
+      countryCode: "+91",
+      role: "Recruiter",
+    });
+    setPermissions({
+      canSearchCandidates: false,
+      canUnlockProfiles: false,
+      canPostJobs: false,
+      canManageApplications: false,
+    });
+  };
+
   useEffect(() => {
     loadSubUsers();
   }, []);
@@ -122,7 +173,7 @@ const EmployerSubUserPage = () => {
                 </span>
               </div>
 
-              <button
+              {/* <button
                 className="btn btn-default btn-sm"
                 style={{
                   borderRadius: "12px",
@@ -137,7 +188,7 @@ const EmployerSubUserPage = () => {
                   style={{ marginRight: "6px" }}
                 />
                 Invite sub-user
-              </button>
+              </button> */}
             </div>
 
             {/* Info Card */}
@@ -380,6 +431,16 @@ const EmployerSubUserPage = () => {
                               countryCode: user.countryCode || "+91",
                               role: user.role || "Recruiter",
                             });
+
+                            setPermissions({
+                              canSearchCandidates:
+                                !!user.permissions?.canSearchCandidates,
+                              canUnlockProfiles:
+                                !!user.permissions?.canUnlockProfiles,
+                              canPostJobs: !!user.permissions?.canPostJobs,
+                              canManageApplications:
+                                !!user.permissions?.canManageApplications,
+                            });
                           }}
                         >
                           <i className="fi fi-rr-edit me-1" />
@@ -407,6 +468,54 @@ const EmployerSubUserPage = () => {
                             Reactivate
                           </button>
                         )}
+
+                        {!user.inviteAccepted && (
+                          <button
+                            className="btn btn-border btn-sm"
+                            onClick={async () => {
+                              try {
+                                await resendInvite(user.subUserId);
+                                showToast("Invite resent", "success");
+                              } catch (error) {
+                                showToast(
+                                  error.response?.data?.message ||
+                                    "Failed to resend invite",
+                                  "error",
+                                );
+                              }
+                            }}
+                          >
+                            <i className="fi fi-rr-paper-plane me-1" />
+                            Resend
+                          </button>
+                        )}
+
+                        <button
+                          className="btn btn-grey-small"
+                          style={{ color: "#a32d2d" }}
+                          onClick={async () => {
+                            if (
+                              !window.confirm(
+                                `Remove ${user.subUserName}? This cannot be undone.`,
+                              )
+                            )
+                              return;
+                            try {
+                              await deleteSubUser(user.subUserId);
+                              showToast("Sub-user removed", "success");
+                              loadSubUsers();
+                            } catch (error) {
+                              showToast(
+                                error.response?.data?.message ||
+                                  "Failed to remove sub-user",
+                                "error",
+                              );
+                            }
+                          }}
+                        >
+                          <i className="fi fi-rr-trash me-1" />
+                          Delete
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -494,12 +603,14 @@ const EmployerSubUserPage = () => {
                     <select
                       className="form-control form-select"
                       value={inviteForm.role || "Recruiter"}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        const role = e.target.value;
                         setInviteForm({
                           ...inviteForm,
-                          role: e.target.value,
-                        })
-                      }
+                          role,
+                        });
+                        applyRolePermissions(role);
+                      }}
                     >
                       <option value="Recruiter">Recruiter</option>
                       <option value="HR_Manager">HR Manager</option>
@@ -519,14 +630,9 @@ const EmployerSubUserPage = () => {
                         gap: "12px",
                       }}
                     >
-                      {[
-                        "Can unlock profiles",
-                        "Search candidates",
-                        "Post jobs",
-                        "Manage applications",
-                      ].map((permission, index) => (
+                      {PERMISSION_FIELDS.map(({ label, key }) => (
                         <label
-                          key={permission}
+                          key={key}
                           style={{
                             position: "relative",
                             cursor: "pointer",
@@ -534,7 +640,13 @@ const EmployerSubUserPage = () => {
                         >
                           <input
                             type="checkbox"
-                            defaultChecked={index === 1}
+                            checked={!!permissions[key]}
+                            onChange={(e) =>
+                              setPermissions((prev) => ({
+                                ...prev,
+                                [key]: e.target.checked,
+                              }))
+                            }
                             className="permission-checkbox"
                           />
 
@@ -546,9 +658,11 @@ const EmployerSubUserPage = () => {
                               justifyContent: "center",
                               padding: "8px 14px",
                               borderRadius: "999px",
-                              background: "#EAF4FF",
+                              background: permissions[key]
+                                ? "#1D4ED8"
+                                : "#EAF4FF",
                               border: "1px solid #B9DCFF",
-                              color: "#1D4ED8",
+                              color: permissions[key] ? "#ffffff" : "#1D4ED8",
                               fontSize: "12px",
                               fontWeight: 600,
                               whiteSpace: "nowrap",
@@ -565,7 +679,7 @@ const EmployerSubUserPage = () => {
                                 marginRight: "6px",
                               }}
                             />
-                            {permission}
+                            {label}
                           </span>
                         </label>
                       ))}
@@ -575,10 +689,10 @@ const EmployerSubUserPage = () => {
                     onClick={async () => {
                       try {
                         if (editingUser) {
-                          await updateSubUser(
-                            editingUser.subUserId,
-                            inviteForm,
-                          );
+                          await updateSubUser(editingUser.subUserId, {
+                            role: inviteForm.role,
+                            ...permissions,
+                          });
 
                           showToast("User updated successfully", "success");
                         } else {
@@ -589,15 +703,7 @@ const EmployerSubUserPage = () => {
 
                         await loadSubUsers();
 
-                        setEditingUser(null);
-
-                        setInviteForm({
-                          subUserName: "",
-                          subUserEmail: "",
-                          subUserMobile: "",
-                          countryCode: "+91",
-                          role: "Recruiter",
-                        });
+                        resetInviteForm();
                       } catch (error) {
                         console.error(error.response?.data);
 

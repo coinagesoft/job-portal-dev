@@ -22,6 +22,15 @@ export default function LoginPage() {
   const dispatch = useDispatch();
   const router = useRouter();
 
+  // Pre-fill the email/mobile when arriving from the invite-accept flow
+  // (e.g. /Login?identifier=user@email.com), so the user just requests an OTP.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const prefill = params.get("identifier") || params.get("email");
+    if (prefill) setInput(prefill);
+  }, []);
+
   const { isLoading: authLoading, user } = useSelector((state) => state.auth);
 
   // Detect input type
