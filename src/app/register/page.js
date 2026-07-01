@@ -2361,14 +2361,14 @@ function EmployerForm() {
       </div>
 
       <div
-  style={{
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-    gap: 14,
-    marginBottom: 14,
-    width: "100%",
-  }}
->
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gap: 14,
+          marginBottom: 14,
+          width: "100%",
+        }}
+      >
         {[
           {
             id: "poe",
@@ -2433,13 +2433,23 @@ function EmployerForm() {
                 style={{
                   border: "1px dashed var(--color-border-secondary,#ffc151)",
                   borderRadius: 8,
-                  padding: "24px 16px",
+                  padding: "16px",
                   textAlign: "center",
                   cursor: "pointer",
                   background: file
                     ? "#EAF3DE"
                     : "var(--color-background-secondary)",
                   transition: ".2s",
+
+                  minHeight: "95px",      // Makes both boxes same height
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  alignItems: "center",
+
+                  width: "100%",
+                  boxSizing: "border-box",
+                  overflow: "hidden",
                 }}
               >
                 {file ? (
@@ -2449,10 +2459,14 @@ function EmployerForm() {
                         fontSize: "var(--font-xs)",
                         color: "#3B6D11",
                         fontWeight: 600,
+
+                        width: "100%",
                         overflow: "hidden",
                         textOverflow: "ellipsis",
                         whiteSpace: "nowrap",
-                        width: "100%",
+
+                        lineHeight: "18px",
+                        minHeight: "18px",
                       }}
                       title={file.name}
                     >
