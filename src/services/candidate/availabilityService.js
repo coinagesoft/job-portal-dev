@@ -1,3 +1,5 @@
+// services/candidate/availabilityService.js
+
 import api from "../api";
 import { getCandidateId } from "@/utils/authHelper";
 
@@ -12,7 +14,7 @@ export const getAvailability = () => {
 export const updateAvailability = (payload) => {
   const candidateId = getCandidateId();
 
-  return api.put(
+  return api.patch(
     `/api/candidate/profile/availability?candidateId=${candidateId}`,
     payload
   );

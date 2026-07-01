@@ -312,30 +312,23 @@ const Header = () => {
           className="dropdown-menu dropdown-menu-light dropdown-menu-end"
           aria-labelledby="dropdownProfile"
         >
-          {profileLinks.map(
-            (link) => (
-              <li
-                key={
-                  link.href +
-                  link.label
-                }
-              >
-                <Link
-                  className={`dropdown-item ${
-                    isExactPathActive(
-                      pathname,
-                      link.href
-                    )
-                      ? "active"
-                      : ""
-                  }`}
-                  href={link.href}
-                >
-                  {link.label}
-                </Link>
-              </li>
-            )
-          )}
+          {profileLinks.map((link) => (
+  <li key={link.href + link.label}>
+    <button
+      className={`dropdown-item ${
+        isExactPathActive(pathname, link.href)
+          ? "active"
+          : ""
+      }`}
+      onClick={() => {
+        console.log("GOING TO:", link.href);
+        router.push(link.href);
+      }}
+    >
+      {link.label}
+    </button>
+  </li>
+))}
 
           <li>
             <button
