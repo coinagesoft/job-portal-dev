@@ -111,9 +111,53 @@ const JobContent = ({ job = detailedJob }) => {
         </div>
       )}
 
-      <div dangerouslySetInnerHTML={{ __html: job.description }} />
+      <div className="job-content">
+
+  {/* Job Description */}
+  <h5>Job Description</h5>
+  <p style={{ whiteSpace: "pre-line" }}>
+    {job.jobDescription}
+  </p>
+
+  {/* Key Responsibilities */}
+  {job.keyResponsibilities?.length > 0 && (
+    <>
+      <h5 className="mt-4">Key Responsibilities</h5>
+      <ul>
+        {job.keyResponsibilities.map((item, index) => (
+          <li key={index}>{item}</li>
+        ))}
+      </ul>
+    </>
+  )}
+
+  {/* Professional Skills */}
+  {job.professionalSkills?.length > 0 && (
+    <>
+      <h5 className="mt-4">Professional Skills</h5>
+      <ul>
+        {job.professionalSkills.map((skill, index) => (
+          <li key={index}>{skill}</li>
+        ))}
+      </ul>
+    </>
+  )}
+
+  {/* Perks & Benefits */}
+  {job.perksAndBenefits?.length > 0 && (
+    <>
+      <h5 className="mt-4">Perks & Benefits</h5>
+      <ul>
+        {job.perksAndBenefits.map((perk, index) => (
+          <li key={index}>{perk}</li>
+        ))}
+      </ul>
+    </>
+  )}
+
+</div>
       <div className="author-single">
-        <span>{job.companyFull}</span>
+        <span>{job.companyName}</span>
       </div>
       <div className="single-apply-jobs">
         <div className="row align-items-center">
