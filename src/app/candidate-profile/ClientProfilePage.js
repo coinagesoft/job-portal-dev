@@ -422,7 +422,13 @@ const StepBar = ({ current }) => (
 );
 
 // ─── STEP 1 — Personal Information ───────────────────────────────────────────
-const StepPersonal = ({ data, onChange, onPhotoUpload, errors = {} }) => {
+const StepPersonal = ({
+  data,
+  onChange,
+  onPhotoUpload,
+  onAvailabilityChange,
+  errors = {},
+}) => {
   const [avatarPreview, setAvatarPreview] = useState(null);
   const avatarSrc = avatarPreview || data.avatar || DEFAULT_PROFILE_PHOTO;
 
@@ -821,7 +827,7 @@ const StepPersonal = ({ data, onChange, onPhotoUpload, errors = {} }) => {
           type="checkbox"
           id="available"
           checked={!!data.availableForWork}
-          onChange={(e) => onChange("availableForWork", e.target.checked)}
+         onChange={(e) => onAvailabilityChange(e.target.checked)}
           style={{
             width: 18,
             height: 18,
@@ -2445,23 +2451,26 @@ const CandidateProfilePage = () => {
   const [initialPersonalInfo, setInitialPersonalInfo] = useState(null);
   const [initialWorkHistory, setInitialWorkHistory] = useState([]);
 
-  const loadAvailability = useCallback(async () => {
-    if (!candidateId) return;
+const loadAvailability = useCallback(async () => {
+  if (!candidateId) return;
 
-    try {
-      const response = await getAvailability();
+  try {
+    const response = await getAvailability();
 
-      if (response.data.success) {
-        setProfileData((prev) => ({
-          ...prev,
-          availableForWork:
-            response.data.data.availabilityStatus === "Open_To_Opportunities",
-        }));
-      }
-    } catch (error) {
-      console.error("Failed to load availability", error);
+    if (response.data.success) {
+      setProfileData((prev) => ({
+        ...prev,
+        availableForWork:
+          response.data.data.availabilityStatus === "Available",
+      }));
     }
-  }, [candidateId]);
+  } catch (error) {
+    console.error("Failed to load availability", error);
+  }
+}, [candidateId]);
+  useEffect(() => {
+  loadAvailability();
+}, [loadAvailability]);
   //load ITI info from API
   const loadITIInfo = useCallback(async () => {
     if (!candidateId) return;
@@ -3383,6 +3392,25 @@ const CandidateProfilePage = () => {
     }));
   }, []);
 
+const handleAvailabilityChange = async (checked) => {
+  console.log("Sending:", {
+    availabilityStatus: checked
+      ? "Open_To_Opportunities"
+      : "Not_Available",
+  });
+
+  await updateAvailability({
+    availabilityStatus: checked
+      ? "Available"
+      : "Not Available",
+  });
+
+  setProfileData((prev) => ({
+    ...prev,
+    availableForWork: checked,
+  }));
+};
+
   // Documents
   const uploadDoc = useCallback(
     (docKey, file, fieldKey = "file") => {
@@ -3520,9 +3548,11 @@ const CandidateProfilePage = () => {
       case 1:
         return (
           <StepPersonal
+
             data={profileData}
             onChange={updateField}
             onPhotoUpload={uploadProfile}
+            onAvailabilityChange={handleAvailabilityChange}
             errors={errors}
           />
         );
