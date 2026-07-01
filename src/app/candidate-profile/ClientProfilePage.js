@@ -50,10 +50,17 @@ import {
   getEducationCertificates,
 } from "@/services/candidate/candidateEducationCert.js";
 
+// import {
+//   uploadPassport,
+//   deletePassport,
+// } from "@/services/candidate/candidatePassport";
+
 import {
-  uploadPassport,
-  deletePassport,
-} from "@/services/candidate/candidatePassport";
+  getPersonalInfo,
+  createPersonalInfo,
+  updatePersonalInfo,
+  uploadProfilePhoto,
+} from "@/services/candidate/profileService";
 
 import api from "@/services/api";
 
@@ -623,6 +630,11 @@ const StepPersonal = ({ data, onChange, onPhotoUpload, errors = {} }) => {
             onChange={(e) => onChange("dob", e.target.value)}
             required
           />
+          {errors.dob && (
+            <p style={{ color: "red", fontSize: "12px", marginTop: "4px" }}>
+              {errors.dob}
+            </p>
+          )}
         </Field>
         <Field label="Gender" required>
           <Sel
@@ -636,6 +648,11 @@ const StepPersonal = ({ data, onChange, onPhotoUpload, errors = {} }) => {
             <option>Other</option>
             <option>Prefer not to say</option>
           </Sel>
+          {errors.gender && (
+            <p style={{ color: "red", fontSize: "12px", marginTop: "4px" }}>
+              {errors.gender}
+            </p>
+          )}
         </Field>
       </div>
 
@@ -653,6 +670,11 @@ const StepPersonal = ({ data, onChange, onPhotoUpload, errors = {} }) => {
             placeholder="Pune"
             required
           />
+          {errors.city && (
+            <p style={{ color: "red", fontSize: "12px", marginTop: "4px" }}>
+              {errors.city}
+            </p>
+          )}
         </Field>
         <Field label="State" required>
           <Sel
@@ -667,6 +689,11 @@ const StepPersonal = ({ data, onChange, onPhotoUpload, errors = {} }) => {
               </option>
             ))}
           </Sel>
+          {errors.state && (
+            <p style={{ color: "red", fontSize: "12px", marginTop: "4px" }}>
+              {errors.state}
+            </p>
+          )}
         </Field>
         <Field label="PIN Code" required>
           <Inp
@@ -676,6 +703,11 @@ const StepPersonal = ({ data, onChange, onPhotoUpload, errors = {} }) => {
             maxLength={6}
             required
           />
+          {errors.pin && (
+            <p style={{ color: "red", fontSize: "12px", marginTop: "4px" }}>
+              {errors.pin}
+            </p>
+          )}
         </Field>
       </div>
 
@@ -693,6 +725,11 @@ const StepPersonal = ({ data, onChange, onPhotoUpload, errors = {} }) => {
             placeholder="Indian"
             required
           />
+          {errors.nationality && (
+            <p style={{ color: "red", fontSize: "12px", marginTop: "4px" }}>
+              {errors.nationality}
+            </p>
+          )}
         </Field>
         <Field label="Trade / Job Title" required>
           <Inp
@@ -701,6 +738,11 @@ const StepPersonal = ({ data, onChange, onPhotoUpload, errors = {} }) => {
             placeholder="Senior Electrician"
             required
           />
+          {errors.trade && (
+            <p style={{ color: "red", fontSize: "12px", marginTop: "4px" }}>
+              {errors.trade}
+            </p>
+          )}
         </Field>
       </div>
 
@@ -715,6 +757,11 @@ const StepPersonal = ({ data, onChange, onPhotoUpload, errors = {} }) => {
           rows={4}
           placeholder="Describe your key skills and years of experience..."
         />
+        {errors.summary && (
+          <p style={{ color: "red", fontSize: "12px", marginTop: "4px" }}>
+            {errors.summary}
+          </p>
+        )}
       </Field>
 
       <div
@@ -734,6 +781,11 @@ const StepPersonal = ({ data, onChange, onPhotoUpload, errors = {} }) => {
             placeholder="45000"
             required
           />
+          {errors.salaryExpectation && (
+            <p style={{ color: "red", fontSize: "12px", marginTop: "4px" }}>
+              {errors.salaryExpectation}
+            </p>
+          )}
         </Field>
         <Field label="Years of Experience" required>
           <Inp
@@ -747,6 +799,11 @@ const StepPersonal = ({ data, onChange, onPhotoUpload, errors = {} }) => {
             max={50}
             required
           />
+          {errors.yearsOfExperience && (
+            <p style={{ color: "red", fontSize: "12px", marginTop: "4px" }}>
+              {errors.yearsOfExperience}
+            </p>
+          )}
         </Field>
       </div>
 
@@ -2255,24 +2312,87 @@ const CandidateProfilePage = () => {
   const validatePersonalInfo = () => {
     const newErrors = {};
 
+    // Name
     if (!profileData.firstName.trim()) {
-      newErrors.firstName = "Enter first name";
+      newErrors.firstName = "First name is required";
     }
 
     if (!profileData.lastName.trim()) {
-      newErrors.lastName = "Enter last name";
+      newErrors.lastName = "Last name is required";
     }
 
+    // Mobile
     if (!profileData.mobile.trim()) {
-      newErrors.mobile = "Enter mobile number";
+      newErrors.mobile = "Mobile number is required";
+    } else if (!/^\d{10}$/.test(profileData.mobile.replace(/\D/g, ""))) {
+      newErrors.mobile = "Enter a valid 10-digit mobile number";
     }
 
+    // Email
     if (!profileData.email.trim()) {
-      newErrors.email = "Enter email address";
+      newErrors.email = "Email is required";
+    } else if (
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profileData.email)
+    ) {
+      newErrors.email = "Enter a valid email address";
     }
 
+    // DOB
+    if (!profileData.dob) {
+      newErrors.dob = "Date of birth is required";
+    }
+
+    // Gender
+    if (!profileData.gender) {
+      newErrors.gender = "Please select gender";
+    }
+
+    // Address
+    if (!profileData.city.trim()) {
+      newErrors.city = "City is required";
+    }
+
+    if (!profileData.state) {
+      newErrors.state = "State is required";
+    }
+
+    if (!profileData.pin.trim()) {
+      newErrors.pin = "PIN code is required";
+    } else if (!/^\d{6}$/.test(profileData.pin)) {
+      newErrors.pin = "PIN code must be 6 digits";
+    }
+
+    // Nationality
+    if (!profileData.nationality.trim()) {
+      newErrors.nationality = "Nationality is required";
+    }
+
+    // Trade
     if (!profileData.trade.trim()) {
-      newErrors.trade = "Enter trade/job title";
+      newErrors.trade = "Trade/Job Title is required";
+    }
+
+    // Summary
+    if (!profileData.summary.trim()) {
+      newErrors.summary = "Professional summary is required";
+    }
+
+    // Salary
+    if (
+      !profileData.salaryExpectation ||
+      profileData.salaryExpectation <= 0
+    ) {
+      newErrors.salaryExpectation =
+        "Expected salary must be greater than 0";
+    }
+
+    // Experience
+    if (
+      profileData.yearsOfExperience === "" ||
+      profileData.yearsOfExperience < 0
+    ) {
+      newErrors.yearsOfExperience =
+        "Enter valid years of experience";
     }
 
     setErrors(newErrors);
@@ -2302,7 +2422,7 @@ const CandidateProfilePage = () => {
     state: "",
     pin: "",
     address: "",
-    role: "",
+    // role: "",
     category: "",
     country: "IN",
     hasDisability: false,
@@ -2347,9 +2467,7 @@ const CandidateProfilePage = () => {
     if (!candidateId) return;
 
     try {
-      const response = await api.get(
-        `/api/candidate/profile/iti-info?candidateId=${candidateId}`,
-      );
+    const response = await getPersonalInfo();
 
       if (response.data.success) {
         setItiInfo(response.data.data);
@@ -2432,7 +2550,7 @@ const CandidateProfilePage = () => {
           firstName: names[0] || "",
           lastName: names.slice(1).join(" ") || "",
           mobile: profile.mobileNumber || "",
-          trade: profile.trade || profile.jobTitle || "",
+          trade: profile.role || profile.jobTitle || "",
           nationality: profile.nationality || "",
           dob: profile.dateOfBirth ? profile.dateOfBirth.split("T")[0] : "",
           gender: profile.gender || "",
@@ -2469,16 +2587,14 @@ const CandidateProfilePage = () => {
           summary: profile.professionalSummary || "",
 
           yearsOfExperience: profile.totalExperienceYears || 0,
-          trade: profile.trade || profile.jobTitle || "",
+          trade: profile.role || profile.jobTitle || "",
           nationality: profile.nationality || "",
           salaryExpectation:
             profile.expectedSalary || profile.salaryExpectation || "",
 
-          avatar:
-            getStoredProfilePhotoPreview() ||
-            (profile.profilePhotoUrl
-              ? buildProfilePhotoUrl(profile.profilePhotoUrl)
-              : prev.avatar || DEFAULT_PROFILE_PHOTO),
+          avatar: profile.profilePhotoUrl
+  ? buildProfilePhotoUrl(profile.profilePhotoUrl)
+  : DEFAULT_PROFILE_PHOTO,
         }));
         console.log(
           "Final Avatar URL:",
@@ -2500,58 +2616,85 @@ const CandidateProfilePage = () => {
   }, [loadPersonalInfo, loadAvailability]);
 
   //Update profile data to API
+
   const savePersonalInfo = async () => {
     console.log("Candidate ID:", candidateId);
     if (!candidateId) {
       showToast("Please log in again to save your profile.", "error");
       return false;
     }
-    const validatePersonalInfo = () => {
-      const newErrors = {};
+    if (!validatePersonalInfo()) {
+      return false;
+    }
+    // const validatePersonalInfo = () => {
+    //   const newErrors = {};
 
-      if (!profileData.firstName.trim()) {
-        newErrors.firstName = "Enter first name";
-      }
+    //   if (!profileData.firstName.trim()) {
+    //     newErrors.firstName = "Enter first name";
+    //   }
 
-      if (!profileData.lastName.trim()) {
-        newErrors.lastName = "Enter last name";
-      }
+    //   if (!profileData.lastName.trim()) {
+    //     newErrors.lastName = "Enter last name";
+    //   }
 
-      if (!profileData.mobile.trim()) {
-        newErrors.mobile = "Enter mobile number";
-      }
+    //   if (!profileData.mobile.trim()) {
+    //     newErrors.mobile = "Enter mobile number";
+    //   }
 
-      if (!profileData.email.trim()) {
-        newErrors.email = "Enter email address";
-      }
+    //   if (!profileData.email.trim()) {
+    //     newErrors.email = "Enter email address";
+    //   }
 
-      if (!profileData.trade.trim()) {
-        newErrors.trade = "Enter trade/job title";
-      }
+    //   if (!profileData.trade.trim()) {
+    //     newErrors.trade = "Enter trade/job title";
+    //   }
 
-      console.log("Validation Errors:", newErrors);
+    //   console.log("Validation Errors:", newErrors);
 
-      setErrors(newErrors);
+    //   setErrors(newErrors);
 
-      return Object.keys(newErrors).length === 0;
-    };
+    //   return Object.keys(newErrors).length === 0;
+    // };
     const currentPersonalInfo = {
-      firstName: profileData.firstName,
-      lastName: profileData.lastName,
-      mobile: profileData.mobile,
-      trade: profileData.trade,
-      nationality: profileData.nationality,
-      dob: profileData.dob,
-      gender: profileData.gender,
-      email: profileData.email,
-      city: profileData.city,
-      state: profileData.state,
-      pin: profileData.pin,
-      summary: profileData.summary,
-      yearsOfExperience: profileData.yearsOfExperience,
-      salaryExpectation: profileData.salaryExpectation,
-    };
+      fullName: `${profileData.firstName} ${profileData.lastName}`,
 
+      role: profileData.trade,
+
+      email: profileData.email,
+      mobileNumber: profileData.mobile,
+      countryCode: "+91",
+
+      dateOfBirth: profileData.dob,
+      gender: profileData.gender,
+      nationality: profileData.nationality,
+
+      currentCity: profileData.city,
+      currentState: profileData.state,
+      pincode: profileData.pin,
+
+      professionalSummary: profileData.summary,
+
+      totalExperienceYears: profileData.yearsOfExperience,
+      expectedSalary: profileData.salaryExpectation,
+
+      currentlyAvailableForWork: profileData.availableForWork,
+      newsletterOptIn: false,
+    };
+    console.log("Sending Payload:", currentPersonalInfo);
+    try {
+      await updatePersonalInfo(currentPersonalInfo);
+
+      showToast("Personal information updated successfully", "success");
+
+      return true;
+    } catch (error) {
+      console.error(error);
+
+      showToast("Failed to update personal information", "error");
+
+      return false;
+    }
+    console.log("SENDING DATA:", currentPersonalInfo);
     const personalChanged =
       JSON.stringify(currentPersonalInfo) !==
       JSON.stringify(initialPersonalInfo);
@@ -2630,18 +2773,11 @@ const CandidateProfilePage = () => {
   };
 
   // Upload profile photo to API
- // Upload profile photo to API
-const uploadProfile = async (file, previewUrl) => {
-  try {
-    const formData = new FormData();
-    formData.append("photo", file);
-
-    const response = await api.post(
-      `/api/candidate/profile/profile-photo?candidateId=${candidateId}`,  // ← add ?candidateId=
-      formData,
-      { headers: { "Content-Type": "multipart/form-data" } },
-    );
-    // ... rest unchanged
+  // Upload profile photo to API
+  const uploadProfile = async (file, previewUrl) => {
+    try {
+      const response = await uploadProfilePhoto(file);
+      // ... rest unchanged
 
       console.log("PHOTO UPLOADED", response.data);
 
@@ -2654,9 +2790,11 @@ const uploadProfile = async (file, previewUrl) => {
       if (uploadedPhotoUrl) {
         const uploadedAvatar = buildProfilePhotoUrl(uploadedPhotoUrl);
 
+        storeProfilePhotoPreview(uploadedAvatar);
+
         setProfileData((prev) => ({
           ...prev,
-          avatar: getStoredProfilePhotoPreview() || uploadedAvatar,
+          avatar: uploadedAvatar,
         }));
       } else if (previewUrl) {
         storeProfilePhotoPreview(previewUrl);
@@ -2694,6 +2832,7 @@ const uploadProfile = async (file, previewUrl) => {
           startDate: item.startDate ? item.startDate.split("T")[0] : "",
           endDate: item.endDate ? item.endDate.split("T")[0] : "",
           current: item.isCurrent,
+          noticePeriod: item.noticePeriod || "",
           description: item.jobDescription || "",
           isOffshore: item.isOffshore || false,
         }));
@@ -2749,9 +2888,9 @@ const uploadProfile = async (file, previewUrl) => {
       workHistory: prev.workHistory.map((work) =>
         work.id === id
           ? {
-              ...work,
-              [field]: value,
-            }
+            ...work,
+            [field]: value,
+          }
           : work,
       ),
     }));
@@ -2918,9 +3057,9 @@ const uploadProfile = async (file, previewUrl) => {
       education: prev.education.map((edu) =>
         edu.id === id
           ? {
-              ...edu,
-              [field]: value,
-            }
+            ...edu,
+            [field]: value,
+          }
           : edu,
       ),
     }));
@@ -3048,49 +3187,49 @@ const uploadProfile = async (file, previewUrl) => {
     }
   };
   //Update existing skill in API
-const saveSkill = async (skill) => {
-  try {
-    const payload = {
-      skillName: skill.name,
-      proficiencyLevel: skill.proficiency || "Beginner",
-      yearsOfExperience: Number(skill.years) || 0,
-    };
+  const saveSkill = async (skill) => {
+    try {
+      const payload = {
+        skillName: skill.name,
+        proficiencyLevel: skill.proficiency || "Beginner",
+        yearsOfExperience: Number(skill.years) || 0,
+      };
 
-    console.log("Skill Id:", skill.id);
-    console.log("Payload:", payload);
+      console.log("Skill Id:", skill.id);
+      console.log("Payload:", payload);
 
-    await updateCandidateSkill(skill.id, payload);
+      await updateCandidateSkill(skill.id, payload);
 
-    await loadSkills();
+      await loadSkills();
 
-    showToast("Skill updated", "success");
-    return true;
-  } catch (error) {
-    console.log("STATUS:", error.response?.status);
-    console.log("DATA:", error.response?.data);
-    console.log("HEADERS:", error.config?.headers);
-    console.log("REQUEST DATA:", error.config?.data);
+      showToast("Skill updated", "success");
+      return true;
+    } catch (error) {
+      console.log("STATUS:", error.response?.status);
+      console.log("DATA:", error.response?.data);
+      console.log("HEADERS:", error.config?.headers);
+      console.log("REQUEST DATA:", error.config?.data);
 
-    showToast("Failed to update skill", "error");
-    return false;
-  }
-};
+      showToast("Failed to update skill", "error");
+      return false;
+    }
+  };
 
   //Remove skill from API
   const removeSkill = async (skillId) => {
-  try {
-    await deleteSkill(skillId);
+    try {
+      await deleteSkill(skillId);
 
-    await loadSkills();
+      await loadSkills();
 
-    showToast("Skill removed", "success");
-    return true;
-  } catch (error) {
-    console.log(error.response?.data);
-    showToast("Failed to remove skill", "error");
-    return false;
-  }
-};
+      showToast("Skill removed", "success");
+      return true;
+    } catch (error) {
+      console.log(error.response?.data);
+      showToast("Failed to remove skill", "error");
+      return false;
+    }
+  };
 
   const loadLanguages = useCallback(async () => {
     if (!candidateId) return;
@@ -3141,12 +3280,12 @@ const saveSkill = async (skill) => {
   const addLanguage = async (lang) => {
     try {
       await createLanguage({
-  languageName: lang.name,
-  proficiencyLevel: lang.proficiency,
-  canRead: lang.reading,
-  canWrite: lang.writing,
-  canSpeak: lang.speaking,
-});
+        languageName: lang.name,
+        proficiencyLevel: lang.proficiency,
+        canRead: lang.reading,
+        canWrite: lang.writing,
+        canSpeak: lang.speaking,
+      });
 
       await loadLanguages();
 
@@ -3173,13 +3312,13 @@ const saveSkill = async (skill) => {
     }
 
     try {
-    await updateLanguage(lang.id, {
-  languageName: lang.name,
-  proficiencyLevel: lang.proficiency,
-  canRead: lang.reading,
-  canWrite: lang.writing,
-  canSpeak: lang.speaking,
-});
+      await updateLanguage(lang.id, {
+        languageName: lang.name,
+        proficiencyLevel: lang.proficiency,
+        canRead: lang.reading,
+        canWrite: lang.writing,
+        canSpeak: lang.speaking,
+      });
 
       await loadLanguages();
 
@@ -3195,7 +3334,7 @@ const saveSkill = async (skill) => {
   // Remove language from API
   const removeLanguage = async (languageId) => {
     try {
-     await deleteLanguage(languageId);
+      await deleteLanguage(languageId);
 
       await loadLanguages();
 
@@ -3235,10 +3374,10 @@ const saveSkill = async (skill) => {
       skillMatrix: p.skillMatrix.map((e) =>
         e.id === id
           ? {
-              ...e,
-              [field]: value,
-              isModified: true, // mark changed
-            }
+            ...e,
+            [field]: value,
+            isModified: true, // mark changed
+          }
           : e,
       ),
     }));
@@ -3364,7 +3503,10 @@ const saveSkill = async (skill) => {
       "Languages",
     ];
 
-    showToast(`${names[currentStep - 1]} saved!`, "success");
+    // Don't show a second toast for Personal Information
+    if (currentStep !== 1) {
+      showToast(`${names[currentStep - 1]} saved!`, "success");
+    }
 
     if (currentStep < TOTAL) {
       setCurrentStep((s) => s + 1);
@@ -3448,19 +3590,19 @@ const saveSkill = async (skill) => {
 
               file: docs.resume
                 ? {
-                    id: docs.resume.cvId,
-                    name: docs.resume.cvFileUrl.split("/").pop(),
-                    url: docs.resume.cvFileUrl,
-                  }
+                  id: docs.resume.cvId,
+                  name: docs.resume.cvFileUrl.split("/").pop(),
+                  url: docs.resume.cvFileUrl,
+                }
                 : null,
 
               metaLines: docs.resume
                 ? [
-                    `Status: ${docs.resume.verificationStatus}`,
-                    `Uploaded: ${new Date(
-                      docs.resume.uploadedAt,
-                    ).toLocaleDateString()}`,
-                  ]
+                  `Status: ${docs.resume.verificationStatus}`,
+                  `Uploaded: ${new Date(
+                    docs.resume.uploadedAt,
+                  ).toLocaleDateString()}`,
+                ]
                 : [],
             },
 
@@ -3474,10 +3616,10 @@ const saveSkill = async (skill) => {
               file:
                 docs.educationCertificates?.length > 0
                   ? {
-                      id: docs.educationCertificates[0].educationId,
+                    id: docs.educationCertificates[0].educationId,
 
-                      name: docs.educationCertificates[0].educationLevel,
-                    }
+                    name: docs.educationCertificates[0].educationLevel,
+                  }
                   : null,
 
               metaLines:
@@ -3494,9 +3636,9 @@ const saveSkill = async (skill) => {
 
               file: docs.passport
                 ? {
-                    id: docs.passport.passportId,
-                    name: docs.passport.passportNumber,
-                  }
+                  id: docs.passport.passportId,
+                  name: docs.passport.passportNumber,
+                }
                 : null,
             },
 
@@ -3508,9 +3650,9 @@ const saveSkill = async (skill) => {
 
               file: docs.aadhaar
                 ? {
-                    id: docs.aadhaar.aadhaarId,
-                    name: docs.aadhaar.aadhaarNumber,
-                  }
+                  id: docs.aadhaar.aadhaarId,
+                  name: docs.aadhaar.aadhaarNumber,
+                }
                 : null,
             },
           },
