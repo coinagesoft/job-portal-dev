@@ -1,28 +1,26 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import api from "@/services/api";
 
 export default function AcceptInvite() {
-  const searchParams = useSearchParams();
-
-  const token = searchParams.get("token");
-
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+
     if (!token) {
       setMessage("Invalid invitation link.");
       setLoading(false);
       return;
     }
 
-    acceptInvite();
+    acceptInvite(token);
   }, []);
 
-  const acceptInvite = async () => {
+  const acceptInvite = async (token) => {
     try {
       const { data } = await api.post(
         `/api/recruiter/sub-users/accept-invite?token=${token}`
@@ -32,7 +30,7 @@ export default function AcceptInvite() {
     } catch (err) {
       setMessage(
         err.response?.data?.message ||
-          "Unable to accept invitation."
+        "Unable to accept invitation."
       );
     } finally {
       setLoading(false);
