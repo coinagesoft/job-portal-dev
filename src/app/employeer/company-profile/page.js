@@ -5,33 +5,6 @@ import { useToast } from "@/components/Toast";
 import { useEffect } from "react";
 import companyProfileService from "@/services/recruiter/companyProfileService";
 
-const trustBadges = [
-  {
-    badge: "GST Verified",
-    status: "Approved",
-    color: "#0BAB7C",
-    bg: "#d1fae5",
-  },
-  {
-    badge: "POE Licensed",
-    status: "Approved · Exp: 31 Dec 2026",
-    color: "#0BAB7C",
-    bg: "#d1fae5",
-  },
-  {
-    badge: "RPSL Licensed",
-    status: "Pending upload",
-    color: "#d97706",
-    bg: "#fef3c7",
-  },
-  {
-    badge: "Verified Employer",
-    status: "Active",
-    color: "#ffa300",
-    bg: "#ffffff",
-  },
-];
-
 const recruitmentCards = [
   {
     id: 1,
@@ -178,6 +151,199 @@ const EditFieldModal = ({ field, value, onClose, onSave }) => {
   );
 };
 
+// Renders one labeled section of editable rows, reused across Basic Info,
+// Online Presence, Address, and Contact blocks.
+const FieldSection = ({ title, rows, company, onEdit }) => (
+  <>
+    <h4
+      className="mt-30"
+      style={{
+        color: "#122359",
+        fontWeight: 700,
+        marginBottom: "20px",
+      }}
+    >
+      {title}
+    </h4>
+    <div
+      style={{
+        background: "#ffffff",
+        borderRadius: "20px",
+        border: "1px solid rgba(18,35,89,0.06)",
+        overflow: "hidden",
+        boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
+        marginBottom: "28px",
+      }}
+    >
+      {rows.map((row, index) => (
+        <div
+          key={row.key}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "18px",
+            padding: "18px 22px",
+            borderBottom:
+              index !== rows.length - 1
+                ? "1px solid rgba(18,35,89,0.06)"
+                : "none",
+            transition: "all .35s ease",
+            border: "1px solid transparent",
+            position: "relative",
+            background: "#ffffff",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "#fffaf2";
+            e.currentTarget.style.transform = "translateY(-3px)";
+            e.currentTarget.style.borderColor = "rgba(255,153,0,0.28)";
+            e.currentTarget.style.boxShadow =
+              "0 12px 28px rgba(255,163,0,0.10)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "#ffffff";
+            e.currentTarget.style.transform = "translateY(0px)";
+            e.currentTarget.style.borderColor = "transparent";
+            e.currentTarget.style.boxShadow = "none";
+          }}
+        >
+          <div style={{ minWidth: "180px" }}>
+            <div
+              style={{
+                fontSize: "12px",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: ".5px",
+                color: "#ff9900",
+                marginBottom: "4px",
+              }}
+            >
+              {row.label}
+            </div>
+
+            <div
+              style={{
+                color: "#122359",
+                fontSize: "15px",
+                fontWeight: 600,
+                wordBreak: "break-word",
+              }}
+            >
+              {row.key === "website" ? (
+                company.website ? (
+                  <a
+                    href={`https://${company.website.replace(/^https?:\/\//, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: "#122359", textDecoration: "underline" }}
+                  >
+                    {company.website}
+                  </a>
+                ) : (
+                  "—"
+                )
+              ) : row.key === "highlights" ? (
+                Array.isArray(company.highlights) &&
+                company.highlights.length > 0
+                  ? company.highlights.join(", ")
+                  : "—"
+              ) : (
+                company[row.key] || "—"
+              )}
+            </div>
+          </div>
+
+          <button
+            className="btn btn-border btn-sm"
+            style={{
+              borderRadius: "10px",
+              padding: "8px 14px",
+              fontWeight: 600,
+              minWidth: "90px",
+              transition: "all .25s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "#122359";
+              e.currentTarget.style.color = "#ffffff";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "#ffffff";
+              e.currentTarget.style.color = "#122359";
+            }}
+            onClick={() =>
+              onEdit({
+                field: row.label,
+                key: row.key,
+                value:
+                  row.key === "highlights"
+                    ? (company.highlights || []).join(", ")
+                    : company[row.key] ?? "",
+              })
+            }
+          >
+            <i className="fi fi-rr-edit" style={{ marginRight: "5px" }} />
+            Edit
+          </button>
+        </div>
+      ))}
+    </div>
+  </>
+);
+
+// Read-only section for verification / system-managed fields — no Edit button,
+// since these come from GST/POE/RPSL verification flows or are system-set.
+const ReadOnlySection = ({ title, rows, company }) => (
+  <>
+    <h4
+      className="mt-30"
+      style={{ color: "#122359", fontWeight: 700, marginBottom: "20px" }}
+    >
+      {title}
+    </h4>
+    <div
+      style={{
+        background: "#f9fafb",
+        borderRadius: "20px",
+        border: "1px solid rgba(18,35,89,0.06)",
+        overflow: "hidden",
+        marginBottom: "28px",
+      }}
+    >
+      {rows.map((row, index) => (
+        <div
+          key={row.key}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "18px",
+            padding: "16px 22px",
+            borderBottom:
+              index !== rows.length - 1
+                ? "1px solid rgba(18,35,89,0.06)"
+                : "none",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "12px",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: ".5px",
+              color: "#66789c",
+            }}
+          >
+            {row.label}
+          </div>
+          <div style={{ color: "#122359", fontSize: "14px", fontWeight: 600 }}>
+            {String(company[row.key] ?? "—")}
+          </div>
+        </div>
+      ))}
+    </div>
+  </>
+);
+
 export default function EmployerCompanyProfilePage() {
   const showToast = useToast();
   const [activeTab, setActiveTab] = useState("about");
@@ -185,6 +351,9 @@ export default function EmployerCompanyProfilePage() {
   const [loading, setLoading] = useState(true);
   const [editModal, setEditModal] = useState(null);
   const [description, setDescription] = useState("");
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
+
   useEffect(() => {
     loadCompanyProfile();
   }, []);
@@ -196,27 +365,66 @@ export default function EmployerCompanyProfilePage() {
       const data = await companyProfileService.getCompanyProfile();
 
       setCompany({
+        // Basic info
         name: data.legalName ?? "",
-        displayName: data.companyDisplayName ?? "",
-        location: `${data.city ?? ""}, ${data.state ?? ""}`,
-        industry: data.industryType ?? "",
-        size: data.companySize ?? "",
-        founded: data.yearEstablished ?? "",
-        companyLogoUrl: data.companyLogoUrl ?? "",
-        website: data.websiteUrl ?? "",
-        phone: data.contactPhone ?? "",
-        email: data.contactEmailPublic ?? "",
-        gstNo: data.gstn ?? "",
+        legalName: data.legalName ?? "",
         tradeName: data.tradeName ?? "",
+        displayName: data.companyDisplayName ?? "",
+        companyDisplayName: data.companyDisplayName ?? "",
+        companyDescription: data.companyDescription ?? "",
+        industry: data.industryType ?? "",
+        industryType: data.industryType ?? "",
+        businessType: data.businessType ?? "",
+        size: data.companySize ?? "",
+        companySize: data.companySize ?? "",
+        founded: data.yearEstablished ?? "",
+        yearEstablished: data.yearEstablished ?? "",
+        totalEmployees: data.totalEmployees ?? "",
+        companyLogoUrl: data.companyLogoUrl ?? "",
+        coverImageUrl: data.coverImageUrl ?? "",
+        highlights: data.companyHighlights ?? [],
+        timeZone: data.timeZone ?? "",
+
+        // Online presence
+        website: data.websiteUrl ?? "",
+        websiteUrl: data.websiteUrl ?? "",
+        linkedInUrl: data.linkedInUrl ?? "",
+        instagramUrl: data.instagramUrl ?? "",
+        facebookUrl: data.facebookUrl ?? "",
+
+        // Address
+        location: `${data.city ?? ""}, ${data.state ?? ""}`,
         addressLine1: data.addressLine1 ?? "",
         addressLine2: data.addressLine2 ?? "",
         city: data.city ?? "",
         state: data.state ?? "",
         pincode: data.pincode ?? "",
         country: data.country ?? "",
+        officeAddress: data.officeAddress ?? "",
+
+        // Contact
+        phone: data.CompanyPhoneNo ?? "",
+        contactPhone: data.CompanyPhoneNo ?? "",
+        email: data.companyEmail ?? "",
+        contactEmailPublic: data.companyEmail ?? "",
         contactPersonName: data.contactPersonName ?? "",
         designation: data.designation ?? "",
         operatingHours: data.operatingHours ?? "",
+
+        // Verification & status (read-only here)
+        gstRegistered: data.gstRegistered ? "Yes" : "No",
+        gstNo: data.gstn ?? "",
+        pan: data.pan ?? "",
+        cin: data.cin ?? "",
+        accountStatus: data.accountStatus ?? "",
+        profileCompletionScore:
+          data.profileCompletionScore != null
+            ? `${data.profileCompletionScore}%`
+            : "",
+        trialExpiresAt: data.trialExpiresAt
+          ? new Date(data.trialExpiresAt).toLocaleDateString()
+          : "",
+        reviewCount: data.reviewCount ?? 0,
       });
 
       setDescription(data.companyDescription || "");
@@ -265,11 +473,24 @@ export default function EmployerCompanyProfilePage() {
         return;
       }
 
-      await companyProfileService.updateCompanyProfileField(apiField, val);
+      // CompanyHighlights is a list on the backend — split the
+      // comma-separated input back into an array before sending.
+      const payloadValue =
+        field === "highlights"
+          ? val
+              .split(",")
+              .map((v) => v.trim())
+              .filter(Boolean)
+          : val;
+
+      await companyProfileService.updateCompanyProfileField(
+        apiField,
+        payloadValue,
+      );
 
       setCompany((prev) => ({
         ...prev,
-        [field]: val,
+        [field]: payloadValue,
       }));
 
       showToast("Updated successfully", "success");
@@ -283,26 +504,122 @@ export default function EmployerCompanyProfilePage() {
     }
   };
 
-  const fieldRows = [
+  // NOTE: requires a companyProfileService.updateCompanyProfileFile(fieldKey, file)
+  // method that PATCHes multipart/form-data with the file under "CompanyLogo" or
+  // "CoverImage" (matching UpdateCompanyProfileDto field names) — not implemented
+  // yet in the service file you showed me.
+  const handleFileUpload = async (fieldKey, apiField, file, setUploading) => {
+    if (!file) return;
+
+    try {
+      setUploading(true);
+
+      const result = await companyProfileService.updateCompanyProfileFile(
+        apiField,
+        file,
+      );
+
+      setCompany((prev) => ({
+        ...prev,
+        [fieldKey]: result?.url ?? URL.createObjectURL(file),
+      }));
+
+      showToast("Image updated successfully", "success");
+    } catch (error) {
+      console.error(error);
+      showToast(
+        error?.response?.data?.message || "Failed to upload image",
+        "error",
+      );
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const basicInfoRows = [
+    { label: "Legal Name", key: "legalName" },
+    { label: "Trade Name", key: "tradeName" },
     { label: "Display Name", key: "displayName" },
     { label: "Industry", key: "industry" },
+    { label: "Business Type", key: "businessType" },
     { label: "Company Size", key: "size" },
+    { label: "Total Employees", key: "totalEmployees" },
     { label: "Founded", key: "founded" },
-    { label: "Website", key: "website" },
-    { label: "Contact Phone", key: "phone" },
-    { label: "Contact Email", key: "email" },
-    { label: "GST Number", key: "gstNo" },
+    { label: "Company Highlights", key: "highlights" },
+    { label: "Time Zone", key: "timeZone" },
   ];
 
+  const onlinePresenceRows = [
+    { label: "Website", key: "website" },
+    { label: "LinkedIn", key: "linkedInUrl" },
+    { label: "Instagram", key: "instagramUrl" },
+    { label: "Facebook", key: "facebookUrl" },
+  ];
+
+  const addressRows = [
+    { label: "Address Line 1", key: "addressLine1" },
+    { label: "Address Line 2", key: "addressLine2" },
+    { label: "City", key: "city" },
+    { label: "State", key: "state" },
+    { label: "Pincode", key: "pincode" },
+    { label: "Country", key: "country" },
+    { label: "Office Address", key: "officeAddress" },
+  ];
+
+  const contactRows = [
+    { label: "Contact Phone", key: "phone" },
+    { label: "Contact Email", key: "email" },
+    { label: "Contact Person", key: "contactPersonName" },
+    { label: "Designation", key: "designation" },
+    { label: "Operating Hours", key: "operatingHours" },
+  ];
+
+  const verificationRows = [
+    { label: "GST Registered", key: "gstRegistered" },
+    { label: "GST Number", key: "gstNo" },
+    { label: "PAN", key: "pan" },
+    { label: "CIN", key: "cin" },
+    { label: "Account Status", key: "accountStatus" },
+    { label: "Profile Completion", key: "profileCompletionScore" },
+    { label: "Trial Expires", key: "trialExpiresAt" },
+    { label: "Review Count", key: "reviewCount" },
+  ];
+
+  // Maps the row `key` used in UI state to the exact field name expected by
+  // UpdateCompanyProfileAsync's PATCH body (matches UpdateCompanyProfileDto).
   const fieldApiMap = {
+    legalName: "LegalName",
+    tradeName: "TradeName",
     displayName: "CompanyDisplayName",
-    website: "WebsiteUrl",
-    size: "CompanySize",
-    founded: "YearEstablished",
-    phone: "ContactPhone",
-    email: "ContactEmailPublic",
     companyDescription: "CompanyDescription",
+    industry: "IndustryType",
+    businessType: "BusinessType",
+    size: "CompanySize",
+    totalEmployees: "TotalEmployees",
+    founded: "YearEstablished",
+    highlights: "CompanyHighlights",
+    timeZone: "TimeZone",
+
+    website: "WebsiteUrl",
+    linkedInUrl: "LinkedInUrl",
+    instagramUrl: "InstagramUrl",
+    facebookUrl: "FacebookUrl",
+
+    addressLine1: "AddressLine1",
+    addressLine2: "AddressLine2",
+    city: "City",
+    state: "State",
+    pincode: "Pincode",
+    country: "Country",
+    officeAddress: "OfficeAddress",
+
+    phone: "CompanyPhoneNo",
+    email: "CompanyEmail",
+    contactPersonName: "ContactPersonName",
+    designation: "Designation",
+    operatingHours: "OperatingHours",
   };
+
   if (loading) {
     return (
       <div className="container py-5 text-center">
@@ -310,14 +627,15 @@ export default function EmployerCompanyProfilePage() {
       </div>
     );
   }
+
   return (
     <main className="main">
       {/* Banner */}
       <section className="section-box-2">
         <div className="container">
-          <div className="banner-hero banner-image-single">
+          <div className="banner-hero banner-image-single" style={{ position: "relative" }}>
             <img
-              src="/assets/imgs/page/company/img.png"
+              src={company?.coverImageUrl || "/assets/imgs/page/company/img.png"}
               alt="company banner"
               style={{
                 width: "100%",
@@ -326,10 +644,39 @@ export default function EmployerCompanyProfilePage() {
                 maxHeight: "220px",
               }}
             />
+            <label
+              style={{
+                position: "absolute",
+                bottom: "10px",
+                right: "10px",
+                background: "rgba(18,35,89,0.85)",
+                color: "#fff",
+                padding: "6px 12px",
+                borderRadius: "8px",
+                fontSize: "12px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              {uploadingCover ? "Uploading…" : "Change Cover"}
+              <input
+                type="file"
+                accept="image/*"
+                style={{ display: "none" }}
+                onChange={(e) =>
+                  handleFileUpload(
+                    "coverImageUrl",
+                    "CoverImage",
+                    e.target.files?.[0],
+                    setUploadingCover,
+                  )
+                }
+              />
+            </label>
           </div>
 
           <div className="box-company-profile">
-            <div className="image-compay">
+            <div className="image-compay" style={{ position: "relative" }}>
               <img
                 src={
                   company?.companyLogoUrl ||
@@ -345,6 +692,39 @@ export default function EmployerCompanyProfilePage() {
                   marginbottom: "20px",
                 }}
               />
+              <label
+                style={{
+                  position: "absolute",
+                  bottom: "0",
+                  right: "0",
+                  background: "#ffa300",
+                  color: "#fff",
+                  width: "26px",
+                  height: "26px",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  fontSize: "12px",
+                }}
+                title={uploadingLogo ? "Uploading…" : "Change Logo"}
+              >
+                <i className="fi fi-rr-edit" />
+                <input
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={(e) =>
+                    handleFileUpload(
+                      "companyLogoUrl",
+                      "CompanyLogo",
+                      e.target.files?.[0],
+                      setUploadingLogo,
+                    )
+                  }
+                />
+              </label>
             </div>
             <div className="row mt-10">
               <div className="col-lg-8 col-md-12">
@@ -381,11 +761,6 @@ export default function EmployerCompanyProfilePage() {
                   ))}
                 </div>
               </div>
-              {/* <div className="col-lg-4 col-md-12 text-lg-end">
-                <button className="btn btn-call-icon btn-apply btn-apply-big" type="button" onClick={() => showToast("Company profile saved successfully!", "success")}>
-                  Save Changes
-                </button>
-              </div> */}
             </div>
           </div>
 
@@ -440,211 +815,39 @@ export default function EmployerCompanyProfilePage() {
                     </p>
                   </div>
 
-                  <h4
-                    className="mt-30"
-                    style={{
-                      color: "#122359",
-                      fontWeight: 700,
-                      marginBottom: "20px",
-                    }}
-                  >
-                    Company Details
-                  </h4>
+                  <FieldSection
+                    title="Basic Info"
+                    rows={basicInfoRows}
+                    company={company}
+                    onEdit={setEditModal}
+                  />
 
-                  <div
-                    style={{
-                      background: "#ffffff",
-                      borderRadius: "20px",
-                      border: "1px solid rgba(18,35,89,0.06)",
-                      overflow: "hidden",
-                      boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
-                      marginBottom: "28px",
-                    }}
-                  >
-                    {fieldRows.map((row, index) => (
-                      <div
-                        key={row.key}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          gap: "18px",
-                          padding: "18px 22px",
-                          borderBottom:
-                            index !== fieldRows.length - 1
-                              ? "1px solid rgba(18,35,89,0.06)"
-                              : "none",
-                          transition: "all .35s ease",
-                          border: "1px solid transparent",
-                          position: "relative",
-                          background: "#ffffff",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = "#fffaf2";
+                  <FieldSection
+                    title="Online Presence"
+                    rows={onlinePresenceRows}
+                    company={company}
+                    onEdit={setEditModal}
+                  />
 
-                          e.currentTarget.style.transform = "translateY(-3px)";
+                  <FieldSection
+                    title="Address"
+                    rows={addressRows}
+                    company={company}
+                    onEdit={setEditModal}
+                  />
 
-                          e.currentTarget.style.borderColor =
-                            "rgba(255,153,0,0.28)";
+                  <FieldSection
+                    title="Contact"
+                    rows={contactRows}
+                    company={company}
+                    onEdit={setEditModal}
+                  />
 
-                          e.currentTarget.style.boxShadow =
-                            "0 12px 28px rgba(255,163,0,0.10)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = "#ffffff";
-
-                          e.currentTarget.style.transform = "translateY(0px)";
-
-                          e.currentTarget.style.borderColor = "transparent";
-
-                          e.currentTarget.style.boxShadow = "none";
-                        }}
-                      >
-                        <div
-                          style={{
-                            minWidth: "180px",
-                          }}
-                        >
-                          <div
-                            style={{
-                              fontSize: "12px",
-                              fontWeight: 700,
-                              textTransform: "uppercase",
-                              letterSpacing: ".5px",
-                              color: "#ff9900",
-                              marginBottom: "4px",
-                            }}
-                          >
-                            {row.label}
-                          </div>
-
-                          <div
-                            style={{
-                              color: "#122359",
-                              fontSize: "15px",
-                              fontWeight: 600,
-                              wordBreak: "break-word",
-                            }}
-                          >
-                            {row.key === "website" ? (
-                              <a
-                                href={`https://${company.website?.replace(/^https?:\/\//, "")}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{
-                                  color: "#122359",
-                                  textDecoration: "underline",
-                                }}
-                              >
-                                {company.website}
-                              </a>
-                            ) : (
-                              company[row.key]
-                            )}
-                          </div>
-                        </div>
-
-                        <button
-                          className="btn btn-border btn-sm"
-                          style={{
-                            borderRadius: "10px",
-                            padding: "8px 14px",
-                            fontWeight: 600,
-                            minWidth: "90px",
-                            transition: "all .25s ease",
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = "#122359";
-                            e.currentTarget.style.color = "#ffffff";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = "#ffffff";
-                            e.currentTarget.style.color = "#122359";
-                          }}
-                          onClick={() =>
-                            setEditModal({
-                              field: row.label,
-                              key: row.key,
-                              value: company[row.key] ?? "",
-                            })
-                          }
-                        >
-                          <i
-                            className="fi fi-rr-edit"
-                            style={{ marginRight: "5px" }}
-                          />
-                          Edit
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* <h4>Trust Badges & Compliance</h4>
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns:
-                        "repeat(auto-fill, minmax(220px, 1fr))",
-                      gap: "14px",
-                      marginBottom: "24px",
-                    }}
-                  >
-                    {trustBadges.map((b) => (
-                      <div
-                        key={b.badge}
-                        style={{
-                          padding: "16px",
-                          border: "1.5px solid #e5e7eb",
-                          borderRadius: "10px",
-                          background: b.bg,
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontWeight: "600",
-                            color: "#122359",
-                            marginBottom: "4px",
-                          }}
-                        >
-                          {b.badge}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: "12px",
-                            color: b.color,
-                            fontWeight: "500",
-                          }}
-                        >
-                          {b.status}
-                        </div>
-                        <button
-                          className="btn btn-border btn-sm"
-                          style={{ marginTop: "10px", fontSize: "11px" }}
-                          onClick={() =>
-                            showToast(
-                              `${b.badge}: ${b.status}`,
-                              b.status.includes("Pending")
-                                ? "warning"
-                                : "success",
-                            )
-                          }
-                        >
-                          View details
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                  <button
-                    className="btn btn-default btn-sm"
-                    onClick={() =>
-                      showToast(
-                        "Company profile changes saved successfully!",
-                        "success",
-                      )
-                    }
-                  >
-                    Save All Changes
-                  </button> */}
+                  <ReadOnlySection
+                    title="Verification & Status"
+                    rows={verificationRows}
+                    company={company}
+                  />
                 </div>
               )}
 
@@ -1080,19 +1283,19 @@ export default function EmployerCompanyProfilePage() {
                         value: company.location,
                       },
                       {
-                        icon: "fi-rr-dollar",
-                        label: "Salary Band",
-                        value: "INR 35k – INR 75k/month",
+                        icon: "fi-rr-briefcase",
+                        label: "Business Type",
+                        value: company.businessType,
                       },
                       {
-                        icon: "fi-rr-clock",
-                        label: "Member since",
-                        value: "Jul 2012",
+                        icon: "fi-rr-calendar",
+                        label: "Founded",
+                        value: company.founded,
                       },
                       {
-                        icon: "fi-rr-time-fast",
-                        label: "Last job posted",
-                        value: "1 day ago",
+                        icon: "fi-rr-shield-check",
+                        label: "Account Status",
+                        value: company.accountStatus,
                       },
                     ].map((item) => (
                       <li key={item.label}>
@@ -1102,7 +1305,7 @@ export default function EmployerCompanyProfilePage() {
                         <div className="sidebar-text-info">
                           <span className="text-description">{item.label}</span>
                           <strong className="small-heading">
-                            {item.value}
+                            {item.value || "—"}
                           </strong>
                         </div>
                       </li>
@@ -1111,13 +1314,10 @@ export default function EmployerCompanyProfilePage() {
                 </div>
                 <div className="sidebar-list-job">
                   <ul className="ul-disc">
-                    <li>{company.address}</li>
+                    <li>{company.addressLine1}</li>
                     <li>Phone: {company.phone}</li>
                     <li>Email: {company.email}</li>
                   </ul>
-                  {/* <div className="mt-30">
-                    <button className="btn btn-send-message" onClick={() => showToast("Message form opened. Compose your message to the employer.", "info")}>Send Message</button>
-                  </div> */}
                 </div>
               </div>
               <div

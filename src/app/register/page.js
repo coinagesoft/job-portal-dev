@@ -2071,9 +2071,16 @@ const isStep4Valid =
         <Btn variant="outline" onClick={() => setStep(2)}>
           ← Back
         </Btn>
-        <Btn variant="primary" disabled={!canGoStep4} onClick={() => setStep(4)}>
-          Continue →
-        </Btn>
+       <Btn 
+  variant="primary" 
+  disabled={!canGoStep4} 
+  onClick={async () => {
+    await saveStep3();
+    setStep(4);
+  }}
+>
+  Continue →
+</Btn>
       </div>
     </div>
   );
