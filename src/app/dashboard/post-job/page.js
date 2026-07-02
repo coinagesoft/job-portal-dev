@@ -5,6 +5,20 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import styles from "./post-job.module.css";
 
+import currencyCodes from "currency-codes";
+import countries from "world-countries";
+
+
+
+const countryOptions = countries
+  .map((country) => country.name.common)
+  .sort((a, b) => a.localeCompare(b));
+
+const currencies = currencyCodes.data.map((currency) => ({
+  value: currency.code,
+  label: `${currency.code} - ${currency.currency}`,
+}));
+
 import {
   saveJobDetails,
   saveCompensation,
@@ -31,8 +45,10 @@ const roleCategories = [
   "Other",
 ];
 const jobPostTypes = [
-  { label: "Normal Job", value: "Normal_Job" },
+  { label: "Regular Hiring", value: "Regular_Hiring" },
   { label: "Hot Vacancy", value: "Hot_Vacancy" },
+  { label: "Urgent Hiring", value: "Urgent_Hiring" },
+  { label: "Bulk Hiring", value: "Bulk_Hiring" },
   { label: "Classified", value: "Classified" },
 ];
 const employmentTypeOptions = [
@@ -210,15 +226,17 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
       <div className={styles.grid2}>
         {/* Trade Category */}
         <Field label="Trade / Role Category" required>
-          <select
-            className={`${styles.control} ${styles.selectControl}`}
+          <input
+            className={styles.control}
             value={jobForm.TradeCategory}
-            onChange={(e) => setJobForm((p) => ({ ...p, TradeCategory: e.target.value }))}
-          >
-            {roleCategories.map((v) => (
-              <option key={v}>{v}</option>
-            ))}
-          </select>
+            onChange={(e) =>
+              setJobForm((p) => ({
+                ...p,
+                TradeCategory: e.target.value,
+              }))
+            }
+            placeholder="e.g. Welding, Electrician, Plumber"
+          />
         </Field>
 
         {/* Role (optional free-text specialisation) */}
@@ -348,6 +366,13 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
         label="Key Responsibilities"
         hint="Enter each responsibility on a new line"
       >
+        <button
+          type="button"
+          className="btn btn-sm btn-default mb-10"
+          onClick={handleGenerateJD}
+        >
+          {loadingAI ? "Generating…" : "✨ Generate with AI"}
+        </button>
         <textarea
           className={styles.textarea}
           rows={4}
@@ -356,10 +381,7 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
           onChange={(e) =>
             setJobForm((p) => ({
               ...p,
-              KeyResponsibilities: e.target.value
-                .split("\n")
-                .map((s) => s.trim())
-                .filter(Boolean),
+              KeyResponsibilities: e.target.value.split("\n"),
             }))
           }
         />
@@ -367,13 +389,7 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
 
       {/* Job Description */}
       <Field label="Job Description" required>
-        <button
-          type="button"
-          className="btn btn-sm btn-default mb-10"
-          onClick={handleGenerateJD}
-        >
-          {loadingAI ? "Generating…" : "✨ Generate with AI"}
-        </button>
+
 
         <textarea
           className={styles.textarea}
@@ -426,53 +442,37 @@ function Step2({ go, jobForm, setJobForm, onSubmit }) {
       onContinue={onSubmit}
     >
       <div className={styles.grid2}>
-        <Field label="Min Salary" required>
-          <input
-            type="number"
-            min={0}
-            className={styles.control}
-            value={jobForm.SalaryMin}
-            onChange={(e) =>
-              setJobForm((p) => ({ ...p, SalaryMin: e.target.value }))
-            }
-          />
-        </Field>
 
-        <Field label="Max Salary" required>
-          <input
-            type="number"
-            min={0}
-            className={styles.control}
-            value={jobForm.SalaryMax}
-            onChange={(e) =>
-              setJobForm((p) => ({ ...p, SalaryMax: e.target.value }))
-            }
-          />
-        </Field>
-
+        {/* Currency First */}
         <Field label="Currency" required>
           <select
             className={`${styles.control} ${styles.selectControl}`}
             value={jobForm.SalaryCurrency}
             onChange={(e) =>
-              setJobForm((p) => ({ ...p, SalaryCurrency: e.target.value }))
+              setJobForm((p) => ({
+                ...p,
+                SalaryCurrency: e.target.value,
+              }))
             }
           >
-            <option value="INR">INR – Indian Rupee</option>
-            <option value="USD">USD – US Dollar</option>
-            <option value="AED">AED – UAE Dirham</option>
-            <option value="SAR">SAR – Saudi Riyal</option>
-            <option value="QAR">QAR – Qatari Riyal</option>
-            <option value="SGD">SGD – Singapore Dollar</option>
+            {currencies.map((currency) => (
+              <option key={currency.value} value={currency.value}>
+                {currency.label}
+              </option>
+            ))}
           </select>
         </Field>
 
+        {/* Display Option Second */}
         <Field label="Salary Display Option" required>
           <select
             className={`${styles.control} ${styles.selectControl}`}
             value={jobForm.SalaryDisplayOption}
             onChange={(e) =>
-              setJobForm((p) => ({ ...p, SalaryDisplayOption: e.target.value }))
+              setJobForm((p) => ({
+                ...p,
+                SalaryDisplayOption: e.target.value,
+              }))
             }
           >
             <option value="Show_Range">Show Range</option>
@@ -481,6 +481,39 @@ function Step2({ go, jobForm, setJobForm, onSubmit }) {
             <option value="Show_Max">Show Maximum Only</option>
           </select>
         </Field>
+
+        {/* Min Salary */}
+        <Field label="Min Salary" required>
+          <input
+            type="number"
+            min={0}
+            className={styles.control}
+            value={jobForm.SalaryMin}
+            onChange={(e) =>
+              setJobForm((p) => ({
+                ...p,
+                SalaryMin: e.target.value,
+              }))
+            }
+          />
+        </Field>
+
+        {/* Max Salary */}
+        <Field label="Max Salary" required>
+          <input
+            type="number"
+            min={0}
+            className={styles.control}
+            value={jobForm.SalaryMax}
+            onChange={(e) =>
+              setJobForm((p) => ({
+                ...p,
+                SalaryMax: e.target.value,
+              }))
+            }
+          />
+        </Field>
+
       </div>
     </StepCard>
   );
@@ -508,14 +541,13 @@ function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, han
         />
       </Field>
 
-      <div className={styles.chipRow}>
+      {/* <div className={styles.chipRow}>
         {suggestedSkills.map((s) => (
           <button
             key={s}
             type="button"
-            className={`btn btn-border btn-sm mr-10 mb-10 ${
-              jobForm.KeySkills.includes(s) ? "btn-brand-1" : ""
-            }`}
+            className={`btn btn-border btn-sm mr-10 mb-10 ${jobForm.KeySkills.includes(s) ? "btn-brand-1" : ""
+              }`}
             onClick={() =>
               setJobForm((p) => ({
                 ...p,
@@ -528,10 +560,10 @@ function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, han
             {s}
           </button>
         ))}
-      </div>
+      </div> */}
 
       {/* Key Responsibilities (step-3 copy — separate from step-1) */}
-      <Field
+      {/* <Field
         label="Key Responsibilities"
         hint="One per line"
       >
@@ -550,10 +582,10 @@ function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, han
             }))
           }
         />
-      </Field>
+      </Field> */}
 
       {/* Additional Job Description */}
-      <Field label="Additional Job Description">
+      {/* <Field label="Additional Job Description">
         <button
           type="button"
           className="btn btn-sm btn-default mb-10"
@@ -592,10 +624,10 @@ function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, han
             ))}
           </div>
         )}
-      </Field>
+      </Field> */}
 
       {/* Licence / Docs Required */}
-      <Field label="Licence / Documents Required">
+      <Field label="Licence / Documents Required" hint="Comma-separated list">
         <input
           className={styles.control}
           placeholder="e.g. ITI Certificate, CSWIP 3.1"
@@ -607,7 +639,7 @@ function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, han
       </Field>
 
       {/* Language Required */}
-      <Field label="Language Required">
+      <Field label="Language Required" hint="Comma-separated list">
         <input
           className={styles.control}
           placeholder="e.g. English, Hindi"
@@ -635,9 +667,8 @@ function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, han
           <button
             key={b}
             type="button"
-            className={`btn btn-border btn-sm mr-10 mb-10 ${
-              jobForm.Benefits.includes(b) ? "btn-brand-1" : ""
-            }`}
+            className={`btn btn-border btn-sm mr-10 mb-10 ${jobForm.Benefits.includes(b) ? "btn-brand-1" : ""
+              }`}
             onClick={() =>
               setJobForm((p) => ({
                 ...p,
@@ -698,7 +729,7 @@ function Step4({ go, jobForm, setJobForm, onSubmit }) {
               setJobForm((p) => ({ ...p, EducationRequired: e.target.value }))
             }
           >
-            <option value="Any">Any</option>
+            <option value="No Specific Requirement">No Specific Requirement</option>
             <option value="Below_10th">Below 10th</option>
             <option value="10th_Pass">10th Pass</option>
             <option value="12th_Pass">12th Pass</option>
@@ -742,7 +773,7 @@ function Step4({ go, jobForm, setJobForm, onSubmit }) {
               setJobForm((p) => ({ ...p, GenderPreferred: e.target.value }))
             }
           >
-            <option value="Any">Any</option>
+            <option value="Any">Not Specified</option>
             <option value="Male">Male</option>
             <option value="Female">Female</option>
           </select>
@@ -813,7 +844,7 @@ function Step4({ go, jobForm, setJobForm, onSubmit }) {
 }
 
 /* ─── STEP 5 – Location ───────────────────────────────────────────────────── */
-function Step5({ go, jobForm, setJobForm, onSubmit }) {
+function Step5({ go, jobForm, setJobForm, onSubmit , errors,}) {
   const isOnshore = jobForm.LocationType === "Onshore";
 
   return (
@@ -845,18 +876,17 @@ function Step5({ go, jobForm, setJobForm, onSubmit }) {
             className={`${styles.control} ${styles.selectControl}`}
             value={jobForm.Country}
             onChange={(e) =>
-              setJobForm((p) => ({ ...p, Country: e.target.value }))
+              setJobForm((p) => ({
+                ...p,
+                Country: e.target.value,
+              }))
             }
           >
-            <option value="India">India</option>
-            <option value="UAE">UAE</option>
-            <option value="Saudi Arabia">Saudi Arabia</option>
-            <option value="Qatar">Qatar</option>
-            <option value="Kuwait">Kuwait</option>
-            <option value="Bahrain">Bahrain</option>
-            <option value="Oman">Oman</option>
-            <option value="Singapore">Singapore</option>
-            <option value="Malaysia">Malaysia</option>
+            {countryOptions.map((country) => (
+              <option key={country} value={country}>
+                {country}
+              </option>
+            ))}
           </select>
         </Field>
 
@@ -931,12 +961,15 @@ function Step5({ go, jobForm, setJobForm, onSubmit }) {
                     OffshoreVesselName: e.target.value,
                   }))
                 }
+                
+                required
               />
             </Field>
 
             <Field label="Offshore Region" required>
-              <select
-                className={`${styles.control} ${styles.selectControl}`}
+              <input
+                className={styles.control}
+                placeholder="e.g. Arabian Gulf, North Sea, Gulf of Mexico"
                 value={jobForm.OffshoreRegion}
                 onChange={(e) =>
                   setJobForm((p) => ({
@@ -944,15 +977,7 @@ function Step5({ go, jobForm, setJobForm, onSubmit }) {
                     OffshoreRegion: e.target.value,
                   }))
                 }
-              >
-                <option value="">Select Region</option>
-                <option value="Arabian Gulf">Arabian Gulf</option>
-                <option value="North Sea">North Sea</option>
-                <option value="South China Sea">South China Sea</option>
-                <option value="Indian Ocean">Indian Ocean</option>
-                <option value="Gulf of Mexico">Gulf of Mexico</option>
-                <option value="West Africa">West Africa</option>
-              </select>
+              />
             </Field>
 
             <Field label="Offshore Country">
@@ -977,17 +1002,17 @@ function Step5({ go, jobForm, setJobForm, onSubmit }) {
 
 /* ─── STEP 6 – Screening Questions ───────────────────────────────────────── */
 function Step6({ go, jobForm, setJobForm, onSubmit }) {
- const addQuestion = () => {
-  setJobForm((p) => ({
-    ...p,
-    questions: [
-      ...p.questions,
-      {
-        questionText: "",
-      },
-    ],
-  }));
-};
+  const addQuestion = () => {
+    setJobForm((p) => ({
+      ...p,
+      questions: [
+        ...p.questions,
+        {
+          questionText: "",
+        },
+      ],
+    }));
+  };
 
   const removeQuestion = (index) => {
     setJobForm((p) => ({
@@ -1033,11 +1058,6 @@ function Step6({ go, jobForm, setJobForm, onSubmit }) {
               placeholder="e.g. Do you have a valid CSWIP 3.1 certificate?"
             />
           </Field>
-
-         
-
-         
-
           {jobForm.questions.length > 1 && (
             <button
               type="button"
@@ -1157,16 +1177,19 @@ function Step7({ go, jobForm, setJobForm, onSubmit }) {
 
       {/* Publishing Tags */}
       <Field label="Publishing Tags" hint="Select all that apply">
-        <div className={styles.chipRow}>
+        <div className={styles.chipRow} style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "10px",
+        }}>
           {availableTags.map((tag) => (
             <button
               key={tag}
               type="button"
-              className={`btn btn-sm ${
-                jobForm.PublishingTags.includes(tag)
-                  ? "btn-brand-1"
-                  : "btn-border"
-              }`}
+              className={`btn btn-sm ${jobForm.PublishingTags.includes(tag)
+                ? "btn-brand-1"
+                : "btn-border"
+                }`}
               onClick={() => toggleTag(tag)}
             >
               {tag}
@@ -1191,6 +1214,7 @@ export default function DashboardPostJobPage() {
   const [loadingAI, setLoadingAI] = useState(false);
   const [jobId, setJobId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
   /* ── initial state – every API field present ── */
   const [jobForm, setJobForm] = useState({
@@ -1247,11 +1271,11 @@ export default function DashboardPostJobPage() {
     OffshoreCountry: "",
 
     // Step 6
-  questions: [
-  {
-    questionText: "",
-  },
-],
+    questions: [
+      {
+        questionText: "",
+      },
+    ],
 
     // Step 7
     ApplicationDeadline: "",
@@ -1362,8 +1386,8 @@ export default function DashboardPostJobPage() {
     questions: response.step6Data?.questions?.length
       ? response.step6Data.questions
       : [{
-  questionText: "",
-}],
+        questionText: "",
+      }],
 
     // Step 7 – publishing data isn't returned in resume, keep defaults
     ApplicationDeadline: "",
@@ -1375,12 +1399,19 @@ export default function DashboardPostJobPage() {
   const loadJobForEdit = async (id) => {
     try {
       const response = await getJobResume(id);
+
+      console.log("FULL RESPONSE:", response);
+      console.log("STEP 3 DATA:", response.step3Data);
+      console.log("BENEFITS:", response.step3Data?.benefits);
+
       setJobId(id);
       setJobForm((prev) => ({ ...prev, ...mapResumeToForm(response) }));
+
       const nextStep =
         response.stepStatus?.lastCompletedStep >= 7
           ? 7
           : (response.stepStatus?.lastCompletedStep ?? 0) + 1;
+
       setActiveStep(nextStep);
     } catch (error) {
       console.error("loadJobForEdit:", error);
@@ -1391,15 +1422,25 @@ export default function DashboardPostJobPage() {
     try {
       const draft = localStorage.getItem("jobDraft");
       if (!draft) return;
+
       const parsed = JSON.parse(draft);
       if (!parsed?.jobId) return;
+
       setJobId(parsed.jobId);
+
       const response = await getJobResume(parsed.jobId);
+
+      console.log("FULL RESPONSE:", response);
+      console.log("STEP 3 DATA:", response.step3Data);
+      console.log("BENEFITS:", response.step3Data?.benefits);
+
       setJobForm((prev) => ({ ...prev, ...mapResumeToForm(response) }));
+
       const nextStep =
         response.stepStatus.lastCompletedStep >= 7
           ? 7
           : response.stepStatus.lastCompletedStep + 1;
+
       setActiveStep(nextStep);
     } catch (error) {
       console.error("loadDraft:", error);
@@ -1572,6 +1613,11 @@ export default function DashboardPostJobPage() {
   const handleStep3 = async () => {
     setLoading(true);
     try {
+      console.log("Saving Step 3:", {
+        Benefits: jobForm.Benefits,
+        Tags: jobForm.Tags,
+        KeySkills: jobForm.KeySkills,
+      });
       const response = await saveSkills(jobId, {
         KeySkills: jobForm.KeySkills,
         KeyResponsibilities: jobForm.Step3KeyResponsibilities,
@@ -1615,9 +1661,26 @@ export default function DashboardPostJobPage() {
       setLoading(false);
     }
   };
+  
 
   const handleStep5 = async () => {
     if (!jobForm.LocationType) return alert("Location Type is required");
+     if (
+  jobForm.LocationType === "Offshore" &&
+  !jobForm.OffshoreVesselName.trim()
+) {
+  setErrors((prev) => ({
+    ...prev,
+    OffshoreVesselName: "Vessel / Platform Name is required",
+  }));
+
+  return;
+}
+
+setErrors((prev) => ({
+  ...prev,
+  OffshoreVesselName: "",
+}));
 
     setLoading(true);
     try {
@@ -1643,27 +1706,27 @@ export default function DashboardPostJobPage() {
     }
   };
 
-const handleStep6 = async () => {
-  setLoading(true);
+  const handleStep6 = async () => {
+    setLoading(true);
 
-  try {
-    const response = await saveQuestions(jobId, {
-      questions: jobForm.questions
-        .filter((q) => q.questionText.trim() !== "")
-        .map((q) => ({
-          questionText: q.questionText,
-        })),
-    });
+    try {
+      const response = await saveQuestions(jobId, {
+        questions: jobForm.questions
+          .filter((q) => q.questionText.trim() !== "")
+          .map((q) => ({
+            questionText: q.questionText,
+          })),
+      });
 
-    updateDraft(response);
-    go(7);
-  } catch (error) {
-    console.error("Step 6:", error?.response?.data ?? error);
-    alert("Failed to save questions. Please try again.");
-  } finally {
-    setLoading(false);
-  }
-};
+      updateDraft(response);
+      go(7);
+    } catch (error) {
+      console.error("Step 6:", error?.response?.data ?? error);
+      alert("Failed to save questions. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleStep7 = async () => {
     if (!jobForm.ApplicationDeadline)
@@ -1757,7 +1820,8 @@ const handleStep6 = async () => {
                   go={go}
                   jobForm={jobForm}
                   setJobForm={setJobForm}
-                  onSubmit={stepHandlers[activeStep - 1] ?? (() => {})}
+                    errors={errors}
+                  onSubmit={stepHandlers[activeStep - 1] ?? (() => { })}
                   handleGenerateJD={handleGenerateJD}
                   handleGenerateAdditionalJD={handleGenerateAdditionalJD}
                   loadingAI={loadingAI}
