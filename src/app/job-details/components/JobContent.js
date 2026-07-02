@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import ApplyJobModal from '@/app/Homepage/components/ApplyJobModal';
-import { detailedJob } from '../data.js';
 
 import { saveJob } from "@/services/candidate/savedJobsService";
 import { useToast } from "@/components/Toast";
@@ -25,7 +24,7 @@ const badgeStyle = {
   marginBottom: '6px',
 };
 
-const JobContent = ({ job = detailedJob }) => {
+const JobContent = ({ job = {}, isApplied = false, onApplied }) => {
   const [showModal, setShowModal] = useState(false);
   const toggleModal = () => setShowModal(!showModal);
 
@@ -162,11 +161,21 @@ const JobContent = ({ job = detailedJob }) => {
       <div className="single-apply-jobs">
         <div className="row align-items-center">
           <div className="col-md-5">
-            <a className="btn btn-default mr-15" href="#" onClick={(event) => {
-              event.preventDefault();
-              toggleModal();
-            }}>Apply now</a>
-      
+            {isApplied ? (
+              <span
+                className="btn btn-default mr-15"
+                style={{ opacity: 0.6, cursor: 'default', pointerEvents: 'none' }}
+                aria-disabled="true"
+              >
+                Applied
+              </span>
+            ) : (
+              <a className="btn btn-default mr-15" href="#" onClick={(event) => {
+                event.preventDefault();
+                toggleModal();
+              }}>Apply now</a>
+            )}
+
             <button
               type="button" 
               className="btn btn-border"
@@ -184,7 +193,11 @@ const JobContent = ({ job = detailedJob }) => {
           </div>
         </div>
       </div>
-      <ApplyJobModal showModal={showModal} setShowModal={setShowModal} job={job} />
+      <ApplyJobModal
+        showModal={showModal}
+        setShowModal={(v) => { setShowModal(v); if (!v) onApplied?.(); }}
+        job={job}
+      />
     </div>
   );
 };

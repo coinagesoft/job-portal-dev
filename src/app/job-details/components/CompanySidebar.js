@@ -1,13 +1,18 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { detailedJob } from '../data.js';
 
 import { getAllJobs } from '@/services/candidate/allJobsService';
 
-const CompanySidebar = ({ job = detailedJob }) => {
+const CompanySidebar = ({ job = {} }) => {
   const [isShortlisted, setIsShortlisted] = useState(false);
   const [similarJobs, setSimilarJobs] = useState([]);
+
+  const humanize = (value) => {
+    if (value === null || value === undefined) return value;
+    if (typeof value !== 'string') return value;
+    return value.replace(/_/g, ' ');
+  };
 
   const formatHourlyPrice = (value) => {
     const text = String(value || '').trim();
@@ -52,15 +57,21 @@ const CompanySidebar = ({ job = detailedJob }) => {
               />
             </figure>
             <div className="sidebar-info">
-              <span className="sidebar-company">{job.companyFull}</span>
-              <span className="card-location">
-                <i className="fa-solid fa-location-dot mr-5" style={{ color: 'var(--color-brand-1)' }}></i>
-                {job.location}
-              </span>
-              <a className="link-underline mt-15" href="#">
-                <i className="fa-solid fa-briefcase mr-5"></i>
-                {job.openJobs} Open Jobs
-              </a>
+              {job.companyFull && (
+                <span className="sidebar-company">{job.companyFull}</span>
+              )}
+              {job.location && (
+                <span className="card-location">
+                  <i className="fa-solid fa-location-dot mr-5" style={{ color: 'var(--color-brand-1)' }}></i>
+                  {job.location}
+                </span>
+              )}
+              {job.openJobs != null && (
+                <a className="link-underline mt-15" href="#">
+                  <i className="fa-solid fa-briefcase mr-5"></i>
+                  {job.openJobs} Open Jobs
+                </a>
+              )}
             </div>
           </div>
         </div>
@@ -78,8 +89,22 @@ const CompanySidebar = ({ job = detailedJob }) => {
           <ul>
             {similarJobs.map((item) => (
               <li key={item.jobId}>
-                <div className="card-list-4 hover-up">
-                  <div className="image">
+                <div
+                  className="card-list-4 hover-up"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '12px',
+                  }}
+                >
+                  <div
+                    className="image"
+                    style={{
+                      flex: '0 0 auto',
+                      width: '48px',
+                      height: '48px',
+                    }}
+                  >
                     <Link href={`/job-details?jobId=${item.jobId}`}>
                       <img
                         src={
@@ -87,11 +112,18 @@ const CompanySidebar = ({ job = detailedJob }) => {
                           "/assets/imgs/page/homepage1/img1.png"
                         }
                         alt="jobBox"
+                        style={{
+                          width: '48px',
+                          height: '48px',
+                          objectFit: 'cover',
+                          borderRadius: '8px',
+                          border: '1px solid rgba(18, 35, 89, 0.08)',
+                        }}
                       />
                     </Link>
                   </div>
 
-                  <div className="info-text">
+                  <div className="info-text" style={{ flex: '1 1 auto', minWidth: 0 }}>
                     <h5 className="font-md font-bold color-brand-1">
                       <Link href={`/job-details?jobId=${item.jobId}`}>
                         {item.jobTitle}
@@ -100,7 +132,7 @@ const CompanySidebar = ({ job = detailedJob }) => {
 
                     <div className="mt-0">
                       <span className="card-briefcase">
-                        {item.employmentType}
+                        {humanize(item.employmentType)}
                       </span>
 
                       <span className="card-time">
@@ -113,7 +145,7 @@ const CompanySidebar = ({ job = detailedJob }) => {
                       <div className="row">
                         <div className="col-6">
                           <h6 className="card-price">
-                            {item.salaryDisplay || "Confidential"}
+                            {item.salaryRange || "Confidential"}
                           </h6>
                         </div>
 

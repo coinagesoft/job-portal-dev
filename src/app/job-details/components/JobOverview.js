@@ -1,6 +1,5 @@
 'use client';
 import React from 'react';
-import { detailedJob } from '../data.js';
 
 const iconMap = {
   industry: '/assets/imgs/page/job-single/industry.svg',
@@ -13,37 +12,42 @@ const iconMap = {
   location: '/assets/imgs/page/job-single/location.svg',
 };
 
-const JobOverview = ({ job = detailedJob }) => {
+const JobOverview = ({ job = {} }) => {
+  // Backend enum values come through as PascalCase_With_Underscores
+  // (e.g. "Full_Time", "Onshore"). Convert to readable text for display
+  // without changing the underlying data anywhere else in the app.
+  const humanize = (value) => {
+    if (value === null || value === undefined) return value;
+    if (Array.isArray(value)) return value.map(humanize).join(", ");
+    if (typeof value !== "string") return value;
+    return value.replace(/_/g, " ");
+  };
+
   const infoItems = [
     {
       icon: "industry",
       label: "Trade Category",
-      value: job.tradeCategory,
+      value: humanize(job.tradeCategory),
     },
     {
       icon: "industry",
       label: "Department",
-      value: job.department,
+      value: humanize(job.department),
     },
     {
       icon: "jobType",
       label: "Employment Type",
-      value: job.employmentType,
+      value: humanize(job.employmentType),
     },
     {
       icon: "location",
       label: "Employment Mode",
-      value: job.employmentMode,
-    },
-    {
-      icon: "jobType",
-      label: "Job Type",
-      value: job.jobType,
+      value: humanize(job.employmentMode),
     },
     {
       icon: "location",
       label: "Location Type",
-      value: job.locationType,
+      value: humanize(job.locationType),
     },
     {
       icon: "salary",
@@ -54,24 +58,29 @@ const JobOverview = ({ job = detailedJob }) => {
       icon: "experience",
       label: "Experience",
       value:
-        job.experienceMaxYears > 0
-          ? `${job.experienceMinYears}-${job.experienceMaxYears} Years`
-          : `${job.experienceMinYears}+ Years`,
+        job.experienceMinYears != null && job.experienceMaxYears != null
+          ? job.experienceMaxYears > 0
+            ? `${job.experienceMinYears}-${job.experienceMaxYears} Years`
+            : `${job.experienceMinYears}+ Years`
+          : null,
     },
     {
       icon: "industry",
       label: "Education",
-      value: job.educationRequired,
+      value: humanize(job.educationRequired),
     },
     {
       icon: "experience",
       label: "Age Range",
-      value: `${job.ageMin}-${job.ageMax} Years`,
+      value:
+        job.ageMin != null && job.ageMax != null
+          ? `${job.ageMin}-${job.ageMax} Years`
+          : null,
     },
     {
       icon: "jobType",
       label: "Gender Preference",
-      value: job.genderPreferred,
+      value: humanize(job.genderPreferred),
     },
     {
       icon: "location",
@@ -81,7 +90,7 @@ const JobOverview = ({ job = detailedJob }) => {
     {
       icon: "industry",
       label: "Certificates",
-      value: job.requiredLicencesCertificates,
+      value: humanize(job.requiredLicencesCertificates),
     },
     {
       icon: "jobLevel",
