@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import ApplyJobModal from '@/app/Homepage/components/ApplyJobModal';
-import { detailedJob } from '../data.js';
 
 import { saveJob } from "@/services/candidate/savedJobsService";
 import { useToast } from "@/components/Toast";
@@ -25,7 +24,95 @@ const badgeStyle = {
   marginBottom: '6px',
 };
 
-const JobContent = ({ job = detailedJob }) => {
+// Job descriptions often come as one plain-text blob with inline section
+// labels like "Key Responsibilities:", "Requirements:", "What We Offer:"
+// and "•" bullet lines. Rendered as a single <p>, those labels look
+// identical to normal sentences. This splits the text into headings,
+// bullet lists, and paragraphs so the structure the recruiter already
+// wrote is actually visible.
+const renderJobDescription = (text) => {
+  if (!text) return null;
+
+  const headingPattern = /^[A-Za-z][A-Za-z0-9 &/'-]{2,45}:$/;
+  const bulletPattern = /^[•\-*]\s*(.*)$/;
+
+  const lines = text.split(/\r?\n/);
+  const blocks = [];
+  let currentList = [];
+
+  const flushList = (key) => {
+    if (currentList.length === 0) return;
+    blocks.push(
+      <ul key={`list-${key}`} style={{ paddingLeft: '20px', marginBottom: '14px' }}>
+        {currentList.map((item, i) => (
+          <li key={i} style={{ marginBottom: '6px', lineHeight: 1.6 }}>
+            {item}
+          </li>
+        ))}
+      </ul>
+    );
+    currentList = [];
+  };
+
+  lines.forEach((rawLine, index) => {
+    const line = rawLine.trim();
+
+    if (!line) {
+      flushList(index);
+      return;
+    }
+
+    const bulletMatch = line.match(bulletPattern);
+    if (bulletMatch) {
+      currentList.push(bulletMatch[1]);
+      return;
+    }
+
+    flushList(index);
+
+    if (headingPattern.test(line)) {
+      blocks.push(
+        <h6
+          key={`heading-${index}`}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            marginTop: blocks.length === 0 ? 0 : '18px',
+            marginBottom: '8px',
+            color: '#122359',
+            fontWeight: 700,
+            fontSize: '15px',
+          }}
+        >
+          <span
+            style={{
+              width: '4px',
+              height: '16px',
+              borderRadius: '2px',
+              background: '#ffa300',
+              display: 'inline-block',
+              flexShrink: 0,
+            }}
+          ></span>
+          {line}
+        </h6>
+      );
+    } else {
+      blocks.push(
+        <p key={`p-${index}`} style={{ marginBottom: '10px', lineHeight: 1.7 }}>
+          {line}
+        </p>
+      );
+    }
+  });
+
+  flushList('end');
+
+  return blocks;
+};
+
+const JobContent = ({ job = {}, isApplied = false, onApplied }) => {
   const [showModal, setShowModal] = useState(false);
   const toggleModal = () => setShowModal(!showModal);
 
@@ -114,45 +201,193 @@ const JobContent = ({ job = detailedJob }) => {
       <div className="job-content">
 
   {/* Job Description */}
-  <h5>Job Description</h5>
-  <p style={{ whiteSpace: "pre-line" }}>
-    {job.jobDescription}
-  </p>
+  <div
+    style={{
+      background: '#ffffff',
+      border: '1px solid rgba(18,35,89,0.08)',
+      borderRadius: '16px',
+      padding: '22px 24px',
+      marginBottom: '24px',
+      boxShadow: '0 4px 14px rgba(18,35,89,0.04)',
+    }}
+  >
+    <h5 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <span
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '34px',
+          height: '34px',
+          borderRadius: '10px',
+          background: '#FFF3E0',
+          color: '#ff9900',
+          flexShrink: 0,
+        }}
+      >
+        <i className="fa-solid fa-file-lines"></i>
+      </span>
+      Job Description
+    </h5>
+    <div style={{ marginTop: '12px' }}>
+      {renderJobDescription(job.jobDescription)}
+    </div>
+  </div>
 
   {/* Key Responsibilities */}
   {job.keyResponsibilities?.length > 0 && (
-    <>
-      <h5 className="mt-4">Key Responsibilities</h5>
-      <ul>
+    <div
+      style={{
+        background: '#ffffff',
+        border: '1px solid rgba(18,35,89,0.08)',
+        borderRadius: '16px',
+        padding: '22px 24px',
+        marginBottom: '24px',
+        boxShadow: '0 4px 14px rgba(18,35,89,0.04)',
+      }}
+    >
+      <h5 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '34px',
+            height: '34px',
+            borderRadius: '10px',
+            background: '#EAF2FF',
+            color: '#1D4ED8',
+            flexShrink: 0,
+          }}
+        >
+          <i className="fa-solid fa-list-check"></i>
+        </span>
+        Key Responsibilities
+      </h5>
+      <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {job.keyResponsibilities.map((item, index) => (
-          <li key={index}>{item}</li>
+          <div key={index} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '20px',
+                height: '20px',
+                borderRadius: '50%',
+                background: '#1D4ED8',
+                color: '#ffffff',
+                fontSize: '10px',
+                flexShrink: 0,
+                marginTop: '3px',
+              }}
+            >
+              <i className="fa-solid fa-check"></i>
+            </span>
+            <span style={{ lineHeight: 1.6 }}>{item}</span>
+          </div>
         ))}
-      </ul>
-    </>
+      </div>
+    </div>
   )}
 
   {/* Professional Skills */}
   {job.professionalSkills?.length > 0 && (
-    <>
-      <h5 className="mt-4">Professional Skills</h5>
-      <ul>
+    <div
+      style={{
+        background: '#ffffff',
+        border: '1px solid rgba(18,35,89,0.08)',
+        borderRadius: '16px',
+        padding: '22px 24px',
+        marginBottom: '24px',
+        boxShadow: '0 4px 14px rgba(18,35,89,0.04)',
+      }}
+    >
+      <h5 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '34px',
+            height: '34px',
+            borderRadius: '10px',
+            background: '#F0FBF3',
+            color: '#178A4C',
+            flexShrink: 0,
+          }}
+        >
+          <i className="fa-solid fa-star"></i>
+        </span>
+        Professional Skills
+      </h5>
+      <div style={{ marginTop: '14px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
         {job.professionalSkills.map((skill, index) => (
-          <li key={index}>{skill}</li>
+          <span
+            key={index}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '7px 14px',
+              borderRadius: 999,
+              background: '#F0FBF3',
+              border: '1px solid #B7E8C2',
+              color: '#178A4C',
+              fontSize: '13px',
+              fontWeight: 600,
+            }}
+          >
+            {skill}
+          </span>
         ))}
-      </ul>
-    </>
+      </div>
+    </div>
   )}
 
   {/* Perks & Benefits */}
   {job.perksAndBenefits?.length > 0 && (
-    <>
-      <h5 className="mt-4">Perks & Benefits</h5>
-      <ul>
+    <div
+      style={{
+        background: '#ffffff',
+        border: '1px solid rgba(18,35,89,0.08)',
+        borderRadius: '16px',
+        padding: '22px 24px',
+        marginBottom: '24px',
+        boxShadow: '0 4px 14px rgba(18,35,89,0.04)',
+      }}
+    >
+      <h5 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '34px',
+            height: '34px',
+            borderRadius: '10px',
+            background: '#FEF3E2',
+            color: '#B15C00',
+            flexShrink: 0,
+          }}
+        >
+          <i className="fa-solid fa-gift"></i>
+        </span>
+        Perks &amp; Benefits
+      </h5>
+      <div className="row" style={{ marginTop: '14px' }}>
         {job.perksAndBenefits.map((perk, index) => (
-          <li key={index}>{perk}</li>
+          <div key={index} className="col-md-6" style={{ marginBottom: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+              <i
+                className="fa-solid fa-circle-check"
+                style={{ color: '#B15C00', marginTop: '4px', flexShrink: 0 }}
+              ></i>
+              <span style={{ lineHeight: 1.6 }}>{perk}</span>
+            </div>
+          </div>
         ))}
-      </ul>
-    </>
+      </div>
+    </div>
   )}
 
 </div>
@@ -162,11 +397,21 @@ const JobContent = ({ job = detailedJob }) => {
       <div className="single-apply-jobs">
         <div className="row align-items-center">
           <div className="col-md-5">
-            <a className="btn btn-default mr-15" href="#" onClick={(event) => {
-              event.preventDefault();
-              toggleModal();
-            }}>Apply now</a>
-      
+            {isApplied ? (
+              <span
+                className="btn btn-default mr-15"
+                style={{ opacity: 0.6, cursor: 'default', pointerEvents: 'none' }}
+                aria-disabled="true"
+              >
+                Applied
+              </span>
+            ) : (
+              <a className="btn btn-default mr-15" href="#" onClick={(event) => {
+                event.preventDefault();
+                toggleModal();
+              }}>Apply now</a>
+            )}
+
             <button
               type="button" 
               className="btn btn-border"
@@ -184,7 +429,11 @@ const JobContent = ({ job = detailedJob }) => {
           </div>
         </div>
       </div>
-      <ApplyJobModal showModal={showModal} setShowModal={setShowModal} job={job} />
+      <ApplyJobModal
+        showModal={showModal}
+        setShowModal={(v) => { setShowModal(v); if (!v) onApplied?.(); }}
+        job={job}
+      />
     </div>
   );
 };

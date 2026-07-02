@@ -30,10 +30,10 @@ import {
 // Shared helpers
 // ─────────────────────────────────────────────
 const COUNTRY_CODES = [
-  { code: "+91", label: "🇮🇳 +91" },
-  { code: "+1", label: "🇺🇸 +1" },
-  { code: "+44", label: "🇬🇧 +44" },
-  { code: "+971", label: "🇦🇪 +971" },
+  { code: "+91", label: "🇮🇳 +91", minLen: 10, maxLen: 10 },
+  { code: "+1", label: "🇺🇸 +1", minLen: 10, maxLen: 10 },
+  { code: "+44", label: "🇬🇧 +44", minLen: 10, maxLen: 10 },
+  { code: "+971", label: "🇦🇪 +971", minLen: 9, maxLen: 9 },
 ];
 
 const INDUSTRIES = [
@@ -67,6 +67,18 @@ const STATES = [
   "West Bengal",
   "Other",
 ];
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const isValidEmail = (email) => EMAIL_REGEX.test(email.trim());
+
+const getCountryMeta = (code) =>
+  COUNTRY_CODES.find((c) => c.code === code) || COUNTRY_CODES[0];
+
+const isValidMobile = (mobile, countryCode) => {
+  const digits = mobile.replace(/\D/g, "");
+  const meta = getCountryMeta(countryCode);
+  return digits.length >= meta.minLen && digits.length <= meta.maxLen;
+};
 
 const TOTAL_EMP_STEPS = 5;
 const EMPLOYER_UI_PREVIEW_MODE = false;
@@ -296,15 +308,23 @@ function MobileOtpField({
   resendMobileOtp,
 }) {
   const { sent, verified, userVal } = otp;
-  const showToast = useToast();
+  const meta = getCountryMeta(countryCode);
+  const digitsOnly = mobile.replace(/\D/g, "");
+  const touched = digitsOnly.length > 0;
+  const mobileValid = isValidMobile(mobile, countryCode);
+  const showMobileError = touched && !verified && !mobileValid;
 
   return (
     <div>
-      {/* Mobile input row with tick */}
       <div style={{ display: "flex", gap: 8 }}>
         <Select
           value={countryCode}
-          onChange={(e) => onCountryCodeChange(e.target.value)}
+          onChange={(e) => {
+            onCountryCodeChange(e.target.value);
+            // re-trim number to new country's max length
+            const newMeta = getCountryMeta(e.target.value);
+            onMobileChange(digitsOnly.slice(0, newMeta.maxLen));
+          }}
           style={{ width: 110, flexShrink: 0 }}
         >
           {COUNTRY_CODES.map((c) => (
@@ -316,10 +336,16 @@ function MobileOtpField({
         <div style={{ position: "relative", flex: 1 }}>
           <Input
             type="tel"
-            maxLength={10}
-            placeholder="9876543210"
+            maxLength={meta.maxLen}
+            placeholder={`${meta.minLen}-digit number`}
             value={mobile}
-            onChange={(e) => onMobileChange(e.target.value)}
+            disabled={verified}
+            error={showMobileError}
+            onChange={(e) =>
+              onMobileChange(
+                e.target.value.replace(/\D/g, "").slice(0, meta.maxLen)
+              )
+            }
             style={{ paddingRight: verified ? 40 : undefined }}
           />
           {verified && (
@@ -348,29 +374,19 @@ function MobileOtpField({
         </div>
       </div>
 
-      {/* OTP row */}
+      {showMobileError && (
+        <p style={{ fontSize: "var(--font-xs)", color: "#E24B4A", marginTop: 4 }}>
+          Enter a valid {meta.minLen === meta.maxLen ? meta.minLen : `${meta.minLen}-${meta.maxLen}`}-digit number for {meta.code}
+        </p>
+      )}
+
       {!verified && (
-        <div
-          style={{
-            marginTop: 8,
-            display: "flex",
-            gap: 8,
-            alignItems: "center",
-          }}
-        >
+        <div style={{ marginTop: 8, display: "flex", gap: 8, alignItems: "center" }}>
           <Btn
             variant="ghost"
-            disabled={mobile.length < 10 || verified}
-            onClick={() => {
-              if (sent) resendMobileOtp();
-              else sendMobileOtp();
-            }}
-            style={{
-              flexShrink: 0,
-              fontSize: "var(--font-xs)",
-              padding: "0 12px",
-              height: 38,
-            }}
+            disabled={!mobileValid || verified}
+            onClick={() => (sent ? resendMobileOtp() : sendMobileOtp())}
+            style={{ flexShrink: 0, fontSize: "var(--font-xs)", padding: "0 12px", height: 38 }}
           >
             {sent ? "Resend OTP" : "Send OTP"}
           </Btn>
@@ -382,7 +398,7 @@ function MobileOtpField({
                 placeholder="Enter OTP"
                 value={userVal}
                 onChange={(e) =>
-                  onOtpStateChange({ ...otp, userVal: e.target.value })
+                  onOtpStateChange({ ...otp, userVal: e.target.value.replace(/\D/g, "") })
                 }
                 style={{ height: 38, flex: 1 }}
               />
@@ -390,12 +406,7 @@ function MobileOtpField({
                 variant="primary"
                 disabled={userVal.length !== 6}
                 onClick={verifyMobileOtp}
-                style={{
-                  flexShrink: 0,
-                  fontSize: "var(--font-xs)",
-                  padding: "0 14px",
-                  height: 38,
-                }}
+                style={{ flexShrink: 0, fontSize: "var(--font-xs)", padding: "0 14px", height: 38 }}
               >
                 Verify
               </Btn>
@@ -1241,11 +1252,14 @@ function EmployerForm() {
   const isStep2Valid = data.hasGst !== null && data.industry;
   const isStep3Valid =
     data.legalName && data.state && data.city && data.pincode;
-  const isStep4Valid =
-    data.contactName &&
-    data.designation &&
-    data.mobileOtp.verified &&
-    data.corpEmailOtp.verified;
+const isStep4Valid =
+  data.contactName &&
+  data.designation &&
+  isValidEmail(data.contactPersonEmail) &&
+  isValidEmail(data.corpEmail) &&
+  isValidMobile(data.mobile, data.countryCode) &&
+  data.mobileOtp.verified &&
+  data.corpEmailOtp.verified;
   const canGoStep2 = EMPLOYER_UI_PREVIEW_MODE || isStep2Valid;
   const canGoStep3 = EMPLOYER_UI_PREVIEW_MODE || isStep3Valid;
   const canGoStep4 = EMPLOYER_UI_PREVIEW_MODE || isStep4Valid;
@@ -1932,7 +1946,13 @@ function EmployerForm() {
     }
   };
   // ── Step 3: Contact & OTP ─────────────────
-  const renderStep3 = () => (
+ const renderStep3 = () => {
+  const contactEmailTouched = data.contactPersonEmail.length > 0;
+  const contactEmailValid = isValidEmail(data.contactPersonEmail);
+  const corpEmailTouched = data.corpEmail.length > 0;
+  const corpEmailValid = isValidEmail(data.corpEmail);
+
+  return (
     <div>
       <h3
         style={{
@@ -1960,31 +1980,50 @@ function EmployerForm() {
             placeholder="HR Manager"
           />
         </Field>
-        <Field label="Contact Person Email" required>
+        <Field
+          label="Contact Person Email"
+          required
+          error={
+            contactEmailTouched && !contactEmailValid
+              ? "Enter a valid email address"
+              : null
+          }
+        >
           <Input
             type="email"
             value={data.contactPersonEmail}
-            onChange={(e) => set("contactPersonEmail", e.target.value)}
+            error={contactEmailTouched && !contactEmailValid}
+            onChange={(e) => set("contactPersonEmail", e.target.value.trim())}
             placeholder="contact@personal.com"
           />
         </Field>
       </div>
 
-      <Field label="Company Email " required>
+      <Field
+        label="Company Email"
+        required
+        error={
+          corpEmailTouched && !corpEmailValid
+            ? "Enter a valid company email address"
+            : null
+        }
+      >
         <Input
           type="email"
           value={data.corpEmail}
-          onChange={(e) => set("corpEmail", e.target.value)}
+          error={corpEmailTouched && !corpEmailValid && !data.corpEmailOtp.verified}
+          disabled={data.corpEmailOtp.verified}
+          onChange={(e) => set("corpEmail", e.target.value.trim())}
           placeholder="you@yourcompany.com"
         />
 
-        {data.corpEmail && (
+        {data.corpEmail && corpEmailValid && (
           <div style={{ marginTop: 8 }}>
             <OtpBlock
               target="corporate email"
               sent={data.corpEmailOtp.sent}
               verified={data.corpEmailOtp.verified}
-              disabled={!data.corpEmail}
+              disabled={!corpEmailValid}
               onSend={sendCorpEmailOtp}
               onResend={handleResendEmailOtp}
               onVerify={verifyCorpEmailOtp}
@@ -1992,10 +2031,7 @@ function EmployerForm() {
               setOtpVal={(v) =>
                 setData((p) => ({
                   ...p,
-                  corpEmailOtp: {
-                    ...p.corpEmailOtp,
-                    userVal: v,
-                  },
+                  corpEmailOtp: { ...p.corpEmailOtp, userVal: v.replace(/\D/g, "") },
                 }))
               }
             />
@@ -2010,12 +2046,7 @@ function EmployerForm() {
           mobile={data.mobile}
           onMobileChange={(v) => set("mobile", v)}
           otp={data.mobileOtp}
-          onOtpStateChange={(v) =>
-            setData((p) => ({
-              ...p,
-              mobileOtp: v,
-            }))
-          }
+          onOtpStateChange={(v) => setData((p) => ({ ...p, mobileOtp: v }))}
           sendMobileOtp={handleSendMobileOtp}
           verifyMobileOtp={handleVerifyMobileOtp}
           resendMobileOtp={handleResendMobileOtp}
@@ -2036,26 +2067,17 @@ function EmployerForm() {
         />
       </Field>
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          marginTop: 8,
-        }}
-      >
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
         <Btn variant="outline" onClick={() => setStep(2)}>
           ← Back
         </Btn>
-        <Btn
-          variant="primary"
-          disabled={!canGoStep4}
-          onClick={() => setStep(4)}
-        >
+        <Btn variant="primary" disabled={!canGoStep4} onClick={() => setStep(4)}>
           Continue →
         </Btn>
       </div>
     </div>
   );
+};
   const handleStep4 = async () => {
     try {
       const sessionId = localStorage.getItem("registrationSessionId");
