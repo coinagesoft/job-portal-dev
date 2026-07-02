@@ -284,15 +284,15 @@ export default function EmployerCompanyProfilePage() {
   };
 
   const fieldRows = [
-    { label: "Display Name", key: "displayName" },
-    { label: "Industry", key: "industry" },
-    { label: "Company Size", key: "size" },
-    { label: "Founded", key: "founded" },
-    { label: "Website", key: "website" },
-    { label: "Contact Phone", key: "phone" },
-    { label: "Contact Email", key: "email" },
-    { label: "GST Number", key: "gstNo" },
-  ];
+  { label: "Display Name", key: "displayName", editable: true },
+  { label: "Industry", key: "industry", editable: false },
+  { label: "Company Size", key: "size", editable: true },
+  { label: "Founded", key: "founded", editable: true },
+  { label: "Website", key: "website", editable: true },
+  { label: "Contact Phone", key: "phone", editable: true },
+  { label: "Contact Email", key: "email", editable: true },
+  { label: "GST Number", key: "gstNo", editable: false },
+];
 
   const fieldApiMap = {
     displayName: "CompanyDisplayName",
