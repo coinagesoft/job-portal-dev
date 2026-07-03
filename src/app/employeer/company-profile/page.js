@@ -69,6 +69,7 @@ const people = [
   },
 ];
 
+
 const EditFieldModal = ({ field, value, onClose, onSave }) => {
   const [val, setVal] = useState(value ?? "");
   return (
@@ -403,8 +404,8 @@ export default function EmployerCompanyProfilePage() {
         officeAddress: data.officeAddress ?? "",
 
         // Contact
-        phone: data.CompanyPhoneNo ?? "",
-        contactPhone: data.CompanyPhoneNo ?? "",
+        phone: data.companyPhoneNo ?? "",
+        contactPhone: data.companyPhoneNo ?? "",
         email: data.companyEmail ?? "",
         contactEmailPublic: data.companyEmail ?? "",
         contactPersonName: data.contactPersonName ?? "",

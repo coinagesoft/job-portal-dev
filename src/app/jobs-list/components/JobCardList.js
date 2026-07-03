@@ -211,10 +211,75 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) 
             </div>
             )}
           </div>
-          <div className="mt-5">
-            <span className="card-briefcase">
-              {job.jobType}
-            </span>
+          <div className="mt-5" style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+            {job.tradeCategory && (
+              <span
+                className="card-briefcase"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "4px 10px",
+                  borderRadius: 999,
+                  background: "#F1F5FF",
+                  color: "#3B4CCA",
+                  fontSize: 12,
+                  fontWeight: 600,
+                }}
+              >
+                {job.tradeCategory}
+              </span>
+            )}
+
+            {job.employmentMode && (
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "4px 10px",
+                  borderRadius: 999,
+                  background: "#FFF3E0",
+                  color: "#B15C00",
+                  fontSize: 12,
+                  fontWeight: 600,
+                }}
+              >
+                {job.employmentMode}
+              </span>
+            )}
+
+            {job.employmentType && (
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "4px 10px",
+                  borderRadius: 999,
+                  background: "#F0FBF3",
+                  color: "#178A4C",
+                  fontSize: 12,
+                  fontWeight: 600,
+                }}
+              >
+                {job.employmentType.replace(/_/g, " ")}
+              </span>
+            )}
+
+            {job.department && (
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "4px 10px",
+                  borderRadius: 999,
+                  background: "#F5F0FF",
+                  color: "#6B21A8",
+                  fontSize: 12,
+                  fontWeight: 600,
+                }}
+              >
+                {job.department}
+              </span>
+            )}
 
             <span className="card-time">
               {job.timeAgo || "Recently Posted"}
@@ -224,7 +289,7 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) 
           {viewMode === "list" && (
             <div className="mt-10">
               <span className="font-xs color-text-paragraph-2">
-                Openings: <strong>{job.vacancies}  1</strong> - Experience:{" "}
+                Openings: <strong>{job.vacancies}</strong> - Experience:{" "}
                 <strong>{job.experienceDisplay}</strong>
               </span>
               {jobTags.length > 0 && (
@@ -264,7 +329,7 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) 
             <div className="row">
               <div className="col-lg-7 col-7">
                 <span className="card-text-price">
-                  {job.salaryDisplay}
+                  {job.salaryRange}
                 </span>
               </div>
               <div className="col-lg-5 col-5 text-end">
