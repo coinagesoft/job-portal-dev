@@ -235,7 +235,7 @@ const JobContent = ({ job = {}, isApplied = false, onApplied }) => {
   </div>
 
   {/* Key Responsibilities */}
-  {job.keyResponsibilities?.length > 0 && (
+  {/* {job.keyResponsibilities?.length > 0 && (
     <div
       style={{
         background: '#ffffff',
@@ -289,7 +289,7 @@ const JobContent = ({ job = {}, isApplied = false, onApplied }) => {
         ))}
       </div>
     </div>
-  )}
+  )} */}
 
   {/* Professional Skills */}
   {job.professionalSkills?.length > 0 && (

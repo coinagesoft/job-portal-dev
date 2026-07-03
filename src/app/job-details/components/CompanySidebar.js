@@ -62,7 +62,7 @@ const CompanySidebar = ({ job = {} }) => {
               )}
               {job.location && (
                 <span className="card-location">
-                  <i className="fa-solid fa-location-dot mr-5" style={{ color: 'var(--color-brand-1)' }}></i>
+                  {/* <i className="fa-solid fa-location-dot mr-5" style={{ color: 'var(--color-brand-1)' }}></i> */}
                   {job.location}
                 </span>
               )}
@@ -124,37 +124,50 @@ const CompanySidebar = ({ job = {} }) => {
                   </div>
 
                   <div className="info-text" style={{ flex: '1 1 auto', minWidth: 0 }}>
-                    <h5 className="font-md font-bold color-brand-1">
-                      <Link href={`/job-details?jobId=${item.jobId}`}>
-                        {item.jobTitle}
-                      </Link>
-                    </h5>
+                    {/* Job Title + Time Ago */}
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: '10px',
+                      }}
+                    >
+                      <h5
+                        className="font-md font-bold color-brand-1"
+                        style={{
+                          marginBottom: 0,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          flex: 1,
+                        }}
+                      >
+                        <Link href={`/job-details?jobId=${item.jobId}`}>
+                          {item.jobTitle}
+                        </Link>
+                      </h5>
 
-                    <div className="mt-0">
-                      <span className="card-briefcase">
-                        {humanize(item.employmentType)}
-                      </span>
-
-                      <span className="card-time">
-                        {/* <i className="fa-regular fa-clock mr-3"></i> */}
-                        {item.timeAgo || "Recently"}
+                      <span
+                        className="card-time"
+                        style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+                      >
+                        {item.timeAgo || 'Recently'}
                       </span>
                     </div>
 
+                    {/* Location */}
                     <div className="mt-5">
-                      <div className="row">
-                        <div className="col-6">
-                          <h6 className="card-price">
-                            {item.salaryRange || "Confidential"}
-                          </h6>
-                        </div>
+                      <span className="card-briefcase">
+                        {item.companyLocation}
+                      </span>
+                    </div>
 
-                        <div className="col-6 text-end text-truncate">
-                          <span className="card-briefcase">
-                            {item.companyLocation}
-                          </span>
-                        </div>
-                      </div>
+                    {/* Salary */}
+                    <div className="mt-5">
+                      <h6 className="card-price mb-0">
+                        {item.salaryRange || 'Confidential'}
+                      </h6>
                     </div>
                   </div>
                 </div>

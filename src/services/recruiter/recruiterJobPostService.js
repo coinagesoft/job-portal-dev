@@ -186,21 +186,23 @@ export const saveQuestions = async (jobId, payload) => {
    PATCH /api/recruiter/jobs/step7-publish
 ───────────────────────────────────────────────────────────────────────────── */
 export const publishJob = async (payload) => {
-  const formData = new FormData();
-
-  formData.append("JobId", payload.JobId);
-  formData.append("ApplicationDeadline", payload.ApplicationDeadline);
-  formData.append("CompanyVisibility", payload.CompanyVisibility ?? "ShowName");
-  formData.append("JobType", payload.JobType ?? "Normal_Job");
-  (payload.PublishingTags ?? []).forEach((tag) =>
-    formData.append("PublishingTags", tag)
-  );
-  formData.append("PublishNow", String(payload.PublishNow ?? true));
-
   const response = await api.patch(
     "/api/recruiter/jobs/step7-publish",
-    formData
+    {
+      JobId: payload.JobId,
+      ApplicationDeadline: payload.ApplicationDeadline,
+      CompanyVisibility: payload.CompanyVisibility ?? "ShowName",
+      JobType: payload.JobType ?? "Normal_Job",
+      PublishingTags: payload.PublishingTags ?? [],
+      PublishNow: payload.PublishNow ?? true,
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
   );
+
   return response.data;
 };
 

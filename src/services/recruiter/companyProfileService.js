@@ -17,7 +17,13 @@ const companyProfileService = {
 
     const formData = new FormData();
 
-    formData.append(fieldName, value ?? "");
+   if (Array.isArray(value)) {
+  value.forEach((item) => {
+    formData.append(fieldName, item.trim());
+  });
+} else {
+  formData.append(fieldName, value ?? "");
+}
 
     const { data } = await api.patch(
       `/api/recruiter/company-profile/${employerId}`,
