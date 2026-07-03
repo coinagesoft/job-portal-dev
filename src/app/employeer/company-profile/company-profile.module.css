@@ -1,0 +1,657 @@
+.pageSection {
+  background: transparent;
+}
+
+.layout {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.content {
+  display: grid;
+  gap: 18px;
+}
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.headerActions {
+  display: inline-flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.btnSoft {
+  background: var(--bg-light);
+  border: 1px solid var(--border-light);
+  color: var(--text-mid);
+}
+
+/* =========================================================
+   STEP PROGRESS BAR
+========================================================= */
+
+.progressContainer {
+  margin-top: 12px;
+  margin-bottom: 8px;
+  /* contain overflow — never let bar push the page wider */
+  min-width: 0;
+  overflow: hidden;
+}
+
+.stepWrapper {
+  width: 100%;
+  /* scroll internally if truly too narrow, never expand parent */
+  overflow-x: auto;
+  display: flex;
+  align-items: flex-start;
+  padding-bottom: 8px;
+  /* hide scrollbar visually but keep it functional */
+  scrollbar-width: none;
+}
+.stepWrapper::-webkit-scrollbar { display: none; }
+
+.stepItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* flex-shrink so items compress before the bar overflows */
+  flex-shrink: 1;
+  /* min-width small enough for 7 items to fit at ~900px */
+  min-width: 72px;
+}
+
+.stepCircle {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 2px solid #d9e0ea;
+  background: #f5f7fa;
+  color: #66789c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.stepActive {
+  background: var(--primary-blue);
+  border-color: var(--border-light);
+  color: #ffffff;
+  box-shadow: 0 0 0 5px rgba(255, 163, 0, 0.15);
+}
+
+.stepLabel {
+  margin-top: 6px;
+  text-align: center;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--text-mid);
+  font-weight: 600;
+  /* allow wrapping so long labels don't stretch the item */
+  white-space: normal;
+  word-break: break-word;
+  max-width: 72px;
+}
+
+.stepLine {
+  flex: 1;
+  /* no min-width so lines compress freely */
+  min-width: 10px;
+  height: 2px;
+  background: #dfe5ef;
+  margin-top: 18px;
+  flex-shrink: 1;
+}
+.aiSuggestions {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.aiSuggestion {
+  padding: 8px 12px;
+  background: #f4f6f8;
+  border: 1px solid #dfe3e8;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.aiSuggestion:hover {
+  background: #0057ff;
+  color: #fff;
+}
+.inlineSuggestion {
+  margin-top: 10px;
+  padding: 10px 14px;
+
+  border-radius: 10px;
+
+  background: #f8fafc;
+
+  border: 1px solid #e2e8f0;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  font-size: 14px;
+}
+
+.tabHint {
+  color: #2563eb;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.suggestionText {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* =========================================================
+   BODY
+========================================================= */
+
+.body {
+  display: block;
+}
+
+.fullFormPanel {
+  display: grid;
+  gap: 16px;
+}
+
+/* =========================================================
+   SECTION CARD
+========================================================= */
+
+.sectionCard {
+  background: var(--bg-light);
+  border: 1px solid transparent;
+  border-radius: 18px;
+  overflow: hidden;
+  margin-bottom: 24px;
+  box-shadow:
+    0 10px 22px rgba(18, 35, 89, 0.05),
+    0 4px 10px rgba(18, 35, 89, 0.03);
+  transition: all 0.25s ease;
+}
+
+.sectionCard:hover {
+  transform: translateY(-2px);
+  border-color: #ffa300; /* Orange border on hover */
+  box-shadow:
+    0 16px 30px rgba(18, 35, 89, 0.08),
+    0 6px 14px rgba(18, 35, 89, 0.05),
+    0 0 0 2px rgba(255, 163, 0, 0.12);
+}
+
+.sectionCard:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 16px 30px rgba(18, 35, 89, 0.08),
+    0 6px 14px rgba(18, 35, 89, 0.05);
+}
+
+.sectionSummary {
+  list-style: none;
+  cursor: pointer;
+  padding: 20px 22px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.sectionSummary::-webkit-details-marker {
+  display: none;
+}
+
+.sectionCard[open] .sectionSummary {
+  background: #fff9ef;
+  border-bottom: 1px solid rgba(255, 193, 81, 0.4);
+}
+
+.sectionBody {
+  padding: 22px;
+}
+
+.sectionChevron {
+  width: 11px;
+  height: 11px;
+  margin-top: 8px;
+  border-right: 2px solid #7b8aa7;
+  border-bottom: 2px solid #7b8aa7;
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.sectionCard[open] .sectionChevron {
+  transform: rotate(-135deg);
+}
+
+/* =========================================================
+   SECTION HEADER
+========================================================= */
+
+.sectionHeading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.sectionStep {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border: 1px solid var(--border-light);
+  color: var(--primary-blue);
+  font-size: var(--font-xs);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.sectionTitle {
+  margin: 0;
+  color: var(--text-dark);
+  font-size: var(--font-h6);
+  line-height: 24px;
+  font-weight: 700;
+}
+
+.sectionSub {
+  margin: 4px 0 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-sm);
+  line-height: 22px;
+}
+
+/* =========================================================
+   GRID
+========================================================= */
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+/* =========================================================
+   FIELD
+========================================================= */
+
+.field {
+  margin-bottom: 18px;
+}
+
+.field:last-child {
+  margin-bottom: 0;
+}
+
+.label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-dark);
+  font-size: var(--font-xs);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.required {
+  color: #e02020;
+  margin-left: 4px;
+}
+
+.hint {
+  margin-top: 6px;
+  color: var(--text-light);
+  font-size: var(--font-xs);
+  line-height: 18px;
+}
+
+/* =========================================================
+   FORM CONTROLS
+========================================================= */
+
+.control {
+  width: 100%;
+  min-height: 52px;
+  border-radius: 12px;
+  border: 1px solid rgba(18, 35, 89, 0.12);
+  background: #ffffff;
+  padding: 0 16px;
+  font-size: var(--font-base);
+  line-height: 22px;
+  color: var(--text-dark);
+  transition: all 0.2s ease;
+}
+
+.control:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 4px rgba(255, 163, 0, 0.12);
+}
+
+.textarea {
+  width: 100%;
+  min-height: 130px;
+  border-radius: 12px;
+  border: 1px solid rgba(18, 35, 89, 0.12);
+  background: #ffffff;
+  padding: 14px 16px;
+  resize: vertical;
+  font-size: var(--font-base);
+  line-height: 24px;
+  color: var(--text-dark);
+  transition: all 0.2s ease;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 4px rgba(255, 163, 0, 0.12);
+}
+
+.selectControl {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  background-image: url("/assets/imgs/template/icons/arrow-down.svg");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 14px;
+
+  padding-right: 42px;
+}
+
+/* =========================================================
+   INLINE PANEL
+========================================================= */
+
+.inlinePanel {
+  border: 1px solid rgba(255, 193, 81, 0.4);
+  border-radius: 16px;
+  background: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    #fffaf2 100%
+  );
+  padding: 18px;
+}
+
+.inlinePanelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.inlinePanelTitle {
+  margin: 0;
+  color: var(--text-dark);
+  font-size: var(--font-lg);
+  line-height: 26px;
+  font-weight: 700;
+}
+
+.inlinePanelBadge {
+  border-radius: 999px;
+  padding: 6px 12px;
+  border: 1px solid var(--border-light);
+  background: #ffffff;
+  color: var(--primary-blue);
+  font-size: var(--font-xs);
+  font-weight: 700;
+}
+
+.inlinePanelText {
+  margin: 10px 0 16px;
+  color: var(--text-mid);
+  font-size: var(--font-sm);
+  line-height: 22px;
+}
+
+/* =========================================================
+   TAGS
+========================================================= */
+
+.tagGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pillHot,
+.pillUrgent,
+.pillNeutral,
+.skillPrimaryBadge,
+.skillSecondaryBadge,
+.questionRequired,
+.questionOptional {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: var(--font-xs);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.pillHot {
+  background: #fff4df;
+  border: 1px solid #ffd48a;
+  color: #c57600;
+}
+
+.pillUrgent {
+  background: #ffeaea;
+  border: 1px solid #ffc4c4;
+  color: #c13d3d;
+}
+
+.pillNeutral {
+  background: #f5f7fa;
+  border: 1px solid #d9dfea;
+  color: #4f5e64;
+}
+
+.skillPrimaryBadge {
+  background: #fff4df;
+  border: 1px solid #ffd48a;
+  color: #c57600;
+}
+
+.skillSecondaryBadge {
+  background: #eef4ff;
+  border: 1px solid #cfe0ff;
+  color: #2457c5;
+}
+
+.questionRequired {
+  background: #fff4df;
+  border: 1px solid #ffd48a;
+  color: #c57600;
+}
+
+.questionOptional {
+  background: #eef4ff;
+  border: 1px solid #cfe0ff;
+  color: #2457c5;
+}
+
+/* =========================================================
+   CHIPS
+========================================================= */
+
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.skillPriorityList {
+  margin: 14px 0;
+  display: grid;
+  gap: 12px;
+}
+
+.skillPriorityItem {
+  border: 1px solid rgba(18, 35, 89, 0.08);
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.skillName {
+  display: block;
+  color: var(--text-dark);
+  font-size: var(--font-base);
+  font-weight: 700;
+}
+
+.skillHint {
+  margin: 4px 0 0;
+  color: var(--text-light);
+  font-size: var(--font-xs);
+}
+
+/* =========================================================
+   QUESTION CARD
+========================================================= */
+
+.questionList {
+  display: grid;
+  gap: 14px;
+}
+
+.questionCard {
+  border: 1px solid rgba(18, 35, 89, 0.08);
+  border-radius: 16px;
+  background: #ffffff;
+  padding: 18px;
+}
+
+.questionCardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.questionCardTitle {
+  margin: 0;
+  color: var(--text-dark);
+  font-size: var(--font-base);
+  font-weight: 700;
+}
+
+.questionCardText {
+  margin: 0 0 14px;
+  color: var(--text-mid);
+  font-size: var(--font-sm);
+  line-height: 22px;
+}
+
+/* =========================================================
+   BOTTOM LINK
+========================================================= */
+
+.bottomLink {
+  text-align: right;
+  padding: 4px;
+}
+
+.bottomLink a {
+  color: var(--primary-blue);
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.bottomLink a:hover {
+  color: var(--text-dark);
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 991px) {
+  .headerActions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 767px) {
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+
+  .stepItem {
+    min-width: 56px;
+  }
+
+  .stepCircle {
+    width: 30px;
+    height: 30px;
+    font-size: 10px;
+  }
+
+  .stepLabel {
+    font-size: 10px;
+    max-width: 56px;
+  }
+
+  .stepLine {
+    margin-top: 15px;
+  }
+
+  .sectionBody {
+    padding: 16px;
+  }
+
+  .skillPriorityItem,
+  .questionCardHead,
+  .inlinePanelHead {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+/* ── Additional classes for one-step-at-a-time layout ── */
+.stepCompleted { background: #22c55e; border-color: #22c55e; color: #ffffff; }
+.stepLabelActive { color: var(--primary-blue); }
+.stepLineActive  { background: #22c55e; }
+
+.stepActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-light);
+}
+.backBtn     { min-width: 100px; }
+.continueBtn { min-width: 160px; }
