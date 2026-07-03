@@ -11,7 +11,7 @@ import {
   resumeJob,
   closeJob,
   archiveJob,
-  
+  deleteJob,
 } from "@/services/recruiter/recruiterJobListService";
 
 /* ── reusable pill tag ── */
@@ -52,6 +52,23 @@ const Tag = ({ label }) => {
   );
 };
 
+const handleDelete = async (jobId, jobTitle) => {
+  const confirmed = window.confirm(
+    `Are you sure you want to delete "${jobTitle}"? This action cannot be undone.`
+  );
+
+  if (!confirmed) return;
+
+  try {
+    const res = await deleteJob(jobId);
+
+    showToast(res.message || "Job deleted successfully", "success");
+
+    await loadData();
+  } catch (err) {
+    showToast(err.response?.data?.message || "Unable to delete job", "error");
+  }
+};
 const EmployerJobListPage = () => {
   const showToast = useToast();
   const [activeStatus, setActiveStatus] = useState("Active");
@@ -546,11 +563,10 @@ const EmployerJobListPage = () => {
                           style={{
                             background:
                               job.appliedCount > 0 ? "#EAF4FF" : "#f8fafc",
-                            border: `1px solid ${
-                              job.appliedCount > 0
+                            border: `1px solid ${job.appliedCount > 0
                                 ? "#B9DCFF"
                                 : "rgba(18,35,89,0.08)"
-                            }`,
+                              }`,
                             borderRadius: 14,
                             padding: "10px 16px",
                             textAlign: "center",
@@ -673,7 +689,14 @@ const EmployerJobListPage = () => {
                               </button>
                             )}
 
-                           
+
+                            <button
+                              className="btn btn-outline-danger btn-sm"
+                              onClick={() => handleDelete(job.jobId, job.jobTitle)}
+                            >
+                              <i className="fi-rr-trash" style={{ marginRight: 5 }} />
+                              Delete
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -685,7 +708,7 @@ const EmployerJobListPage = () => {
           </div>
         </div>
       </section>
-    
+
     </main>
   );
 };

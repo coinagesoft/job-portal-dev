@@ -122,3 +122,9 @@ export const getJobStats = async (jobId) => {
 
   return data;
 };
+
+export const deleteJob = async (jobId) => {
+  const { data } = await api.delete(`/api/recruiter/jobs/${jobId}`);
+
+  return data;
+};
