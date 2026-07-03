@@ -108,8 +108,8 @@ function Field({ label, required, hint, children }) {
 }
 
 /** Split a comma-separated string into a trimmed array, ignoring blanks */
-const splitComma = (str) =>
-  (str ?? "")
+const splitComma = (value) =>
+  value
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
@@ -475,10 +475,10 @@ function Step2({ go, jobForm, setJobForm, onSubmit }) {
               }))
             }
           >
-            <option value="Show_Range">Show Range</option>
-            <option value="Hide_Salary">Hide Salary</option>
-            <option value="Show_Min">Show Minimum Only</option>
-            <option value="Show_Max">Show Maximum Only</option>
+            <option value="Show Range">Show Range</option>
+            <option value="Show Minimum Only">Show Minimum Only</option>
+            <option value="Show Maximum Only">Show Maximum Only</option>
+            <option value="Negotiable">Negotiable</option>
           </select>
         </Field>
 
@@ -684,16 +684,20 @@ function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, han
       </div>
 
       {/* Tags */}
-      <Field label="Job Tags" hint="Comma-separated search tags">
-        <input
-          className={styles.control}
-          placeholder="e.g. blue-collar, urgent, offshore"
-          value={joinComma(jobForm.Tags)}
-          onChange={(e) =>
-            setJobForm((p) => ({ ...p, Tags: splitComma(e.target.value) }))
-          }
-        />
-      </Field>
+   <Field label="Job Tags" hint="Comma-separated search tags">
+  <input
+    className={styles.control}
+    placeholder="e.g. blue-collar, urgent, offshore"
+    value={jobForm.TagsInput || joinComma(jobForm.Tags)}
+    onChange={(e) =>
+      setJobForm((p) => ({
+        ...p,
+        TagsInput: e.target.value,
+        Tags: splitComma(e.target.value),
+      }))
+    }
+  />
+</Field>
     </StepCard>
   );
 }
@@ -1142,7 +1146,7 @@ function Step7({ go, jobForm, setJobForm, onSubmit }) {
         </Field>
 
         {/* Job Type (for publishing context — maps to API JobType) */}
-        <Field label="Job Post Type">
+        {/* <Field label="Job Post Type">
           <select
             className={`${styles.control} ${styles.selectControl}`}
             value={jobForm.JobType}
@@ -1156,7 +1160,7 @@ function Step7({ go, jobForm, setJobForm, onSubmit }) {
               </option>
             ))}
           </select>
-        </Field>
+        </Field> */}
 
         {/* Publish Now */}
         <Field label="Publish Now">
