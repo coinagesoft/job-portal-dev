@@ -36,9 +36,12 @@ const JobOverview = ({ job = {} }) => {
       items: [
         { icon: 'industry', label: 'Trade Category', value: humanize(job.tradeCategory) },
         { icon: 'industry', label: 'Department', value: humanize(job.department) },
+         { icon: 'industry', label: 'Industry Type', value: humanize(job.industryType) },
         { icon: 'jobType', label: 'Employment Type', value: humanize(job.employmentType) },
         { icon: 'location', label: 'Employment Mode', value: humanize(job.employmentMode) },
+         { icon: 'location', label: 'Job Type', value: humanize(job.jobType) },
         { icon: 'location', label: 'Location Type', value: humanize(job.locationType) },
+        { icon: 'location', label: 'Oil Field', value: humanize(job.isOilField) },
       ],
     },
     {
@@ -184,7 +187,7 @@ const JobOverview = ({ job = {} }) => {
                   padding: '14px 16px',
                   borderRadius: '12px',
                   border: '1px solid rgba(18,35,89,0.08)',
-                  background: '#fafbfe',
+                  background: '#ffffff',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

@@ -476,8 +476,8 @@ function Step2({ go, jobForm, setJobForm, onSubmit }) {
             }
           >
             <option value="Show Range">Show Range</option>
-            <option value="Show Minimum Only">Show Minimum Only</option>
-            <option value="Show Maximum Only">Show Maximum Only</option>
+            <option value="Show Min Only">Show Minimum Only</option>
+            <option value="Show Max Only">Show Maximum Only</option>
             <option value="Negotiable">Negotiable</option>
           </select>
         </Field>
