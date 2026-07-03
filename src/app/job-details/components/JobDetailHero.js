@@ -45,7 +45,7 @@ const JobDetailHero = ({ job = {}, isApplied = false, onApplied }) => {
                 marginTop: '8px',
                 marginBottom: '15px',
                 color: '#66789C',
-                fontSize: '15px',
+                fontSize: '12px',
               }}
             >
               {job.jobLocation && (

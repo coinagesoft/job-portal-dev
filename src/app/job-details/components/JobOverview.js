@@ -70,11 +70,11 @@ const JobOverview = ({ job = {} }) => {
       ],
     },
     {
-      title: 'Eligibility & Requirements',
+      title: 'Eligibility',
       items: [
         { icon: 'jobType', label: 'Gender Preference', value: humanize(job.genderPreferred) },
-        { icon: 'location', label: 'Languages', value: job.languagePreferred },
-        { icon: 'industry', label: 'Certificates', value: humanize(job.requiredLicencesCertificates) },
+        // { icon: 'location', label: 'Languages', value: job.languagePreferred },
+        // { icon: 'industry', label: 'Certificates', value: humanize(job.requiredLicencesCertificates) },
         {
           icon: 'jobType',
           label: 'Disability Friendly',

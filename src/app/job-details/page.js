@@ -11,6 +11,7 @@ import Newsletter from './components/Newsletter';
 import { mapApiJobToDetailedJob } from './data';
 import { getJobDetails } from '@/services/candidate/jobDetailsService';
 import { getMyApplications } from '@/services/candidate/myApplicationsService';
+import JobRequirements from './components/JobRequirements';
 
 const JobDetailsContent = () => {
   const searchParams = useSearchParams();
@@ -96,8 +97,15 @@ const JobDetailsContent = () => {
         <div className="container">
           <div className="row">
             <div className="col-lg-8 col-md-12 col-sm-12 col-12">
-              <JobOverview job={job} />
-              <JobContent job={job} isApplied={isApplied} onApplied={checkApplied} />
+             <JobOverview job={job} />
+
+<JobRequirements job={job} />
+
+<JobContent
+  job={job}
+  isApplied={isApplied}
+  onApplied={checkApplied}
+/>
             </div>
             <div className="col-lg-4 col-md-12 col-sm-12 col-12 pl-40 pl-lg-15 mt-lg-30">
               <CompanySidebar job={job} />
