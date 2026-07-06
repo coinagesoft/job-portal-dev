@@ -94,15 +94,63 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) 
                 />
               </div>
               <div className="right-info">
-                <Link className="name-job" href={`/company-details?employerId=${job.employerId}`}>
+                <Link
+                  className="name-job"
+                  href={`/company-details?employerId=${job.employerId}`}
+                >
                   {job.companyName}
                 </Link>
-                <span
-                  className="location-small"
-                  style={{ whiteSpace: "nowrap" }}
+
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    flexWrap: "wrap",
+                    marginTop: "3px",
+                  }}
                 >
-                  {job.companyLocation}
-                </span>
+                  <span
+                    // className="location-small"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      color: "#98A2B3",
+                    }}
+                  >
+                    <i
+                      className="fi-rr-marker"
+                      style={{
+                        fontSize: "11px",
+                        // color: "#A0ABB8",
+                        color: "#98A2B3",
+                      }}
+                    ></i>
+
+                    {job.companyLocation}
+                  </span>
+
+                  <span
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      fontSize: "12px",
+                      color: "#98A2B3",
+                      fontWeight: 500,
+                    }}
+                  >
+                    <i
+                      className="fi-rr-clock"
+                      style={{
+                        fontSize: "11px",
+                      }}
+                    ></i>
+
+                    {job.timeAgo || "Recently Posted"}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -179,36 +227,36 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) 
 
             {/* AI MATCH (only when a real per-candidate score exists) */}
             {job.aiMatchPercentage != null && (
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-                padding: "6px 14px",
-                borderRadius: 999,
-                background:
-                  "linear-gradient(135deg, #fff4df 0%, #ffe7ba 100%)",
-                border:
-                  "1px solid rgba(255, 163, 0, 0.22)",
-                color: "#ff9900",
-                fontSize: 12,
-                fontWeight: 700,
-                width: "fit-content",
-                boxShadow:
-                  "0 6px 16px rgba(255,153,0,0.08)",
-              }}
-            >
-              <i
-                className="fa-solid fa-wand-magic-sparkles"
+              <div
                 style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                  padding: "6px 14px",
+                  borderRadius: 999,
+                  background:
+                    "linear-gradient(135deg, #fff4df 0%, #ffe7ba 100%)",
+                  border:
+                    "1px solid rgba(255, 163, 0, 0.22)",
+                  color: "#ff9900",
                   fontSize: 12,
-                  lineHeight: 1,
+                  fontWeight: 700,
+                  width: "fit-content",
+                  boxShadow:
+                    "0 6px 16px rgba(255,153,0,0.08)",
                 }}
-              ></i>
+              >
+                <i
+                  className="fa-solid fa-wand-magic-sparkles"
+                  style={{
+                    fontSize: 12,
+                    lineHeight: 1,
+                  }}
+                ></i>
 
-              AI Match: {job.aiMatchPercentage}%
-            </div>
+                AI Match: {job.aiMatchPercentage}%
+              </div>
             )}
           </div>
           <div className="mt-5" style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
@@ -281,9 +329,7 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) 
               </span>
             )}
 
-            <span className="card-time">
-              {job.timeAgo || "Recently Posted"}
-            </span>
+
           </div>
           <p className="font-sm color-text-paragraph mt-10">{job.description}</p>
           {viewMode === "list" && (

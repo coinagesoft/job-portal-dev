@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useToast } from "@/components/Toast";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import styles from "./joblist.module.css";
 
 import {
   getJobDashboard,
@@ -73,6 +74,15 @@ const EmployerJobListPage = () => {
   const showToast = useToast();
   const [activeStatus, setActiveStatus] = useState("Active");
   const [activeType, setActiveType] = useState("All Types");
+  const [openMenu, setOpenMenu] = useState(null);
+
+  const [menuPosition, setMenuPosition] = useState({
+    top: 0,
+    left: 0,
+  });
+
+  const menuButtonRefs = useRef({});
+  const menuRef = useRef(null);
 
 
 
@@ -188,6 +198,54 @@ const EmployerJobListPage = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!openMenu) return;
+
+      const clickedButton = Object.values(menuButtonRefs.current).some(
+        (btn) => btn && btn.contains(e.target)
+      );
+
+      if (clickedButton) return;
+
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpenMenu(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [openMenu]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setOpenMenu(null);
+    };
+
+    window.addEventListener("scroll", handleScroll, true);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll, true);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setOpenMenu(null);
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
+
   const loadData = async () => {
     try {
       setLoading(true);
@@ -324,14 +382,17 @@ const EmployerJobListPage = () => {
                   key={job.jobId}
                   className="subuser-hover-card"
                   style={{
-                    background: "#ffffff",
+                    background: "#fff",
                     borderRadius: 24,
-                    boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
-                    padding: 0,
-                    overflow: "hidden",
+                    position: "relative",
+                    zIndex: 1,
                   }}
                 >
-                  <div style={{ padding: "24px 28px" }}>
+                  <div
+                    style={{
+                      padding: "24px 28px",
+                    }}
+                  >
                     <div
                       style={{
                         display: "flex",
@@ -379,20 +440,45 @@ const EmployerJobListPage = () => {
                               marginBottom: 5,
                             }}
                           >
-                            <h5
+                            <div
                               style={{
-                                margin: 0,
-                                color: "#122359",
-                                fontWeight: 800,
-                                fontSize: 17,
-                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                                flexWrap: "wrap",
                               }}
-                              onClick={() =>
-                                showToast(`Viewing: ${job.jobTitle}`, "info")
-                              }
                             >
-                              {job.jobTitle}
-                            </h5>
+                              <h5
+                                style={{
+                                  margin: 0,
+                                  color: "#122359",
+                                  fontWeight: 800,
+                                  fontSize: 17,
+                                  cursor: "pointer",
+                                }}
+                                onClick={() =>
+                                  showToast(`Viewing: ${job.jobTitle}`, "info")
+                                }
+                              >
+                                {job.jobTitle}
+                              </h5>
+
+                              <span
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  padding: "4px 10px",
+                                  borderRadius: 999,
+                                  background: "#EAF4FF",
+                                  border: "1px solid #B9DCFF",
+                                  color: "#1D4ED8",
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                }}
+                              >
+                                {job.appliedCount} Applicant{job.appliedCount !== 1 ? "s" : ""}
+                              </span>
+                            </div>
                             {/* Post type badge */}
                             <span
                               style={{
@@ -559,7 +645,7 @@ const EmployerJobListPage = () => {
                         }}
                       >
                         {/* Applicant count pill */}
-                        <div
+                        {/* <div
                           style={{
                             background:
                               job.appliedCount > 0 ? "#EAF4FF" : "#f8fafc",
@@ -594,10 +680,10 @@ const EmployerJobListPage = () => {
                           >
                             Applicant{job.appliedCount !== 1 ? "s" : ""}
                           </div>
-                        </div>
+                        </div> */}
 
                         {/* Action buttons */}
-                        <div
+                        {/* <div
                           style={{
                             display: "flex",
                             flexDirection: "column",
@@ -698,12 +784,260 @@ const EmployerJobListPage = () => {
                               Delete
                             </button>
                           </div>
+                        </div> */}
+
+                        <div
+                          style={{
+                            position: "relative",
+                          }}
+                        >
+                          <button
+                            ref={(el) => (menuButtonRefs.current[job.jobId] = el)}
+                            onClick={() => {
+                              if (openMenu === job.jobId) {
+                                setOpenMenu(null);
+                                return;
+                              }
+
+                              const rect =
+                                menuButtonRefs.current[job.jobId].getBoundingClientRect();
+
+                              setMenuPosition({
+                                top: rect.bottom + 8,
+                                left: rect.left - 190,
+                              });
+
+                              setOpenMenu(job.jobId);
+                            }}
+                            style={{
+                              width: 44,
+                              height: 44,
+                              borderRadius: 14,
+                              border: "1px solid #E5E7EB",
+                              background: "#fff",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              cursor: "pointer",
+                              boxShadow: "0 4px 12px rgba(18,35,89,.08)",
+                              transition: ".25s",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.borderColor = "#FFA300";
+                              e.currentTarget.style.background = "#FFF8EC";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.borderColor = "#E5E7EB";
+                              e.currentTarget.style.background = "#fff";
+                            }}
+                          >
+                            <i
+                              className="fi-rr-menu-dots-vertical"
+                              style={{
+                                fontSize: 18,
+                                color: "#122359",
+                              }}
+                            />
+                          </button>
+
+                          {/* {openMenu === job.jobId && (
+                            <div
+                              style={{
+                                position: "absolute",
+                                top: 0,
+                                right: "52px",
+                                width: 220,
+                                background: "#fff",
+                                borderRadius: 18,
+                                border: "1px solid #EEF2F7",
+                                boxShadow: "0 18px 40px rgba(18,35,89,.12)",
+                                zIndex: 9999,
+                              }}
+                            >
+                              <Link
+                                href={`/dashboard/post-job?jobId=${job.jobId}`}
+                                className={styles.dropdownItem}
+                              >
+                                <>
+                                  <i className="fi-rr-edit" />
+                                  <span>Edit Job</span>
+                                </>
+                              </Link>
+
+                              <Link
+                                href={`/employeer/applicants?jobId=${job.jobId}&jobTitle=${encodeURIComponent(
+                                  job.jobTitle || ""
+                                )}`}
+                                className={styles.dropdownItem}
+                              >
+                                <>
+                                  <i className="fi-rr-users" />
+                                  <span>View Applicants</span>
+                                </>
+                              </Link>
+
+                              {job.jobStatus === "Active" && (
+                                <>
+                                  <button
+                                    className={styles.dropdownItem}
+                                    onClick={() => handlePause(job.jobId)}
+                                  >
+                                    <>
+                                      <i className="fi-rr-pause" />
+                                      <span>Pause Job</span>
+                                    </>
+                                  </button>
+
+                                  <button
+                                    className={styles.dropdownItem}
+                                    onClick={() => handleClose(job.jobId)}
+                                  >
+                                    <>
+                                      <i className="fi-rr-cross-circle" />
+                                      <span>Close Job</span>
+                                    </>
+                                  </button>
+                                </>
+                              )}
+
+                              {job.jobStatus === "Paused" && (
+                                <>
+                                  <button
+                                    className={styles.dropdownItem}
+                                    onClick={() => handleResume(job.jobId)}
+                                  >
+                                    <>
+                                      <i className="fi-rr-play" />
+                                      <span>Resume Job</span>
+                                    </>
+                                  </button>
+
+                                  <button
+                                    className={styles.dropdownItem}
+                                    onClick={() => handleArchive(job.jobId)}
+                                  >
+                                    <>
+                                      <i className="fi-rr-archive" />
+                                      <span>Archive Job</span>
+                                    </>
+                                  </button>
+                                </>
+                              )}
+
+                              {job.jobStatus === "Closed" && (
+                                <button
+                                  className={styles.dropdownItem}
+                                  onClick={() => handleArchive(job.jobId)}
+                                >
+                                  📦 Archive
+                                </button>
+                              )}
+
+                              <button
+                                className={styles.dropdownItem}
+                                onClick={() =>
+                                  handleDelete(job.jobId, job.jobTitle)
+                                }
+                                style={{ color: "#dc2626" }}
+                              >
+                                <>
+                                  <i className="fi-rr-trash" />
+                                  <span>Delete Job</span>
+                                </>
+                              </button>
+                            </div>
+                          )} */}
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
               ))}
+
+              {openMenu && (
+
+                <div
+                  ref={menuRef}
+                  style={{
+                    position: "fixed",
+
+                    top: menuPosition.top,
+                    left: menuPosition.left,
+
+                    width: 240,
+
+                    background: "#fff",
+
+                    borderRadius: 18,
+
+                    border: "1px solid #EEF2F7",
+
+                    boxShadow: "0 24px 50px rgba(18,35,89,.14)",
+
+                    overflow: "hidden",
+
+                    zIndex: 999999,
+                  }}
+                >
+
+                  {jobs
+                    .filter(job => job.jobId === openMenu)
+                    .map(job => (
+
+                      <div key={job.jobId}>
+
+                        <Link
+                          href={`/dashboard/post-job?jobId=${job.jobId}`}
+                          className={styles.dropdownItem}
+                        >
+                          <i className="fi-rr-edit" />
+                          <span>Edit Job</span>
+                        </Link>
+
+                        <Link
+                          href={`/employeer/applicants?jobId=${job.jobId}&jobTitle=${encodeURIComponent(job.jobTitle || "")}`}
+                          className={styles.dropdownItem}
+                        >
+                          <i className="fi-rr-user" />
+                          <span>Applicants</span>
+                        </Link>
+
+                        {job.jobStatus === "Active" && (
+                          <>
+                            <button
+                              className={styles.dropdownItem}
+                              onClick={() => handlePause(job.jobId)}
+                            >
+                              <i className="fi-rr-pause" />
+                              <span>Pause Job</span>
+                            </button>
+
+                            <button
+                              className={styles.dropdownItem}
+                              onClick={() => handleClose(job.jobId)}
+                            >
+                              <i className="fi-rr-cross-circle" />
+                              <span>Close Job</span>
+                            </button>
+                          </>
+                        )}
+
+                        <button
+                          className={styles.dropdownItem}
+                          onClick={() => handleDelete(job.jobId, job.jobTitle)}
+                          style={{ color: "#dc2626" }}
+                        >
+                          <i className="fi-rr-trash" />
+                          <span>Delete Job</span>
+                        </button>
+
+                      </div>
+
+                    ))}
+
+                </div>
+
+              )}
             </div>
           </div>
         </div>

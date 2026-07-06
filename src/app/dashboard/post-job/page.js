@@ -331,83 +331,83 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
         </Field>
 
         {/* Duty Hours Per Day */}
-<div
-  style={{
-    gridColumn: "1 / -1", // take full width of the parent grid
-    display: "flex",
-    gap: "24px",
-    alignItems: "flex-start",
-    width: "100%",
-  }}
->
-  <div style={{ flex: 2 }}>
-    <Field label="Duty Hours Per Day" hint="Max 24">
-      <input
-        type="number"
-        min={1}
-        max={24}
-        className={styles.control}
-        value={jobForm.DutyHoursPerDay}
-        onChange={(e) =>
-          setJobForm((p) => ({
-            ...p,
-            DutyHoursPerDay: e.target.value,
-          }))
-        }
-      />
-    </Field>
-  </div>
+        <div
+          style={{
+            gridColumn: "1 / -1", // take full width of the parent grid
+            display: "flex",
+            gap: "24px",
+            alignItems: "flex-start",
+            width: "100%",
+          }}
+        >
+          <div style={{ flex: 2 }}>
+            <Field label="Duty Hours Per Day" hint="Max 24">
+              <input
+                type="number"
+                min={1}
+                max={24}
+                className={styles.control}
+                value={jobForm.DutyHoursPerDay}
+                onChange={(e) =>
+                  setJobForm((p) => ({
+                    ...p,
+                    DutyHoursPerDay: e.target.value,
+                  }))
+                }
+              />
+            </Field>
+          </div>
 
-  <div style={{ flex: 1 }}>
-    <Field label="Paid Overtime">
-      <label
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          marginTop: "12px",
-        }}
-      >
-        <input
-          type="checkbox"
-          checked={jobForm.PaidOvertime}
-          onChange={(e) =>
-            setJobForm((p) => ({
-              ...p,
-              PaidOvertime: e.target.checked,
-            }))
-          }
-        />
-        Overtime will be paid
-      </label>
-    </Field>
-  </div>
+          <div style={{ flex: 1 }}>
+            <Field label="Paid Overtime">
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  marginTop: "12px",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={jobForm.PaidOvertime}
+                  onChange={(e) =>
+                    setJobForm((p) => ({
+                      ...p,
+                      PaidOvertime: e.target.checked,
+                    }))
+                  }
+                />
+                Overtime will be paid
+              </label>
+            </Field>
+          </div>
 
-  <div style={{ flex: 1 }}>
-    <Field label="Oil Field">
-      <label
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          marginTop: "12px",
-        }}
-      >
-        <input
-          type="checkbox"
-          checked={jobForm.IsOilField}
-          onChange={(e) =>
-            setJobForm((p) => ({
-              ...p,
-              IsOilField: e.target.checked,
-            }))
-          }
-        />
-        Oil field job
-      </label>
-    </Field>
-  </div>
-</div>
+          <div style={{ flex: 1 }}>
+            <Field label="Oil Field">
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  marginTop: "12px",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={jobForm.IsOilField}
+                  onChange={(e) =>
+                    setJobForm((p) => ({
+                      ...p,
+                      IsOilField: e.target.checked,
+                    }))
+                  }
+                />
+                Oil field job
+              </label>
+            </Field>
+          </div>
+        </div>
       </div>
 
       {/* Key Responsibilities */}
@@ -583,10 +583,16 @@ function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, han
         <input
           className={styles.control}
           placeholder="e.g. Welding, AutoCAD, Safety Compliance"
-          value={joinComma(jobForm.KeySkills)}
-          onChange={(e) =>
-            setJobForm((p) => ({ ...p, KeySkills: splitComma(e.target.value) }))
-          }
+          value={jobForm.KeySkillsText}
+          onChange={(e) => {
+            const value = e.target.value;
+
+            setJobForm(p => ({
+              ...p,
+              KeySkillsText: value,
+              KeySkills: splitComma(value)
+            }));
+          }}
         />
       </Field>
 
@@ -704,10 +710,16 @@ function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, han
         <input
           className={styles.control}
           placeholder="e.g. Health Insurance, Provident Fund"
-          value={joinComma(jobForm.Benefits)}
-          onChange={(e) =>
-            setJobForm((p) => ({ ...p, Benefits: splitComma(e.target.value) }))
-          }
+          value={jobForm.BenefitsText}
+          onChange={(e) => {
+            const value = e.target.value;
+
+            setJobForm(p => ({
+              ...p,
+              BenefitsText: value,
+              Benefits: splitComma(value)
+            }));
+          }}
         />
       </Field>
 
@@ -718,14 +730,19 @@ function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, han
             type="button"
             className={`btn btn-border btn-sm mr-10 mb-10 ${jobForm.Benefits.includes(b) ? "btn-brand-1" : ""
               }`}
-            onClick={() =>
-              setJobForm((p) => ({
-                ...p,
-                Benefits: p.Benefits.includes(b)
-                  ? p.Benefits.filter((x) => x !== b)
-                  : [...p.Benefits, b],
-              }))
-            }
+           onClick={() =>
+  setJobForm((p) => {
+    const benefits = p.Benefits.includes(b)
+      ? p.Benefits.filter((x) => x !== b)
+      : [...p.Benefits, b];
+
+    return {
+      ...p,
+      Benefits: benefits,
+      BenefitsText: benefits.join(", "),
+    };
+  })
+}
           >
             {b}
           </button>
@@ -1295,11 +1312,15 @@ export default function DashboardPostJobPage() {
 
     // Step 3
     KeySkills: [],
+    KeySkillsText: "",
+
+    Benefits: [],
+    BenefitsText: "",
     Step3KeyResponsibilities: [],  // step-3 separate field
     AdditionalJobDescription: "",
     LicenceDocsRequired: "",
     LanguageRequired: "",
-    Benefits: [],
+    // Benefits: [],
     Tags: [],
 
     // Step 4
@@ -1372,6 +1393,11 @@ export default function DashboardPostJobPage() {
   };
 
   const updateDraft = (response) => {
+    if (response.stepStatus?.lastCompletedStep >= 7) {
+      localStorage.removeItem("jobDraft");
+      return;
+    }
+
     localStorage.setItem(
       "jobDraft",
       JSON.stringify({
