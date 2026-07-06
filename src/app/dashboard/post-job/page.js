@@ -331,34 +331,83 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
         </Field>
 
         {/* Duty Hours Per Day */}
-        <Field label="Duty Hours Per Day" hint="Max 24">
-          <input
-            type="number"
-            min={1}
-            max={24}
-            className={styles.control}
-            value={jobForm.DutyHoursPerDay}
-            onChange={(e) =>
-              setJobForm((p) => ({ ...p, DutyHoursPerDay: e.target.value }))
-            }
-          />
-        </Field>
+<div
+  style={{
+    gridColumn: "1 / -1", // take full width of the parent grid
+    display: "flex",
+    gap: "24px",
+    alignItems: "flex-start",
+    width: "100%",
+  }}
+>
+  <div style={{ flex: 2 }}>
+    <Field label="Duty Hours Per Day" hint="Max 24">
+      <input
+        type="number"
+        min={1}
+        max={24}
+        className={styles.control}
+        value={jobForm.DutyHoursPerDay}
+        onChange={(e) =>
+          setJobForm((p) => ({
+            ...p,
+            DutyHoursPerDay: e.target.value,
+          }))
+        }
+      />
+    </Field>
+  </div>
 
-        {/* Paid Overtime */}
-        <Field label="Paid Overtime">
-          <div style={{ paddingTop: 12 }}>
-            <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <input
-                type="checkbox"
-                checked={jobForm.PaidOvertime}
-                onChange={(e) =>
-                  setJobForm((p) => ({ ...p, PaidOvertime: e.target.checked }))
-                }
-              />
-              Yes – overtime is compensated
-            </label>
-          </div>
-        </Field>
+  <div style={{ flex: 1 }}>
+    <Field label="Paid Overtime">
+      <label
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          marginTop: "12px",
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={jobForm.PaidOvertime}
+          onChange={(e) =>
+            setJobForm((p) => ({
+              ...p,
+              PaidOvertime: e.target.checked,
+            }))
+          }
+        />
+        Overtime will be paid
+      </label>
+    </Field>
+  </div>
+
+  <div style={{ flex: 1 }}>
+    <Field label="Oil Field">
+      <label
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          marginTop: "12px",
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={jobForm.IsOilField}
+          onChange={(e) =>
+            setJobForm((p) => ({
+              ...p,
+              IsOilField: e.target.checked,
+            }))
+          }
+        />
+        Oil field job
+      </label>
+    </Field>
+  </div>
+</div>
       </div>
 
       {/* Key Responsibilities */}
@@ -684,20 +733,20 @@ function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, han
       </div>
 
       {/* Tags */}
-   <Field label="Job Tags" hint="Comma-separated search tags">
-  <input
-    className={styles.control}
-    placeholder="e.g. blue-collar, urgent, offshore"
-    value={jobForm.TagsInput || joinComma(jobForm.Tags)}
-    onChange={(e) =>
-      setJobForm((p) => ({
-        ...p,
-        TagsInput: e.target.value,
-        Tags: splitComma(e.target.value),
-      }))
-    }
-  />
-</Field>
+      <Field label="Job Tags" hint="Comma-separated search tags">
+        <input
+          className={styles.control}
+          placeholder="e.g. blue-collar, urgent, offshore"
+          value={jobForm.TagsInput || joinComma(jobForm.Tags)}
+          onChange={(e) =>
+            setJobForm((p) => ({
+              ...p,
+              TagsInput: e.target.value,
+              Tags: splitComma(e.target.value),
+            }))
+          }
+        />
+      </Field>
     </StepCard>
   );
 }
@@ -848,7 +897,7 @@ function Step4({ go, jobForm, setJobForm, onSubmit }) {
 }
 
 /* ─── STEP 5 – Location ───────────────────────────────────────────────────── */
-function Step5({ go, jobForm, setJobForm, onSubmit , errors,}) {
+function Step5({ go, jobForm, setJobForm, onSubmit, errors, }) {
   const isOnshore = jobForm.LocationType === "Onshore";
 
   return (
@@ -965,7 +1014,7 @@ function Step5({ go, jobForm, setJobForm, onSubmit , errors,}) {
                     OffshoreVesselName: e.target.value,
                   }))
                 }
-                
+
                 required
               />
             </Field>
@@ -1233,6 +1282,7 @@ export default function DashboardPostJobPage() {
     EmploymentMode: "Onsite",
     Department: "",
     DutyHoursPerDay: "",
+    IsOilField: false,
     PaidOvertime: false,
     KeyResponsibilities: [],   // step-1 copy (also sent in step-1 payload)
     JobDescription: "",
@@ -1345,6 +1395,7 @@ export default function DashboardPostJobPage() {
     EmploymentMode: response.step1Data?.employmentMode ?? "Onsite",
     Department: response.step1Data?.department ?? "",
     DutyHoursPerDay: response.step1Data?.dutyHoursPerDay ?? "",
+    IsOilField: response.step1Data?.isOilField ?? false,
     PaidOvertime: response.step1Data?.paidOvertime ?? false,
     KeyResponsibilities: response.step1Data?.keyResponsibilities ?? [],
     JobDescription: response.step1Data?.jobDescription ?? "",
@@ -1577,6 +1628,7 @@ export default function DashboardPostJobPage() {
         EmploymentMode: jobForm.EmploymentMode,
         Department: jobForm.Department,
         DutyHoursPerDay: jobForm.DutyHoursPerDay,
+        IsOilField: jobForm.IsOilField,
         PaidOvertime: jobForm.PaidOvertime,
         KeyResponsibilities: jobForm.KeyResponsibilities,
         JobDescription: jobForm.JobDescription,
@@ -1665,26 +1717,26 @@ export default function DashboardPostJobPage() {
       setLoading(false);
     }
   };
-  
+
 
   const handleStep5 = async () => {
     if (!jobForm.LocationType) return alert("Location Type is required");
-     if (
-  jobForm.LocationType === "Offshore" &&
-  !jobForm.OffshoreVesselName.trim()
-) {
-  setErrors((prev) => ({
-    ...prev,
-    OffshoreVesselName: "Vessel / Platform Name is required",
-  }));
+    if (
+      jobForm.LocationType === "Offshore" &&
+      !jobForm.OffshoreVesselName.trim()
+    ) {
+      setErrors((prev) => ({
+        ...prev,
+        OffshoreVesselName: "Vessel / Platform Name is required",
+      }));
 
-  return;
-}
+      return;
+    }
 
-setErrors((prev) => ({
-  ...prev,
-  OffshoreVesselName: "",
-}));
+    setErrors((prev) => ({
+      ...prev,
+      OffshoreVesselName: "",
+    }));
 
     setLoading(true);
     try {
@@ -1824,7 +1876,7 @@ setErrors((prev) => ({
                   go={go}
                   jobForm={jobForm}
                   setJobForm={setJobForm}
-                    errors={errors}
+                  errors={errors}
                   onSubmit={stepHandlers[activeStep - 1] ?? (() => { })}
                   handleGenerateJD={handleGenerateJD}
                   handleGenerateAdditionalJD={handleGenerateAdditionalJD}

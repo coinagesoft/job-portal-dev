@@ -30,6 +30,9 @@ export const saveJobDetails = async (payload) => {
   if (payload.PaidOvertime !== undefined && payload.PaidOvertime !== null) {
     formData.append("PaidOvertime", String(payload.PaidOvertime));
   }
+  if (payload.IsOilField !== undefined && payload.IsOilField !== null) {
+  formData.append("IsOilField", String(payload.IsOilField));
+}
 
   // array field
   (payload.KeyResponsibilities ?? []).forEach((r) =>
