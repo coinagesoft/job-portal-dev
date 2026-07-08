@@ -148,3 +148,15 @@ export const getNotes = async (applicationId) => {
   );
   return data;
 };
+
+/**
+ * GET /api/recruiter/screening-questions/applications/{applicationId}
+ * Returns { success, message, applicationId, jobId, jobTitle, candidateId,
+ *           candidateName, screening: [{ question, answer }] }
+ */
+export const getScreeningAnswers = async (applicationId) => {
+  const { data } = await api.get(
+    `/api/recruiter/screening-questions/applications/${applicationId}`
+  );
+  return data;
+};
