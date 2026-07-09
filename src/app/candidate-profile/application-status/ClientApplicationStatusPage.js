@@ -296,7 +296,7 @@ const ApplicationStatusCard = ({ application, isAcknowledged, onAcknowledge, onW
               verticalAlign: 'bottom'
             }}
           >
-            {application.recruiterNote}
+            {application.recruiterNote || "No note from the recruiter yet."}
           </span>
           <div
             style={{
@@ -458,7 +458,7 @@ const ClientApplicationStatusPage = () => {
           stage: item.applicationStage || item.applicationStatus,
           tags: item.tags || [],
           description: item.salaryDisplay,
-          recruiterNote: item.recruiterNote || 'Your application is under review.',
+          recruiterNote: item.note || null,
           logo:
             item.companyLogoUrl ||
             "/assets/imgs/brands/brand-10.png",
