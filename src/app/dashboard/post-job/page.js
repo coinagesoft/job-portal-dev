@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import styles from "./post-job.module.css";
@@ -31,6 +31,8 @@ import {
   getJobResume,
   generateJobDescription,
   getInlineSuggestion,
+  searchRoles,
+  suggestSkills,
 } from "@/services/recruiter/recruiterJobPostService";
 
 /* ─── static data ─────────────────────────────────────────────────────────── */
@@ -82,6 +84,68 @@ const suggestedBenefits = [
   "Food Allowance",
   "Transport",
 ];
+const departmentOptions = [
+  "Operations",
+  "Production",
+  "Maintenance",
+  "Quality Assurance",
+  "Human Resources",
+  "Administration",
+  "Logistics",
+  "Safety",
+  "Procurement",
+  "Other",
+];
+const indianStates = [
+  "Andhra Pradesh",
+  "Assam",
+  "Bihar",
+  "Delhi",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Madhya Pradesh",
+  "Maharashtra",
+  "Odisha",
+  "Punjab",
+  "Rajasthan",
+  "Tamil Nadu",
+  "Telangana",
+  "Uttar Pradesh",
+  "West Bengal",
+  "Other",
+];
+const salaryDisplayOptions = [
+  { value: "Show Range", label: "Show Range" },
+  { value: "Show Min Only", label: "Show Minimum Only" },
+  { value: "Show Max Only", label: "Show Maximum Only" },
+  { value: "Negotiable", label: "Negotiable" },
+];
+const educationOptions = [
+  { value: "No Specific Requirement", label: "No Specific Requirement" },
+  { value: "Below_10th", label: "Below 10th" },
+  { value: "10th_Pass", label: "10th Pass" },
+  { value: "12th_Pass", label: "12th Pass" },
+  { value: "ITI_Diploma", label: "ITI / Diploma" },
+  { value: "Graduate", label: "Graduate" },
+  { value: "Post_Graduate", label: "Post Graduate" },
+];
+const genderOptions = [
+  { value: "Any", label: "Not Specified" },
+  { value: "Male", label: "Male" },
+  { value: "Female", label: "Female" },
+];
+const locationTypeOptions = [
+  { value: "Onshore", label: "Onshore" },
+  { value: "Offshore", label: "Offshore" },
+];
+const companyVisibilityOptions = [
+  { value: "ShowName", label: "Show Company Name" },
+  { value: "HideName", label: "Hide Company Name" },
+];
 
 const JOB_STEPS = [
   { id: "job-details", step: "01", title: "Job Details" },
@@ -103,6 +167,209 @@ function Field({ label, required, hint, children }) {
       </label>
       {children}
       {hint && <p className={styles.hint}>{hint}</p>}
+    </div>
+  );
+}
+
+/**
+ * Dropdown-with-free-text field: pick from a known list, or type your own.
+ * Same pattern as the employer registration wizard's Business Type / Industry
+ * pickers — cuts down on typing while still allowing anything not on the list.
+ */
+/**
+ * Dropdown-with-free-text field: pick from a known list, or type your own.
+ * Same pattern as the employer registration wizard's Business Type / Industry
+ * pickers — cuts down on typing while still allowing anything not on the list.
+ * Accepts either a plain string array (value === label) or an array of
+ * {value, label} pairs (for enum-backed fields like Job Type, where the
+ * stored value differs from the display text).
+ */
+function Combobox({ value, onChange, options, placeholder }) {
+  const normalized = (options || []).map((o) =>
+    typeof o === "string" ? { value: o, label: o } : o
+  );
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+
+  const matched = normalized.find((o) => o.value === value);
+  const [query, setQuery] = useState(matched ? matched.label : value || "");
+
+  useEffect(() => {
+    const m = normalized.find((o) => o.value === value);
+    setQuery(m ? m.label : value || "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  useEffect(() => {
+    const onClickOutside = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
+
+  const filtered = query
+    ? normalized.filter((o) => o.label.toLowerCase().includes(query.toLowerCase()))
+    : normalized;
+
+  return (
+    <div ref={wrapRef} style={{ position: "relative" }}>
+      <input
+        className={styles.control}
+        value={query}
+        placeholder={placeholder || "Type or select…"}
+        autoComplete="off"
+        onChange={(e) => {
+          setQuery(e.target.value);
+          onChange(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+      />
+      {open && filtered.length > 0 && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            left: 0,
+            right: 0,
+            zIndex: 40,
+            background: "#fff",
+            border: "1px solid rgba(18,35,89,0.12)",
+            borderRadius: 10,
+            boxShadow: "0 12px 28px rgba(18,35,89,0.14)",
+            maxHeight: 220,
+            overflowY: "auto",
+          }}
+        >
+          {filtered.map((opt) => (
+            <div
+              key={opt.value}
+              onMouseDown={() => {
+                onChange(opt.value);
+                setQuery(opt.label);
+                setOpen(false);
+              }}
+              style={{
+                padding: "10px 16px",
+                fontSize: "14px",
+                cursor: "pointer",
+                color: "#122359",
+                background: opt.label === query ? "#FFF4E0" : "transparent",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "#FFF4E0")}
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background =
+                  opt.label === query ? "#FFF4E0" : "transparent")
+              }
+            >
+              {opt.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Same dropdown-with-typing UX as Combobox, but the option list comes from
+ * a live API call (GET /api/recruiter/jobs/search-roles) instead of a fixed
+ * array — used for "Role / Specialisation" so suggestions are based on roles
+ * already posted across the platform. Falls back to free typing (AllowCustom)
+ * when there are no matches or the query is too short.
+ */
+function AsyncCombobox({ value, onChange, fetchOptions, placeholder, minChars = 2 }) {
+  const [open, setOpen] = useState(false);
+  const [options, setOptions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const wrapRef = useRef(null);
+  const debounceRef = useRef(null);
+
+  useEffect(() => {
+    const onClickOutside = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
+
+  const runSearch = (q) => {
+    clearTimeout(debounceRef.current);
+    if (!q || q.length < minChars) {
+      setOptions([]);
+      return;
+    }
+    debounceRef.current = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const result = await fetchOptions(q);
+        setOptions(result?.suggestions ?? []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }, 300);
+  };
+
+  return (
+    <div ref={wrapRef} style={{ position: "relative" }}>
+      <input
+        className={styles.control}
+        value={value || ""}
+        placeholder={placeholder || "Type to search…"}
+        autoComplete="off"
+        onChange={(e) => {
+          onChange(e.target.value);
+          setOpen(true);
+          runSearch(e.target.value);
+        }}
+        onFocus={() => setOpen(true)}
+      />
+      {open && (loading || options.length > 0) && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            left: 0,
+            right: 0,
+            zIndex: 40,
+            background: "#fff",
+            border: "1px solid rgba(18,35,89,0.12)",
+            borderRadius: 10,
+            boxShadow: "0 12px 28px rgba(18,35,89,0.14)",
+            maxHeight: 220,
+            overflowY: "auto",
+          }}
+        >
+          {loading ? (
+            <div style={{ padding: "10px 16px", fontSize: 13, color: "#66789c" }}>
+              Searching…
+            </div>
+          ) : (
+            options.map((opt) => (
+              <div
+                key={opt}
+                onMouseDown={() => {
+                  onChange(opt);
+                  setOpen(false);
+                }}
+                style={{
+                  padding: "10px 16px",
+                  fontSize: "14px",
+                  cursor: "pointer",
+                  color: "#122359",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "#FFF4E0")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+              >
+                {opt}
+              </div>
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -226,25 +493,20 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
       <div className={styles.grid2}>
         {/* Trade Category */}
         <Field label="Trade / Role Category" required>
-          <input
-            className={styles.control}
+          <Combobox
             value={jobForm.TradeCategory}
-            onChange={(e) =>
-              setJobForm((p) => ({
-                ...p,
-                TradeCategory: e.target.value,
-              }))
-            }
+            onChange={(v) => setJobForm((p) => ({ ...p, TradeCategory: v }))}
+            options={roleCategories}
             placeholder="e.g. Welding, Electrician, Plumber"
           />
         </Field>
 
         {/* Role (optional free-text specialisation) */}
         <Field label="Role / Specialisation">
-          <input
-            className={styles.control}
+          <AsyncCombobox
             value={jobForm.Role}
-            onChange={(e) => setJobForm((p) => ({ ...p, Role: e.target.value }))}
+            onChange={(v) => setJobForm((p) => ({ ...p, Role: v }))}
+            fetchOptions={searchRoles}
             placeholder="e.g. Pipe Welder"
           />
         </Field>
@@ -277,55 +539,40 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
 
         {/* Job Type */}
         <Field label="Job Type" required>
-          <select
-            className={`${styles.control} ${styles.selectControl}`}
+          <Combobox
             value={jobForm.JobType}
-            onChange={(e) => setJobForm((p) => ({ ...p, JobType: e.target.value }))}
-          >
-            {jobPostTypes.map((v) => (
-              <option key={v.value} value={v.value}>
-                {v.label}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setJobForm((p) => ({ ...p, JobType: v }))}
+            options={jobPostTypes}
+            placeholder="e.g. Regular Hiring"
+          />
         </Field>
 
         {/* Employment Type */}
         <Field label="Employment Type" required>
-          <select
-            className={`${styles.control} ${styles.selectControl}`}
+          <Combobox
             value={jobForm.EmploymentType}
-            onChange={(e) => setJobForm((p) => ({ ...p, EmploymentType: e.target.value }))}
-          >
-            {employmentTypeOptions.map((v) => (
-              <option key={v.value} value={v.value}>
-                {v.label}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setJobForm((p) => ({ ...p, EmploymentType: v }))}
+            options={employmentTypeOptions}
+            placeholder="e.g. Full Time"
+          />
         </Field>
 
         {/* Employment Mode */}
         <Field label="Employment Mode" required>
-          <select
-            className={`${styles.control} ${styles.selectControl}`}
+          <Combobox
             value={jobForm.EmploymentMode}
-            onChange={(e) => setJobForm((p) => ({ ...p, EmploymentMode: e.target.value }))}
-          >
-            {employmentModeOptions.map((v) => (
-              <option key={v.value} value={v.value}>
-                {v.label}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setJobForm((p) => ({ ...p, EmploymentMode: v }))}
+            options={employmentModeOptions}
+            placeholder="e.g. Onsite"
+          />
         </Field>
 
         {/* Department */}
         <Field label="Department">
-          <input
-            className={styles.control}
+          <Combobox
             value={jobForm.Department}
-            onChange={(e) => setJobForm((p) => ({ ...p, Department: e.target.value }))}
+            onChange={(v) => setJobForm((p) => ({ ...p, Department: v }))}
+            options={departmentOptions}
             placeholder="e.g. Operations"
           />
         </Field>
@@ -494,42 +741,23 @@ function Step2({ go, jobForm, setJobForm, onSubmit }) {
 
         {/* Currency First */}
         <Field label="Currency" required>
-          <select
-            className={`${styles.control} ${styles.selectControl}`}
+          <Combobox
             value={jobForm.SalaryCurrency}
-            onChange={(e) =>
-              setJobForm((p) => ({
-                ...p,
-                SalaryCurrency: e.target.value,
-              }))
-            }
-          >
-            {currencies.map((currency) => (
-              <option key={currency.value} value={currency.value}>
-                {currency.label}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setJobForm((p) => ({ ...p, SalaryCurrency: v }))}
+            options={currencies}
+            placeholder="e.g. INR"
+          />
         </Field>
 
         {/* Display Option Second */}
-          <Field label="Salary Display Option" required>
-            <select
-              className={`${styles.control} ${styles.selectControl}`}
-              value={jobForm.SalaryDisplayOption}
-              onChange={(e) =>
-                setJobForm((p) => ({
-                  ...p,
-                  SalaryDisplayOption: e.target.value,
-                }))
-              }
-            >
-              <option value="Show Range">Show Range</option>
-              <option value="Show Min Only">Show Minimum Only</option>
-              <option value="Show Max Only">Show Maximum Only</option>
-              <option value="Negotiable">Negotiable</option>
-            </select>
-          </Field>
+        <Field label="Salary Display Option" required>
+          <Combobox
+            value={jobForm.SalaryDisplayOption}
+            onChange={(v) => setJobForm((p) => ({ ...p, SalaryDisplayOption: v }))}
+            options={salaryDisplayOptions}
+            placeholder="e.g. Show Range"
+          />
+        </Field>
 
         {/* Min Salary */}
         <Field label="Min Salary" required>
@@ -569,7 +797,7 @@ function Step2({ go, jobForm, setJobForm, onSubmit }) {
 }
 
 /* ─── STEP 3 – Skills & JD ────────────────────────────────────────────────── */
-function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, handleGenerateAdditionalJD, loadingAI }) {
+function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, handleGenerateAdditionalJD, loadingAI, handleSuggestSkills, skillsLoading }) {
   return (
     <StepCard
       stepNum={3}
@@ -578,44 +806,67 @@ function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, han
       onBack={() => go(2)}
       onContinue={onSubmit}
     >
-      {/* Key Skills */}
-      <Field label="Key Skills" required hint="Comma-separated list">
-        <input
-          className={styles.control}
-          placeholder="e.g. Welding, AutoCAD, Safety Compliance"
-          value={jobForm.KeySkillsText}
-          onChange={(e) => {
-            const value = e.target.value;
+      {/* Key Skills — AI-generated only, no manual typing */}
+      <Field
+        label="Key Skills"
+        required
+        hint="Generated automatically from the job title, trade, and description. Remove any that don't fit, or regenerate for a fresh set."
+      >
+        <button
+          type="button"
+          className="btn btn-sm btn-default mb-10"
+          onClick={handleSuggestSkills}
+          disabled={skillsLoading}
+        >
+          {skillsLoading
+            ? "Generating…"
+            : jobForm.KeySkills.length > 0
+              ? "✨ Regenerate with AI"
+              : "✨ Generate Skills with AI"}
+        </button>
 
-            setJobForm(p => ({
-              ...p,
-              KeySkillsText: value,
-              KeySkills: splitComma(value)
-            }));
-          }}
-        />
+        {jobForm.KeySkills.length === 0 && !skillsLoading && (
+          <p style={{ fontSize: 13, color: "#66789c", margin: "4px 0 0" }}>
+            No skills yet — click above to have AI suggest skills based on
+            this job.
+          </p>
+        )}
+
+        {jobForm.KeySkills.length > 0 && (
+          <div className={styles.chipRow}>
+            {jobForm.KeySkills.map((s) => (
+              <span
+                key={s}
+                className="btn btn-border btn-sm mr-10 mb-10"
+                style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
+              >
+                {s}
+                <button
+                  type="button"
+                  aria-label={`Remove ${s}`}
+                  onClick={() =>
+                    setJobForm((p) => ({
+                      ...p,
+                      KeySkills: p.KeySkills.filter((k) => k !== s),
+                    }))
+                  }
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "#9ca3af",
+                    fontWeight: 700,
+                    lineHeight: 1,
+                    padding: 0,
+                  }}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
       </Field>
-
-      {/* <div className={styles.chipRow}>
-        {suggestedSkills.map((s) => (
-          <button
-            key={s}
-            type="button"
-            className={`btn btn-border btn-sm mr-10 mb-10 ${jobForm.KeySkills.includes(s) ? "btn-brand-1" : ""
-              }`}
-            onClick={() =>
-              setJobForm((p) => ({
-                ...p,
-                KeySkills: p.KeySkills.includes(s)
-                  ? p.KeySkills.filter((k) => k !== s)
-                  : [...p.KeySkills, s],
-              }))
-            }
-          >
-            {s}
-          </button>
-        ))}
-      </div> */}
 
       {/* Key Responsibilities (step-3 copy — separate from step-1) */}
       {/* <Field
@@ -792,21 +1043,12 @@ function Step4({ go, jobForm, setJobForm, onSubmit }) {
         </Field>
 
         <Field label="Education Required" required>
-          <select
-            className={`${styles.control} ${styles.selectControl}`}
+          <Combobox
             value={jobForm.EducationRequired}
-            onChange={(e) =>
-              setJobForm((p) => ({ ...p, EducationRequired: e.target.value }))
-            }
-          >
-            <option value="No Specific Requirement">No Specific Requirement</option>
-            <option value="Below_10th">Below 10th</option>
-            <option value="10th_Pass">10th Pass</option>
-            <option value="12th_Pass">12th Pass</option>
-            <option value="ITI_Diploma">ITI / Diploma</option>
-            <option value="Graduate">Graduate</option>
-            <option value="Post_Graduate">Post Graduate</option>
-          </select>
+            onChange={(v) => setJobForm((p) => ({ ...p, EducationRequired: v }))}
+            options={educationOptions}
+            placeholder="e.g. Graduate"
+          />
         </Field>
 
         <Field label="Minimum Age">
@@ -836,17 +1078,12 @@ function Step4({ go, jobForm, setJobForm, onSubmit }) {
         </Field>
 
         <Field label="Gender Preferred">
-          <select
-            className={`${styles.control} ${styles.selectControl}`}
+          <Combobox
             value={jobForm.GenderPreferred}
-            onChange={(e) =>
-              setJobForm((p) => ({ ...p, GenderPreferred: e.target.value }))
-            }
-          >
-            <option value="Any">Not Specified</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-          </select>
+            onChange={(v) => setJobForm((p) => ({ ...p, GenderPreferred: v }))}
+            options={genderOptions}
+            placeholder="e.g. Not Specified"
+          />
         </Field>
 
         <Field label="Disability Eligible">
@@ -928,36 +1165,22 @@ function Step5({ go, jobForm, setJobForm, onSubmit, errors, }) {
       <div className={styles.grid2}>
         {/* Location Type */}
         <Field label="Location Type" required>
-          <select
-            className={`${styles.control} ${styles.selectControl}`}
+          <Combobox
             value={jobForm.LocationType}
-            onChange={(e) =>
-              setJobForm((p) => ({ ...p, LocationType: e.target.value }))
-            }
-          >
-            <option value="Onshore">Onshore</option>
-            <option value="Offshore">Offshore</option>
-          </select>
+            onChange={(v) => setJobForm((p) => ({ ...p, LocationType: v }))}
+            options={locationTypeOptions}
+            placeholder="e.g. Onshore"
+          />
         </Field>
 
         {/* General Country */}
         <Field label="Country" required>
-          <select
-            className={`${styles.control} ${styles.selectControl}`}
+          <Combobox
             value={jobForm.Country}
-            onChange={(e) =>
-              setJobForm((p) => ({
-                ...p,
-                Country: e.target.value,
-              }))
-            }
-          >
-            {countryOptions.map((country) => (
-              <option key={country} value={country}>
-                {country}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setJobForm((p) => ({ ...p, Country: v }))}
+            options={countryOptions}
+            placeholder="e.g. India"
+          />
         </Field>
 
         {/* Work Address Line (both types) */}
@@ -986,23 +1209,20 @@ function Step5({ go, jobForm, setJobForm, onSubmit, errors, }) {
             </Field>
 
             <Field label="State / Province" required>
-              <input
-                className={styles.control}
+              <Combobox
                 value={jobForm.OnshoreState}
-                onChange={(e) =>
-                  setJobForm((p) => ({ ...p, OnshoreState: e.target.value }))
-                }
+                onChange={(v) => setJobForm((p) => ({ ...p, OnshoreState: v }))}
+                options={indianStates}
+                placeholder="e.g. Maharashtra"
               />
             </Field>
 
             <Field label="Onshore Country">
-              <input
-                className={styles.control}
-                placeholder="e.g. India"
+              <Combobox
                 value={jobForm.OnshoreCountry}
-                onChange={(e) =>
-                  setJobForm((p) => ({ ...p, OnshoreCountry: e.target.value }))
-                }
+                onChange={(v) => setJobForm((p) => ({ ...p, OnshoreCountry: v }))}
+                options={countryOptions}
+                placeholder="e.g. India"
               />
             </Field>
 
@@ -1051,16 +1271,11 @@ function Step5({ go, jobForm, setJobForm, onSubmit, errors, }) {
             </Field>
 
             <Field label="Offshore Country">
-              <input
-                className={styles.control}
-                placeholder="e.g. UAE"
+              <Combobox
                 value={jobForm.OffshoreCountry}
-                onChange={(e) =>
-                  setJobForm((p) => ({
-                    ...p,
-                    OffshoreCountry: e.target.value,
-                  }))
-                }
+                onChange={(v) => setJobForm((p) => ({ ...p, OffshoreCountry: v }))}
+                options={countryOptions}
+                placeholder="e.g. UAE"
               />
             </Field>
           </>
@@ -1197,19 +1412,12 @@ function Step7({ go, jobForm, setJobForm, onSubmit }) {
 
         {/* Company Visibility */}
         <Field label="Company Visibility">
-          <select
-            className={`${styles.control} ${styles.selectControl}`}
+          <Combobox
             value={jobForm.CompanyVisibility}
-            onChange={(e) =>
-              setJobForm((p) => ({
-                ...p,
-                CompanyVisibility: e.target.value,
-              }))
-            }
-          >
-            <option value="ShowName">Show Company Name</option>
-            <option value="HideName">Hide Company Name</option>
-          </select>
+            onChange={(v) => setJobForm((p) => ({ ...p, CompanyVisibility: v }))}
+            options={companyVisibilityOptions}
+            placeholder="e.g. Show Company Name"
+          />
         </Field>
 
         {/* Job Type (for publishing context — maps to API JobType) */}
@@ -1260,6 +1468,7 @@ export default function DashboardPostJobPage() {
   const [additionalJdSuggestions, setAdditionalJdSuggestions] = useState([]);
   const [ghostSuggestion, setGhostSuggestion] = useState("");
   const [loadingAI, setLoadingAI] = useState(false);
+  const [skillsLoading, setSkillsLoading] = useState(false);
   const [jobId, setJobId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -1442,11 +1651,11 @@ export default function DashboardPostJobPage() {
       ? response.step6Data.questions
       : [],
 
-    // Step 7 – publishing data isn't returned in resume, keep defaults
-    ApplicationDeadline: "",
-    CompanyVisibility: "ShowName",
-    PublishingTags: [],
-    PublishNow: true,
+    // Step 7 – publishing data IS returned in resume as step7Data
+    ApplicationDeadline: response.step7Data?.applicationDeadline ?? "",
+    CompanyVisibility: response.step7Data?.companyVisibility ?? "ShowName",
+    PublishingTags: response.step7Data?.publishingTags ?? [],
+    PublishNow: response.step7Data?.publishNow ?? true,
   });
 
   const loadJobForEdit = async (id) => {
@@ -1561,6 +1770,46 @@ export default function DashboardPostJobPage() {
       setLoadingAI(false);
     }
   };
+
+  /* ── AI skill suggestions (Step 3 — skills are AI-generated only, no manual typing) ── */
+  const handleSuggestSkills = async () => {
+    if (!jobForm.JobTitle.trim()) {
+      alert("Add a Job Title in Step 1 first so AI knows what skills to suggest.");
+      return;
+    }
+    try {
+      setSkillsLoading(true);
+      const response = await suggestSkills({
+        jobTitle: jobForm.JobTitle,
+        tradeCategory: jobForm.TradeCategory,
+        jobDescription: jobForm.JobDescription,
+      });
+      setJobForm((p) => ({
+        ...p,
+        KeySkills: response?.skills ?? p.KeySkills,
+      }));
+    } catch (error) {
+      console.error("suggestSkills:", error);
+      alert("Failed to generate skills. Please try again.");
+    } finally {
+      setSkillsLoading(false);
+    }
+  };
+
+  /* Auto-generate skills the first time the employer reaches Step 3,
+     as long as they haven't been filled already (e.g. from Step 1's
+     "Generate with AI" JD button, or from resuming a draft). */
+  useEffect(() => {
+    if (
+      activeStep === 3 &&
+      jobForm.KeySkills.length === 0 &&
+      jobForm.JobTitle.trim() &&
+      !skillsLoading
+    ) {
+      handleSuggestSkills();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeStep]);
 
   const fetchInlineSuggestions = async (currentText, target = "job") => {
     if (!currentText || currentText.length < 20) return;
@@ -1883,6 +2132,8 @@ export default function DashboardPostJobPage() {
                   additionalJdSuggestions={additionalJdSuggestions}
                   ghostSuggestion={ghostSuggestion}
                   handleJDTab={handleJDTab}
+                  handleSuggestSkills={handleSuggestSkills}
+                  skillsLoading={skillsLoading}
                 />
 
                 <div className={styles.bottomLink}>
