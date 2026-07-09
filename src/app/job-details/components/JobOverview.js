@@ -23,6 +23,9 @@ const JobOverview = ({ job = {} }) => {
     return value.replace(/_/g, " ");
   };
 
+  const isConfidential =
+  job.companyVisibility === "HideName"
+
   // Previously all ~20 fields were dumped into one flat 2-column flex grid.
   // When a label wrapped to two lines ("Employment Mode", "Disability
   // Friendly", etc.) it visually collided with the next row, since icon +

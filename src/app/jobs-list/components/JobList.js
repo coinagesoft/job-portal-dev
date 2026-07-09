@@ -144,8 +144,11 @@ const JobList = ({ filters = {} }) => {
         // when logged in, backend returns a per-candidate AI match score
         candidateId: getCandidateId() || undefined,
       };
+     
 
       const response = await searchJobs(params);
+      console.log("API RESPONSE");
+console.log(response.data.jobs);
       const data = response.data || {};
       const jobsList = (data.jobs || []).map((job) => ({
         ...job,
@@ -162,7 +165,9 @@ const JobList = ({ filters = {} }) => {
     } finally {
       setLoading(false);
     }
+    
   };
+
   useEffect(() => {
     loadJobs();
   }, [filters, currentPage, showPerPage, sortBy]);

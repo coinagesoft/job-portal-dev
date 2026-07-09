@@ -3,6 +3,7 @@ import React from "react";
 import Link from "next/link";
 import { getAllJobs } from "@/services/candidate/allJobsService";
 
+
 const COMPANY_RELATED_TAGS = new Set([
   "Verified Employer",
   "Licensed Contractor",
@@ -29,7 +30,10 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) 
   const companyTagsFromData = toSafeTags(job.companyTags);
   const jobTagsFromData = toSafeTags(job.jobTags);
   const derivedCompanyBadge = COMPANY_BADGE_BY_POSTED_BY[job.postedBy];
+  const isConfidential = job.companyVisibility === "HideName";
 
+  console.log(job.companyVisibility);
+  console.log(job);
   const companyTags =
     companyTagsFromData.length > 0
       ? companyTagsFromData
@@ -44,7 +48,35 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) 
     jobTagsFromData.length > 0
       ? jobTagsFromData
       : tags.filter((tag) => !COMPANY_RELATED_TAGS.has(tag));
+// console.log("job =", job);
+// console.log("companyVisibility =", job.companyVisibility);
+// console.log("isConfidential =", job.companyVisibility === "HideName");
 
+const getDisplaySalary = (salaryRange, salaryVisibility) => {
+  if (!salaryRange) return "";
+
+  switch (salaryVisibility) {
+    case "Show Range":
+    case "Show_Range":
+      return salaryRange;
+
+    case "Show Min Only":
+      return salaryRange.includes("-")
+        ? salaryRange.split("-")[0].trim()
+        : salaryRange;
+
+    case "Show Max Only":
+      return salaryRange.includes("-")
+        ? salaryRange.split("-")[1].trim()
+        : salaryRange;
+
+    case "Negotiable":
+      return "Negotiable";
+
+    default:
+      return salaryRange;
+  }
+};
   return (
     <>
       <div
@@ -83,23 +115,44 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) 
           <div className="col-lg-6 col-md-6 col-sm-12">
             <div className="card-grid-2-image-left">
               <div className="image-box">
-                <img style={{
-                  width: "52px",
-                  height: "52px",
-                  overflow: "hidden",
-                  objectFit: "cover", borderRadius: "8px",
-                }}
-                  src={job.companyLogoUrl || "/assets/imgs/brands/brand-10.png"}
+                <img
+                  style={{
+                    width: "52px",
+                    height: "52px",
+                    objectFit: "contain",
+                    background: "#fff",
+                    borderRadius: "8px",
+                    padding: "4px",
+                  }}
+                  src={
+                    isConfidential
+                      ? "/assets/imgs/brands/brand-9.png"
+                      : job.companyLogoUrl || "/assets/imgs/brands/brand-10.png"
+                  }
                   alt="jobBox"
                 />
               </div>
               <div className="right-info">
-                <Link
-                  className="name-job"
-                  href={`/company-details?employerId=${job.employerId}`}
-                >
-                  {job.companyName}
-                </Link>
+                {isConfidential ? (
+                  <span
+                    className="name-job"
+                    style={{
+                      cursor: "default",
+                      pointerEvents: "none",
+                      textDecoration: "none",
+                      color: "inherit",
+                    }}
+                  >
+                    Confidential Company
+                  </span>
+                ) : (
+                  <Link
+                    className="name-job"
+                    href={`/company-details?employerId=${job.employerId}`}
+                  >
+                    {job.companyName}
+                  </Link>
+                )}
 
                 <div
                   style={{
@@ -374,9 +427,9 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) 
           <div className="card-2-bottom mt-20">
             <div className="row">
               <div className="col-lg-7 col-7">
-                <span className="card-text-price">
-                  {job.salaryRange}
-                </span>
+              <span className="card-text-price">
+  {getDisplaySalary(job.salaryRange, job.salaryVisibility)}
+</span>
               </div>
               <div className="col-lg-5 col-5 text-end">
                 {isApplied ? (

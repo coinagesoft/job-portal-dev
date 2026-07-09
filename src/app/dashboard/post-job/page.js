@@ -513,23 +513,23 @@ function Step2({ go, jobForm, setJobForm, onSubmit }) {
         </Field>
 
         {/* Display Option Second */}
-        <Field label="Salary Display Option" required>
-          <select
-            className={`${styles.control} ${styles.selectControl}`}
-            value={jobForm.SalaryDisplayOption}
-            onChange={(e) =>
-              setJobForm((p) => ({
-                ...p,
-                SalaryDisplayOption: e.target.value,
-              }))
-            }
-          >
-            <option value="Show Range">Show Range</option>
-            <option value="Show Min Only">Show Minimum Only</option>
-            <option value="Show Max Only">Show Maximum Only</option>
-            <option value="Negotiable">Negotiable</option>
-          </select>
-        </Field>
+          <Field label="Salary Display Option" required>
+            <select
+              className={`${styles.control} ${styles.selectControl}`}
+              value={jobForm.SalaryDisplayOption}
+              onChange={(e) =>
+                setJobForm((p) => ({
+                  ...p,
+                  SalaryDisplayOption: e.target.value,
+                }))
+              }
+            >
+              <option value="Show Range">Show Range</option>
+              <option value="Show Min Only">Show Minimum Only</option>
+              <option value="Show Max Only">Show Maximum Only</option>
+              <option value="Negotiable">Negotiable</option>
+            </select>
+          </Field>
 
         {/* Min Salary */}
         <Field label="Min Salary" required>

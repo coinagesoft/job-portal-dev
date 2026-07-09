@@ -446,7 +446,7 @@ const StepPersonal = ({
       storeProfilePhotoPreview(previewUrl);
       onChange("avatar", previewUrl);
 
-      console.log("Selected file:", file);
+      // console.log("Selected file:", file);
 
       await onPhotoUpload(file, previewUrl);
     };
@@ -2548,12 +2548,12 @@ const loadAvailability = useCallback(async () => {
         `/api/candidate/profile/personal-info?candidateId=${candidateId}`,
       );
 
-      console.log("PROFILE DATA", response.data);
+      // console.log("PROFILE DATA", response.data);
 
       if (response.data.success) {
         const profile = response.data.data;
         const country = COUNTRY_MAP[profile.countryCode] || "IN";
-        console.log("profilePhotoUrl =", profile.profilePhotoUrl);
+        // console.log("profilePhotoUrl =", profile.profilePhotoUrl);
         const names = profile.fullName ? profile.fullName.split(" ") : [];
         const personalInfoData = {
           firstName: names[0] || "",
@@ -2605,12 +2605,12 @@ const loadAvailability = useCallback(async () => {
   ? buildProfilePhotoUrl(profile.profilePhotoUrl)
   : DEFAULT_PROFILE_PHOTO,
         }));
-        console.log(
-          "Final Avatar URL:",
-          profile.profilePhotoUrl
-            ? buildProfilePhotoUrl(profile.profilePhotoUrl)
-            : "default-image",
-        );
+        // console.log(
+        //   "Final Avatar URL:",
+        //   profile.profilePhotoUrl
+        //     ? buildProfilePhotoUrl(profile.profilePhotoUrl)
+        //     : "default-image",
+        // );
       }
     } catch (error) {
       console.error("Failed to load profile", error);
@@ -2618,7 +2618,7 @@ const loadAvailability = useCallback(async () => {
   }, [candidateId]);
 
   useEffect(() => {
-    console.log("API URL =", process.env.NEXT_PUBLIC_API_URL);
+    // console.log("API URL =", process.env.NEXT_PUBLIC_API_URL);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadPersonalInfo();
     loadAvailability();
@@ -2627,7 +2627,7 @@ const loadAvailability = useCallback(async () => {
   //Update profile data to API
 
   const savePersonalInfo = async () => {
-    console.log("Candidate ID:", candidateId);
+    // console.log("Candidate ID:", candidateId);
     if (!candidateId) {
       showToast("Please log in again to save your profile.", "error");
       return false;
@@ -2689,7 +2689,7 @@ const loadAvailability = useCallback(async () => {
       currentlyAvailableForWork: profileData.availableForWork,
       newsletterOptIn: false,
     };
-    console.log("Sending Payload:", currentPersonalInfo);
+    // console.log("Sending Payload:", currentPersonalInfo);
     try {
       await updatePersonalInfo(currentPersonalInfo);
 
@@ -2703,16 +2703,16 @@ const loadAvailability = useCallback(async () => {
 
       return false;
     }
-    console.log("SENDING DATA:", currentPersonalInfo);
+    // console.log("SENDING DATA:", currentPersonalInfo);
     const personalChanged =
       JSON.stringify(currentPersonalInfo) !==
       JSON.stringify(initialPersonalInfo);
 
     try {
       let savedMessage = "Profile saved successfully";
-      console.log("Current:", currentPersonalInfo);
-      console.log("Initial:", initialPersonalInfo);
-      console.log("Changed:", personalChanged);
+      // console.log("Current:", currentPersonalInfo);
+      // console.log("Initial:", initialPersonalInfo);
+      // console.log("Changed:", personalChanged);
 
       if (!personalChanged) {
         await updateAvailability({
@@ -2764,16 +2764,16 @@ const loadAvailability = useCallback(async () => {
 
         showToast(savedMessage, "success");
 
-        console.log("Profile Completion:", response.data.profileCompletionPct);
+        // console.log("Profile Completion:", response.data.profileCompletionPct);
 
         return true; // <-- ADD THIS
       }
 
       return false; // <-- ADD THIS
     } catch (error) {
-      console.log("STATUS:", error.response?.status);
-      console.log("ERROR DATA:", error.response?.data);
-      console.log("PAYLOAD:", payload);
+      // console.log("STATUS:", error.response?.status);
+      // console.log("ERROR DATA:", error.response?.data);
+      // console.log("PAYLOAD:", payload);
 
       console.error("Failed to update profile", error);
 
@@ -3393,11 +3393,11 @@ const loadAvailability = useCallback(async () => {
   }, []);
 
 const handleAvailabilityChange = async (checked) => {
-  console.log("Sending:", {
-    availabilityStatus: checked
-      ? "Open_To_Opportunities"
-      : "Not_Available",
-  });
+  // console.log("Sending:", {
+  //   availabilityStatus: checked
+  //     ? "Open_To_Opportunities"
+  //     : "Not_Available",
+  // });
 
   await updateAvailability({
     availabilityStatus: checked
@@ -3475,13 +3475,13 @@ const handleAvailabilityChange = async (checked) => {
   );
 
   const handleSaveStep = async () => {
-    console.log("Current Step:", currentStep);
+    // console.log("Current Step:", currentStep);
     if (currentStep === 1) {
       const saved = await savePersonalInfo();
-      console.log("savePersonalInfo returned:", saved);
+      // console.log("savePersonalInfo returned:", saved);
 
       if (!saved) {
-        console.log("NOT MOVING TO NEXT STEP");
+        // console.log("NOT MOVING TO NEXT STEP");
         return;
       }
     }
@@ -3603,7 +3603,7 @@ const handleAvailabilityChange = async (checked) => {
     try {
       const response = await getDocuments();
 
-      console.log("DOCUMENTS:", response.data);
+      // console.log("DOCUMENTS:", response.data);
 
       if (response.data.success) {
         const docs = response.data.data;
