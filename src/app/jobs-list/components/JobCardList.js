@@ -126,7 +126,7 @@ const getDisplaySalary = (salaryRange, salaryVisibility) => {
                   }}
                   src={
                     isConfidential
-                      ? "/assets/imgs/brands/brand-9.png"
+                      ? "/assets/imgs/page/job-single/industry.svg"
                       : job.companyLogoUrl || "/assets/imgs/brands/brand-10.png"
                   }
                   alt="jobBox"

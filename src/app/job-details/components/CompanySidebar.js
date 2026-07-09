@@ -8,14 +8,15 @@ const CompanySidebar = ({ job = {} }) => {
   const [isShortlisted, setIsShortlisted] = useState(false);
   const [similarJobs, setSimilarJobs] = useState([]);
 
+  const isConfidential = job.companyVisibility === "HideName";
+
   const humanize = (value) => {
     if (value === null || value === undefined) return value;
     if (typeof value !== 'string') return value;
     return value.replace(/_/g, ' ');
   };
 
-  const isConfidential =
-    job.companyVisibility === "HideName";
+  
 
   const formatHourlyPrice = (value) => {
     const text = String(value || '').trim();
@@ -51,29 +52,18 @@ const CompanySidebar = ({ job = {} }) => {
         <div className="sidebar-heading">
           <div className="avatar-sidebar">
             <figure>
-              <img
-                alt="jobBox"
-                src={
-                  isConfidential
-                    ? "/assets/imgs/page/job-single/industry.svg"
-                    : job.companyLogoUrl || "/assets/imgs/page/homepage1/img1.png"
-                }
-                  style={{
-    width: "54px",
-    height: "54px",
-    objectFit: "cover",
-    // borderRadius: "8px",
-    // border: "1px solid rgba(18, 35, 89, 0.08)",
-  }}
-              />
+             <img
+  alt="jobBox"
+  src={
+    isConfidential
+      ? "/assets/imgs/page/job-single/industry.svg"
+      : job.companyLogoUrl || "/assets/imgs/page/homepage1/img1.png"
+  }
+/>
             </figure>
             <div className="sidebar-info">
               {job.companyFull && (
-                <span className="sidebar-company">
-                  {isConfidential
-                    ? "Confidential Company"
-                    : job.companyFull || job.companyName}
-                </span>
+                <span className="sidebar-company">{job.companyFull}</span>
               )}
               {job.location && (
                 <span className="card-location">
