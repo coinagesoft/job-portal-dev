@@ -1,74 +1,121 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import Link from "next/link";
 import { useToast } from "@/components/Toast";
 import { useEffect } from "react";
 import companyProfileService from "@/services/recruiter/companyProfileService";
+import {
+  getRecruiterJobs,
+  pauseJob,
+  resumeJob,
+} from "@/services/recruiter/recruiterJobListService";
+import {
+  getSubUsers,
+  deactivateSubUser,
+  reactivateSubUser,
+  resendInvite,
+} from "@/services/recruiter/recruiterSubUserService";
 import styles from "./company-profile.module.css";
 
-const recruitmentCards = [
-  {
-    id: 1,
-    title: "Welder 6G – Offshore",
-    location: "Mumbai",
-    type: "Full time",
-    salary: "INR 45,000/mo",
-    applicants: 12,
-    posted: "2 days ago",
-    tags: ["ITI", "6G", "Offshore"],
-  },
-  {
-    id: 2,
-    title: "Marine Electrician",
-    location: "Chennai",
-    type: "Contract",
-    salary: "INR 52,000/mo",
-    applicants: 8,
-    posted: "4 days ago",
-    tags: ["Marine", "HT/LT"],
-  },
-  {
-    id: 3,
-    title: "Galley Cook",
-    location: "Kochi",
-    type: "Full time",
-    salary: "INR 38,000/mo",
-    applicants: 5,
-    posted: "6 days ago",
-    tags: ["Vessel Crew", "STCW"],
-  },
-  {
-    id: 4,
-    title: "Rigger – Heavy Lift",
-    location: "Visakhapatnam",
-    type: "Contract",
-    salary: "INR 58,000/mo",
-    applicants: 9,
-    posted: "1 day ago",
-    tags: ["Rigging", "Heavy Lift"],
-  },
+// Same option set used in the employer registration wizard (src/app/register/page.js)
+// kept in sync here so the profile page always mirrors what a recruiter saw at sign-up.
+const INDUSTRIES = [
+  "Construction & Infrastructure",
+  "Marine & Shipping",
+  "Oil & Gas",
+  "Manufacturing",
+  "Logistics & Transportation",
+  "Warehousing & Supply Chain",
+  "Hospitality & Facilities",
+  "Ports & Terminals",
+  "Mining",
+  "Aviation",
+  "Renewable Energy",
+  "Engineering Services",
+  "Healthcare",
+  "IT & Technology",
+  "Retail",
+  "Other",
 ];
 
-const people = [
-  {
-    name: "Arjun Mehta",
-    role: "Account Owner",
-    email: "arjun.mehta@horizonmarine.in",
-    initials: "AM",
-  },
-  {
-    name: "Sneha Raut",
-    role: "HR Manager",
-    email: "sneha.raut@horizonmarine.in",
-    initials: "SR",
-  },
-  {
-    name: "Rahul Desai",
-    role: "Recruiter",
-    email: "rahul.desai@horizonmarine.in",
-    initials: "RD",
-  },
+const BUSINESS_TYPES = [
+  "Private Limited",
+  "Public Limited",
+  "Limited Liability Partnership (LLP)",
+  "Partnership",
+  "Sole Proprietorship",
+  "One Person Company (OPC)",
+  "Section 8 Company (Non-Profit)",
+  "Trust",
+  "Society",
+  "Cooperative Society",
+  "Public Sector Undertaking (PSU)",
+  "Government Entity",
+  "Branch Office",
+  "Liaison Office",
+  "Joint Venture",
+  "Other",
 ];
+
+// ── Helpers for formatting live job & team-member data ──────────
+const getTimeAgo = (dateString) => {
+  if (!dateString) return "Recently";
+  const now = new Date();
+  const postedDate = new Date(dateString);
+  const diffInMs = now - postedDate;
+  const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+  const diffInDays = Math.floor(diffInHours / 24);
+
+  if (diffInHours < 1) return "Just now";
+  if (diffInHours < 24) return `${diffInHours} hour${diffInHours === 1 ? "" : "s"} ago`;
+  return `${diffInDays} day${diffInDays === 1 ? "" : "s"} ago`;
+};
+
+const formatSalary = (job) => {
+  const currency = job.salaryCurrency || "INR";
+  const min = job.salaryMin;
+  const max = job.salaryMax;
+
+  if (!min && !max) return "Not disclosed";
+  if (min && max && min !== max) {
+    return `${currency} ${min.toLocaleString("en-IN")} - ${max.toLocaleString("en-IN")}/mo`;
+  }
+  return `${currency} ${(max || min).toLocaleString("en-IN")}/mo`;
+};
+
+const mapJobToCard = (job) => ({
+  id: job.jobId,
+  jobId: job.jobId,
+  title: job.jobTitle,
+  location: job.location || "—",
+  type: job.employmentType || job.jobType || "—",
+  salary: formatSalary(job),
+  applicants: job.appliedCount ?? 0,
+  posted: getTimeAgo(job.publishedAt || job.createdAt),
+  status: job.jobStatus,
+  tags: [job.tradeCategory, job.role, job.employmentMode, job.locationType].filter(
+    (t) => !!t && t !== "string",
+  ),
+});
+
+const getInitials = (name) => {
+  if (!name) return "?";
+  const parts = name.trim().split(/\s+/);
+  return parts
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase())
+    .join("");
+};
+
+const mapSubUserToPerson = (u) => ({
+  subUserId: u.subUserId,
+  name: u.subUserName,
+  role: u.role,
+  email: u.subUserEmail,
+  status: u.status,
+  initials: getInitials(u.subUserName),
+});
+
 const Field = ({ label, children }) => (
   <div className={styles.field}>
     <label className={styles.label}>
@@ -92,6 +139,84 @@ const Textarea = (props) => (
     className={styles.textarea}
   />
 );
+
+// Dropdown-with-free-text field, same pattern used in the registration wizard's
+// Business Type / Industry pickers — lets existing saved values that aren't in
+// the preset list (e.g. custom text typed at registration) still display correctly.
+const Combobox = ({ value, onChange, options, placeholder }) => {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+
+  useEffect(() => {
+    const onClickOutside = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
+
+  const query = value || "";
+  const filtered = query
+    ? options.filter((o) => o.toLowerCase().includes(query.toLowerCase()))
+    : options;
+
+  return (
+    <div ref={wrapRef} style={{ position: "relative" }}>
+      <input
+        className={styles.control}
+        value={query}
+        placeholder={placeholder || "Type or select…"}
+        autoComplete="off"
+        onChange={(e) => {
+          onChange(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+      />
+      {open && filtered.length > 0 && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            left: 0,
+            right: 0,
+            zIndex: 40,
+            background: "#fff",
+            border: "1px solid rgba(18,35,89,0.12)",
+            borderRadius: 8,
+            boxShadow: "0 12px 28px rgba(18,35,89,0.14)",
+            maxHeight: 220,
+            overflowY: "auto",
+          }}
+        >
+          {filtered.map((opt) => (
+            <div
+              key={opt}
+              onMouseDown={() => {
+                onChange(opt);
+                setOpen(false);
+              }}
+              style={{
+                padding: "9px 14px",
+                fontSize: "14px",
+                cursor: "pointer",
+                color: "#122359",
+                background: opt === query ? "#FFF4E0" : "transparent",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "#FFF4E0")}
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background =
+                  opt === query ? "#FFF4E0" : "transparent")
+              }
+            >
+              {opt}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 // const EditFieldModal = ({ field, value, onClose, onSave }) => {
 //   const [val, setVal] = useState(value ?? "");
@@ -414,9 +539,85 @@ export default function EmployerCompanyProfilePage() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
 
+  // Recruitments tab (live job postings)
+  const [jobs, setJobs] = useState([]);
+  const [jobsLoading, setJobsLoading] = useState(true);
+
+  // People tab (live sub-users / team members)
+  const [people, setPeople] = useState([]);
+  const [peopleLoading, setPeopleLoading] = useState(true);
+
   useEffect(() => {
     loadCompanyProfile();
+    loadJobs();
+    loadPeople();
   }, []);
+
+  const loadJobs = async () => {
+    try {
+      setJobsLoading(true);
+      const response = await getRecruiterJobs({ pageSize: 50 });
+      const list = (response?.jobs || []).map(mapJobToCard);
+      setJobs(list);
+    } catch (error) {
+      console.error(error);
+      showToast("Failed to load recruitments", "error");
+    } finally {
+      setJobsLoading(false);
+    }
+  };
+
+  const loadPeople = async () => {
+    try {
+      setPeopleLoading(true);
+      const response = await getSubUsers();
+      const list = (response?.subUsers || []).map(mapSubUserToPerson);
+      setPeople(list);
+    } catch (error) {
+      console.error(error);
+      showToast("Failed to load team members", "error");
+    } finally {
+      setPeopleLoading(false);
+    }
+  };
+
+  const handleTogglePause = async (job) => {
+    try {
+      const res =
+        job.status === "Paused"
+          ? await resumeJob(job.jobId)
+          : await pauseJob(job.jobId);
+
+      showToast(res?.message || "Job updated", "success");
+      await loadJobs();
+    } catch (error) {
+      showToast(
+        error?.response?.data?.message || "Unable to update job",
+        "error",
+      );
+    }
+  };
+
+  const handleRevokeAccess = async (person) => {
+    try {
+      let res;
+      if (person.status === "Deactivated") {
+        res = await reactivateSubUser(person.subUserId);
+      } else if (person.status === "Pending") {
+        res = await resendInvite(person.subUserId);
+      } else {
+        res = await deactivateSubUser(person.subUserId);
+      }
+
+      showToast(res?.message || "Team member updated", "success");
+      await loadPeople();
+    } catch (error) {
+      showToast(
+        error?.response?.data?.message || "Unable to update team member",
+        "error",
+      );
+    }
+  };
 
   const loadCompanyProfile = async () => {
     try {
@@ -570,25 +771,26 @@ export default function EmployerCompanyProfilePage() {
     handleSaveField(field, company[field]);
   };
 
-  // NOTE: requires a companyProfileService.updateCompanyProfileFile(fieldKey, file)
-  // method that PATCHes multipart/form-data with the file under "CompanyLogo" or
-  // "CoverImage" (matching UpdateCompanyProfileDto field names) — not implemented
-  // yet in the service file you showed me.
+  // Uploads a logo/cover image file via multipart/form-data PATCH to the
+  // company profile endpoint. The backend only returns { success, message }
+  // (no updated URL), so after a successful upload we re-fetch the full
+  // profile to pick up the real, persisted image URL — using a blob preview
+  // or a guessed URL here would look fine until the next reload, then
+  // silently revert.
   const handleFileUpload = async (fieldKey, apiField, file, setUploading) => {
     if (!file) return;
+
+    // Show an instant local preview while the upload is in flight.
+    const previewUrl = URL.createObjectURL(file);
+    setCompany((prev) => ({ ...prev, [fieldKey]: previewUrl }));
 
     try {
       setUploading(true);
 
-      const result = await companyProfileService.updateCompanyProfileFile(
-        apiField,
-        file,
-      );
+      await companyProfileService.updateCompanyProfileFile(apiField, file);
 
-      setCompany((prev) => ({
-        ...prev,
-        [fieldKey]: result?.url ?? URL.createObjectURL(file),
-      }));
+      // Re-fetch so the UI reflects the actual persisted URL from the server.
+      await loadCompanyProfile();
 
       showToast("Image updated successfully", "success");
     } catch (error) {
@@ -597,6 +799,9 @@ export default function EmployerCompanyProfilePage() {
         error?.response?.data?.message || "Failed to upload image",
         "error",
       );
+      // Roll back the optimistic preview on failure by reloading the
+      // last-known-good profile from the server.
+      await loadCompanyProfile();
     } finally {
       setUploading(false);
     }
@@ -611,6 +816,9 @@ export default function EmployerCompanyProfilePage() {
         handleSaveField("industry", company.industry),
         handleSaveField("businessType", company.businessType),
         handleSaveField("size", company.size),
+        handleSaveField("totalEmployees", company.totalEmployees),
+        handleSaveField("founded", company.founded),
+        handleSaveField("timeZone", company.timeZone),
         handleSaveField("highlights", company.highlights || []),
         handleSaveField("companyDescription", description),
       ]);
@@ -1001,12 +1209,11 @@ export default function EmployerCompanyProfilePage() {
                       </Field>
 
                       <Field label="Industry">
-                        <Inp
+                        <Combobox
                           value={company.industry || ""}
-                          onChange={(e) =>
-                            handleInputChange("industry", e.target.value)
-                          }
-                        // onBlur={() => handleBlurSave("industry")}
+                          onChange={(v) => handleInputChange("industry", v)}
+                          options={INDUSTRIES}
+                          placeholder="Type or select industry…"
                         />
                       </Field>
                     </div>
@@ -1019,21 +1226,12 @@ export default function EmployerCompanyProfilePage() {
                       }}
                     >
                       <Field label="Business Type">
-                        <select
-                          className={styles.control}
+                        <Combobox
                           value={company.businessType || ""}
-                          onChange={(e) =>
-                            handleInputChange("businessType", e.target.value)
-                          }
-                        >
-                          <option value="">--</option>
-                          <option value="Proprietorship">Proprietorship</option>
-                          <option value="Partnership">Partnership</option>
-                          <option value="Private Ltd">Private Ltd</option>
-                          <option value="Public Ltd">Public Ltd</option>
-                          <option value="LLP">LLP</option>
-                          <option value="Other">Other</option>
-                        </select>
+                          onChange={(v) => handleInputChange("businessType", v)}
+                          options={BUSINESS_TYPES}
+                          placeholder="Type or select business type…"
+                        />
                       </Field>
 
                       <Field label="Company Size">
@@ -1051,6 +1249,48 @@ export default function EmployerCompanyProfilePage() {
                           <option value="201-500">201-500</option>
                           <option value="500+">500+</option>
                         </select>
+                      </Field>
+                    </div>
+
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr 1fr",
+                        gap: "0 20px",
+                      }}
+                    >
+                      <Field label="Total Employees">
+                        <Inp
+                          type="number"
+                          min="0"
+                          value={company.totalEmployees ?? ""}
+                          onChange={(e) =>
+                            handleInputChange("totalEmployees", e.target.value)
+                          }
+                        />
+                      </Field>
+
+                      <Field label="Founded (Year)">
+                        <Inp
+                          type="number"
+                          min="1800"
+                          max={new Date().getFullYear()}
+                          placeholder="e.g. 2015"
+                          value={company.founded ?? ""}
+                          onChange={(e) =>
+                            handleInputChange("founded", e.target.value)
+                          }
+                        />
+                      </Field>
+
+                      <Field label="Time Zone">
+                        <Inp
+                          placeholder="e.g. Asia/Kolkata"
+                          value={company.timeZone || ""}
+                          onChange={(e) =>
+                            handleInputChange("timeZone", e.target.value)
+                          }
+                        />
                       </Field>
                     </div>
 
@@ -1304,8 +1544,8 @@ export default function EmployerCompanyProfilePage() {
                     </div>
 
                     <Field label="Operating Hours">
-                      <Textarea
-                        rows={3}
+                      <Inp
+                        placeholder="e.g. Mon–Sat, 9:00 AM – 6:00 PM"
                         value={company.operatingHours || ""}
                         onChange={(e) =>
                           handleInputChange("operatingHours", e.target.value)
@@ -1345,28 +1585,36 @@ export default function EmployerCompanyProfilePage() {
                       Active Recruitments
                     </h4>
 
-                    <button
+                    <Link
+                      href="/dashboard/post-job"
                       className="btn btn-default btn-sm"
                       style={{
                         borderRadius: "12px",
                         fontWeight: 700,
                         padding: "10px 18px",
                         boxShadow: "0 8px 18px rgba(255,163,0,0.18)",
+                        display: "inline-flex",
+                        alignItems: "center",
                       }}
-                      onClick={() =>
-                        showToast("Redirecting to post a new job…", "info")
-                      }
                     >
                       <i
                         className="fi fi-rr-plus"
                         style={{ marginRight: "6px" }}
                       />
                       Post New Job
-                    </button>
+                    </Link>
                   </div>
 
+                  {jobsLoading ? (
+                    <p style={{ color: "#66789c" }}>Loading recruitments…</p>
+                  ) : jobs.length === 0 ? (
+                    <p style={{ color: "#66789c" }}>
+                      No active job postings yet. Click “Post New Job” to
+                      create one.
+                    </p>
+                  ) : (
                   <div className="box-list-jobs display-list">
-                    {recruitmentCards.map((job) => (
+                    {jobs.map((job) => (
                       <div className="col-xl-12 col-12" key={job.id}>
                         <div
                           className="card-grid-2 hover-up cv-search-candidate-card"
@@ -1399,7 +1647,9 @@ export default function EmployerCompanyProfilePage() {
                                     transition: "all .25s ease",
                                   }}
                                 >
-                                  <Link href="/employeer/applicants">
+                                  <Link
+                                    href={`/employeer/applicants?jobId=${job.jobId}&jobTitle=${encodeURIComponent(job.title || "")}`}
+                                  >
                                     {job.title}
                                   </Link>
                                 </h4>
@@ -1537,7 +1787,7 @@ export default function EmployerCompanyProfilePage() {
                                 }}
                               >
                                 <Link
-                                  href="/employeer/applicants"
+                                  href={`/employeer/applicants?jobId=${job.jobId}&jobTitle=${encodeURIComponent(job.title || "")}`}
                                   className="btn btn-default"
                                   style={{
                                     background: "#ffa300",
@@ -1575,22 +1825,17 @@ export default function EmployerCompanyProfilePage() {
                                   View Applicants
                                 </Link>
 
-                                <button
+                                <Link
+                                  href={`/dashboard/post-job?jobId=${job.jobId}`}
                                   className="btn btn-border btn-sm"
                                   style={{
                                     borderRadius: "12px",
                                     fontWeight: 700,
                                     padding: "10px 16px",
                                   }}
-                                  onClick={() =>
-                                    showToast(
-                                      `Editing job: "${job.title}"`,
-                                      "info",
-                                    )
-                                  }
                                 >
                                   Edit Job
-                                </button>
+                                </Link>
 
                                 <button
                                   className="btn btn-grey-small"
@@ -1599,14 +1844,9 @@ export default function EmployerCompanyProfilePage() {
                                     fontWeight: 700,
                                     padding: "10px 16px",
                                   }}
-                                  onClick={() =>
-                                    showToast(
-                                      `Job "${job.title}" paused.`,
-                                      "warning",
-                                    )
-                                  }
+                                  onClick={() => handleTogglePause(job)}
                                 >
-                                  Pause
+                                  {job.status === "Paused" ? "Resume" : "Pause"}
                                 </button>
                               </div>
                             </div>
@@ -1615,6 +1855,7 @@ export default function EmployerCompanyProfilePage() {
                       </div>
                     ))}
                   </div>
+                  )}
                 </div>
               )}
 
@@ -1629,18 +1870,21 @@ export default function EmployerCompanyProfilePage() {
                     }}
                   >
                     <h4 style={{ margin: 0 }}>Team Members</h4>
-                    <button
+                    <Link
+                      href="/employeer/sub-user"
                       className="btn btn-default btn-sm"
-                      onClick={() =>
-                        showToast(
-                          "Invite member — enter email to send invitation.",
-                          "info",
-                        )
-                      }
                     >
                       + Invite Member
-                    </button>
+                    </Link>
                   </div>
+
+                  {peopleLoading ? (
+                    <p style={{ color: "#66789c" }}>Loading team members…</p>
+                  ) : people.length === 0 ? (
+                    <p style={{ color: "#66789c" }}>
+                      No team members yet. Click “Invite Member” to add one.
+                    </p>
+                  ) : (
                   <div
                     style={{
                       display: "flex",
@@ -1650,7 +1894,7 @@ export default function EmployerCompanyProfilePage() {
                   >
                     {people.map((p) => (
                       <div
-                        key={p.name}
+                        key={p.subUserId}
                         className="employer-cv-surface-card"
                         style={{
                           display: "flex",
@@ -1683,32 +1927,31 @@ export default function EmployerCompanyProfilePage() {
                           </div>
                           <div style={{ fontSize: "12px", color: "#6b7280" }}>
                             {p.role} · {p.email}
+                            {p.status ? ` · ${p.status}` : ""}
                           </div>
                         </div>
                         <div style={{ display: "flex", gap: "8px" }}>
-                          <button
+                          <Link
+                            href="/employeer/sub-user"
                             className="btn btn-border btn-sm"
-                            onClick={() =>
-                              showToast(`Editing profile for ${p.name}`, "info")
-                            }
                           >
                             Edit
-                          </button>
+                          </Link>
                           <button
                             className="btn btn-grey-small"
-                            onClick={() =>
-                              showToast(
-                                `Access revoked for ${p.name}.`,
-                                "warning",
-                              )
-                            }
+                            onClick={() => handleRevokeAccess(p)}
                           >
-                            Revoke
+                            {p.status === "Deactivated"
+                              ? "Reactivate"
+                              : p.status === "Pending"
+                                ? "Resend Invite"
+                                : "Revoke"}
                           </button>
                         </div>
                       </div>
                     ))}
                   </div>
+                  )}
                 </div>
               )}
             </div>

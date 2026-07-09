@@ -18,28 +18,85 @@ const EmployerBuyCreditsPage = () => {
   const [wallet, setWallet] = useState(null);
   const [plans, setPlans] = useState([]);
   const [selected, setSelected] = useState(null);
+  const [plansLoading, setPlansLoading] = useState(true);
+  const [plansError, setPlansError] = useState(null);
 
   const gst = selected ? selected.price * 0.18 : 0;
 
   const total = selected ? selected.price + gst : 0;
 
+  const loadPlans = () => {
+    setPlansLoading(true);
+    setPlansError(null);
+
+    getCreditPlans()
+      .then((data) => {
+        // Some backends wrap the array as { plans: [...] } — support both shapes.
+        const list = Array.isArray(data) ? data : data?.plans || [];
+        setPlans(list);
+        if (list.length > 0) setSelected(list[0]);
+      })
+      .catch((err) => {
+        console.error(err);
+        setPlansError(
+          err?.response?.data?.message ||
+            "Failed to load credit plans. Please try again.",
+        );
+      })
+      .finally(() => setPlansLoading(false));
+  };
+
   useEffect(() => {
     getWallet()
       .then(setWallet)
-      .catch(() => setWallet(null));
+      .catch((err) => {
+        console.error(err);
+        setWallet(null);
+      });
 
-    getCreditPlans().then((data) => {
-      setPlans(data);
-
-      if (data.length > 0) setSelected(data[0]);
-    });
+    loadPlans();
   }, []);
-  if (!selected) {
+
+  if (plansLoading) {
     return (
       <main className="main">
         <section className="section-box mt-50">
           <div className="container text-center">
             <h4>Loading plans...</h4>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (plansError) {
+    return (
+      <main className="main">
+        <section className="section-box mt-50">
+          <div className="container text-center">
+            <h4 className="mb-15">Couldn’t load credit plans</h4>
+            <p className="font-md color-text-paragraph-2 mb-20">
+              {plansError}
+            </p>
+            <button className="btn btn-default" onClick={loadPlans}>
+              Try Again
+            </button>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (!selected) {
+    return (
+      <main className="main">
+        <section className="section-box mt-50">
+          <div className="container text-center">
+            <h4 className="mb-15">No credit plans available</h4>
+            <p className="font-md color-text-paragraph-2">
+              There are no active credit plans right now. Please check back
+              later.
+            </p>
           </div>
         </section>
       </main>

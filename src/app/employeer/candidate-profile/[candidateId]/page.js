@@ -247,34 +247,32 @@ const EmployerCandidateProfilePage = () => {
                     : ""}
                 </p>
 
-                <div className="mt-10 mb-15">
-                  {[...Array(5)].map((_, i) => (
-                    <img
-                      key={i}
-                      src="/assets/imgs/template/icons/star.svg"
-                      alt="rating star"
-                    />
-                  ))}
-                  {overview.aiMatchScore != null && (
-                    <span className="font-xs color-text-mutted ml-10">
-                      {overview.aiMatchScore}% match
-                    </span>
-                  )}
-                  <img
-                    className="ml-30"
-                    src="/assets/imgs/page/candidates/verified.png"
-                    alt="verified candidate"
-                  />
-                </div>
-
-                <div className="candidate-tags-wrap">
+                <div className="candidate-tags-wrap mt-10 mb-15">
                   {summary.itiCertified && (
                     <span className="candidate-profile-tag">ITI Certified</span>
                   )}
-                  <span className="candidate-profile-tag">KYC Verified</span>
                   {overview.availabilityStatus && (
                     <span className="candidate-profile-tag">
                       {overview.availabilityStatus}
+                    </span>
+                  )}
+                  {overview.aiMatchScore != null && (
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        padding: "6px 14px",
+                        borderRadius: "999px",
+                        background: "#fff7ea",
+                        border: "1px solid rgba(255,163,0,0.25)",
+                        color: "#ff9900",
+                        fontSize: "12px",
+                        fontWeight: 700,
+                      }}
+                    >
+                      <i className="fi-rr-badge-check" />
+                      {overview.aiMatchScore}% AI Match
                     </span>
                   )}
                 </div>
@@ -597,29 +595,137 @@ const EmployerCandidateProfilePage = () => {
                       </div>
                     </div>
 
-                    {summary.about && (
-                      <>
-                        <h4 className="mt-30">About</h4>
-                        <p>{summary.about}</p>
-                      </>
-                    )}
+                    {(summary.about || summary.professionalSummary) && (
+                      <div
+                        className="employer-cv-surface-card"
+                        style={{
+                          borderRadius: "18px",
+                          padding: "26px",
+                          marginTop: "30px",
+                          border: "1px solid rgba(18,35,89,0.06)",
+                          boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
+                        }}
+                      >
+                        {summary.about && (
+                          <div>
+                            <h5
+                              style={{
+                                color: "#122359",
+                                fontWeight: 700,
+                                marginBottom: "10px",
+                              }}
+                            >
+                              About
+                            </h5>
+                            <p className="font-sm color-text-paragraph mb-0">
+                              {summary.about}
+                            </p>
+                          </div>
+                        )}
 
-                    {summary.professionalSummary && (
-                      <>
-                        <h4 className="mt-20">Professional summary</h4>
-                        <p>{summary.professionalSummary}</p>
-                      </>
+                        {summary.about && summary.professionalSummary && (
+                          <div
+                            style={{
+                              height: "1px",
+                              background: "rgba(18,35,89,0.08)",
+                              margin: "22px 0",
+                            }}
+                          />
+                        )}
+
+                        {summary.professionalSummary && (
+                          <div>
+                            <h5
+                              style={{
+                                color: "#122359",
+                                fontWeight: 700,
+                                marginBottom: "10px",
+                              }}
+                            >
+                              Professional Summary
+                            </h5>
+                            <p className="font-sm color-text-paragraph mb-0">
+                              {summary.professionalSummary}
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     )}
 
                     {summary.itiCertified && (
-                      <>
-                        <h4 className="mt-20">ITI Details</h4>
-                        <ul>
-                          {summary.itiTrade && <li>Trade: {summary.itiTrade}</li>}
-                          {summary.itiCollege && <li>College: {summary.itiCollege}</li>}
-                          {summary.itiMarks && <li>Marks: {summary.itiMarks}</li>}
-                        </ul>
-                      </>
+                      <div
+                        className="employer-cv-surface-card"
+                        style={{
+                          borderRadius: "18px",
+                          padding: "26px",
+                          marginTop: "20px",
+                          border: "1px solid rgba(18,35,89,0.06)",
+                          boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
+                        }}
+                      >
+                        <h5
+                          style={{
+                            color: "#122359",
+                            fontWeight: 700,
+                            marginBottom: "16px",
+                          }}
+                        >
+                          ITI Details
+                        </h5>
+                        <div className="row">
+                          {summary.itiTrade && (
+                            <div className="col-md-4 col-sm-12 mb-15">
+                              <span
+                                className="d-block font-xs color-text-mutted"
+                                style={{
+                                  textTransform: "uppercase",
+                                  letterSpacing: "0.03em",
+                                  fontWeight: 700,
+                                }}
+                              >
+                                Trade
+                              </span>
+                              <strong style={{ color: "#122359" }}>
+                                {summary.itiTrade}
+                              </strong>
+                            </div>
+                          )}
+                          {summary.itiCollege && (
+                            <div className="col-md-4 col-sm-12 mb-15">
+                              <span
+                                className="d-block font-xs color-text-mutted"
+                                style={{
+                                  textTransform: "uppercase",
+                                  letterSpacing: "0.03em",
+                                  fontWeight: 700,
+                                }}
+                              >
+                                College
+                              </span>
+                              <strong style={{ color: "#122359" }}>
+                                {summary.itiCollege}
+                              </strong>
+                            </div>
+                          )}
+                          {summary.itiMarks && (
+                            <div className="col-md-4 col-sm-12 mb-15">
+                              <span
+                                className="d-block font-xs color-text-mutted"
+                                style={{
+                                  textTransform: "uppercase",
+                                  letterSpacing: "0.03em",
+                                  fontWeight: 700,
+                                }}
+                              >
+                                Marks
+                              </span>
+                              <strong style={{ color: "#122359" }}>
+                                {summary.itiMarks}
+                              </strong>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     )}
                   </div>
 
@@ -630,75 +736,213 @@ const EmployerCandidateProfilePage = () => {
                     role="tabpanel"
                     aria-labelledby="tab-skills"
                   >
-                    <h4>Core skills</h4>
-                    <p>
+                    <h4 style={{ color: "#122359", fontWeight: 700 }}>
+                      Core Skills
+                    </h4>
+                    <p className="color-text-paragraph-2 mb-20">
                       Skills shown here are visible in pre-unlock mode to support
                       shortlisting decisions before spending credits.
                     </p>
-                    <div className="mt-20">
-                      {skills.length === 0 && <p>No skills listed.</p>}
-                      {skills.map((skill, idx) => (
-                        <span
-                          key={`${skill.skillName}-${idx}`}
-                          className="btn btn-grey-small mr-10 mb-10"
-                          title={
-                            skill.skillRole
-                              ? `${skill.skillRole} · ${skill.yearsOfExperience ?? 0} yrs`
-                              : `${skill.yearsOfExperience ?? 0} yrs`
-                          }
-                        >
-                          {skill.skillName}
-                          {skill.yearsOfExperience != null
-                            ? ` (${skill.yearsOfExperience} yrs)`
-                            : ""}
-                        </span>
-                      ))}
-                    </div>
+
+                    {skills.length === 0 ? (
+                      <p className="color-text-paragraph-2">No skills listed.</p>
+                    ) : (
+                      <div
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: "10px",
+                          marginBottom: "10px",
+                        }}
+                      >
+                        {skills.map((skill, idx) => (
+                          <span
+                            key={`${skill.skillName}-${idx}`}
+                            title={
+                              skill.skillRole
+                                ? `${skill.skillRole} · ${skill.yearsOfExperience ?? 0} yrs`
+                                : `${skill.yearsOfExperience ?? 0} yrs`
+                            }
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "6px",
+                              padding: "8px 16px",
+                              borderRadius: "999px",
+                              background: "#fff7ea",
+                              border: "1px solid rgba(255,163,0,0.18)",
+                              color: "#ff9900",
+                              fontSize: "13px",
+                              fontWeight: 700,
+                            }}
+                          >
+                            {skill.skillName}
+                            {skill.yearsOfExperience != null && (
+                              <span style={{ color: "#c97e00", fontWeight: 600 }}>
+                                {skill.yearsOfExperience}
+                                {" "}
+                                yrs
+                              </span>
+                            )}
+                          </span>
+                        ))}
+                      </div>
+                    )}
 
                     {languages.length > 0 && (
-                      <>
-                        <h4 className="mt-30">Languages</h4>
-                        <ul>
+                      <div
+                        className="employer-cv-surface-card"
+                        style={{
+                          borderRadius: "18px",
+                          padding: "24px",
+                          marginTop: "30px",
+                          border: "1px solid rgba(18,35,89,0.06)",
+                          boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
+                        }}
+                      >
+                        <h5
+                          style={{
+                            color: "#122359",
+                            fontWeight: 700,
+                            marginBottom: "16px",
+                          }}
+                        >
+                          Languages
+                        </h5>
+                        <div className="row">
                           {languages.map((lang, idx) => (
-                            <li key={`${lang.language}-${idx}`}>
-                              <strong>{lang.language}</strong> — Read:{" "}
-                              {lang.canRead ? "Yes" : "No"}, Write:{" "}
-                              {lang.canWrite ? "Yes" : "No"}, Speak:{" "}
-                              {lang.canSpeak ? "Yes" : "No"}
-                            </li>
+                            <div
+                              className="col-md-6 col-sm-12 mb-15"
+                              key={`${lang.language}-${idx}`}
+                            >
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  padding: "12px 16px",
+                                  borderRadius: "12px",
+                                  background: "#f8f9fc",
+                                }}
+                              >
+                                <strong style={{ color: "#122359" }}>
+                                  {lang.language}
+                                </strong>
+                                <div style={{ display: "flex", gap: "6px" }}>
+                                  {[
+                                    ["Read", lang.canRead],
+                                    ["Write", lang.canWrite],
+                                    ["Speak", lang.canSpeak],
+                                  ].map(([label, ok]) => (
+                                    <span
+                                      key={label}
+                                      style={{
+                                        fontSize: "11px",
+                                        fontWeight: 700,
+                                        padding: "3px 9px",
+                                        borderRadius: "999px",
+                                        color: ok ? "#166534" : "#9ca3af",
+                                        background: ok ? "#e7f9ed" : "#f1f2f5",
+                                      }}
+                                    >
+                                      {label}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
                           ))}
-                        </ul>
-                      </>
+                        </div>
+                      </div>
                     )}
 
                     {educations.length > 0 && (
-                      <>
-                        <h4 className="mt-30">Education</h4>
-                        <ul>
+                      <div
+                        className="employer-cv-surface-card"
+                        style={{
+                          borderRadius: "18px",
+                          padding: "24px",
+                          marginTop: "20px",
+                          border: "1px solid rgba(18,35,89,0.06)",
+                          boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
+                        }}
+                      >
+                        <h5
+                          style={{
+                            color: "#122359",
+                            fontWeight: 700,
+                            marginBottom: "16px",
+                          }}
+                        >
+                          Education
+                        </h5>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "12px",
+                          }}
+                        >
                           {educations.map((edu) => (
-                            <li key={edu.educationId}>
-                              <strong>{edu.educationLevel}</strong>
-                              {edu.instituteName ? ` - ${edu.instituteName}` : ""}
-                              {edu.passoutYear ? ` (${edu.passoutYear})` : ""}
-                              {edu.isAiVerified && (
-                                <span className="badge bg-success ml-10">
-                                  AI Verified
-                                </span>
-                              )}
-                              {edu.certificateUrl && (
-                                <a
-                                  href={edu.certificateUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="ml-10"
-                                >
-                                  View Certificate
-                                </a>
-                              )}
-                            </li>
+                            <div
+                              key={edu.educationId}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                flexWrap: "wrap",
+                                gap: "10px",
+                                padding: "14px 16px",
+                                borderRadius: "12px",
+                                background: "#f8f9fc",
+                              }}
+                            >
+                              <div>
+                                <strong style={{ color: "#122359" }}>
+                                  {edu.educationLevel}
+                                </strong>
+                                <div className="font-sm color-text-paragraph-2">
+                                  {edu.instituteName}
+                                  {edu.passoutYear ? ` · ${edu.passoutYear}` : ""}
+                                </div>
+                              </div>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "10px",
+                                }}
+                              >
+                                {edu.isAiVerified && (
+                                  <span
+                                    style={{
+                                      fontSize: "11px",
+                                      fontWeight: 700,
+                                      padding: "4px 10px",
+                                      borderRadius: "999px",
+                                      color: "#166534",
+                                      background: "#e7f9ed",
+                                    }}
+                                  >
+                                    AI Verified
+                                  </span>
+                                )}
+                                {edu.certificateUrl && (
+                                  <a
+                                    href={edu.certificateUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-sm"
+                                    style={{ color: "#ff9900", fontWeight: 700 }}
+                                  >
+                                    View Certificate
+                                  </a>
+                                )}
+                              </div>
+                            </div>
                           ))}
-                        </ul>
-                      </>
+                        </div>
+                      </div>
                     )}
                   </div>
 
@@ -709,22 +953,132 @@ const EmployerCandidateProfilePage = () => {
                     role="tabpanel"
                     aria-labelledby="tab-work-experience"
                   >
-                    <h4>Work Experience Snapshot</h4>
-                    <p>
+                    <h4 style={{ color: "#122359", fontWeight: 700 }}>
+                      Work Experience Snapshot
+                    </h4>
+                    <p className="color-text-paragraph-2 mb-20">
                       Current snapshot includes role, company, and timeline.
                     </p>
-                    <ul>
-                      {workHistories.length === 0 && <li>No work history listed.</li>}
-                      {workHistories.map((item) => (
-                        <li key={item.workId}>
-                          <strong>{item.jobTitle}</strong> at {item.companyName} (
-                          {fmtMonthYear(item.startDate)} -{" "}
-                          {item.isCurrent ? "Present" : fmtMonthYear(item.endDate)})
-                          {item.workLocation ? ` - ${item.workLocation}` : ""}
-                          {item.isOffshore ? " (Offshore)" : ""}
-                        </li>
-                      ))}
-                    </ul>
+
+                    {workHistories.length === 0 ? (
+                      <p className="color-text-paragraph-2">
+                        No work history listed.
+                      </p>
+                    ) : (
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "0",
+                        }}
+                      >
+                        {workHistories.map((item, idx) => (
+                          <div
+                            key={item.workId}
+                            style={{
+                              display: "flex",
+                              gap: "16px",
+                              paddingBottom:
+                                idx === workHistories.length - 1 ? "0" : "22px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                flexShrink: 0,
+                              }}
+                            >
+                              <div
+                                style={{
+                                  width: "12px",
+                                  height: "12px",
+                                  borderRadius: "50%",
+                                  background: item.isCurrent
+                                    ? "#ffa300"
+                                    : "#d8dde8",
+                                  marginTop: "6px",
+                                  flexShrink: 0,
+                                }}
+                              />
+                              {idx !== workHistories.length - 1 && (
+                                <div
+                                  style={{
+                                    width: "2px",
+                                    flex: 1,
+                                    background: "rgba(18,35,89,0.1)",
+                                    marginTop: "4px",
+                                  }}
+                                />
+                              )}
+                            </div>
+
+                            <div
+                              className="employer-cv-surface-card"
+                              style={{
+                                flex: 1,
+                                borderRadius: "16px",
+                                padding: "18px 22px",
+                                border: "1px solid rgba(18,35,89,0.06)",
+                                boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "flex-start",
+                                  flexWrap: "wrap",
+                                  gap: "10px",
+                                }}
+                              >
+                                <div>
+                                  <strong
+                                    style={{ color: "#122359", fontSize: "16px" }}
+                                  >
+                                    {item.jobTitle}
+                                  </strong>
+                                  <div className="font-sm color-text-paragraph-2">
+                                    {item.companyName}
+                                    {item.workLocation
+                                      ? ` · ${item.workLocation}`
+                                      : ""}
+                                  </div>
+                                </div>
+
+                                {item.isCurrent && (
+                                  <span
+                                    style={{
+                                      fontSize: "11px",
+                                      fontWeight: 700,
+                                      padding: "4px 12px",
+                                      borderRadius: "999px",
+                                      color: "#166534",
+                                      background: "#e7f9ed",
+                                      whiteSpace: "nowrap",
+                                    }}
+                                  >
+                                    Current
+                                  </span>
+                                )}
+                              </div>
+
+                              <div
+                                className="font-xs color-text-mutted mt-10"
+                                style={{ fontWeight: 600 }}
+                              >
+                                {fmtMonthYear(item.startDate)} —{" "}
+                                {item.isCurrent
+                                  ? "Present"
+                                  : fmtMonthYear(item.endDate)}
+                                {item.isOffshore ? " · Offshore" : " · Onshore"}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
