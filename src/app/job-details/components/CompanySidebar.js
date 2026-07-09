@@ -16,7 +16,7 @@ const CompanySidebar = ({ job = {} }) => {
     return value.replace(/_/g, ' ');
   };
 
-  
+
 
   const formatHourlyPrice = (value) => {
     const text = String(value || '').trim();
@@ -52,14 +52,21 @@ const CompanySidebar = ({ job = {} }) => {
         <div className="sidebar-heading">
           <div className="avatar-sidebar">
             <figure>
-             <img
-  alt="jobBox"
-  src={
-    isConfidential
-      ? "/assets/imgs/page/job-single/industry.svg"
-      : job.companyLogoUrl || "/assets/imgs/page/homepage1/img1.png"
-  }
-/>
+              <img
+                alt="jobBox"
+                src={
+                  isConfidential
+                    ? "/assets/imgs/page/job-single/industry.svg"
+                    : job.companyLogoUrl || "/assets/imgs/page/homepage1/img1.png"
+                }
+                style={{
+                  width: '48px',
+                  height: '48px',
+                  objectFit: 'cover',
+                  // borderRadius: '8px',
+                  // border: '1px solid rgba(18, 35, 89, 0.08)',
+                }}
+              />
             </figure>
             <div className="sidebar-info">
               {job.companyFull && (
