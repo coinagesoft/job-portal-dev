@@ -202,6 +202,8 @@ const EmployerCvSearchPage = () => {
     jobId: "",
   });
 
+  const totalPages = Math.max(1, Math.ceil(totalCandidates / (filters.pageSize || 10)));
+
   const resetFilters = async () => {
     const defaultFilters = {
       keyword: "",
@@ -258,11 +260,11 @@ const EmployerCvSearchPage = () => {
       );
     }
   };
-  const loadCandidates = async () => {
+  const loadCandidates = async (overrideFilters) => {
     try {
       setLoading(true);
 
-      const response = await searchCandidates(filters);
+      const response = await searchCandidates(overrideFilters ?? filters);
 
       setCvCandidates(response.candidates);
       setTotalCandidates(response.totalCandidates);
@@ -271,6 +273,23 @@ const EmployerCvSearchPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  /* Run a brand-new search (filters changed) — always reset to page 1
+     so the results the employer sees always start from the top. */
+  const handleSearch = () => {
+    const next = { ...filters, pageNumber: 1 };
+    setFilters(next);
+    loadCandidates(next);
+  };
+
+  /* Jump to a specific page of the current search, keeping filters as-is. */
+  const goToPage = (page) => {
+    if (page < 1 || page > totalPages || page === filters.pageNumber) return;
+    const next = { ...filters, pageNumber: page };
+    setFilters(next);
+    loadCandidates(next);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const loadJobs = async () => {
@@ -347,7 +366,7 @@ const EmployerCvSearchPage = () => {
           <div className="banner-hero banner-single banner-single-bg">
             <div className="block-banner text-center">
               <h3>
-                <span className="color-brand-2">{cvCandidates.length}</span>{" "}
+                <span className="color-brand-2">{totalCandidates}</span>{" "}
                 Candidates in CV Search
               </h3>
               <div className="font-sm color-text-paragraph-2 mt-10">
@@ -438,7 +457,7 @@ const EmployerCvSearchPage = () => {
                   <button
                     className="btn btn-default btn-find font-sm"
                     type="button"
-                    onClick={loadCandidates}
+                    onClick={handleSearch}
                   >
                     Search
                   </button>
@@ -586,7 +605,7 @@ const EmployerCvSearchPage = () => {
                               <Link
                                 href={`/employeer/candidate-profile/${candidate.candidateId}`}
                               >
-                                {candidate.primaryTrade}
+                                {candidate.role || candidate.primaryTrade || "—"}
                               </Link>
                             </h4>
 
@@ -686,6 +705,82 @@ const EmployerCvSearchPage = () => {
                     );
                   })}
                 </div>
+
+                {/* Pagination */}
+                {totalCandidates > 0 && totalPages > 1 && (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 8,
+                      flexWrap: "wrap",
+                      marginTop: 30,
+                    }}
+                  >
+                    <button
+                      type="button"
+                      className="btn btn-border btn-sm"
+                      disabled={filters.pageNumber <= 1 || loading}
+                      onClick={() => goToPage(filters.pageNumber - 1)}
+                    >
+                      ‹ Prev
+                    </button>
+
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter((page) => {
+                        // Always show first, last, current, and neighbours;
+                        // collapse the rest so the bar stays readable even
+                        // with many pages.
+                        return (
+                          page === 1 ||
+                          page === totalPages ||
+                          Math.abs(page - filters.pageNumber) <= 1
+                        );
+                      })
+                      .reduce((acc, page, idx, arr) => {
+                        if (idx > 0 && page - arr[idx - 1] > 1) {
+                          acc.push("ellipsis-" + page);
+                        }
+                        acc.push(page);
+                        return acc;
+                      }, [])
+                      .map((page) =>
+                        typeof page === "string" ? (
+                          <span
+                            key={page}
+                            style={{ padding: "0 4px", color: "#94a3b8" }}
+                          >
+                            …
+                          </span>
+                        ) : (
+                          <button
+                            key={page}
+                            type="button"
+                            className={`btn btn-sm ${
+                              page === filters.pageNumber
+                                ? "btn-default"
+                                : "btn-border"
+                            }`}
+                            disabled={loading}
+                            onClick={() => goToPage(page)}
+                            style={{ minWidth: 40 }}
+                          >
+                            {page}
+                          </button>
+                        ),
+                      )}
+
+                    <button
+                      type="button"
+                      className="btn btn-border btn-sm"
+                      disabled={filters.pageNumber >= totalPages || loading}
+                      onClick={() => goToPage(filters.pageNumber + 1)}
+                    >
+                      Next ›
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -950,7 +1045,7 @@ const EmployerCvSearchPage = () => {
                       <button
                         className="btn btn-default w-100 mb-10"
                         type="button"
-                        onClick={loadCandidates}
+                        onClick={handleSearch}
                       >
                         Search
                       </button>

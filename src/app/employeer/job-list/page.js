@@ -15,6 +15,9 @@ import {
   deleteJob,
 } from "@/services/recruiter/recruiterJobListService";
 
+/* Turn backend enum-style values (Regular_Hiring, Full_Time) into readable text */
+const humanize = (s) => (s ? s.replace(/_/g, " ") : s);
+
 /* ── reusable pill tag ── */
 const Tag = ({ label }) => {
   const handleEnter = (e) => {
@@ -479,7 +482,7 @@ const EmployerJobListPage = () => {
                                 {job.appliedCount} Applicant{job.appliedCount !== 1 ? "s" : ""}
                               </span>
                             </div>
-                            {/* Post type badge */}
+                            {/* Employment type badge (Full Time / Contract / etc.) */}
                             <span
                               style={{
                                 display: "inline-flex",
@@ -493,7 +496,7 @@ const EmployerJobListPage = () => {
                                 fontWeight: 700,
                               }}
                             >
-                              {job.jobType}
+                              {humanize(job.employmentType) || humanize(job.jobType)}
                             </span>
                             {/* Status badge */}
                             <span
@@ -618,18 +621,6 @@ const EmployerJobListPage = () => {
                             </strong>
                           </div>
 
-                          {/* Skill tags */}
-                          <div
-                            style={{
-                              display: "flex",
-                              flexWrap: "wrap",
-                              gap: 6,
-                            }}
-                          >
-                            <Tag label={job.tradeCategory} />
-                            <Tag label={job.jobType} />
-                            <Tag label={job.jobStatus} />
-                          </div>
                         </div>
                       </div>
 

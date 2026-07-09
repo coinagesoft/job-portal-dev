@@ -241,7 +241,7 @@ const EmployerCandidateProfilePage = () => {
                 </h5>
 
                 <p className="mt-0 font-md color-text-paragraph-2 mb-15">
-                  {overview.primaryTrade}
+                  {overview.role || overview.primaryTrade}
                   {overview.totalExperienceYears != null
                     ? ` · ${overview.totalExperienceYears} years experience`
                     : ""}
@@ -430,7 +430,7 @@ const EmployerCandidateProfilePage = () => {
                               <div>
                                 <span className="visibility-label">Current Role</span>
                                 <h6 className="visibility-value">
-                                  {overview.primaryTrade || "Not specified"}
+                                  {overview.role || overview.primaryTrade || "Not specified"}
                                 </h6>
                               </div>
                             </div>
@@ -1178,7 +1178,7 @@ const EmployerCandidateProfilePage = () => {
                       <div className="sidebar-text-info">
                         <span className="text-description">Trade</span>
                         <strong className="small-heading">
-                          {overview.primaryTrade || "—"}
+                          {overview.role || overview.primaryTrade || "—"}
                         </strong>
                       </div>
                     </li>

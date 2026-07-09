@@ -938,13 +938,14 @@ h6,
 
 .btn-apply-now {
   background-color: #ffc151;
-  color: #ffa300;
+  color: #ffffff !important;
   padding: 12px 10px;
   min-width: 95px;
   border-radius: 4px;
   font-size: 12px;
   text-transform: capitalize;
 }
+
 
 .btn-apply {
   background-color: #ffa300;
@@ -1881,7 +1882,7 @@ label {
   margin-left: 0;
 }
 .card-grid-2 .btn-apply-now {
-  color: #ffa300;
+  color: #ffffff;
 }
 .card-grid-2:hover {
   border-color: #ffc151;
