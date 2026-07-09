@@ -570,25 +570,26 @@ export default function EmployerCompanyProfilePage() {
     handleSaveField(field, company[field]);
   };
 
-  // NOTE: requires a companyProfileService.updateCompanyProfileFile(fieldKey, file)
-  // method that PATCHes multipart/form-data with the file under "CompanyLogo" or
-  // "CoverImage" (matching UpdateCompanyProfileDto field names) — not implemented
-  // yet in the service file you showed me.
+  // Uploads a logo/cover image file via multipart/form-data PATCH to the
+  // company profile endpoint. The backend only returns { success, message }
+  // (no updated URL), so after a successful upload we re-fetch the full
+  // profile to pick up the real, persisted image URL — using a blob preview
+  // or a guessed URL here would look fine until the next reload, then
+  // silently revert.
   const handleFileUpload = async (fieldKey, apiField, file, setUploading) => {
     if (!file) return;
+
+    // Show an instant local preview while the upload is in flight.
+    const previewUrl = URL.createObjectURL(file);
+    setCompany((prev) => ({ ...prev, [fieldKey]: previewUrl }));
 
     try {
       setUploading(true);
 
-      const result = await companyProfileService.updateCompanyProfileFile(
-        apiField,
-        file,
-      );
+      await companyProfileService.updateCompanyProfileFile(apiField, file);
 
-      setCompany((prev) => ({
-        ...prev,
-        [fieldKey]: result?.url ?? URL.createObjectURL(file),
-      }));
+      // Re-fetch so the UI reflects the actual persisted URL from the server.
+      await loadCompanyProfile();
 
       showToast("Image updated successfully", "success");
     } catch (error) {
@@ -597,6 +598,9 @@ export default function EmployerCompanyProfilePage() {
         error?.response?.data?.message || "Failed to upload image",
         "error",
       );
+      // Roll back the optimistic preview on failure by reloading the
+      // last-known-good profile from the server.
+      await loadCompanyProfile();
     } finally {
       setUploading(false);
     }
@@ -611,6 +615,9 @@ export default function EmployerCompanyProfilePage() {
         handleSaveField("industry", company.industry),
         handleSaveField("businessType", company.businessType),
         handleSaveField("size", company.size),
+        handleSaveField("totalEmployees", company.totalEmployees),
+        handleSaveField("founded", company.founded),
+        handleSaveField("timeZone", company.timeZone),
         handleSaveField("highlights", company.highlights || []),
         handleSaveField("companyDescription", description),
       ]);
@@ -1001,13 +1008,21 @@ export default function EmployerCompanyProfilePage() {
                       </Field>
 
                       <Field label="Industry">
-                        <Inp
+                        <select
+                          className={styles.control}
                           value={company.industry || ""}
                           onChange={(e) =>
                             handleInputChange("industry", e.target.value)
                           }
-                        // onBlur={() => handleBlurSave("industry")}
-                        />
+                        >
+                          <option value="">--</option>
+                          <option value="Construction">Construction</option>
+                          <option value="Shipping">Shipping</option>
+                          <option value="Manufacturing">Manufacturing</option>
+                          <option value="Hospitality">Hospitality</option>
+                          <option value="Marine">Marine</option>
+                          <option value="Other">Other</option>
+                        </select>
                       </Field>
                     </div>
 
@@ -1051,6 +1066,48 @@ export default function EmployerCompanyProfilePage() {
                           <option value="201-500">201-500</option>
                           <option value="500+">500+</option>
                         </select>
+                      </Field>
+                    </div>
+
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr 1fr",
+                        gap: "0 20px",
+                      }}
+                    >
+                      <Field label="Total Employees">
+                        <Inp
+                          type="number"
+                          min="0"
+                          value={company.totalEmployees ?? ""}
+                          onChange={(e) =>
+                            handleInputChange("totalEmployees", e.target.value)
+                          }
+                        />
+                      </Field>
+
+                      <Field label="Founded (Year)">
+                        <Inp
+                          type="number"
+                          min="1800"
+                          max={new Date().getFullYear()}
+                          placeholder="e.g. 2015"
+                          value={company.founded ?? ""}
+                          onChange={(e) =>
+                            handleInputChange("founded", e.target.value)
+                          }
+                        />
+                      </Field>
+
+                      <Field label="Time Zone">
+                        <Inp
+                          placeholder="e.g. Asia/Kolkata"
+                          value={company.timeZone || ""}
+                          onChange={(e) =>
+                            handleInputChange("timeZone", e.target.value)
+                          }
+                        />
                       </Field>
                     </div>
 

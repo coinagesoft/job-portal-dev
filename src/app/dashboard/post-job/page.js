@@ -1104,10 +1104,33 @@ function Step6({ go, jobForm, setJobForm, onSubmit }) {
     <StepCard
       stepNum={6}
       title="Questions"
-      subtitle="Screening questions for applicants"
+      subtitle="Screening questions for applicants (optional)"
       onBack={() => go(5)}
       onContinue={onSubmit}
     >
+      <p style={{ fontSize: 13, color: "#66789c", marginBottom: 16 }}>
+        Screening questions are entirely optional. Add one or more if you'd
+        like candidates to answer specific questions when they apply, or skip
+        this step and continue.
+      </p>
+
+      {jobForm.questions.length === 0 && (
+        <div
+          style={{
+            padding: "20px",
+            marginBottom: 16,
+            textAlign: "center",
+            border: "1px dashed #ddd",
+            borderRadius: 8,
+            color: "#66789c",
+            fontSize: 13,
+          }}
+        >
+          No screening questions added yet. You can skip this step, or add a
+          question below.
+        </div>
+      )}
+
       {jobForm.questions.map((question, index) => (
         <div
           key={index}
@@ -1128,15 +1151,13 @@ function Step6({ go, jobForm, setJobForm, onSubmit }) {
               placeholder="e.g. Do you have a valid CSWIP 3.1 certificate?"
             />
           </Field>
-          {jobForm.questions.length > 1 && (
-            <button
-              type="button"
-              className="btn btn-danger btn-sm"
-              onClick={() => removeQuestion(index)}
-            >
-              Remove
-            </button>
-          )}
+          <button
+            type="button"
+            className="btn btn-danger btn-sm"
+            onClick={() => removeQuestion(index)}
+          >
+            Remove
+          </button>
         </div>
       ))}
 
@@ -1149,26 +1170,6 @@ function Step6({ go, jobForm, setJobForm, onSubmit }) {
 
 /* ─── STEP 7 – Publishing ─────────────────────────────────────────────────── */
 function Step7({ go, jobForm, setJobForm, onSubmit }) {
-  const availableTags = [
-    "Urgent Hiring",
-    "Featured",
-    "Blue Collar",
-    "Offshore",
-    "Onshore",
-    "Skilled Worker",
-    "Walk-in",
-    "Immediate Joiner",
-  ];
-
-  const toggleTag = (tag) => {
-    setJobForm((p) => ({
-      ...p,
-      PublishingTags: p.PublishingTags.includes(tag)
-        ? p.PublishingTags.filter((t) => t !== tag)
-        : [...p.PublishingTags, tag],
-    }));
-  };
-
   return (
     <StepCard
       stepNum={7}
@@ -1244,29 +1245,6 @@ function Step7({ go, jobForm, setJobForm, onSubmit }) {
           </div>
         </Field>
       </div>
-
-      {/* Publishing Tags */}
-      <Field label="Publishing Tags" hint="Select all that apply">
-        <div className={styles.chipRow} style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "10px",
-        }}>
-          {availableTags.map((tag) => (
-            <button
-              key={tag}
-              type="button"
-              className={`btn btn-sm ${jobForm.PublishingTags.includes(tag)
-                ? "btn-brand-1"
-                : "btn-border"
-                }`}
-              onClick={() => toggleTag(tag)}
-            >
-              {tag}
-            </button>
-          ))}
-        </div>
-      </Field>
     </StepCard>
   );
 }
@@ -1346,11 +1324,7 @@ export default function DashboardPostJobPage() {
     OffshoreCountry: "",
 
     // Step 6
-    questions: [
-      {
-        questionText: "",
-      },
-    ],
+    questions: [],
 
     // Step 7
     ApplicationDeadline: "",
@@ -1466,9 +1440,7 @@ export default function DashboardPostJobPage() {
     // Step 6
     questions: response.step6Data?.questions?.length
       ? response.step6Data.questions
-      : [{
-        questionText: "",
-      }],
+      : [],
 
     // Step 7 – publishing data isn't returned in resume, keep defaults
     ApplicationDeadline: "",

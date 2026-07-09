@@ -37,13 +37,64 @@ const COUNTRY_CODES = [
 ];
 
 const INDUSTRIES = [
-  "Construction",
-  "Shipping",
+  "Construction & Infrastructure",
+  "Marine & Shipping",
+  "Oil & Gas",
   "Manufacturing",
-  "Hospitality",
-  "Marine",
+  "Logistics & Transportation",
+  "Warehousing & Supply Chain",
+  "Hospitality & Facilities",
+  "Ports & Terminals",
+  "Mining",
+  "Aviation",
+  "Renewable Energy",
+  "Engineering Services",
+  "Healthcare",
+  "IT & Technology",
+  "Retail",
   "Other",
 ];
+
+const BUSINESS_TYPES = [
+  { value: "Private_Ltd", label: "Private Limited" },
+  { value: "Public_Ltd", label: "Public Limited" },
+  { value: "LLP", label: "Limited Liability Partnership (LLP)" },
+  { value: "Partnership", label: "Partnership" },
+  { value: "Proprietorship", label: "Sole Proprietorship" },
+  { value: "OPC", label: "One Person Company (OPC)" },
+  { value: "Section8", label: "Section 8 Company (Non-Profit)" },
+  { value: "Trust", label: "Trust" },
+  { value: "Society", label: "Society" },
+  { value: "Cooperative", label: "Cooperative Society" },
+  { value: "PSU", label: "Public Sector Undertaking (PSU)" },
+  { value: "Government", label: "Government Entity" },
+  { value: "Branch_Office", label: "Branch Office" },
+  { value: "Liaison_Office", label: "Liaison Office" },
+  { value: "Joint_Venture", label: "Joint Venture" },
+  { value: "Other", label: "Other" },
+];
+
+const COMPANY_SIZES = [
+  { value: "Size_1_10", label: "1-10 employees" },
+  { value: "Size_11_50", label: "11-50 employees" },
+  { value: "Size_51_200", label: "51-200 employees" },
+  { value: "Size_201_500", label: "201-500 employees" },
+  { value: "Size_500_Plus", label: "500+ employees" },
+];
+
+const COMPANY_TYPES = [
+  { value: "startup", label: "Startup" },
+  { value: "mid-size", label: "Mid-size" },
+  { value: "enterprise", label: "Enterprise" },
+  { value: "government", label: "Government" },
+  { value: "non-profit", label: "Non-profit" },
+];
+
+const labelFor = (list, value) =>
+  list.find((o) => o.value === value)?.label || value;
+
+const GSTIN_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[A-Z0-9]{1}[Z]{1}[A-Z0-9]{1}$/;
+const PIN_REGEX = /^[0-9]{6}$/;
 
 const STATES = [
   "Andhra Pradesh",
@@ -165,7 +216,7 @@ function StepBar({ current, total, labels }) {
   );
 }
 
-function Field({ label, hint, required, children }) {
+function Field({ label, hint, required, error, children }) {
   return (
     <div style={{ marginBottom: 16 }}>
       <label
@@ -181,32 +232,50 @@ function Field({ label, hint, required, children }) {
         {required && <span style={{ color: "#E24B4A", marginLeft: 2 }}>*</span>}
       </label>
       {children}
-      {hint && (
+      {error ? (
         <p
           style={{
             fontSize: "var(--font-xs)",
-            color: "var(--color-text-tertiary)",
+            color: "#E24B4A",
             marginTop: 4,
+            fontWeight: 500,
           }}
         >
-          {hint}
+          {error}
         </p>
+      ) : (
+        hint && (
+          <p
+            style={{
+              fontSize: "var(--font-xs)",
+              color: "var(--color-text-tertiary)",
+              marginTop: 4,
+            }}
+          >
+            {hint}
+          </p>
+        )
       )}
     </div>
   );
 }
 
-function Input({ className = "", style = {}, ...props }) {
+function Input({ className = "", style = {}, error, ...props }) {
   return (
     <input
       {...props}
       className={`form-control ${className}`.trim()}
-      style={{ height: 53, ...style }}
+      style={{
+        height: 53,
+        borderColor: error ? "#E24B4A" : undefined,
+        backgroundColor: error ? "#FFF5F5" : undefined,
+        ...style,
+      }}
     />
   );
 }
 
-function Select({ children, className = "", style = {}, ...props }) {
+function Select({ children, className = "", style = {}, error, ...props }) {
   return (
     <select
       {...props}
@@ -220,11 +289,106 @@ function Select({ children, className = "", style = {}, ...props }) {
         appearance: "none",
         WebkitAppearance: "none",
         MozAppearance: "none",
+        borderColor: error ? "#E24B4A" : undefined,
+        backgroundColor: error ? "#FFF5F5" : undefined,
         ...style,
       }}
     >
       {children}
     </select>
+  );
+}
+
+// ── Combobox: type-to-filter input with a selectable dropdown ────────────
+// Accepts either a plain string[] or a {value,label}[] options array.
+// Free typing is always allowed — the typed text becomes the stored value
+// if it doesn't match any option, so users are never blocked from entering
+// something not on the list.
+function Combobox({ value, onChange, options, placeholder, error, disabled }) {
+  const normalized = (options || []).map((o) =>
+    typeof o === "string" ? { value: o, label: o } : o
+  );
+  const [open, setOpen] = useState(false);
+  const matched = normalized.find((o) => o.value === value);
+  const [query, setQuery] = useState(matched ? matched.label : value || "");
+  const wrapRef = useRef(null);
+
+  useEffect(() => {
+    const m = normalized.find((o) => o.value === value);
+    setQuery(m ? m.label : value || "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  useEffect(() => {
+    const onClickOutside = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
+
+  const filtered = query
+    ? normalized.filter((o) => o.label.toLowerCase().includes(query.toLowerCase()))
+    : normalized;
+
+  return (
+    <div ref={wrapRef} style={{ position: "relative" }}>
+      <Input
+        value={query}
+        disabled={disabled}
+        error={error}
+        placeholder={placeholder || "Type or select…"}
+        autoComplete="off"
+        onChange={(e) => {
+          setQuery(e.target.value);
+          onChange(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+      />
+      {open && filtered.length > 0 && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            left: 0,
+            right: 0,
+            zIndex: 40,
+            background: "#fff",
+            border: "0.5px solid var(--color-border-secondary)",
+            borderRadius: 8,
+            boxShadow: "0 12px 28px rgba(18,35,89,0.14)",
+            maxHeight: 220,
+            overflowY: "auto",
+          }}
+        >
+          {filtered.map((opt) => (
+            <div
+              key={opt.value}
+              onMouseDown={() => {
+                onChange(opt.value);
+                setQuery(opt.label);
+                setOpen(false);
+              }}
+              style={{
+                padding: "9px 14px",
+                fontSize: "var(--font-sm)",
+                cursor: "pointer",
+                color: "var(--color-text-primary)",
+                background: opt.label === query ? "#FFF4E0" : "transparent",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "#FFF4E0")}
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background =
+                  opt.label === query ? "#FFF4E0" : "transparent")
+              }
+            >
+              {opt.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1102,6 +1266,9 @@ function EmployerForm() {
   });
   const [ocrLoading, setOcrLoading] = useState(false);
   const [loadingResume, setLoadingResume] = useState(true);
+  const [attempt1, setAttempt1] = useState(false);
+  const [attempt2, setAttempt2] = useState(false);
+  const [attempt3, setAttempt3] = useState(false);
   const logoRef = useRef();
   const licRef = useRef();
 
@@ -1249,9 +1416,15 @@ function EmployerForm() {
     }
   };
 
-  const isStep2Valid = data.hasGst !== null && data.industry;
+  const isGstnValid = !data.hasGst || data.gstn.trim().length === 15;
+  const isStep2Valid = data.hasGst !== null && !!data.industry;
   const isStep3Valid =
-    data.legalName && data.state && data.city && data.pincode;
+    !!data.legalName &&
+    !!data.state &&
+    !!data.city &&
+    PIN_REGEX.test(data.pincode) &&
+    !!data.address &&
+    isGstnValid;
 const isStep4Valid =
   data.contactName &&
   data.designation &&
@@ -1379,13 +1552,19 @@ const isStep4Valid =
 
     resume();
   }, []);
+  const [attempt5, setAttempt5] = useState(false);
   const handleEmployerSubmit = async () => {
+    setAttempt5(true);
+    if (!termsAccepted) {
+      showToast("Please accept the Terms of Service to continue.", "warning");
+      return;
+    }
     try {
       const sessionId = localStorage.getItem("registrationSessionId");
 
       const response = await submitRegistration({
         sessionId,
-        consentGiven: true,
+        consentGiven: termsAccepted,
       });
 
       if (response.data.success) {
@@ -1489,7 +1668,9 @@ const isStep4Valid =
               border:
                 data.hasGst === opt.val
                   ? "2px solid #ff9900"
-                  : "0.5px solid var(--color-border-secondary)",
+                  : attempt1 && data.hasGst === null
+                    ? "1px solid #E24B4A"
+                    : "0.5px solid var(--color-border-secondary)",
               background:
                 data.hasGst === opt.val
                   ? "#ffffff"
@@ -1530,24 +1711,38 @@ const isStep4Valid =
         </Alert>
       )}
 
-      <Field label="Industry Type" required>
-        <Select
+      {attempt1 && data.hasGst === null && (
+        <p style={{ fontSize: "var(--font-xs)", color: "#E24B4A", marginTop: -12, marginBottom: 16, fontWeight: 500 }}>
+          Please select whether your company is GST registered.
+        </p>
+      )}
+
+      <Field
+        label="Industry Type"
+        required
+        hint="Start typing to search, or pick from the list — you can also enter your own industry."
+        error={attempt1 && !data.industry ? "Industry type is required" : null}
+      >
+        <Combobox
           value={data.industry}
-          onChange={(e) => set("industry", e.target.value)}
-        >
-          <option value="">Select industry…</option>
-          {INDUSTRIES.map((i) => (
-            <option key={i} value={i}>
-              {i}
-            </option>
-          ))}
-        </Select>
+          onChange={(v) => set("industry", v)}
+          options={INDUSTRIES}
+          placeholder="Type or select an industry…"
+          error={attempt1 && !data.industry}
+        />
       </Field>
 
       <div
         style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}
       >
-        <Btn variant="primary" disabled={!canGoStep2} onClick={handleStep1}>
+        <Btn
+          variant="primary"
+          onClick={() => {
+            setAttempt1(true);
+            if (data.hasGst === null || !data.industry.trim()) return;
+            handleStep1();
+          }}
+        >
           Continue →
         </Btn>
       </div>
@@ -1618,6 +1813,16 @@ const isStep4Valid =
             label="GSTN"
             required
             hint="15-character alphanumeric GST number"
+            error={
+              attempt2 && data.hasGst && !isGstnValid
+                ? "GSTN must be exactly 15 characters"
+                : attempt2 &&
+                    data.hasGst &&
+                    data.gstn.length === 15 &&
+                    !GSTIN_REGEX.test(data.gstn)
+                  ? "This doesn't look like a valid GSTN format — please double-check"
+                  : null
+            }
           >
             <div style={{ display: "flex", gap: 8 }}>
               <Input
@@ -1625,6 +1830,7 @@ const isStep4Valid =
                 onChange={(e) => set("gstn", e.target.value.toUpperCase())}
                 placeholder="27AAPFU0939F1ZV"
                 maxLength={15}
+                error={attempt2 && data.hasGst && !isGstnValid}
                 style={{ fontFamily: "monospace", flex: 1 }}
               />
               <Btn
@@ -1652,9 +1858,14 @@ const isStep4Valid =
       )}
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-        <Field label="Legal / Company Name" required>
+        <Field
+          label="Legal / Company Name"
+          required
+          error={attempt2 && !data.legalName ? "Legal / company name is required" : null}
+        >
           <Input
             value={data.legalName}
+            error={attempt2 && !data.legalName}
             onChange={(e) => set("legalName", e.target.value)}
             placeholder="Acme Pvt. Ltd."
             style={{
@@ -1686,19 +1897,16 @@ const isStep4Valid =
           </Field>
         )}
 
-        <Field label="Business Type">
-          <Select
+        <Field
+          label="Business Type"
+          hint="Start typing to search, or pick from the list — you can also enter your own."
+        >
+          <Combobox
             value={data.businessType}
-            onChange={(e) => set("businessType", e.target.value)}
-          >
-            <option value="">Select…</option>
-            <option value="Private_Ltd">Private Limited</option>
-            <option value="Public_Ltd">Public Limited</option>
-            <option value="LLP">LLP</option>
-            <option value="Partnership">Partnership</option>
-            <option value="Proprietorship">Proprietorship</option>
-            <option value="Other">Other</option>
-          </Select>
+            onChange={(v) => set("businessType", v)}
+            options={BUSINESS_TYPES}
+            placeholder="Type or select business type…"
+          />
         </Field>
         <Field label="Company Size">
           <Select
@@ -1706,11 +1914,9 @@ const isStep4Valid =
             onChange={(e) => set("companySize", e.target.value)}
           >
             <option value="">Select size...</option>
-            <option value="Size_1_10">1-10 employees</option>
-            <option value="Size_11_50">11-50 employees</option>
-            <option value="Size_51_200">51-200 employees</option>
-            <option value="Size_201_500">201-500 employees</option>
-            <option value="Size_500_Plus">500+ employees</option>
+            {COMPANY_SIZES.map((s) => (
+              <option key={s.value} value={s.value}>{s.label}</option>
+            ))}
           </Select>
         </Field>
         <Field label="Company Type">
@@ -1719,11 +1925,9 @@ const isStep4Valid =
             onChange={(e) => set("companyType", e.target.value)}
           >
             <option value="">Select type...</option>
-            <option value="startup">Startup</option>
-            <option value="mid-size">Mid-size</option>
-            <option value="enterprise">Enterprise</option>
-            <option value="government">Government</option>
-            <option value="non-profit">Non-profit</option>
+            {COMPANY_TYPES.map((t) => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
           </Select>
         </Field>
 
@@ -1768,9 +1972,14 @@ const isStep4Valid =
       </p>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-        <Field label="State" required>
+        <Field
+          label="State"
+          required
+          error={attempt2 && !data.state ? "State is required" : null}
+        >
           <Select
             value={data.state}
+            error={attempt2 && !data.state}
             onChange={(e) => set("state", e.target.value)}
           >
             <option value="">Select state…</option>
@@ -1781,9 +1990,14 @@ const isStep4Valid =
             ))}
           </Select>
         </Field>
-        <Field label="City" required>
+        <Field
+          label="City"
+          required
+          error={attempt2 && !data.city ? "City is required" : null}
+        >
           <Input
             value={data.city}
+            error={attempt2 && !data.city}
             onChange={(e) => set("city", e.target.value)}
             placeholder="Mumbai"
             style={{
@@ -1791,11 +2005,22 @@ const isStep4Valid =
             }}
           />
         </Field>
-        <Field label="PIN Code" required>
+        <Field
+          label="PIN Code"
+          required
+          error={
+            attempt2 && !data.pincode
+              ? "PIN code is required"
+              : attempt2 && !PIN_REGEX.test(data.pincode)
+                ? "Enter a valid 6-digit PIN code"
+                : null
+          }
+        >
           <Input
             value={data.pincode}
             maxLength={6}
-            onChange={(e) => set("pincode", e.target.value)}
+            error={attempt2 && !PIN_REGEX.test(data.pincode)}
+            onChange={(e) => set("pincode", e.target.value.replace(/\D/g, ""))}
             placeholder="400001"
             style={{
               background: data.hasGst && data.pincode ? "#ffffff" : undefined,
@@ -1811,9 +2036,14 @@ const isStep4Valid =
         </Field>
       </div>
 
-      <Field label="Full Registered Address" required>
+      <Field
+        label="Full Registered Address"
+        required
+        error={attempt2 && !data.address ? "Full registered address is required" : null}
+      >
         <Input
           value={data.address}
+          error={attempt2 && !data.address}
           onChange={(e) => set("address", e.target.value)}
           placeholder="Building, Street, City, State, PIN"
           style={{
@@ -1894,15 +2124,12 @@ const isStep4Valid =
         </Btn>
         <Btn
           variant="primary"
-          disabled={
-            ocrLoading ||
-            !data.legalName ||
-            !data.state ||
-            !data.city ||
-            !data.pincode ||
-            !data.address
-          }
-          onClick={handleStep2}
+          disabled={ocrLoading}
+          onClick={() => {
+            setAttempt2(true);
+            if (!isStep3Valid) return;
+            handleStep2();
+          }}
         >
           Continue →
         </Btn>
@@ -1966,16 +2193,26 @@ const isStep4Valid =
       </h3>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-        <Field label="Contact Person Name" required>
+        <Field
+          label="Contact Person Name"
+          required
+          error={attempt3 && !data.contactName ? "Contact person name is required" : null}
+        >
           <Input
             value={data.contactName}
+            error={attempt3 && !data.contactName}
             onChange={(e) => set("contactName", e.target.value)}
             placeholder="Arjun Mehta"
           />
         </Field>
-        <Field label="Designation" required>
+        <Field
+          label="Designation"
+          required
+          error={attempt3 && !data.designation ? "Designation is required" : null}
+        >
           <Input
             value={data.designation}
+            error={attempt3 && !data.designation}
             onChange={(e) => set("designation", e.target.value)}
             placeholder="HR Manager"
           />
@@ -2067,14 +2304,22 @@ const isStep4Valid =
         />
       </Field>
 
+      {attempt3 && !isStep4Valid && (
+        <Alert type="error">
+          Please complete all required fields and verify both your mobile
+          number and company email before continuing.
+        </Alert>
+      )}
+
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
         <Btn variant="outline" onClick={() => setStep(2)}>
           ← Back
         </Btn>
-       <Btn 
-  variant="primary" 
-  disabled={!canGoStep4} 
+       <Btn
+  variant="primary"
   onClick={async () => {
+    setAttempt3(true);
+    if (!isStep4Valid) return;
     await saveStep3();
     setStep(4);
   }}
@@ -2325,6 +2570,8 @@ const isStep4Valid =
   //   </div>
   // );
 
+  const [attempt4, setAttempt4] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const renderStep4 = () => (
     <div>
       <h3
@@ -2336,19 +2583,7 @@ const isStep4Valid =
         }}
       >
         Licence & document upload
-        <span
-          style={{
-            fontSize: "var(--font-xs)",
-            fontWeight: 400,
-            color: "var(--color-text-tertiary)",
-            marginLeft: 10,
-            background: "var(--color-background-secondary)",
-            padding: "2px 8px",
-            borderRadius: 6,
-          }}
-        >
-          Optional
-        </span>
+        <span style={{ color: "#E24B4A", marginLeft: 6 }}>*</span>
       </h3>
 
       <p
@@ -2359,14 +2594,21 @@ const isStep4Valid =
           lineHeight: 1.5,
         }}
       >
-        Upload recruitment licences to earn trust badges displayed on all job
-        listings.
+        Both licences below are required to complete your registration and
+        also earn trust badges displayed on all job listings.
       </p>
 
       <Alert type="info">
         <strong>Blue Tick</strong> requires: GST Verified + one active licence +
         corporate domain email — all simultaneously.
       </Alert>
+
+      {attempt4 && (!data.licDocs.find((d) => d.id === "poe") || !data.licDocs.find((d) => d.id === "rpsl")) && (
+        <Alert type="error">
+          Both the Recruitment Licence and RPSL Licence are required — please
+          upload both files to continue.
+        </Alert>
+      )}
 
       <div
         style={{
@@ -2460,7 +2702,9 @@ const isStep4Valid =
                   document.getElementById(`file-${lic.id}`)?.click()
                 }
                 style={{
-                  border: "1px dashed var(--color-border-secondary,#ffc151)",
+                  border: attempt4 && !file
+                    ? "1px dashed #E24B4A"
+                    : "1px dashed var(--color-border-secondary,#ffc151)",
                   borderRadius: 8,
                   padding: "16px",
                   textAlign: "center",
@@ -2574,16 +2818,139 @@ const isStep4Valid =
         </Btn>
 
         <div style={{ display: "flex", gap: 10 }}>
-          <Btn variant="ghost" onClick={() => setStep(5)}>
-            Skip for now
-          </Btn>
-
-          <Btn variant="primary" onClick={handleStep4}>
+          <Btn
+            variant="primary"
+            onClick={() => {
+              setAttempt4(true);
+              handleStep4();
+            }}
+          >
             Continue →
           </Btn>
         </div>
       </div>
     </div>
+  );
+
+  const ReviewSection = ({ icon, title, editStep, children }) => (
+    <div
+      style={{
+        background: "#ffffff",
+        border: "1px solid rgba(18,35,89,0.08)",
+        borderRadius: 16,
+        padding: "18px 20px",
+        marginBottom: 16,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 14,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 10,
+              flexShrink: 0,
+              background: "linear-gradient(135deg,#122359,#1e3a8a)",
+              color: "#ffa300",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 14,
+            }}
+          >
+            <i className={icon} />
+          </span>
+          <p
+            style={{
+              fontSize: "var(--font-sm)",
+              fontWeight: 700,
+              color: "#122359",
+              margin: 0,
+              letterSpacing: 0.2,
+            }}
+          >
+            {title}
+          </p>
+        </div>
+        {editStep && (
+          <button
+            type="button"
+            onClick={() => setStep(editStep)}
+            style={{
+              background: "none",
+              border: "none",
+              color: "#ff9900",
+              fontSize: "var(--font-xs)",
+              fontWeight: 700,
+              cursor: "pointer",
+              padding: "4px 8px",
+            }}
+          >
+            <i className="fi fi-rr-pencil" style={{ marginRight: 4 }} />
+            Edit
+          </button>
+        )}
+      </div>
+      {children}
+    </div>
+  );
+
+  const ReviewRow = ({ label, val, mono }) => (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        gap: 12,
+        padding: "8px 0",
+        borderBottom: "1px solid #f1f4fb",
+        fontSize: "var(--font-sm)",
+      }}
+    >
+      <span style={{ color: "#66789c" }}>{label}</span>
+      {val ? (
+        <span
+          style={{
+            fontFamily: mono ? "monospace" : undefined,
+            fontWeight: 600,
+            color: "#122359",
+            textAlign: "right",
+            maxWidth: "60%",
+          }}
+        >
+          {val}
+        </span>
+      ) : (
+        <span style={{ color: "#b6c0d6", fontStyle: "italic", fontSize: "var(--font-xs)" }}>
+          Not provided
+        </span>
+      )}
+    </div>
+  );
+
+  const VerifyPill = ({ ok, label }) => (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        padding: "5px 12px",
+        borderRadius: 999,
+        fontSize: "var(--font-xs)",
+        fontWeight: 700,
+        background: ok ? "#DCFCE7" : "#FEF3C7",
+        color: ok ? "#166534" : "#92400E",
+      }}
+    >
+      <i className={ok ? "fi fi-rr-check" : "fi fi-rr-clock"} style={{ fontSize: 10 }} />
+      {label}
+    </span>
   );
 
   // ── Step 5: Review & Submit ───────────────
@@ -2603,39 +2970,51 @@ const isStep4Valid =
         style={{
           fontSize: "var(--font-sm)",
           color: "var(--color-text-secondary)",
-          marginBottom: 20,
+          marginBottom: 18,
         }}
       >
-        Confirm all details before creating your account.
+        Confirm all details before creating your account. Use{" "}
+        <strong>Edit</strong> on any section to make changes.
       </p>
+
+      {/* ── Verification status strip ── */}
       <div
         style={{
-          background: "var(--color-background-primary)",
-          border: "0.5px solid var(--color-border-tertiary)",
-          borderRadius: 10,
-          padding: "14px 16px",
-          marginBottom: 14,
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 8,
+          padding: "12px 14px",
+          marginBottom: 20,
+          background: "#F8FAFF",
+          border: "1px solid rgba(18,35,89,0.08)",
+          borderRadius: 14,
         }}
       >
-        <p
-          style={{
-            fontSize: "var(--font-xs)",
-            fontWeight: 600,
-            color: "var(--color-text-tertiary)",
-            marginBottom: 10,
-            letterSpacing: 0.5,
-          }}
-        >
-          COMPANY
-        </p>
-        <InfoRow label="Legal name" val={data.legalName} />
-        {data.hasGst && <InfoRow label="GSTN" val={data.gstn} mono />}
-        {data.hasGst && <InfoRow label="PAN" val={data.pan} mono />}
-        <InfoRow label="Business type" val={data.businessType} />
-        <InfoRow label="Industry" val={data.industry} />
-        {data.hasGst && <InfoRow label="GST Reg. date" val={data.gstRegDate} />}
-        <InfoRow label="CIN" val={data.cin} mono />
-        <InfoRow
+        <VerifyPill ok={!!data.hasGst} label={data.hasGst ? "GST Verified" : "Non-GST entity"} />
+        <VerifyPill ok={data.mobileOtp.verified} label={data.mobileOtp.verified ? "Mobile Verified" : "Mobile Pending"} />
+        <VerifyPill ok={data.corpEmailOtp.verified} label={data.corpEmailOtp.verified ? "Email Verified" : "Email Pending"} />
+        <VerifyPill
+          ok={data.licDocs.length === 2}
+          label={data.licDocs.length === 2 ? "Licences Uploaded" : "Licences Pending"}
+        />
+      </div>
+
+      <ReviewSection icon="fi fi-rr-briefcase" title="Company Details" editStep={2}>
+        <ReviewRow label="Legal name" val={data.legalName} />
+        <ReviewRow label="Trade name" val={data.tradeName} />
+        {data.hasGst && <ReviewRow label="GSTN" val={data.gstn} mono />}
+        {data.hasGst && <ReviewRow label="PAN" val={data.pan} mono />}
+        <ReviewRow label="Business type" val={labelFor(BUSINESS_TYPES, data.businessType)} />
+        <ReviewRow label="Company size" val={labelFor(COMPANY_SIZES, data.companySize)} />
+        <ReviewRow label="Company type" val={labelFor(COMPANY_TYPES, data.companyType)} />
+        <ReviewRow label="Industry" val={data.industry} />
+        {data.hasGst && <ReviewRow label="GST reg. date" val={data.gstRegDate} />}
+        <ReviewRow label="CIN" val={data.cin} mono />
+        <ReviewRow label="Website" val={data.officialWebsite} />
+      </ReviewSection>
+
+      <ReviewSection icon="fi fi-rr-marker" title="Registered Address" editStep={2}>
+        <ReviewRow
           label="Address"
           val={
             data.address
@@ -2643,119 +3022,103 @@ const isStep4Valid =
               : ""
           }
         />
-        <InfoRow label="Website" val={data.officialWebsite} />
-      </div>
-      <div
-        style={{
-          background: "var(--color-background-primary)",
-          border: "0.5px solid var(--color-border-tertiary)",
-          borderRadius: 10,
-          padding: "14px 16px",
-          marginBottom: 14,
-        }}
-      >
-        <p
-          style={{
-            fontSize: "var(--font-xs)",
-            fontWeight: 600,
-            color: "var(--color-text-tertiary)",
-            marginBottom: 10,
-            letterSpacing: 0.5,
-          }}
-        >
-          CONTACT
-        </p>
-        <InfoRow label="Contact person" val={data.contactName} />
-        <InfoRow label="Designation" val={data.designation} />
-        <InfoRow
-          label="Corporate email"
-          val={`${data.corpEmail} ${data.corpEmailOtp.verified ? "✓" : ""}`}
+      </ReviewSection>
+
+      <ReviewSection icon="fi fi-rr-user" title="Contact & Verification" editStep={3}>
+        <ReviewRow label="Contact person" val={data.contactName} />
+        <ReviewRow label="Designation" val={data.designation} />
+        <ReviewRow label="Personal email" val={data.contactPersonEmail} />
+        <ReviewRow
+          label="Company email"
+          val={data.corpEmail ? `${data.corpEmail}${data.corpEmailOtp.verified ? "  ✓ Verified" : ""}` : ""}
         />
-        <InfoRow
+        <ReviewRow
           label="Mobile"
-          val={`${data.countryCode} ${data.mobile} ${data.mobileOtp.verified ? "✓ Verified" : ""}`}
+          val={data.mobile ? `${data.countryCode} ${data.mobile}${data.mobileOtp.verified ? "  ✓ Verified" : ""}` : ""}
         />
-      </div>
-      <div
-        style={{
-          background: "var(--color-background-primary)",
-          border: "0.5px solid var(--color-border-tertiary)",
-          borderRadius: 10,
-          padding: "14px 16px",
-          marginBottom: 14,
-        }}
-      >
-        <p
-          style={{
-            fontSize: "var(--font-xs)",
-            fontWeight: 600,
-            color: "var(--color-text-tertiary)",
-            marginBottom: 10,
-            letterSpacing: 0.5,
-          }}
-        >
-          DOCUMENTS
-        </p>
-        <InfoRow
+      </ReviewSection>
+
+      <ReviewSection icon="fi fi-rr-document" title="Documents & Licences" editStep={4}>
+        <ReviewRow
           label="Company logo"
-          val={data.companyLogo ? `✓ ${data.companyLogo.name}` : "Not uploaded"}
+          val={data.companyLogo ? `✓ ${data.companyLogo.name}` : ""}
         />
-        <InfoRow
+        <ReviewRow
           label="Licences"
           val={
             data.licDocs.length > 0
               ? data.licDocs.map((d) => d.id.toUpperCase()).join(", ")
-              : "Skipped"
+              : ""
           }
         />
-        <InfoRow label="GST Registered" val={data.hasGst ? "Yes" : "No"} />
-      </div>
+        <ReviewRow label="GST registered" val={data.hasGst ? "Yes" : "No"} />
+      </ReviewSection>
+
       <div
         style={{
-          background: "#ffffff",
-          border: "0.5px solid #ffc151",
-          borderRadius: 10,
-          padding: "14px 16px",
+          background: "#FFF8EC",
+          border: "1px solid #ffc151",
+          borderRadius: 16,
+          padding: "18px 20px",
           marginBottom: 20,
         }}
       >
-        <p
-          style={{
-            fontSize: "var(--font-xs)",
-            fontWeight: 600,
-            color: "#ff9900",
-            marginBottom: 10,
-            letterSpacing: 0.5,
-          }}
-        >
-          TRIAL TERMS
-        </p>
-        <InfoRow label="Trial period" val="14 days" />
-        <InfoRow label="Free credits" val="5 × Band A" />
-        <InfoRow label="CV downloads" val="Disabled during trial" />
-        <InfoRow
-          label="Account status"
-          val="Trial — pending admin verification"
-        />
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+          <span
+            style={{
+              width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+              background: "#ffa300", color: "#122359",
+              display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 14,
+            }}
+          >
+            <i className="fi fi-rr-gift" />
+          </span>
+          <p style={{ fontSize: "var(--font-sm)", fontWeight: 700, color: "#8a5a00", margin: 0, letterSpacing: 0.2 }}>
+            Trial Terms
+          </p>
+        </div>
+        <ReviewRow label="Trial period" val="14 days" />
+        <ReviewRow label="Free credits" val="5 × Band A" />
+        <ReviewRow label="CV downloads" val="Disabled during trial" />
+        <ReviewRow label="Account status" val="Trial — pending admin verification" />
       </div>
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          gap: 10,
+          padding: "12px 14px",
+          marginBottom: 8,
+          borderRadius: 12,
+          border: attempt5 && !termsAccepted ? "1px solid #E24B4A" : "1px solid rgba(18,35,89,0.08)",
+          background: attempt5 && !termsAccepted ? "#FFF5F5" : "#F8FAFF",
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={termsAccepted}
+          onChange={(e) => setTermsAccepted(e.target.checked)}
+          style={{ width: 18, height: 18, marginTop: 2, flexShrink: 0, accentColor: "#ff9900" }}
+        />
+        <label style={{ fontSize: "var(--font-xs)", color: "var(--color-text-secondary)", lineHeight: 1.5 }}>
+          I agree to the Terms of Service and Employer Policy, and confirm
+          that the details provided above are accurate.
+        </label>
+      </div>
+      {attempt5 && !termsAccepted && (
+        <p style={{ fontSize: "var(--font-xs)", color: "#E24B4A", marginTop: 0, marginBottom: 14, fontWeight: 500 }}>
+          Please accept the terms to continue.
+        </p>
+      )}
+
       <Btn
         variant="primary"
-        disabled={!canSubmit}
-        style={{ width: "100%", padding: "13px 0", fontSize: "var(--font-md)" }}
+        style={{ width: "100%", padding: "13px 0", fontSize: "var(--font-md)", marginTop: 6 }}
         onClick={handleEmployerSubmit}
       >
         Create Account & Start Trial
       </Btn>
-      <p
-        style={{
-          fontSize: "var(--font-xs)",
-          color: "var(--color-text-tertiary)",
-          textAlign: "center",
-          marginTop: 10,
-        }}
-      >
-        By submitting you agree to our Terms of Service and Employer Policy
-      </p>
       <div
         style={{ display: "flex", justifyContent: "flex-start", marginTop: 12 }}
       >
