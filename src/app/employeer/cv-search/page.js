@@ -586,7 +586,7 @@ const EmployerCvSearchPage = () => {
                               <Link
                                 href={`/employeer/candidate-profile/${candidate.candidateId}`}
                               >
-                                {candidate.primaryTrade}
+                                {candidate.role || candidate.primaryTrade || "—"}
                               </Link>
                             </h4>
 

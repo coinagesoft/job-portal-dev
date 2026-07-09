@@ -11,10 +11,11 @@ import {
   getApplicantDetail,
   moveToReview,
   shortlistApplicant,
-  scheduleInterview,
   rejectApplicant,
   hireApplicant,
   getScreeningAnswers,
+  addNote,
+  getNotes,
 } from "@/services/recruiter/recruiterApplicantsService";
 import { getWallet } from "@/services/recruiter/recruiterCreditWalletService";
 
@@ -41,7 +42,6 @@ const STATUS_BADGE = {
 const STATUS_OPTIONS = [
   { value: "InReview",    label: "In Review" },
   { value: "Shortlisted", label: "Shortlisted" },
-  { value: "Interview",   label: "Schedule Interview" },
   { value: "Hired",       label: "Hired" },
   { value: "Rejected",    label: "Rejected" },
 ];
@@ -166,9 +166,11 @@ const EmployerApplicantsClient = () => {
   // Modals
   const [statusPopup, setStatusPopup]       = useState(null);
   const [selectedStatus, setSelectedStatus] = useState("");
-  const [interviewDate, setInterviewDate]   = useState("");
   const [rejectReason, setRejectReason]     = useState("");
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [statusNote, setStatusNote]         = useState("");
+  const [existingNotes, setExistingNotes]   = useState([]);
+  const [notesLoading, setNotesLoading]     = useState(false);
 
   const [detailPopup, setDetailPopup] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -247,17 +249,23 @@ const EmployerApplicantsClient = () => {
     if (!statusPopup || !selectedStatus) return;
     setUpdatingStatus(true);
     try {
-      if      (selectedStatus === "InReview")    await moveToReview(statusPopup.applicationId);
-      else if (selectedStatus === "Shortlisted") await shortlistApplicant(statusPopup.applicationId);
-      else if (selectedStatus === "Interview") {
-        if (!interviewDate) { showToast("Please pick an interview date.", "warning"); setUpdatingStatus(false); return; }
-        await scheduleInterview(statusPopup.applicationId, new Date(interviewDate).toISOString());
+      if      (selectedStatus === "InReview")    await moveToReview(statusPopup.applicationId, statusNote.trim());
+      else if (selectedStatus === "Shortlisted") await shortlistApplicant(statusPopup.applicationId, statusNote.trim());
+      else if (selectedStatus === "Rejected")    await rejectApplicant(statusPopup.applicationId, rejectReason, statusNote.trim());
+      else if (selectedStatus === "Hired")       await hireApplicant(statusPopup.applicationId, statusNote.trim());
+
+      // Optional note — only sent if the employer actually typed one.
+      if (statusNote.trim()) {
+        try {
+          await addNote(statusPopup.applicationId, statusNote.trim());
+        } catch (noteErr) {
+          console.error(noteErr);
+          showToast("Status updated, but the note could not be saved.", "warning");
+        }
       }
-      else if (selectedStatus === "Rejected")    await rejectApplicant(statusPopup.applicationId, rejectReason);
-      else if (selectedStatus === "Hired")       await hireApplicant(statusPopup.applicationId);
 
       showToast(`Status updated to: ${STATUS_BADGE[selectedStatus]?.label || selectedStatus}`, "success");
-      setStatusPopup(null); setInterviewDate(""); setRejectReason("");
+      setStatusPopup(null); setRejectReason(""); setStatusNote(""); setExistingNotes([]);
       loadData(activeStatus, searchText, pageNumber);
     } catch (err) {
       console.error(err);
@@ -684,11 +692,22 @@ const EmployerApplicantsClient = () => {
                   >
                     <button
                       className={styles.dropdownItem}
-                      onClick={() => {
+                      onClick={async () => {
                         setStatusPopup(menuApplicant);
                         setSelectedStatus(menuApplicant.applicationStatus);
-                        setInterviewDate(""); setRejectReason("");
+                        setRejectReason(""); setStatusNote("");
                         setOpenMenu(null);
+
+                        setExistingNotes([]);
+                        setNotesLoading(true);
+                        try {
+                          const res = await getNotes(menuApplicant.applicationId);
+                          setExistingNotes(res?.notes || []);
+                        } catch (err) {
+                          console.error(err);
+                        } finally {
+                          setNotesLoading(false);
+                        }
                       }}
                     >
                       <i className="fi-rr-refresh" />
@@ -831,28 +850,21 @@ const EmployerApplicantsClient = () => {
 
       {/* ══ Change Status Modal ══ */}
       {statusPopup && (
-        <Modal title={`Change Status — ${statusPopup.candidateName}`} onClose={() => setStatusPopup(null)}>
+        <Modal
+          title={`Change Status — ${statusPopup.candidateName}`}
+          onClose={() => { setStatusPopup(null); setStatusNote(""); setExistingNotes([]); }}
+        >
           <div style={{ marginBottom: "16px" }}>
             <label style={{ fontSize: "13px", fontWeight: 600, color: "#374151", marginBottom: "8px", display: "block" }}>
               Select new status:
             </label>
             <select className="form-control" value={selectedStatus}
-              onChange={(e) => { setSelectedStatus(e.target.value); setInterviewDate(""); setRejectReason(""); }}>
+              onChange={(e) => { setSelectedStatus(e.target.value); setRejectReason(""); }}>
               {STATUS_OPTIONS.map((s) => (
                 <option key={s.value} value={s.value}>{s.label}</option>
               ))}
             </select>
           </div>
-
-          {selectedStatus === "Interview" && (
-            <div style={{ marginBottom: "16px" }}>
-              <label style={{ fontSize: "13px", fontWeight: 600, color: "#374151", marginBottom: "8px", display: "block" }}>
-                Interview Date & Time:
-              </label>
-              <input type="datetime-local" className="form-control" value={interviewDate}
-                onChange={(e) => setInterviewDate(e.target.value)} />
-            </div>
-          )}
 
           {selectedStatus === "Rejected" && (
             <div style={{ marginBottom: "16px" }}>
@@ -864,8 +876,65 @@ const EmployerApplicantsClient = () => {
             </div>
           )}
 
+          {existingNotes.length > 0 && (
+            <div style={{ marginBottom: "16px" }}>
+              <label style={{ fontSize: "13px", fontWeight: 600, color: "#374151", marginBottom: "8px", display: "block" }}>
+                Previous notes:
+              </label>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "8px",
+                  maxHeight: "160px",
+                  overflowY: "auto",
+                }}
+              >
+                {existingNotes.map((n, i) => (
+                  <div
+                    key={n.recruiterNoteId || i}
+                    style={{
+                      background: "#f9fafb",
+                      border: "1px solid #f3f4f6",
+                      borderRadius: "10px",
+                      padding: "10px 12px",
+                    }}
+                  >
+                    <p style={{ margin: 0, fontSize: "13px", color: "#374151" }}>
+                      {n.noteText}
+                    </p>
+                    {n.createdAt && (
+                      <p style={{ margin: "4px 0 0", fontSize: "11px", color: "#9ca3af" }}>
+                        {formatDate(n.createdAt)}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {notesLoading && (
+            <p style={{ fontSize: "12px", color: "#9ca3af", marginBottom: "16px" }}>
+              Loading previous notes…
+            </p>
+          )}
+
+          <div style={{ marginBottom: "16px" }}>
+            <label style={{ fontSize: "13px", fontWeight: 600, color: "#374151", marginBottom: "8px", display: "block" }}>
+              Add a note (optional):
+            </label>
+            <textarea
+              className="form-control"
+              rows={3}
+              placeholder="e.g. Strong communication skills, follow up next week…"
+              value={statusNote}
+              onChange={(e) => setStatusNote(e.target.value)}
+            />
+          </div>
+
           <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
-            <button className="btn btn-border btn-sm" onClick={() => setStatusPopup(null)}>Cancel</button>
+            <button className="btn btn-border btn-sm" onClick={() => { setStatusPopup(null); setStatusNote(""); setExistingNotes([]); }}>Cancel</button>
             <button className="btn btn-default btn-sm" onClick={handleStatusUpdate} disabled={updatingStatus}>
               {updatingStatus ? "Updating…" : "Update Status"}
             </button>

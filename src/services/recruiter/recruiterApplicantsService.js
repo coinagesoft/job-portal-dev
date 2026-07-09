@@ -65,11 +65,12 @@ export const getApplicantsByJob = async (jobId) => {
 
 /**
  * PATCH /api/recruiter/applicants/{applicationId}/review
+ * Body: { note } — note is optional
  */
-export const moveToReview = async (applicationId) => {
+export const moveToReview = async (applicationId, note = "") => {
   const { data } = await api.patch(
     `/api/recruiter/applicants/${applicationId}/review`,
-    null,
+    { note: note || null },
     { params: { employerId: getEmployerId() } }
   );
   return data;
@@ -77,11 +78,12 @@ export const moveToReview = async (applicationId) => {
 
 /**
  * PATCH /api/recruiter/applicants/{applicationId}/shortlist
+ * Body: { note } — note is optional
  */
-export const shortlistApplicant = async (applicationId) => {
+export const shortlistApplicant = async (applicationId, note = "") => {
   const { data } = await api.patch(
     `/api/recruiter/applicants/${applicationId}/shortlist`,
-    null,
+    { note: note || null },
     { params: { employerId: getEmployerId() } }
   );
   return data;
@@ -89,12 +91,12 @@ export const shortlistApplicant = async (applicationId) => {
 
 /**
  * PATCH /api/recruiter/applicants/{applicationId}/interview
- * Body: { interviewDate }
+ * Body: { interviewDate, note }
  */
-export const scheduleInterview = async (applicationId, interviewDate) => {
+export const scheduleInterview = async (applicationId, interviewDate, note = "") => {
   const { data } = await api.patch(
     `/api/recruiter/applicants/${applicationId}/interview`,
-    { interviewDate },
+    { interviewDate, note: note || null },
     { params: { employerId: getEmployerId() } }
   );
   return data;
@@ -102,12 +104,12 @@ export const scheduleInterview = async (applicationId, interviewDate) => {
 
 /**
  * PATCH /api/recruiter/applicants/{applicationId}/reject
- * Body: { reason }
+ * Body: { reason, note } — both optional
  */
-export const rejectApplicant = async (applicationId, reason = "") => {
+export const rejectApplicant = async (applicationId, reason = "", note = "") => {
   const { data } = await api.patch(
     `/api/recruiter/applicants/${applicationId}/reject`,
-    { reason },
+    { reason: reason || null, note: note || null },
     { params: { employerId: getEmployerId() } }
   );
   return data;
@@ -115,11 +117,12 @@ export const rejectApplicant = async (applicationId, reason = "") => {
 
 /**
  * PATCH /api/recruiter/applicants/{applicationId}/hire
+ * Body: { note } — note is optional
  */
-export const hireApplicant = async (applicationId) => {
+export const hireApplicant = async (applicationId, note = "") => {
   const { data } = await api.patch(
     `/api/recruiter/applicants/${applicationId}/hire`,
-    null,
+    { note: note || null },
     { params: { employerId: getEmployerId() } }
   );
   return data;
