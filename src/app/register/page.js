@@ -3281,7 +3281,6 @@ function RegisterPageInner() {
             border: "none",
             borderRadius: 24,
             padding: "38px 34px",
-            overflow: "hidden",
             marginBottom: 0,
             boxSizing: "border-box",
           }}
