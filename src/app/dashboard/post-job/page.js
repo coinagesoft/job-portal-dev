@@ -798,6 +798,24 @@ function Step2({ go, jobForm, setJobForm, onSubmit }) {
 
 /* ─── STEP 3 – Skills & JD ────────────────────────────────────────────────── */
 function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, handleGenerateAdditionalJD, loadingAI, handleSuggestSkills, skillsLoading }) {
+  const [newSkillInput, setNewSkillInput] = useState("");
+
+  const addManualSkill = () => {
+    const value = newSkillInput.trim();
+    if (!value) return;
+
+    const alreadyExists = jobForm.KeySkills.some(
+      (s) => s.toLowerCase() === value.toLowerCase(),
+    );
+    if (alreadyExists) {
+      setNewSkillInput("");
+      return;
+    }
+
+    setJobForm((p) => ({ ...p, KeySkills: [...p.KeySkills, value] }));
+    setNewSkillInput("");
+  };
+
   return (
     <StepCard
       stepNum={3}
@@ -806,29 +824,54 @@ function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, han
       onBack={() => go(2)}
       onContinue={onSubmit}
     >
-      {/* Key Skills — AI-generated only, no manual typing */}
+      {/* Key Skills — AI-generated, plus manual add */}
       <Field
         label="Key Skills"
         required
-        hint="Generated automatically from the job title, trade, and description. Remove any that don't fit, or regenerate for a fresh set."
+        hint="Generate with AI, or type your own and press Enter / click Add. Remove any that don't fit."
       >
-        <button
-          type="button"
-          className="btn btn-sm btn-default mb-10"
-          onClick={handleSuggestSkills}
-          disabled={skillsLoading}
-        >
-          {skillsLoading
-            ? "Generating…"
-            : jobForm.KeySkills.length > 0
-              ? "✨ Regenerate with AI"
-              : "✨ Generate Skills with AI"}
-        </button>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
+          <button
+            type="button"
+            className="btn btn-sm btn-default"
+            onClick={handleSuggestSkills}
+            disabled={skillsLoading}
+          >
+            {skillsLoading
+              ? "Generating…"
+              : jobForm.KeySkills.length > 0
+                ? "✨ Regenerate with AI"
+                : "✨ Generate Skills with AI"}
+          </button>
+        </div>
+
+        <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
+          <input
+            className={styles.control}
+            style={{ flex: 1 }}
+            placeholder="Type a skill and press Enter…"
+            value={newSkillInput}
+            onChange={(e) => setNewSkillInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addManualSkill();
+              }
+            }}
+          />
+          <button
+            type="button"
+            className="btn btn-sm btn-border"
+            onClick={addManualSkill}
+          >
+            + Add
+          </button>
+        </div>
 
         {jobForm.KeySkills.length === 0 && !skillsLoading && (
           <p style={{ fontSize: 13, color: "#66789c", margin: "4px 0 0" }}>
-            No skills yet — click above to have AI suggest skills based on
-            this job.
+            No skills yet — generate with AI above, or type your own and hit
+            Enter.
           </p>
         )}
 
