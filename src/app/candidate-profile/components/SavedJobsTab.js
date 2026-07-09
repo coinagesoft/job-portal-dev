@@ -121,7 +121,7 @@ const SavedJobsTab = () => {
             key={job.id}
             className="col-xl-4 col-lg-4 col-md-6 col-sm-12 col-12"
             style={{
-              marginBottom: "0px",
+              marginBottom: "20px",
               display: "flex",
             }}
           >

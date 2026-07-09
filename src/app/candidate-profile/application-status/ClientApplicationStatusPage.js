@@ -21,225 +21,358 @@ const STATUS_CLASS_MAP = {
   Rejected: 'rejected'
 };
 
-const BLUE_BADGE_STYLE = {
-  backgroundColor: '#e8f0fe',
-  color: '#1a56c4',
-  border: '1px solid #c7dcff'
+const STATUS_COLOR_MAP = {
+  Applied: { bg: '#eef1f8', color: '#3a4a7a', border: '#d7ddef' },
+  'In Review': { bg: '#fff6e6', color: '#a86a00', border: '#ffe3ad' },
+  Shortlisted: { bg: '#e9f7ef', color: '#1c7a45', border: '#c3ebd3' },
+  Interview: { bg: '#e8f0fe', color: '#1a56c4', border: '#c7dcff' },
+  Rejected: { bg: '#fdecec', color: '#b23b3b', border: '#f5c9c9' }
 };
 
-const BLUE_PILL_STYLE = {
-  backgroundColor: '#e8f0fe',
-  color: '#1a56c4',
-  border: '1px solid #c7dcff'
-};
-
-const JOB_LIST_TAG_WRAP_STYLE = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  justifyContent: 'flex-end',
-  gap: 8,
-  marginTop: 24,
-  marginBottom: 14
-};
-
-const JOB_LIST_CARD_STYLE = {
+const CARD_STYLE = {
   border: '1px solid rgba(18, 35, 89, 0.08)',
-  borderRadius: '24px',
-  overflow: 'hidden',
-  transition: 'all 0.35s ease',
+  borderRadius: '16px',
   background: '#ffffff',
-  boxShadow: '0 4px 14px rgba(18,35,89,0.04)'
-};
-
-const JOB_LIST_TAG_STYLE = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: '6px 12px',
-  borderRadius: 999,
-  background: '#EAF4FF',
-  border: '1px solid #B9DCFF',
-  color: '#1D4ED8',
-  fontSize: 12,
-  fontWeight: 600,
-  lineHeight: 1,
+  boxShadow: '0 2px 8px rgba(18,35,89,0.04)',
   transition: 'all 0.25s ease',
-  cursor: 'pointer'
-};
-
-const handleTagHoverEnter = (event) => {
-  event.currentTarget.style.background = '#1D4ED8';
-  event.currentTarget.style.color = '#ffffff';
-  event.currentTarget.style.transform = 'translateY(-1px)';
-};
-
-const handleTagHoverLeave = (event) => {
-  event.currentTarget.style.background = '#EAF4FF';
-  event.currentTarget.style.color = '#1D4ED8';
-  event.currentTarget.style.transform = 'translateY(0px)';
+  padding: '20px 22px',
+  marginBottom: 12
 };
 
 const handleCardHoverEnter = (event) => {
-  event.currentTarget.style.transform = 'translateY(-8px)';
   event.currentTarget.style.border = '1px solid rgba(255, 153, 0, 0.22)';
-  event.currentTarget.style.boxShadow = '0 20px 40px rgba(255,153,0,0.12)';
+  event.currentTarget.style.boxShadow = '0 8px 20px rgba(255,153,0,0.10)';
 };
 
 const handleCardHoverLeave = (event) => {
-  event.currentTarget.style.transform = 'translateY(0px)';
   event.currentTarget.style.border = '1px solid rgba(18, 35, 89, 0.08)';
-  event.currentTarget.style.boxShadow = '0 4px 14px rgba(18,35,89,0.04)';
+  event.currentTarget.style.boxShadow = '0 2px 8px rgba(18,35,89,0.04)';
 };
 
-const SAVED_JOB_ACTION_BUTTON_STYLE = {
-  color: '#ffffff',
-  background: '#ff9900',
-  border: '1px solid #ff9900',
-  transition: 'all 0.25s ease'
+const TAG_STYLE = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  padding: '2px 9px',
+  borderRadius: 999,
+  background: '#f4f6fb',
+  border: '1px solid #e3e7f1',
+  color: '#4a5578',
+  fontSize: 11,
+  fontWeight: 600,
+  lineHeight: 1.6,
+  whiteSpace: 'nowrap'
 };
 
-const handleSavedJobButtonHoverEnter = (event) => {
-  event.currentTarget.style.background = '#e68f00';
-  event.currentTarget.style.border = '1px solid #e68f00';
-  event.currentTarget.style.transform = 'translateY(-1px)';
-  event.currentTarget.style.boxShadow = '0 8px 18px rgba(255,153,0,0.22)';
+const ACTION_BTN_STYLE = {
+  fontSize: 12,
+  fontWeight: 600,
+  padding: '5px 12px',
+  borderRadius: 8,
+  border: '1px solid transparent',
+  cursor: 'pointer',
+  whiteSpace: 'nowrap'
 };
 
-const handleSavedJobButtonHoverLeave = (event) => {
-  event.currentTarget.style.background = '#ff9900';
-  event.currentTarget.style.border = '1px solid #ff9900';
-  event.currentTarget.style.transform = 'translateY(0px)';
-  event.currentTarget.style.boxShadow = 'none';
+const iconMap = {
+  industry: '/assets/imgs/page/job-single/industry.svg',
+  jobLevel: '/assets/imgs/page/job-single/job-level.svg',
+  salary: '/assets/imgs/page/job-single/salary.svg',
+  experience: '/assets/imgs/page/job-single/experience.svg',
+  jobType: '/assets/imgs/page/job-single/job-type.svg',
+  deadline: '/assets/imgs/page/job-single/deadline.svg',
+  updated: '/assets/imgs/page/job-single/updated.svg',
+  location: '/assets/imgs/page/job-single/location.svg',
 };
 
 const getJobDetailsHref = (jobId) =>
   jobId ? `/job-details?jobId=${jobId}` : '/job-details';
 
+
+const formatEmploymentType = (type) => {
+  if (!type) return "";
+
+  return type
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
 const ApplicationStatusCard = ({ application, isAcknowledged, onAcknowledge, onWithdraw }) => {
+  const [noteExpanded, setNoteExpanded] = useState(false);
   const statusClass = STATUS_CLASS_MAP[application.status] || 'applied';
+  const statusColors = STATUS_COLOR_MAP[application.status] || STATUS_COLOR_MAP.Applied;
+  const canWithdraw = onWithdraw && !['Rejected', 'Hired', 'Withdrawn'].includes(application.status);
 
   return (
     <div
-      className="card-grid-2 hover-up candidate-status-card"
-      style={JOB_LIST_CARD_STYLE}
+      className={`hover-up candidate-status-card ${statusClass}`}
+      style={CARD_STYLE}
       onMouseEnter={handleCardHoverEnter}
       onMouseLeave={handleCardHoverLeave}
     >
-      <div className="row">
-        <div className="col-lg-7 col-md-7 col-sm-12">
-          <div className="card-grid-2-image-left">
-            <div className="image-box">
-              <Image src={application.logo} alt={application.company} width={60} height={60} />
-            </div>
-            <div className="right-info">
-              <Link className="name-job" href="/company-details">
-                {application.company}
-              </Link>
-              <span className="location-small">{application.location}</span>
-            </div>
-          </div>
+      {/* Top row: logo, company, title, status pill */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+        <div
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 10,
+            overflow: 'hidden',
+            flexShrink: 0,
+            border: '1px solid rgba(18,35,89,0.06)'
+          }}
+        >
+          <Image src={application.logo} alt={application.company} width={44} height={44} style={{ objectFit: 'cover' }} />
         </div>
-        <div className="col-lg-5 col-md-5 col-sm-12 text-start text-md-end">
-          <div className="candidate-status-tags" style={JOB_LIST_TAG_WRAP_STYLE}>
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              gap: 16,
+            }}
+          >
+            <div style={{ flex: 1 }}>
+              <h4
+                style={{
+                  fontSize: 17,
+                  margin: 0,
+                  lineHeight: 1.3,
+                  color: "#122359",
+                }}
+              >
+                <Link
+                  href={getJobDetailsHref(application.jobId)}
+                  style={{ color: "#122359" }}
+                >
+                  {application.title}
+                </Link>
+              </h4>
+
+            </div>
+
+            <span
+              style={{
+                display: "inline-block",
+                // marginTop: 8,
+                ...TAG_STYLE,
+                background: "#FFF8EA",
+                color: "#B26B00",
+                padding: "6px 12px",
+              }}
+            >
+              Applied {application.appliedOn}
+            </span>
+            <span
+              style={{
+                ...TAG_STYLE,
+                background: statusColors.bg,
+                color: statusColors.color,
+                border: `1px solid ${statusColors.border}`,
+                padding: "6px 14px",
+                fontSize: 12,
+                fontWeight: 700,
+                minWidth: 90,
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              {application.status}
+            </span>
+          </div>
+
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            marginTop: 12, flexWrap: 'wrap'
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <img
+                src={iconMap.industry}
+                alt="Company"
+                width={16}
+                height={16}
+              />
+              <span>{application.company}</span>
+            </div>
+
+            {application.location && (
+              <span style={{ fontSize: 12, color: '#8891ab' }}> {application.location}</span>
+            )}
+            {application.type && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <img
+                  src={iconMap.jobType}
+                  alt="Job Type"
+                  width={16}
+                  height={16}
+                />
+               <span>{formatEmploymentType(application.type)}</span>
+              </div>
+            )}
+          </div>
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              flexWrap: "wrap",
+              marginTop: 14,
+              marginBottom: 12,
+              gap: 10,
+            }}
+          >
             {application.tags.slice(0, 3).map((tag) => (
               <span
                 key={tag}
-                style={JOB_LIST_TAG_STYLE}
-                onMouseEnter={handleTagHoverEnter}
-                onMouseLeave={handleTagHoverLeave}
+                style={{
+                  ...TAG_STYLE,
+                  background: "#EEF5FF",
+                  color: "#0B5ED7",
+                  border: "1px solid #CFE2FF",
+                  padding: "4px 10px",
+                  fontSize: 11,
+                }}
               >
                 {tag}
               </span>
+
             ))}
+          </div>
+          <div
+            style={{
+              marginTop: 12,
+            }}
+          >
+
           </div>
         </div>
       </div>
 
-      <div className="card-block-info">
-        <h4>
-          <Link href={getJobDetailsHref(application.jobId)}>{application.title}</Link>
-        </h4>
-        <div className="mt-5">
-          <span className="card-briefcase">{application.type}</span>
-          <span className="card-time">
-            <span>Applied: {application.appliedOn}</span>
+
+      {/* Meta line: stage, tags, dates */}
+      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+        {/* <span style={{ fontSize: 11.5, color: '#8891ab' }}>Stage:</span> */}
+        {/* <span style={{ fontSize: 12, fontWeight: 600, color: '#122359', marginRight: 4 }}>
+          {application.stage}
+        </span> */}
+
+        {/* <span style={{ marginLeft: 'auto', fontSize: 11.5, color: '#8891ab' }}>
+          Applied {application.appliedOn} · Updated {application.updatedOn}
+        </span> */}
+      </div>
+
+      {/* Recruiter note: single line, expandable */}
+      <div
+        style={{
+          marginTop: 18,
+          padding: 16,
+          borderRadius: 14,
+          background: "#F8FAFD",
+          border: "1px solid #EDF2F7",
+          paddingTop: 10,
+          borderTop: '1px solid rgba(18,35,89,0.06)',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 8
+        }}
+      >
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <span style={{
+            fontWeight: 700,
+            color: "#122359",
+            marginBottom: 8,
+            fontSize: 13,
+          }}>
+            Recruiter note:
           </span>
-        </div>
-        <p className="font-sm color-text-paragraph mt-10">{application.description}</p>
+          <span
+            style={{
+              fontSize: 12.5,
+              color: '#4a5578',
+              display: noteExpanded ? 'inline' : 'inline-block',
+              maxWidth: noteExpanded ? 'none' : '100%',
+              overflow: noteExpanded ? 'visible' : 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: noteExpanded ? 'normal' : 'nowrap',
+              verticalAlign: 'bottom'
+            }}
+          >
+            {application.recruiterNote}
+          </span>
+          <div
+            style={{
+              marginTop: 10,
+              fontSize: 12,
+              color: "#8891ab",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
 
-        <div className="candidate-status-meta mt-20">
-          <div className="candidate-status-headline">
-            <div>
-              <span className="candidate-status-label">Current Stage</span>
-              <h6 className="candidate-status-stage">{application.stage}</h6>
-            </div>
-            <span className={`candidate-status-pill ${statusClass}`} style={BLUE_PILL_STYLE}>
-              {application.status}
-            </span>
+            <span>Updated {application.updatedOn}</span>
           </div>
-          <div className="candidate-status-row">
-            <span className="candidate-status-date">Applied: {application.appliedOn}</span>
-            <span className="candidate-status-date">Updated: {application.updatedOn}</span>
-          </div>
+          {application.recruiterNote && application.recruiterNote.length > 60 && (
+            <button
+              type="button"
+              onClick={() => setNoteExpanded((v) => !v)}
+              style={{
+                marginLeft: 6,
+                fontSize: 11.5,
+                fontWeight: 600,
+                color: '#ff9900',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: "6px 14px",
 
-          <div className="candidate-status-insight">
-            <div className="candidate-status-note">
-              <div className="candidate-status-note-head">
-                <span className="candidate-status-note-label">Recruiter Note</span>
-                <span className="candidate-status-note-date">Updated {application.updatedOn}</span>
-              </div>
-              <p className="candidate-status-note-text">{application.recruiterNote}</p>
-              <div className="candidate-status-ack-row">
-                <span className={`candidate-status-ack-badge ${isAcknowledged ? 'acknowledged' : 'pending'}`}>
-                  {isAcknowledged ? 'Acknowledged' : 'Awaiting acknowledgment'}
-                </span>
-                {!isAcknowledged && (
-                  <button
-                    type="button"
-                    className="candidate-status-ack-btn"
-                    onClick={() => onAcknowledge(application.id, application.company)}
-                  >
-                    Acknowledge Message
-                  </button>
-                )}
-                {onWithdraw &&
-                  !['Rejected', 'Hired', 'Withdrawn'].includes(application.status) && (
-                    <button
-                      type="button"
-                      className="candidate-status-ack-btn"
-                      style={{
-                        background: 'transparent',
-                        color: '#b23b3b',
-                        border: '1px solid #e89999',
-                      }}
-                      onClick={() => onWithdraw(application.id, application.company)}
-                    >
-                      Withdraw
-                    </button>
-                  )}
-              </div>
-            </div>
-          </div>
+              }}
+            >
+              {noteExpanded ? 'Hide' : 'View'}
+            </button>
+          )}
         </div>
 
-        <div className="card-2-bottom mt-20">
-          <div className="row">
-            <div className="col-lg-7 col-7">
-              {/* <span className="card-text-price">{application.price}</span>
-              <span className="text-muted">{application.priceUnit}</span> */}
-            </div>
-            <div className="col-lg-5 col-5 text-end">
-              <Link
-                className="btn btn-apply-now"
-                href={getJobDetailsHref(application.jobId)}
-                style={SAVED_JOB_ACTION_BUTTON_STYLE}
-                onMouseEnter={handleSavedJobButtonHoverEnter}
-                onMouseLeave={handleSavedJobButtonHoverLeave}
-              >
-                View Job
-              </Link>
-            </div>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 600,
+              padding: "6px 14px",
+              borderRadius: 999,
+              background: isAcknowledged ? '#e9f7ef' : '#fff6e6',
+              color: isAcknowledged ? '#1c7a45' : '#a86a00',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            {isAcknowledged ? 'Acknowledged' : 'Pending'}
+          </span>
+
+          {!isAcknowledged && (
+            <button
+              type="button"
+              style={{ ...ACTION_BTN_STYLE, background: '#122359', color: '#fff' }}
+              onClick={() => onAcknowledge(application.id, application.company)}
+            >
+              Acknowledge
+            </button>
+          )}
+
+          {canWithdraw && (
+            <button
+              type="button"
+              style={{ ...ACTION_BTN_STYLE, background: 'transparent', color: '#b23b3b', border: '1px solid #e89999' }}
+              onClick={() => onWithdraw(application.id, application.company)}
+            >
+              Withdraw
+            </button>
+          )}
+
+          <Link
+            href={getJobDetailsHref(application.jobId)}
+            style={{ ...ACTION_BTN_STYLE, background: '#ff9900', color: '#fff', display: 'inline-block' }}
+          >
+            View Job
+          </Link>
         </div>
       </div>
     </div>
@@ -367,7 +500,7 @@ const ClientApplicationStatusPage = () => {
 
   const handleWithdraw = async (applicationId, companyName) => {
     if (typeof window !== 'undefined' &&
-        !window.confirm(`Withdraw your application to ${companyName}?`)) {
+      !window.confirm(`Withdraw your application to ${companyName}?`)) {
       return;
     }
     try {
@@ -450,23 +583,22 @@ const ClientApplicationStatusPage = () => {
                   onClick={() => setActiveFilter(filterName)}
                 >
                   <span>{filterName}</span>
-                  <span className="candidate-status-filter-count" style={BLUE_BADGE_STYLE}>
+                  <span className="candidate-status-filter-count" style={{ backgroundColor: '#e8f0fe', color: '#1a56c4', border: '1px solid #c7dcff' }}>
                     {statusCounts[filterName] || 0}
                   </span>
                 </button>
               ))}
             </div>
 
-            <div className="row display-list">
+            <div>
               {filteredApplications.map((application) => (
-                <div key={application.id} className="col-xl-12 col-12">
-                  <ApplicationStatusCard
-                    application={application}
-                    isAcknowledged={Boolean(acknowledgedMessages[application.id])}
-                    onAcknowledge={handleAcknowledge}
-                    onWithdraw={handleWithdraw}
-                  />
-                </div>
+                <ApplicationStatusCard
+                  key={application.id}
+                  application={application}
+                  isAcknowledged={Boolean(acknowledgedMessages[application.id])}
+                  onAcknowledge={handleAcknowledge}
+                  onWithdraw={handleWithdraw}
+                />
               ))}
             </div>
 
