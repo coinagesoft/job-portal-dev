@@ -39,13 +39,14 @@ const jobsData = [
       img: '/assets/imgs/page/blue-collar/ship_captain.jpg', 
       tags: ['HVAC', 'Troubleshooting'] 
     },
+    
     { 
       title: 'Mechanical Fitter', 
       location: 'Chennai', 
       time: '9 mins ago', 
       price: '$45K - $58K', 
       type: 'Full time', 
-      img: '/assets/imgs/page/blue-collar/welding.jpg', 
+      img: '/assets/imgs/page/blue-collar/ship_service.jpg',
       tags: ['Alignment', 'Assembly'] 
     },
   ],
