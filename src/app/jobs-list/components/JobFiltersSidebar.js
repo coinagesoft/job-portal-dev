@@ -1,10 +1,65 @@
 'use client';
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { filterCategories } from "./filterData";
 import { getJobFilterOptions } from "@/services/candidate/jobFilterService";
-import { BiBorderRadius } from "react-icons/bi";
 
-const JobFiltersSidebar = ({ filters = {}, onFilterChange }) => {
+const normalizeString = (str) => {
+  if (!str) return "";
+  return str.toLowerCase().replace(/[^a-z0-9]/g, "");
+};
+
+const getOptionCount = (categoryType, optionLabel, jobsList) => {
+  if (!Array.isArray(jobsList)) return 0;
+  const normLabel = normalizeString(optionLabel);
+  return jobsList.filter(job => {
+    switch (categoryType) {
+      case "cities": {
+        const jobCity = normalizeString(job.jobLocation || job.city);
+        return jobCity.includes(normLabel);
+      }
+      case "states": {
+        const jobState = normalizeString(job.jobLocation || job.state);
+        return jobState.includes(normLabel);
+      }
+      case "tradeCategories": {
+        const jobTrade = normalizeString(job.tradeCategory);
+        return jobTrade.includes(normLabel);
+      }
+      case "roles": {
+        const jobRole = normalizeString(job.jobTitle || job.role);
+        return jobRole.includes(normLabel);
+      }
+      case "educationLevels": {
+        const jobEdu = normalizeString(job.educationRequired);
+        return jobEdu === normLabel;
+      }
+      case "employmentTypes": {
+        const jobEmpType = normalizeString(job.employmentType);
+        return jobEmpType === normLabel;
+      }
+      case "locationTypes": {
+        const jobLocType = normalizeString(job.locationType);
+        return jobLocType === normLabel;
+      }
+      case "employmentModes": {
+        const jobEmpMode = normalizeString(job.employmentMode);
+        return jobEmpMode === normLabel;
+      }
+      case "departments": {
+        const jobDept = normalizeString(job.department);
+        return jobDept === normLabel;
+      }
+      case "skills": {
+        if (!Array.isArray(job.skills)) return false;
+        return job.skills.some(skill => normalizeString(skill) === normLabel);
+      }
+      default:
+        return false;
+    }
+  }).length;
+};
+
+const JobFiltersSidebar = ({ jobs = [], filters = {}, onFilterChange }) => {
   const [filterOptions, setFilterOptions] = useState({});
   const [openCategory, setOpenCategory] = useState(null);
 
@@ -70,12 +125,22 @@ const JobFiltersSidebar = ({ filters = {}, onFilterChange }) => {
     return sum;
   }, 0);
 
+  const optionsWithCounts = useMemo(() => {
+    const result = {};
+    Object.entries(filterOptions).forEach(([type, opts]) => {
+      result[type] = opts.map(opt => ({
+        ...opt,
+        count: getOptionCount(type, opt.label, jobs)
+      }));
+    });
+    return result;
+  }, [filterOptions, jobs]);
+
   const filterBadgeStyle = {
-    background: '#e8f0fe',
-    color: '#1a56c4',
-    border: '1px solid #c7dcff',
-    borderRadius:"50%",
-    padding:"2px 8px" 
+    background: '#fff4e6',
+    color: '#e68a00',
+    border: '1px solid #ffe3c2',
+    // padding:"10px "
   };
 
   return (
@@ -100,7 +165,7 @@ const JobFiltersSidebar = ({ filters = {}, onFilterChange }) => {
             <span>
               Advance Filter
               {totalSelected > 0 && (
-                <span className="number-item" style={{ ...filterBadgeStyle, marginLeft: 8 }}>
+                <span className="number-item" style={{ ...filterBadgeStyle, padding:"5px 10px", borderRadius:"25%",marginLeft: 8 }}>
                   {totalSelected}
                 </span>
               )}
@@ -124,7 +189,7 @@ const JobFiltersSidebar = ({ filters = {}, onFilterChange }) => {
         </div>
 
         {filterCategories.map((category) => {
-          const options = filterOptions[category.type] || [];
+          const options = optionsWithCounts[category.type] || [];
           const isOpen = openCategory === category.type;
           const selectedCount = filters[category.type]?.length || 0;
 
@@ -153,7 +218,7 @@ const JobFiltersSidebar = ({ filters = {}, onFilterChange }) => {
                 <span>
                   {category.label}
                   {selectedCount > 0 && (
-                    <span className="number-item" style={{ ...filterBadgeStyle, marginLeft: 8 }}>
+                    <span className="number-item" style={{ ...filterBadgeStyle, marginLeft: 8 , padding:"5px 10px", borderRadius:"25% "}}>
                       {selectedCount}
                     </span>
                   )}
@@ -164,7 +229,6 @@ const JobFiltersSidebar = ({ filters = {}, onFilterChange }) => {
                     transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
                     transition: 'transform 0.2s ease',
                     fontSize: 12,
-                  
                   }}
                 >
                   ▾
