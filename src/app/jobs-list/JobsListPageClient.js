@@ -114,7 +114,7 @@ useEffect(() => {
         </div>
       </section>
       <NewsSection />
-      <Newsletter />
+      {/* <Newsletter /> */}
       {showFilterSheet && (
         <JobFilterSheet 
           initialFilters={filters}

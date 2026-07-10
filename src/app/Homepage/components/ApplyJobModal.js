@@ -63,6 +63,8 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
   const showToast = useToast();
 
   const candidateId = getCandidateId();
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const isCandidateLoggedIn = !!token && !!candidateId;
 
   const [profile, setProfile] = useState(null);
 
@@ -101,9 +103,18 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
   const requiredCertificates = applyDetails?.certificatesRequired ?? [];
   const passportRequired = applyDetails?.passportRequired ?? false;
 
+  useEffect(() => {
+    if (showModal && !isCandidateLoggedIn) {
+      showToast("Please login first to apply for a job!", "error");
+      if (typeof setShowModal === "function") {
+        setShowModal(false);
+      }
+    }
+  }, [showModal, isCandidateLoggedIn, setShowModal, showToast]);
+
   // Fetch screening questions + requirements when the modal opens.
   useEffect(() => {
-    if (!showModal || !job?.jobId) return;
+    if (!showModal || !job?.jobId || !isCandidateLoggedIn) return;
 
     const loadApplyDetails = async () => {
       try {
@@ -119,7 +130,7 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
     };
 
     loadApplyDetails();
-  }, [showModal, job?.jobId]);
+  }, [showModal, job?.jobId, candidateId]);
 
 
   useEffect(() => {
@@ -356,7 +367,7 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
       );
     }
   };
-  if (!showModal) return null;
+  if (!showModal || !isCandidateLoggedIn) return null;
 
   return (
     <>

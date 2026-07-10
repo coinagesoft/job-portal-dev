@@ -23,7 +23,7 @@ const HeroSearch = ({ jobs = [] }) => {
         const response = await getJobFilterOptions();
         if (response.data.success) {
           setTradeCategoryOptions(response.data.tradeCategories || []);
-          setCityOptions(response.data.cities || []);
+          setCityOptions(response.data.states || []);
         }
       } catch (error) {
         console.error("Error loading Hero Search filter options:", error);
