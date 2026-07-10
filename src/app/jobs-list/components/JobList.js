@@ -106,58 +106,230 @@ const JobList = ({ filters = {} }) => {
     try {
       setLoading(true);
 
-      const first = (v) => (Array.isArray(v) ? v[0] : v) || "";
-
-      // Salary range labels like "45K - 60K" / "80K+" → min/max rupees
-      const salaryLabel = first(filters.salary);
-      const salaryNums = String(salaryLabel).match(/\d+/g)?.map((n) => Number(n) * 1000) || [];
-      const salaryMin = salaryNums[0];
-      const salaryMax = salaryNums[1];
-
-      // Experience labels like "1-3 Years" / "Fresher (0-1 yr)" / "10+ Years"
-      const expLabel = first(filters.experience);
-      const expNums = String(expLabel).match(/\d+/g)?.map(Number) || [];
-      const expMin = expNums[0];
-      const expMax = expNums[1];
-
-      const sortMap = {
-        "Newest Post": "newest",
-        "Oldest Post": "oldest",
-        "Rating Post": "newest",
-      };
-
       const params = {
         Keyword: filters.keyword || "",
-        Location: filters.locationSingle || first(filters.cities),
-        TradeCategory: first(filters.tradeCategories) || first(filters.industries),
-        Role: first(filters.roles) || first(filters.role),
-        EmploymentType: first(filters.employmentTypes),
-        LocationType: first(filters.locationTypes),
-        EducationLevel: first(filters.educationLevels),
-        SalaryMin: salaryMin,
-        SalaryMax: salaryMax,
-        ExperienceYearsMin: expMin,
-        ExperienceYearsMax: expMax,
-        Page: currentPage,
-        PageSize: showPerPage,
-        Sort: sortMap[sortBy] || "newest",
-        // when logged in, backend returns a per-candidate AI match score
+        Location: filters.locationSingle || "",
+        Page: 1,
+        PageSize: 50,
         candidateId: getCandidateId() || undefined,
       };
-     
 
+      let allJobsList = [];
       const response = await searchJobs(params);
-      console.log("API RESPONSE");
-console.log(response.data.jobs);
       const data = response.data || {};
-      const jobsList = (data.jobs || []).map((job) => ({
+      allJobsList = [...(data.jobs || [])];
+
+      const totalCount = data.totalCount ?? allJobsList.length;
+      if (totalCount > 50) {
+        const remainingPages = Math.ceil(totalCount / 50);
+        for (let p = 2; p <= remainingPages; p++) {
+          try {
+            const nextRes = await searchJobs({ ...params, Page: p });
+            if (nextRes.data && nextRes.data.jobs) {
+              allJobsList = [...allJobsList, ...nextRes.data.jobs];
+            }
+          } catch (e) {
+            console.error("Failed to load page " + p, e);
+          }
+        }
+      }
+
+      // Map salaryDisplay
+      let processedJobs = allJobsList.map((job) => ({
         ...job,
-        // JobCardList reads salaryDisplay; the list API returns salaryRange.
         salaryDisplay: job.salaryDisplay || job.salaryRange,
       }));
 
-      setFilteredJobs(jobsList);
-      setTotalFilteredCount(data.totalCount ?? jobsList.length);
+      // Helper for normalization
+      const normalizeString = (str) => {
+        if (!str) return "";
+        return str.toLowerCase().replace(/[^a-z0-9]/g, "");
+      };
+
+      // Client-side filtering logic
+      const matchesCity = (job) => {
+        const selected = filters.cities || [];
+        if (selected.length === 0) return true;
+        const jobCity = normalizeString(job.jobLocation || job.city);
+        return selected.some(city => jobCity.includes(normalizeString(city)));
+      };
+
+      const matchesState = (job) => {
+        const selected = filters.states || [];
+        if (selected.length === 0) return true;
+        const jobState = normalizeString(job.jobLocation || job.state);
+        return selected.some(state => jobState.includes(normalizeString(state)));
+      };
+
+      const matchesTradeCategory = (job) => {
+        const selected = [...(filters.tradeCategories || []), ...(filters.industries || [])];
+        if (selected.length === 0) return true;
+        const jobTrade = normalizeString(job.tradeCategory);
+        return selected.some(cat => jobTrade.includes(normalizeString(cat)));
+      };
+
+      const matchesRole = (job) => {
+        const selected = [...(filters.roles || []), ...(filters.role || [])];
+        if (selected.length === 0) return true;
+        const jobRole = normalizeString(job.jobTitle || job.role);
+        return selected.some(role => jobRole.includes(normalizeString(role)));
+      };
+
+      const matchesEducation = (job) => {
+        const selected = filters.educationLevels || [];
+        if (selected.length === 0) return true;
+        const jobEdu = normalizeString(job.educationRequired);
+        return selected.some(edu => jobEdu === normalizeString(edu));
+      };
+
+      const matchesEmploymentType = (job) => {
+        const selected = filters.employmentTypes || [];
+        if (selected.length === 0) return true;
+        const jobEmpType = normalizeString(job.employmentType);
+        return selected.some(type => jobEmpType === normalizeString(type));
+      };
+
+      const matchesLocationType = (job) => {
+        const selected = filters.locationTypes || [];
+        if (selected.length === 0) return true;
+        const jobLocType = normalizeString(job.locationType);
+        return selected.some(type => jobLocType === normalizeString(type));
+      };
+
+      const matchesEmploymentMode = (job) => {
+        const selected = filters.employmentModes || [];
+        if (selected.length === 0) return true;
+        const jobEmpMode = normalizeString(job.employmentMode);
+        return selected.some(mode => jobEmpMode === normalizeString(mode));
+      };
+
+      const matchesDepartment = (job) => {
+        const selected = filters.departments || [];
+        if (selected.length === 0) return true;
+        const jobDept = normalizeString(job.department);
+        return selected.some(dept => jobDept === normalizeString(dept));
+      };
+
+      const matchesSkills = (job) => {
+        const selected = filters.skills || [];
+        if (selected.length === 0) return true;
+        if (!Array.isArray(job.skills)) return false;
+        return selected.some(skill => 
+          job.skills.some(jobSkill => normalizeString(jobSkill) === normalizeString(skill))
+        );
+      };
+
+      // Salary helpers
+      const parseSalaryFilter = (label) => {
+        const nums = String(label).match(/\d+/g)?.map(n => Number(n) * 1000) || [];
+        const min = nums[0] || 0;
+        const max = label.includes("+") ? Infinity : (nums[1] || min);
+        return { min, max };
+      };
+
+      const parseJobSalary = (salaryRange) => {
+        const nums = String(salaryRange || "").replace(/,/g, "").match(/\d+/g)?.map(Number) || [];
+        const min = nums[0] || 0;
+        const max = nums[1] || min;
+        return { min, max };
+      };
+
+      const salaryOverlap = (jobSal, filterSal) => {
+        return jobSal.min <= filterSal.max && jobSal.max >= filterSal.min;
+      };
+
+      const matchesSalary = (job) => {
+        const selected = filters.salary || [];
+        if (selected.length === 0) return true;
+        const jobSal = parseJobSalary(job.salaryRange);
+        return selected.some(label => salaryOverlap(jobSal, parseSalaryFilter(label)));
+      };
+
+      // Experience helpers
+      const parseExperienceFilter = (label) => {
+        const nums = String(label).match(/\d+/g)?.map(Number) || [];
+        if (label.toLowerCase().includes("fresher")) {
+          return { min: 0, max: 1 };
+        }
+        const min = nums[0] || 0;
+        const max = label.includes("+") ? Infinity : (nums[1] || min);
+        return { min, max };
+      };
+
+      const parseJobExperience = (experienceDisplay) => {
+        const text = String(experienceDisplay || "").toLowerCase();
+        const nums = text.match(/\d+/g)?.map(Number) || [];
+        if (text.includes("fresher")) {
+          return { min: 0, max: 1 };
+        }
+        if (nums.length === 0) {
+          return { min: 0, max: Infinity };
+        }
+        const min = nums[0];
+        const max = nums[1] || min;
+        return { min, max };
+      };
+
+      const experienceOverlap = (jobExp, filterExp) => {
+        return jobExp.min <= filterExp.max && jobExp.max >= filterExp.min;
+      };
+
+      const matchesExperience = (job) => {
+        const selected = filters.experience || [];
+        if (selected.length === 0) return true;
+        const jobExp = parseJobExperience(job.experienceDisplay);
+        return selected.some(label => experienceOverlap(jobExp, parseExperienceFilter(label)));
+      };
+
+      // Perform filtering
+      const filtered = processedJobs.filter(job => 
+        matchesCity(job) &&
+        matchesState(job) &&
+        matchesTradeCategory(job) &&
+        matchesRole(job) &&
+        matchesEducation(job) &&
+        matchesEmploymentType(job) &&
+        matchesLocationType(job) &&
+        matchesEmploymentMode(job) &&
+        matchesDepartment(job) &&
+        matchesSkills(job) &&
+        matchesSalary(job) &&
+        matchesExperience(job)
+      );
+
+      // Sorting helpers
+      const getJobTime = (job) => {
+        if (!job.postedOn) return 0;
+        return new Date(job.postedOn).getTime();
+      };
+
+      const getJobMatch = (job) => {
+        return Number(job.aiMatchPercentage) || 0;
+      };
+
+      // Perform sorting
+      const sorted = [...filtered].sort((a, b) => {
+        if (sortBy === 'Newest Post') {
+          return getJobTime(b) - getJobTime(a);
+        }
+        if (sortBy === 'Oldest Post') {
+          return getJobTime(a) - getJobTime(b);
+        }
+        if (sortBy === 'Rating Post') {
+          const diff = getJobMatch(b) - getJobMatch(a);
+          if (diff !== 0) return diff;
+          return getJobTime(b) - getJobTime(a);
+        }
+        return 0;
+      });
+
+      // Pagination
+      const totalFiltered = sorted.length;
+      setTotalFilteredCount(totalFiltered);
+
+      const paged = sorted.slice((currentPage - 1) * showPerPage, currentPage * showPerPage);
+      setFilteredJobs(paged);
+
     } catch (error) {
       console.error("Failed to load jobs", error);
       setFilteredJobs([]);
@@ -165,7 +337,6 @@ console.log(response.data.jobs);
     } finally {
       setLoading(false);
     }
-    
   };
 
   useEffect(() => {
@@ -238,21 +409,40 @@ console.log(response.data.jobs);
         </div>
       </div>
 
-      <div className={`row display-${viewMode}`}>
-        {filteredJobs.map((job) => (
-          <div
-            key={job.jobId}
-            className={viewMode === 'grid' ? 'col-xl-4 col-lg-6 col-md-6 col-sm-12 col-12' : 'col-xl-12 col-12'}
-          >
-            <JobCardList
-              job={job}
-              viewMode={viewMode}
-              onApplyNow={openApplyModal}
-              isApplied={appliedJobIds.has(job.jobId)}
-            />
-          </div>
-        ))}
-      </div>
+      {loading ? (
+        <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '300px', width: '100%' }}>
+          <img 
+            src="/assets/imgs/template/loading.gif" 
+            alt="Loading..." 
+            style={{ 
+              maxWidth: '120px',
+              filter: 'hue-rotate(195deg)'
+            }} 
+          />
+        </div>
+      ) : filteredJobs.length === 0 ? (
+        <div className="text-center" style={{ padding: '60px 0', width: '100%' }}>
+          <img src="/assets/imgs/template/icons/empty.svg" alt="No jobs" style={{ maxWidth: '120px', marginBottom: '20px', opacity: 0.6 }} onError={(e) => { e.target.style.display = 'none'; }} />
+          <h4 style={{ color: 'var(--text-dark)', marginBottom: '8px' }}>No Jobs Found</h4>
+          <p style={{ color: 'var(--text-muted, #7c8493)', fontSize: '15px' }}>Try adjusting your filters or search terms to find matching roles.</p>
+        </div>
+      ) : (
+        <div className={`row display-${viewMode}`}>
+          {filteredJobs.map((job) => (
+            <div
+              key={job.jobId}
+              className={viewMode === 'grid' ? 'col-xl-4 col-lg-6 col-md-6 col-sm-12 col-12' : 'col-xl-12 col-12'}
+            >
+              <JobCardList
+                job={job}
+                viewMode={viewMode}
+                onApplyNow={openApplyModal}
+                isApplied={appliedJobIds.has(job.jobId)}
+              />
+            </div>
+          ))}
+        </div>
+      )}
       {totalPages > 1 ? (
         <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       ) : null}
