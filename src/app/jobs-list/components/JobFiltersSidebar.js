@@ -8,6 +8,16 @@ const normalizeString = (str) => {
   return str.toLowerCase().replace(/[^a-z0-9]/g, "");
 };
 
+
+const formatLabel = (value) => {
+  if (!value) return "";
+
+  return value
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+
 const getOptionCount = (categoryType, optionLabel, jobsList) => {
   if (!Array.isArray(jobsList)) return 0;
   const normLabel = normalizeString(optionLabel);
@@ -100,7 +110,7 @@ const JobFiltersSidebar = ({ jobs = [], filters = {}, onFilterChange }) => {
     const newValues = current.includes(value)
       ? current.filter(v => v !== value)
       : [...current, value];
-    
+
     onFilterChange?.({
       ...filters,
       [category]: newValues
@@ -165,7 +175,7 @@ const JobFiltersSidebar = ({ jobs = [], filters = {}, onFilterChange }) => {
             <span>
               Advance Filter
               {totalSelected > 0 && (
-                <span className="number-item" style={{ ...filterBadgeStyle, padding:"5px 10px", borderRadius:"25%",marginLeft: 8 }}>
+                <span className="number-item" style={{ ...filterBadgeStyle, padding: "5px 10px", borderRadius: "25%", marginLeft: 8 }}>
                   {totalSelected}
                 </span>
               )}
@@ -218,7 +228,7 @@ const JobFiltersSidebar = ({ jobs = [], filters = {}, onFilterChange }) => {
                 <span>
                   {category.label}
                   {selectedCount > 0 && (
-                    <span className="number-item" style={{ ...filterBadgeStyle, marginLeft: 8 , padding:"5px 10px", borderRadius:"25% "}}>
+                    <span className="number-item" style={{ ...filterBadgeStyle, marginLeft: 8, padding: "5px 10px", borderRadius: "25% " }}>
                       {selectedCount}
                     </span>
                   )}
@@ -246,7 +256,9 @@ const JobFiltersSidebar = ({ jobs = [], filters = {}, onFilterChange }) => {
                             checked={safeIncludes(filters[category.type], option.label)}
                             onChange={() => handleCheckbox(category.type, option.label)}
                           />
-                          <span className="text-small">{option.label}</span>
+                          <span className="text-small">
+                            {formatLabel(option.label)}
+                          </span>
                           <span className="checkmark"></span>
                         </label>
                         {option.count !== null && option.count !== undefined ? (

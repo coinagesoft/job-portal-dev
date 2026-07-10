@@ -501,6 +501,7 @@ const Header = () => {
                       )
                     }
                     type="button"
+                    style={{textDecoration:"none"}}
                   >
                     Register
                   </button>

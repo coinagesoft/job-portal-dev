@@ -113,7 +113,7 @@ const JobDetailsContent = () => {
           </div>
         </div>
       </section>
-      <FeaturedJobs similarJobs={job.similarJobs || []} />
+      {/* <FeaturedJobs similarJobs={job.similarJobs || []} /> */}
       {/* <Newsletter /> */}
     </main>
   );

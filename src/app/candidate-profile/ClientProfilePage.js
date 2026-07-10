@@ -2053,80 +2053,272 @@ const StepLanguages = ({ data, onAdd, onRemove, onUpdate }) => {
 };
 
 // ─── Completion Summary (final step done) ────────────────────────────────────
-const CompletionSummary = ({ percent, onEdit, router }) => (
-  <div style={{ textAlign: "center", padding: "40px 20px" }}>
+const CompletionSummary = ({
+  completion,
+  onEdit,
+  router,
+}) => {
+  const percent = completion?.overallPct || 0;
+
+  const completedItems =
+    completion?.items?.filter((item) => item.completed) || [];
+
+  const pendingItems =
+    completion?.items?.filter((item) => !item.completed) || [];
+
+  return (
     <div
       style={{
-        width: 96,
-        height: 96,
-        borderRadius: "50%",
-        background: T.successBg,
-        border: `3px solid ${T.success}`,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: 40,
-        margin: "0 auto 20px",
+        maxWidth: 700,
+        margin: "0 auto",
+        padding: "30px 20px",
       }}
     >
-      <i className="fi-rr-check" aria-hidden="true" style={{ lineHeight: 1 }} />
-    </div>
-    <h3 style={{ color: T.navy, margin: "0 0 8px" }}>Profile Complete!</h3>
-    <p style={{ color: T.muted, fontSize: 14, margin: "0 0 24px" }}>
-      Your profile is {percent}% complete. Employers can now find you.
-    </p>
-    <div
-      style={{
-        background: T.bg,
-        borderRadius: 12,
-        padding: "16px 24px",
-        display: "inline-block",
-        marginBottom: 28,
-      }}
-    >
-      <div style={{ fontSize: 13, color: T.muted, marginBottom: 6 }}>
-        Profile Strength
+      {/* Success Icon */}
+      <div style={{ textAlign: "center" }}>
+        <div
+          style={{
+            width: 90,
+            height: 90,
+            borderRadius: "50%",
+            background: "#EAF7EC",
+            border: "3px solid #4CAF50",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            margin: "0 auto 20px",
+            fontSize: 36,
+            color: "#4CAF50",
+          }}
+        >
+          ✓
+        </div>
+
+        <h2
+          style={{
+            color: "#122359",
+            marginBottom: 10,
+          }}
+        >
+          Profile Completion
+        </h2>
+
+        <p
+          style={{
+            color: "#66789C",
+            marginBottom: 30,
+          }}
+        >
+          Your profile is{" "}
+          <strong style={{ color: "#FFA300" }}>
+            {percent}% complete
+          </strong>
+        </p>
       </div>
+
+      {/* Progress Card */}
       <div
         style={{
-          height: 8,
-          background: T.border,
-          borderRadius: 4,
-          width: 220,
-          overflow: "hidden",
+          background: "#fff",
+          border: "1px solid #E8ECF0",
+          borderRadius: 16,
+          padding: 24,
+          marginBottom: 24,
+          boxShadow: "0 8px 24px rgba(18,35,89,.05)",
         }}
       >
         <div
           style={{
-            height: "100%",
-            width: `${percent}%`,
-            background: T.orange,
-            borderRadius: 4,
-            transition: "width .5s",
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: 12,
+            fontWeight: 600,
           }}
-        />
+        >
+          <span>Profile Strength</span>
+
+          <span style={{ color: "#FFA300" }}>
+            {percent}%
+          </span>
+        </div>
+
+        <div
+          style={{
+            height: 10,
+            background: "#EEF2F6",
+            borderRadius: 20,
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              width: `${percent}%`,
+              height: "100%",
+              background: "#FFA300",
+              borderRadius: 20,
+            }}
+          />
+        </div>
       </div>
+
+      {/* Checklist */}
       <div
-        style={{ fontSize: 13, fontWeight: 700, color: T.orange, marginTop: 6 }}
+        style={{
+          background: "#fff",
+          borderRadius: 16,
+          border: "1px solid #E8ECF0",
+          padding: 24,
+          boxShadow: "0 8px 24px rgba(18,35,89,.05)",
+        }}
       >
-        {percent}%
+        <h4
+          style={{
+            marginBottom: 20,
+            color: "#122359",
+          }}
+        >
+          Complete Your Profile
+        </h4>
+
+        {completedItems.map((item) => (
+          <div
+            key={item.key}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "12px 0",
+              borderBottom: "1px solid #F3F4F6",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              <div
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: "50%",
+                  background: "#EAF7EC",
+                  color: "#28A745",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 700,
+                }}
+              >
+                ✓
+              </div>
+
+              <span>{item.label}</span>
+            </div>
+
+            <span
+              style={{
+                color: "#28A745",
+                fontWeight: 600,
+                fontSize: 13,
+              }}
+            >
+              Completed
+            </span>
+          </div>
+        ))}
+
+        {pendingItems.map((item) => (
+          <div
+            key={item.key}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "12px 0",
+              borderBottom: "1px solid #F3F4F6",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              <div
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: "50%",
+                  background: "#FFF5E8",
+                  color: "#FFA300",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 700,
+                }}
+              >
+                !
+              </div>
+
+              <div>
+                <div
+                  style={{
+                    fontWeight: 600,
+                  }}
+                >
+                  {item.label}
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 13,
+                    color: "#66789C",
+                  }}
+                >
+                  {item.actionHint}
+                </div>
+              </div>
+            </div>
+
+            <button
+              style={{
+                border: "none",
+                background: "#FFF5E8",
+                color: "#FFA300",
+                padding: "8px 16px",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              Complete
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          gap: 15,
+          marginTop: 30,
+        }}
+      >
+        <Btn variant="outline" onClick={onEdit}>
+          Edit Profile
+        </Btn>
+
+        <Btn onClick={() => router.push("/jobs-list")}>
+          Browse Jobs
+        </Btn>
       </div>
     </div>
-    <div>
-      <Btn onClick={onEdit} variant="outline" style={{ marginRight: 12 }}>
-        Edit Profile
-      </Btn>
-      <Btn style={{ color: T.white }} onClick={() => router.push("/jobs-list")}>
-        <span style={{ color: T.white }}>Browse Jobs</span>
-        <i
-          className="fi-rr-arrow-small-right"
-          aria-hidden="true"
-          style={{ color: T.white }}
-        />
-      </Btn>
-    </div>
-  </div>
-);
+  );
+};
 
 // ─── Profile Sidebar (progress overview) ─────────────────────────────────────
 const ProfileMini = ({ data, percent, currentStep, onJump }) => (
@@ -3808,6 +4000,7 @@ const handleAvailabilityChange = async (checked) => {
                         setDone(false);
                         setCurrentStep(1);
                       }}
+                      completion={profileCompletion}
                       router={router}
                     />
                   ) : (

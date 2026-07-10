@@ -341,7 +341,8 @@ const handleLinkedInLogin = () => {
                 marginBottom: 10,
               }}
             >
-              SkillBridge
+              <img src="assets/imgs/template/logo.svg"/>
+
             </div>
 
             <h1

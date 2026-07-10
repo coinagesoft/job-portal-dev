@@ -10,6 +10,7 @@ const iconMap = {
   deadline: '/assets/imgs/page/job-single/deadline.svg',
   updated: '/assets/imgs/page/job-single/updated.svg',
   location: '/assets/imgs/page/job-single/location.svg',
+  apply: '/assets/imgs/template/icons/apply.svg',
 };
 
 const JobOverview = ({ job = {} }) => {
@@ -42,7 +43,7 @@ const JobOverview = ({ job = {} }) => {
          { icon: 'industry', label: 'Industry Type', value: humanize(job.industryType) },
         { icon: 'jobType', label: 'Employment Type', value: humanize(job.employmentType) },
         { icon: 'location', label: 'Employment Mode', value: humanize(job.employmentMode) },
-         { icon: 'location', label: 'Job Type', value: humanize(job.jobType) },
+         { icon: 'jobType', label: 'Job Type', value: humanize(job.jobType) },
         { icon: 'location', label: 'Location Type', value: humanize(job.locationType) },
         { icon: 'location', label: 'Oil Field', value: humanize(job.isOilField) },
       ],
@@ -84,12 +85,12 @@ const JobOverview = ({ job = {} }) => {
           value: job.disabilityFriendly !== undefined ? (job.disabilityFriendly ? 'Yes' : 'No') : null,
         },
         {
-          icon: 'jobType',
+          icon: 'experience',
           label: 'Passport Required',
           value: job.passportRequired !== undefined ? (job.passportRequired ? 'Yes' : 'No') : null,
         },
         {
-          icon: 'jobType',
+          icon: 'experience',
           label: 'International Job',
           value: job.isInternational !== undefined ? (job.isInternational ? 'Yes' : 'No') : null,
         },

@@ -181,7 +181,7 @@ const getDisplaySalary = (salaryRange, salaryVisibility) => {
                       }}
                     ></i>
 
-                    {job.companyLocation}
+                    {job.jobLocation}
                   </span>
 
                   <span

@@ -3243,7 +3243,7 @@ function RegisterPageInner() {
               marginBottom: 8,
             }}
           >
-            SkillBridge
+            <img src="assets/imgs/template/logo.svg"/>
           </div>
           <h1
             style={{
