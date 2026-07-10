@@ -95,9 +95,9 @@ const HeroSearch = ({ jobs = [] }) => {
             >
               <form className="dashboard-search-form" onSubmit={handleSearch}>
                 {/* TRADE CATEGORY — sourced from /api/candidate/jobs/filter-options */}
-                <div className="box-industry">
+                <div className="box-industry"style={{ minWidth: "220px", flex: "0 0 220px" }} >
                   <select
-                    className="form-input mr-10 dashboard-select-arrow"
+                    className="form-input mr-12 dashboard-select-arrow"
                     value={industries}
                     onChange={(event) => setIndustries(event.target.value)}
                     disabled={optionsLoading}

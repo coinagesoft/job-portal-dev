@@ -110,7 +110,7 @@ const JobFiltersSidebar = ({ jobs = [], filters = {}, onFilterChange }) => {
     const newValues = current.includes(value)
       ? current.filter(v => v !== value)
       : [...current, value];
-
+    
     onFilterChange?.({
       ...filters,
       [category]: newValues
@@ -175,7 +175,7 @@ const JobFiltersSidebar = ({ jobs = [], filters = {}, onFilterChange }) => {
             <span>
               Advance Filter
               {totalSelected > 0 && (
-                <span className="number-item" style={{ ...filterBadgeStyle, padding: "5px 10px", borderRadius: "25%", marginLeft: 8 }}>
+                <span className="number-item" style={{ ...filterBadgeStyle, padding:"5px 10px", borderRadius:"25%",marginLeft: 8 }}>
                   {totalSelected}
                 </span>
               )}
@@ -228,7 +228,7 @@ const JobFiltersSidebar = ({ jobs = [], filters = {}, onFilterChange }) => {
                 <span>
                   {category.label}
                   {selectedCount > 0 && (
-                    <span className="number-item" style={{ ...filterBadgeStyle, marginLeft: 8, padding: "5px 10px", borderRadius: "25% " }}>
+                    <span className="number-item" style={{ ...filterBadgeStyle, marginLeft: 8 , padding:"5px 10px", borderRadius:"25% "}}>
                       {selectedCount}
                     </span>
                   )}
@@ -247,7 +247,7 @@ const JobFiltersSidebar = ({ jobs = [], filters = {}, onFilterChange }) => {
 
               {isOpen && (
                 <div className="form-group">
-                  <ul className="list-checkbox" style={{ maxHeight: 220, overflowY: 'auto' }}>
+                  <ul className="list-checkbox" style={{ maxHeight: 220,  overflowY: "auto",overflowX: "hidden", }}>
                     {options.map((option) => (
                       <li key={`${category.type}-${option.label}`}>
                         <label className="cb-container">
@@ -256,9 +256,7 @@ const JobFiltersSidebar = ({ jobs = [], filters = {}, onFilterChange }) => {
                             checked={safeIncludes(filters[category.type], option.label)}
                             onChange={() => handleCheckbox(category.type, option.label)}
                           />
-                          <span className="text-small">
-                            {formatLabel(option.label)}
-                          </span>
+                          <span className="text-small">{option.label}</span>
                           <span className="checkmark"></span>
                         </label>
                         {option.count !== null && option.count !== undefined ? (

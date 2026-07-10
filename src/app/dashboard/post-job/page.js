@@ -259,8 +259,8 @@ function Combobox({ value, onChange, options, placeholder }) {
               }}
               onMouseEnter={(e) => (e.currentTarget.style.background = "#FFF4E0")}
               onMouseLeave={(e) =>
-                (e.currentTarget.style.background =
-                  opt.label === query ? "#FFF4E0" : "transparent")
+              (e.currentTarget.style.background =
+                opt.label === query ? "#FFF4E0" : "transparent")
               }
             >
               {opt.label}
@@ -493,20 +493,26 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
       <div className={styles.grid2}>
         {/* Trade Category */}
         <Field label="Trade / Role Category" required>
-          <Combobox
+          <input
+            className={styles.control}
             value={jobForm.TradeCategory}
-            onChange={(v) => setJobForm((p) => ({ ...p, TradeCategory: v }))}
-            options={roleCategories}
+            onChange={(e) =>
+              setJobForm((p) => ({
+                ...p,
+                TradeCategory: e.target.value,
+              }))
+            }
             placeholder="e.g. Welding, Electrician, Plumber"
           />
         </Field>
 
         {/* Role (optional free-text specialisation) */}
         <Field label="Role / Specialisation">
-          <AsyncCombobox
+          <input
             value={jobForm.Role}
             onChange={(v) => setJobForm((p) => ({ ...p, Role: v }))}
-            fetchOptions={searchRoles}
+            // fetchOptions={searchRoles}
+            className={styles.control}
             placeholder="e.g. Pipe Welder"
           />
         </Field>
@@ -1024,19 +1030,19 @@ function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, han
             type="button"
             className={`btn btn-border btn-sm mr-10 mb-10 ${jobForm.Benefits.includes(b) ? "btn-brand-1" : ""
               }`}
-           onClick={() =>
-  setJobForm((p) => {
-    const benefits = p.Benefits.includes(b)
-      ? p.Benefits.filter((x) => x !== b)
-      : [...p.Benefits, b];
+            onClick={() =>
+              setJobForm((p) => {
+                const benefits = p.Benefits.includes(b)
+                  ? p.Benefits.filter((x) => x !== b)
+                  : [...p.Benefits, b];
 
-    return {
-      ...p,
-      Benefits: benefits,
-      BenefitsText: benefits.join(", "),
-    };
-  })
-}
+                return {
+                  ...p,
+                  Benefits: benefits,
+                  BenefitsText: benefits.join(", "),
+                };
+              })
+            }
           >
             {b}
           </button>
