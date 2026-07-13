@@ -12,7 +12,8 @@ export const saveJobDetails = async (payload) => {
   formData.append("JobTitle", payload.JobTitle ?? "");
   formData.append("TradeCategory", payload.TradeCategory ?? "");
   formData.append("Role", payload.Role ?? "");
-  formData.append("JobType", payload.JobType ?? "Normal_Job");
+  formData.append("IndustryType", payload.IndustryType ?? "");
+  formData.append("JobType", payload.JobType ?? "");
   formData.append("EmploymentType", payload.EmploymentType ?? "Full_Time");
   formData.append("EmploymentMode", payload.EmploymentMode ?? "Onsite");
   formData.append("Department", payload.Department ?? "");
@@ -195,7 +196,7 @@ export const publishJob = async (payload) => {
       JobId: payload.JobId,
       ApplicationDeadline: payload.ApplicationDeadline,
       CompanyVisibility: payload.CompanyVisibility ?? "ShowName",
-      JobType: payload.JobType ?? "Normal_Job",
+      JobType: payload.JobType ?? "",
       PublishingTags: payload.PublishingTags ?? [],
       PublishNow: payload.PublishNow ?? true,
     },
