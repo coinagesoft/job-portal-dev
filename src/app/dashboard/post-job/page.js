@@ -991,7 +991,7 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
           </div>
 
           <div style={{ flex: 1 }}>
-            <Field label="Oil Field">
+            {/* <Field label="Oil Field">
               <label
                 style={{
                   display: "flex",
@@ -1012,7 +1012,7 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
                 />
                 Oil field job
               </label>
-            </Field>
+            </Field> */}
           </div>
         </div>
       </div>
