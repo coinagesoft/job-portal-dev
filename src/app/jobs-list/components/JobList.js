@@ -47,7 +47,7 @@ const JobList = ({ filters = {} }) => {
   const [totalFilteredCount, setTotalFilteredCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [showPerPage, setShowPerPage] = useState(12);
-  const [sortBy, setSortBy] = useState('Newest Post');
+  const [sortBy, setSortBy] = useState('Best Match');
   const [viewMode, setViewMode] = useState('list');
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [activeJob, setActiveJob] = useState(null);
@@ -315,7 +315,7 @@ const JobList = ({ filters = {} }) => {
         if (sortBy === 'Oldest Post') {
           return getJobTime(a) - getJobTime(b);
         }
-        if (sortBy === 'Rating Post') {
+        if (sortBy === 'Best Match') {
           const diff = getJobMatch(b) - getJobMatch(a);
           if (diff !== 0) return diff;
           return getJobTime(b) - getJobTime(a);
@@ -375,9 +375,9 @@ const JobList = ({ filters = {} }) => {
                     <span>{sortBy}</span><i className="fi-rr-angle-small-down"></i>
                   </button>
                   <ul className="dropdown-menu">
-                    <li><a className="dropdown-item active" href="#" onClick={(e) => { e.preventDefault(); setSortBy('Newest Post'); }}>Newest Post</a></li>
-                    <li><a className="dropdown-item" href="#" onClick={(e) => { e.preventDefault(); setSortBy('Oldest Post'); }}>Oldest Post</a></li>
-                    <li><a className="dropdown-item" href="#" onClick={(e) => { e.preventDefault(); setSortBy('Rating Post'); }}>Rating Post</a></li>
+                    <li><a className={`dropdown-item${sortBy === 'Best Match' ? ' active' : ''}`} href="#" onClick={(e) => { e.preventDefault(); setSortBy('Best Match'); }}>Best Match</a></li>
+                    <li><a className={`dropdown-item${sortBy === 'Newest Post' ? ' active' : ''}`} href="#" onClick={(e) => { e.preventDefault(); setSortBy('Newest Post'); }}>Newest Post</a></li>
+                    <li><a className={`dropdown-item${sortBy === 'Oldest Post' ? ' active' : ''}`} href="#" onClick={(e) => { e.preventDefault(); setSortBy('Oldest Post'); }}>Oldest Post</a></li>
                   </ul>
                 </div>
               </div>

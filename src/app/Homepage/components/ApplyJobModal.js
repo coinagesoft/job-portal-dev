@@ -13,7 +13,18 @@ import { getProfileSummary } from "@/services/candidate/profileSummaryService";
 import { getCandidateId } from "@/utils/authHelper";
 import { getSkills } from "@/services/candidate/skillsService";
 import { getWorkExperience } from "@/services/candidate/workExperienceService";
+import { getEducation } from "@/services/candidate/educationService";
+import { getLanguages } from "@/services/candidate/languagesService";
 
+
+// Formats a "YYYY-MM-DD" (or full ISO) date string into "Mon YYYY" for the
+// CV preview, so raw ISO strings aren't shown to the candidate/employer.
+const formatCvDate = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString("en-IN", { month: "short", year: "numeric" });
+};
 
 const getDefaultQuestions = (job) => {
   const roleTitle = String(job?.jobTitle || "this role");
@@ -50,6 +61,8 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
   const [error, setError] = useState("");
   const [skills, setSkills] = useState([]);
   const [workHistory, setWorkHistory] = useState([]);
+  const [education, setEducation] = useState([]);
+  const [languages, setLanguages] = useState([]);
   // Apply requirements + screening questions fetched from the API.
   const [applyDetails, setApplyDetails] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
@@ -196,6 +209,39 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
 
     if (candidateId) {
       loadWorkExperience();
+    }
+  }, [candidateId]);
+
+  useEffect(() => {
+    const loadEducationHistory = async () => {
+      try {
+        const response = await getEducation();
+        setEducation(response.data.data || []);
+      } catch (error) {
+        console.error("Failed to load education:", error);
+      }
+    };
+
+    if (candidateId) {
+      loadEducationHistory();
+    }
+  }, [candidateId]);
+
+  useEffect(() => {
+    const loadLanguageList = async () => {
+      try {
+        const response = await getLanguages();
+        const list = Array.isArray(response.data.data)
+          ? response.data.data
+          : response.data.data?.languages || [];
+        setLanguages(list);
+      } catch (error) {
+        console.error("Failed to load languages:", error);
+      }
+    };
+
+    if (candidateId) {
+      loadLanguageList();
     }
   }, [candidateId]);
 
@@ -428,17 +474,78 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
 
                         <div className="mb-20">
                           <h6 className="mb-10">Candidate details</h6>
-                          <div className="row">
-                            <div className="col-md-6 mb-10">
-                              <input className="form-control" value={candidateName} readOnly />
-                            </div>
-                            <div className="col-md-6 mb-10">
-                              <input className="form-control" value={profile?.mobileNumber || ""} readOnly />
-                            </div>
-                            <div className="col-md-12 mb-10">
-                              <input className="form-control" value={profile?.email || ""} readOnly />
-                            </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 12,
+                              padding: "16px 18px",
+                              borderRadius: 12,
+                              background: "#F7F9FC",
+                              border: "1px solid rgba(18,35,89,0.08)",
+                            }}
+                          >
+                            {[
+                              { icon: "fi-rr-user", label: "Name", value: candidateName },
+                              { icon: "fi-rr-phone-call", label: "Mobile", value: profile?.mobileNumber || "—" },
+                              { icon: "fi-rr-envelope", label: "Email", value: profile?.email || "—" },
+                            ].map((item) => (
+                              <div
+                                key={item.label}
+                                style={{ display: "flex", alignItems: "center", gap: 12 }}
+                              >
+                                <span
+                                  style={{
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: "50%",
+                                    background: "#EAF4FF",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  <i
+                                    className={item.icon}
+                                    aria-hidden="true"
+                                    style={{ fontSize: 14, color: "#1D4ED8" }}
+                                  />
+                                </span>
+                                <div style={{ minWidth: 0 }}>
+                                  <div
+                                    style={{
+                                      fontSize: 11,
+                                      fontWeight: 700,
+                                      letterSpacing: 0.3,
+                                      textTransform: "uppercase",
+                                      color: "#98A2B3",
+                                    }}
+                                  >
+                                    {item.label}
+                                  </div>
+                                  <div
+                                    style={{
+                                      fontSize: 14,
+                                      fontWeight: 600,
+                                      color: "#122359",
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                      whiteSpace: "nowrap",
+                                    }}
+                                  >
+                                    {item.value}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
                           </div>
+                          <p
+                            className="font-xs color-text-paragraph-2 mb-0"
+                            style={{ marginTop: 8 }}
+                          >
+                            Pulled from your profile — update it there if anything's outdated.
+                          </p>
                         </div>
 
                         <div className="mb-15">
@@ -571,7 +678,7 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
                             <strong>{candidateName}</strong>
 
                             <p className="font-xs mb-0">
-                              {profile?.professionalSummary || "No role added"} -{" "}
+                              {profile?.role || "No role added"} -{" "}
                               {profile?.totalExperienceYears || 0} years -{" "}
                               {profile?.currentCity}, {profile?.currentState}
                             </p>
@@ -589,32 +696,85 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
 
                           <div className="mb-10">
                             <p className="font-xs fw-600 mb-5">Work Experience</p>
-                            {workHistory.slice(0, 2).map((entry, wi) => (
-                              <div
-                                key={entry.workExperienceId || entry.id || wi}
-                                style={{ marginBottom: "8px" }}
-                              >
-                                <p className="font-xs mb-0">
-                                  <strong>{entry.jobTitle}</strong>
-                                  {" - "}
-                                  {entry.companyName}
-                                </p>
+                            {workHistory.length === 0 ? (
+                              <p className="font-xs color-text-paragraph-2 mb-0">
+                                No work experience added.
+                              </p>
+                            ) : (
+                              workHistory.slice(0, 3).map((entry, wi) => (
+                                <div
+                                  key={entry.workId || entry.workExperienceId || entry.id || wi}
+                                  style={{ marginBottom: "8px" }}
+                                >
+                                  <p className="font-xs mb-0">
+                                    <strong>{entry.jobTitle}</strong>
+                                    {" - "}
+                                    {entry.companyName}
+                                    {entry.workLocation ? ` (${entry.workLocation})` : ""}
+                                  </p>
 
-                                <small>
-                                  {entry.startDate}
-                                  {" to "}
-                                  {entry.currentlyWorking
-                                    ? "Present"
-                                    : entry.endDate}
-                                </small>
-                              </div>
-                            ))}
+                                  <small>
+                                    {formatCvDate(entry.startDate)}
+                                    {" to "}
+                                    {entry.isCurrent
+                                      ? "Present"
+                                      : formatCvDate(entry.endDate)}
+                                  </small>
+                                </div>
+                              ))
+                            )}
                           </div>
+
+                          <div className="mb-10">
+                            <p className="font-xs fw-600 mb-5">Education</p>
+                            {education.length === 0 ? (
+                              <p className="font-xs color-text-paragraph-2 mb-0">
+                                No education added.
+                              </p>
+                            ) : (
+                              education.slice(0, 3).map((edu, ei) => (
+                                <div
+                                  key={edu.educationId || ei}
+                                  style={{ marginBottom: "6px" }}
+                                >
+                                  <p className="font-xs mb-0">
+                                    <strong>{edu.qualificationDegree}</strong>
+                                    {edu.instituteName ? ` - ${edu.instituteName}` : ""}
+                                    {edu.passoutYear ? ` (${edu.passoutYear})` : ""}
+                                  </p>
+                                </div>
+                              ))
+                            )}
+                          </div>
+
+                          {languages.length > 0 && (
+                            <div className="mb-10">
+                              <p className="font-xs fw-600 mb-5">Languages</p>
+                              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                                {languages.map((lang, li) => (
+                                  <span
+                                    key={lang.languageId || lang.id || li}
+                                    className="badge bg-light text-dark"
+                                  >
+                                    {lang.languageName}
+                                    {lang.canRead || lang.canWrite || lang.canSpeak
+                                      ? ` (${[
+                                          lang.canRead && "R",
+                                          lang.canWrite && "W",
+                                          lang.canSpeak && "S",
+                                        ]
+                                          .filter(Boolean)
+                                          .join("/")})`
+                                      : ""}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
 
                           <div className="mb-0">
                             <p className="font-xs fw-600 mb-5">Core Skills</p>
                             <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                              {/* console.log("SKILLS:", response.data); */}
                               {skills.slice(0, 8).map((skill, si) => (
                                 <span
                                   key={skill.skillId || skill.id || si}
