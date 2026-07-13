@@ -335,7 +335,7 @@ const Card = ({ children, style = {} }) => (
 );
 
 // ─── Step Progress Bar ────────────────────────────────────────────────────────
-const StepBar = ({ current }) => (
+const StepBar = ({ current, onStepClick }) => (
   <div
     style={{
       display: "flex",
@@ -349,15 +349,28 @@ const StepBar = ({ current }) => (
       const n = i + 1;
       const done = n < current;
       const active = n === current;
+      const clickable = typeof onStepClick === "function";
       return (
         <React.Fragment key={step.id}>
           <div
+            onClick={clickable ? () => onStepClick(n) : undefined}
+            role={clickable ? "button" : undefined}
+            tabIndex={clickable ? 0 : undefined}
+            onKeyDown={
+              clickable
+                ? (e) => {
+                    if (e.key === "Enter" || e.key === " ") onStepClick(n);
+                  }
+                : undefined
+            }
+            title={clickable ? `Go to ${step.label}` : undefined}
             style={{
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               gap: 6,
               minWidth: 64,
+              cursor: clickable ? "pointer" : "default",
             }}
           >
             <div
@@ -513,7 +526,7 @@ const StepPersonal = ({
             type="file"
             id="avatar-upload"
             onChange={handleAvatar}
-            accept="image/jpeg,image/png,image/jpg"
+            accept="image/*"
             style={{ display: "none" }}
           />
           <label
@@ -852,6 +865,24 @@ const StepPersonal = ({
 };
 
 // ─── STEP 3 — Work Experience ─────────────────────────────────────────────────
+// Pulls a 4-digit year (19xx/20xx) out of the free-text "Year / Details"
+// field (e.g. "Passed: 2014 | Cert No: ITI/2014" or just "2021") so it can
+// be saved as the actual passoutYear the employer-facing profile displays.
+const extractYear = (text) => {
+  const match = String(text || "").match(/\b(19|20)\d{2}\b/);
+  return match ? Number(match[0]) : 0;
+};
+
+const NOTICE_PERIOD_OPTIONS = [
+  "Immediate",
+  "15 Days",
+  "30 Days",
+  "45 Days",
+  "60 Days",
+  "90 Days",
+  "More than 90 Days",
+];
+
 const StepWork = ({ data, onUpdate, onAdd, onRemove }) => {
   const [showForm, setShowForm] = useState(false);
 
@@ -1015,13 +1046,19 @@ const StepWork = ({ data, onUpdate, onAdd, onRemove }) => {
 
               {entry.current && (
                 <Field label="Notice Period" required>
-                  <Inp
+                  <Sel
                     value={entry.noticePeriod || ""}
                     onChange={(e) =>
                       onUpdate(entry.id, "noticePeriod", e.target.value)
                     }
-                    placeholder="e.g. Immediate, 15 Days, 30 Days"
-                  />
+                  >
+                    <option value="">Select notice period…</option>
+                    {NOTICE_PERIOD_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </Sel>
                 </Field>
               )}
               <div style={{ marginBottom: 12 }}>
@@ -1181,7 +1218,7 @@ const StepWork = ({ data, onUpdate, onAdd, onRemove }) => {
           </div>
           {newEntry.current && (
             <Field label="Notice Period" required>
-              <Inp
+              <Sel
                 value={newEntry.noticePeriod || ""}
                 onChange={(e) =>
                   setNewEntry((p) => ({
@@ -1189,8 +1226,14 @@ const StepWork = ({ data, onUpdate, onAdd, onRemove }) => {
                     noticePeriod: e.target.value,
                   }))
                 }
-                placeholder="e.g. Immediate, 15 Days, 30 Days"
-              />
+              >
+                <option value="">Select notice period…</option>
+                {NOTICE_PERIOD_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </Sel>
             </Field>
           )}
 
@@ -1892,13 +1935,11 @@ const PROF_LEVELS = ["Beginner", "Conversational", "Professional", "Native"];
 
 const StepLanguages = ({ data, onAdd, onRemove, onUpdate }) => {
   const [newLang, setNewLang] = useState("");
-  const [newProf, setNewProf] = useState("Conversational");
-
   const handleAdd = () => {
     if (!newLang) return;
     onAdd({
       name: newLang,
-      proficiency: newProf,
+      proficiency: "Conversational",
       reading: true,
       writing: true,
       speaking: true,
@@ -1937,18 +1978,7 @@ const StepLanguages = ({ data, onAdd, onRemove, onUpdate }) => {
             >
               {lang.name}
             </span>
-            <Sel
-              value={lang.proficiency}
-              onChange={(e) =>
-                onUpdate(lang.name, "proficiency", e.target.value)
-              }
-              style={{ flex: 1, height: 40 }}
-            >
-              {PROF_LEVELS.map((p) => (
-                <option key={p}>{p}</option>
-              ))}
-            </Sel>
-            <div style={{ display: "flex", gap: 12 }}>
+            <div style={{ display: "flex", gap: 12, flex: 1 }}>
               {["reading", "writing", "speaking"].map((skill) => (
                 <label
                   key={skill}
@@ -2024,17 +2054,6 @@ const StepLanguages = ({ data, onAdd, onRemove, onUpdate }) => {
                 (l) => !(data.languages || []).find((x) => x.name === l),
               ).map((l) => (
                 <option key={l}>{l}</option>
-              ))}
-            </Sel>
-          </div>
-          <div style={{ flex: 1 }}>
-            <Sel
-              value={newProf}
-              onChange={(e) => setNewProf(e.target.value)}
-              style={{ height: 44 }}
-            >
-              {PROF_LEVELS.map((p) => (
-                <option key={p}>{p}</option>
               ))}
             </Sel>
           </div>
@@ -3275,7 +3294,7 @@ const loadAvailability = useCallback(async () => {
           instituteName: education.institution,
           yearDetails: education.meta,
           isAiVerified: education.verified || false,
-          passoutYear: Number(education.passoutYear) || 0,
+          passoutYear: extractYear(education.meta),
           certificateNumber: education.certificateNumber || "",
         },
       );
@@ -3296,18 +3315,11 @@ const loadAvailability = useCallback(async () => {
       instituteName: entry.institution,
       yearDetails: entry.meta,
       isAiVerified: false,
-      passoutYear: 0,
+      passoutYear: extractYear(entry.meta),
       certificateNumber: "",
     };
     try {
-      await createEducation({
-        qualificationDegree: entry.title,
-        instituteName: entry.institution,
-        yearDetails: entry.meta,
-        isAiVerified: false,
-        passoutYear: 0,
-        certificateNumber: "",
-      });
+      await createEducation(payload);
 
       await loadEducation();
 
@@ -3986,7 +3998,10 @@ const handleAvailabilityChange = async (checked) => {
                     borderBottom: `1px solid ${T.border}`,
                   }}
                 >
-                  <StepBar current={done ? TOTAL + 1 : currentStep} />
+                  <StepBar
+                    current={done ? TOTAL + 1 : currentStep}
+                    onStepClick={done ? undefined : (n) => setCurrentStep(n)}
+                  />
                 </div>
 
                 {/* Content area */}

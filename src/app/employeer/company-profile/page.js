@@ -536,6 +536,7 @@ export default function EmployerCompanyProfilePage() {
   const [loading, setLoading] = useState(true);
   // const [editModal, setEditModal] = useState(null);
   const [description, setDescription] = useState("");
+  const [officeSameAsAddress, setOfficeSameAsAddress] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
 
@@ -552,6 +553,38 @@ export default function EmployerCompanyProfilePage() {
     loadJobs();
     loadPeople();
   }, []);
+
+  // Combine the registered-address fields above into one display string,
+  // used both to detect an existing match (to auto-check the box) and to
+  // keep Office Address synced while "same as registered address" is on.
+  const buildRegisteredAddress = () =>
+    [
+      company.addressLine1,
+      company.addressLine2,
+      company.city,
+      company.state,
+      company.pincode,
+      company.country,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+  useEffect(() => {
+    if (!officeSameAsAddress) return;
+    const combined = buildRegisteredAddress();
+    if (company.officeAddress !== combined) {
+      handleInputChange("officeAddress", combined);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    officeSameAsAddress,
+    company.addressLine1,
+    company.addressLine2,
+    company.city,
+    company.state,
+    company.pincode,
+    company.country,
+  ]);
 
   const loadJobs = async () => {
     try {
@@ -1330,9 +1363,10 @@ export default function EmployerCompanyProfilePage() {
                         quickly understand your hiring needs.
                       </p>
                       <Textarea
-                        rows={5}
+                        rows={10}
                         value={description ?? ""}
                         onChange={(e) => setDescription(e.target.value)}
+                        style={{ minHeight: "240px" }}
                       // onBlur={handleDescriptionBlur}
                       />
 
@@ -1467,14 +1501,44 @@ export default function EmployerCompanyProfilePage() {
                     </div>
 
                     <Field label="Office Address">
-                      <Textarea
-                        rows={3}
-                        value={company.officeAddress || ""}
-                        onChange={(e) =>
-                          handleInputChange("officeAddress", e.target.value)
-                        }
-                      // onBlur={() => handleBlurSave("officeAddress")}
-                      />
+                      <label
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          marginBottom: officeSameAsAddress ? 0 : 10,
+                          cursor: "pointer",
+                          fontSize: "13px",
+                          color: "#66789c",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={officeSameAsAddress}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setOfficeSameAsAddress(checked);
+                            if (checked) {
+                              handleInputChange(
+                                "officeAddress",
+                                buildRegisteredAddress()
+                              );
+                            }
+                          }}
+                          style={{ width: 16, height: 16, accentColor: "#ffa300" }}
+                        />
+                        Same as the address above
+                      </label>
+                      {!officeSameAsAddress && (
+                        <Textarea
+                          rows={3}
+                          value={company.officeAddress || ""}
+                          onChange={(e) =>
+                            handleInputChange("officeAddress", e.target.value)
+                          }
+                        // onBlur={() => handleBlurSave("officeAddress")}
+                        />
+                      )}
                     </Field>
                   </SectionCard>
 

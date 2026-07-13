@@ -1936,8 +1936,8 @@ export default function DashboardPostJobPage() {
     // Step 2
     SalaryMin: "",
     SalaryMax: "",
-    SalaryCurrency: "INR",
-    SalaryDisplayOption: "Show_Range",
+    // SalaryCurrency: "INR",
+    // SalaryDisplayOption: "Show_Range",
 
     // Step 3
     KeySkills: [],
