@@ -16,9 +16,15 @@ import {
   verifyOtp,
   createCandidateOrder,
   googleLogin,
-  linkedInLogin
-} from "@/services/candidate/candidateAuthService";
+  linkedInLogin,
 
+} from "@/services/candidate/candidateAuthService";
+import {
+  registerWithGoogle,
+  registerWithLinkedIn,
+  verifyWithGoogle,
+  verifyWithLinkedIn
+} from "@/services/candidate/registrationService";
 import {
   gstCheck,
   saveCompanyDetails,
@@ -953,6 +959,8 @@ function OtpBlock({
 function CandidateForm() {
   const router = useRouter();
   const showToast = useToast();
+  const [socialAuth, setSocialAuth] = useState(null);
+// shape: { provider: "google" | "linkedin", accessToken }
   const [otpToken, setOtpToken] = useState("");
   const [form, setForm] = useState({
     name: "",
@@ -960,11 +968,13 @@ function CandidateForm() {
     mobile: "",
     email: "",
   });
+
   const [mobileOtp, setMobileOtp] = useState({
     sent: false,
     verified: false,
     userVal: "",
   });
+
   const [emailOtp, setEmailOtp] = useState({
     sent: false,
     verified: false,
@@ -979,9 +989,18 @@ function CandidateForm() {
   const [payStatus, setPayStatus] = useState("");
   const [loading, setLoading] = useState(false);
   const [paymentMessage, setPaymentMessage] = useState("");
-
+   const isSocialVerified = !!socialAuth;
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
-
+useEffect(() => {
+  const pending = sessionStorage.getItem("linkedinVerifiedState");
+  if (pending) {
+    const { accessToken, email, fullName, mobileNumber, countryCode } = JSON.parse(pending);
+    setForm((p) => ({ ...p, name: fullName || p.name, email, mobile: mobileNumber || p.mobile, countryCode: countryCode || p.countryCode }));
+    setEmailOtp((p) => ({ ...p, sent: true, verified: true }));
+    setSocialAuth({ provider: "linkedin", accessToken });
+    sessionStorage.removeItem("linkedinVerifiedState");
+  }
+}, []);
   const sendMobileOtp = async () => {
     try {
       const response = await sendOtp({
@@ -1202,46 +1221,117 @@ function CandidateForm() {
     }
   };
 
+  
+  const canShowPayment = mobileOtp.verified || emailOtp.verified;
+  const canSubmit = canShowPayment && terms && payStatus === "success";
 
-  const canSubmit = mobileOtp.verified && terms && payStatus === "success";
+const handleCandidateSubmit = async () => {
+  try {
+    if (socialAuth) {
+      const registerFn =
+        socialAuth.provider === "google" ? registerWithGoogle : registerWithLinkedIn;
 
-  const handleCandidateSubmit = async () => {
-    try {
-      console.log({
-        otpToken,
-        paymentData
-      });
-      const response = await registerCandidate({
+      const response = await registerFn({
+        accessToken: socialAuth.accessToken,
         fullName: form.name,
-        mobileNumber: form.mobile.replace(/\D/g, ""),
-        countryCode: form.countryCode,
-        email: form.email,
-
-        otpToken: otpToken,
-
+        mobileNumber: form.mobile ? form.mobile.replace(/\D/g, "") : null,
+        countryCode: form.mobile ? form.countryCode : null,
+        termsAccepted: terms,
         razorpayOrderId: paymentData.razorpayOrderId,
         razorpayPaymentId: paymentData.razorpayPaymentId,
         razorpaySignature: paymentData.razorpaySignature,
-
-        termsAccepted: terms
       });
 
-
-
-      showToast(response.data.message, "success");
-
-      setTimeout(() => {
-        router.push("/Login");
-      }, 1000);
-    } catch (err) {
-      showToast(
-        err?.response?.data?.message ||
-        "Registration failed",
-        "error"
-      );
+      if (response.data.success) {
+        localStorage.setItem("token", response.data.token);
+        showToast(response.data.message, "success");
+        setTimeout(() => router.push("/Login"), 1000);
+      } else {
+        showToast(response.data.message, "error");
+      }
+      return;
     }
-  };
 
+    // existing OTP-based path — unchanged
+    const response = await registerCandidate({
+      fullName: form.name,
+      mobileNumber: form.mobile.replace(/\D/g, ""),
+      countryCode: form.countryCode,
+      email: form.email,
+      otpToken,
+      razorpayOrderId: paymentData.razorpayOrderId,
+      razorpayPaymentId: paymentData.razorpayPaymentId,
+      razorpaySignature: paymentData.razorpaySignature,
+      termsAccepted: terms,
+    });
+
+    showToast(response.data.message, "success");
+    setTimeout(() => router.push("/Login"), 1000);
+  }catch (err) {
+  console.log("REGISTER ERROR", err);
+  console.log("STATUS", err?.response?.status);
+  console.log("DATA", err?.response?.data);
+
+  showToast(
+    err?.response?.data?.message || "Registration failed",
+    "error"
+  );
+}
+};
+
+
+const handleGoogleRegister = () => {
+  if (typeof window === "undefined" || !window.google) {
+    showToast("Google sign-in is still loading, try again", "error");
+    return;
+  }
+
+  const client = window.google.accounts.oauth2.initTokenClient({
+    client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+    scope: "openid email profile",
+    callback: async (tokenResponse) => {
+      if (!tokenResponse?.access_token) {
+        showToast("Google sign-in failed", "error");
+        return;
+      }
+
+      try {
+        const response = await verifyWithGoogle({
+          accessToken: tokenResponse.access_token,
+        });
+
+        if (response.data.success) {
+          setForm((p) => ({
+            ...p,
+            name: response.data.fullName || p.name,
+            email: response.data.email,
+          }));
+          setEmailOtp((p) => ({ ...p, sent: true, verified: true }));
+          setSocialAuth({ provider: "google", accessToken: tokenResponse.access_token });
+          showToast("Google account verified. Complete payment to finish.", "success");
+        } else {
+          showToast(response.data.message, "error");
+        }
+      } catch (err) {
+        showToast(err?.response?.data?.message || "Verification failed", "error");
+      }
+    },
+  });
+
+  client.requestAccessToken();
+};
+
+const handleLinkedInRegister = () => {
+  const redirectUri = `${window.location.origin}/linkedin/register`;
+  const params = new URLSearchParams({
+    response_type: "code",
+    client_id: process.env.NEXT_PUBLIC_LINKEDIN_CLIENT_ID,
+    redirect_uri: redirectUri,
+    scope: "openid profile email",
+  });
+
+  window.location.href = `https://www.linkedin.com/oauth/v2/authorization?${params.toString()}`;
+};
   return (
     <div>
       <Alert type="info">
@@ -1257,6 +1347,7 @@ function CandidateForm() {
         <Input
           placeholder="Enter full name"
           value={form.name}
+            disabled={isSocialVerified}
           onChange={(e) => set("name", e.target.value)}
         />
       </Field>
@@ -1280,6 +1371,7 @@ function CandidateForm() {
           type="email"
           placeholder="john@example.com"
           value={form.email}
+            disabled={isSocialVerified}
           onChange={(e) => set("email", e.target.value)}
         />
         {form.email && (
@@ -1304,7 +1396,7 @@ function CandidateForm() {
         )}
       </Field>
 
-      {mobileOtp.verified && (
+      {canShowPayment && (
         <Field label="Registration Fee">
           {payStatus === "success" ? (
             <Alert type="success">
@@ -1376,98 +1468,106 @@ function CandidateForm() {
           />
         </div>
 
-        {/* Buttons */}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 14,
-          }}
-        >
-          {/* Google */}
-          <button
-            type="button"
-            style={{
-              width: "100%",
-              height: 54,
-              borderRadius: 10,
-              border: "1px solid #ffc151",
-              background: "#ffffff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 12,
-              fontWeight: 600,
-              fontSize: 14,
-              color: "#122359",
-              cursor: "pointer",
-              transition: "all 0.25s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#ff9900";
-              e.currentTarget.style.color = "#ffffff";
-              e.currentTarget.style.transform = "translateY(-2px)";
-              e.currentTarget.style.boxShadow =
-                "0 8px 20px rgba(255,153,0,0.18)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "#ffffff";
-              e.currentTarget.style.color = "#122359";
-              e.currentTarget.style.transform = "translateY(0px)";
-              e.currentTarget.style.boxShadow = "none";
-            }}
-          >
-            <img
-              src="https://www.svgrepo.com/show/475656/google-color.svg"
-              alt="google"
-              width={20}
-              height={20}
-            />
-            Register with Google
-          </button>
+     {/* Social Register */}
+{!socialAuth ? (
+  <div
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      gap: 14,
+    }}
+  >
+    {/* Google */}
+    <button
+      type="button"
+      onClick={handleGoogleRegister}
+      style={{
+        width: "100%",
+        height: 54,
+        borderRadius: 10,
+        border: "1px solid #ffc151",
+        background: "#ffffff",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 12,
+        fontWeight: 600,
+        fontSize: 14,
+        color: "#122359",
+        cursor: "pointer",
+        transition: "all 0.25s ease",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = "#ff9900";
+        e.currentTarget.style.color = "#ffffff";
+        e.currentTarget.style.transform = "translateY(-2px)";
+        e.currentTarget.style.boxShadow =
+          "0 8px 20px rgba(255,153,0,0.18)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = "#ffffff";
+        e.currentTarget.style.color = "#122359";
+        e.currentTarget.style.transform = "translateY(0px)";
+        e.currentTarget.style.boxShadow = "none";
+      }}
+    >
+      <img
+        src="https://www.svgrepo.com/show/475656/google-color.svg"
+        alt="google"
+        width={20}
+        height={20}
+      />
+      Register with Google
+    </button>
 
-          {/* LinkedIn */}
-          <button
-            type="button"
-            style={{
-              width: "100%",
-              height: 54,
-              borderRadius: 10,
-              border: "1px solid #ffc151",
-              background: "#ffffff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 12,
-              fontWeight: 600,
-              fontSize: 14,
-              color: "#122359",
-              cursor: "pointer",
-              transition: "all 0.25s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#ff9900";
-              e.currentTarget.style.color = "#ffffff";
-              e.currentTarget.style.transform = "translateY(-2px)";
-              e.currentTarget.style.boxShadow =
-                "0 8px 20px rgba(255,153,0,0.18)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "#ffffff";
-              e.currentTarget.style.color = "#122359";
-              e.currentTarget.style.transform = "translateY(0px)";
-              e.currentTarget.style.boxShadow = "none";
-            }}
-          >
-            <img
-              src="https://cdn-icons-png.flaticon.com/512/3536/3536505.png"
-              alt="linkedin"
-              width={18}
-              height={18}
-            />
-            Register with LinkedIn
-          </button>
-        </div>
+    {/* LinkedIn */}
+    <button
+      type="button"
+      onClick={handleLinkedInRegister}
+      style={{
+        width: "100%",
+        height: 54,
+        borderRadius: 10,
+        border: "1px solid #ffc151",
+        background: "#ffffff",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 12,
+        fontWeight: 600,
+        fontSize: 14,
+        color: "#122359",
+        cursor: "pointer",
+        transition: "all 0.25s ease",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = "#ff9900";
+        e.currentTarget.style.color = "#ffffff";
+        e.currentTarget.style.transform = "translateY(-2px)";
+        e.currentTarget.style.boxShadow =
+          "0 8px 20px rgba(255,153,0,0.18)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = "#ffffff";
+        e.currentTarget.style.color = "#122359";
+        e.currentTarget.style.transform = "translateY(0px)";
+        e.currentTarget.style.boxShadow = "none";
+      }}
+    >
+      <img
+        src="https://cdn-icons-png.flaticon.com/512/3536/3536505.png"
+        alt="linkedin"
+        width={18}
+        height={18}
+      />
+      Register with LinkedIn
+    </button>
+  </div>
+) : (
+  <Alert type="success">
+    ✓ Verified via {socialAuth.provider === "google" ? "Google" : "LinkedIn"} — complete payment below to finish registration.
+  </Alert>
+)}
       </div>
       <div style={{ marginBottom: 20 }}>
         <label

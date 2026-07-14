@@ -10,6 +10,8 @@ import {
   uploadResume,
   deleteResume,
   getDocuments,
+  generateCv,
+  downloadGeneratedCv,
 } from "@/services/candidate/candidateResume";
 
 const NAVY = "#122359";
@@ -45,6 +47,10 @@ export default function MyDocuments() {
   const [docBusy, setDocBusy] = useState(false);
   const [message, setMessage] = useState(null); // { type, text }
 
+  const [generatedCv, setGeneratedCv] = useState(null); // { url, updatedAt }
+  const [generating, setGenerating] = useState(false);
+  const [downloadingPortalCv, setDownloadingPortalCv] = useState(false);
+
   const cvInput = useRef(null);
   const docInput = useRef(null);
 
@@ -57,6 +63,7 @@ export default function MyDocuments() {
       ]);
       setCv(docsRes?.data?.data?.resume ?? null);
       setDocs(uploadedRes?.data?.documents ?? []);
+      setGeneratedCv(docsRes?.data?.data?.generatedCv ?? null);
     } finally {
       setLoading(false);
     }
@@ -65,6 +72,40 @@ export default function MyDocuments() {
   useEffect(() => {
     loadAll();
   }, []);
+
+  const onGenerateCv = async () => {
+    setGenerating(true);
+    setMessage(null);
+    try {
+      const { data } = await generateCv();
+      if (data?.success) {
+        setMessage({ type: "success", text: data.message || "Portal CV generated." });
+        setGeneratedCv({ url: data.generatedCvUrl, updatedAt: data.generatedAt });
+      } else {
+        setMessage({ type: "error", text: data?.message || "Could not generate Portal CV." });
+      }
+    } catch (e) {
+      setMessage({
+        type: "error",
+        text: e?.response?.data?.message || "Could not generate Portal CV.",
+      });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const onDownloadPortalCv = async () => {
+    setDownloadingPortalCv(true);
+    setMessage(null);
+    try {
+      const result = await downloadGeneratedCv(cv?.parsedName || "Candidate");
+      if (!result?.success) {
+        setMessage({ type: "error", text: result?.message || "Could not download Portal CV." });
+      }
+    } finally {
+      setDownloadingPortalCv(false);
+    }
+  };
 
   const onCvUpload = async (file) => {
     if (!file) return;
@@ -207,6 +248,74 @@ export default function MyDocuments() {
             />
           </div>
         </div>
+      </div>
+
+      {/* Portal-Generated CV */}
+      <div style={card}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+          <div>
+            <h6 style={{ color: GOLD, margin: 0 }}>Portal CV</h6>
+            <p style={{ fontSize: 12, color: "#6b7280", margin: "4px 0 0", maxWidth: 460 }}>
+              A CV built from your current profile — work experience, education, skills,
+              and languages — always up to date, separate from the resume you uploaded above.
+            </p>
+            <div style={{ marginTop: 6 }}>
+              {loading ? (
+                <span style={{ fontSize: 13, color: "#6b7280" }}>Loading…</span>
+              ) : generatedCv?.url ? (
+                <span style={badge(true)}>
+                  <i className="fi-rr-check"></i> Generated
+                  {generatedCv.updatedAt
+                    ? ` — ${new Date(generatedCv.updatedAt).toLocaleDateString()}`
+                    : ""}
+                </span>
+              ) : (
+                <span style={badge(false)}>Not generated yet</span>
+              )}
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <button
+              type="button"
+              className="btn btn-default btn-sm"
+              disabled={generating}
+              onClick={onGenerateCv}
+            >
+              {generating
+                ? "Generating…"
+                : generatedCv?.url
+                  ? "Update Portal CV"
+                  : "Generate Portal CV"}
+            </button>
+            {generatedCv?.url && (
+              <button
+                type="button"
+                className="btn btn-border btn-sm"
+                disabled={downloadingPortalCv}
+                onClick={onDownloadPortalCv}
+              >
+                {downloadingPortalCv ? "Downloading…" : "Download"}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {generatedCv?.url && (
+          <div style={{ marginTop: 16 }}>
+            <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 8 }}>Preview</p>
+            <iframe
+              src={generatedCv.url}
+              title="Portal CV preview"
+              style={{
+                width: "100%",
+                height: 480,
+                border: "1px solid rgba(18,35,89,0.08)",
+                borderRadius: 12,
+              }}
+            />
+          </div>
+        )}
       </div>
 
       {/* Other documents (Aadhaar, Passport, PAN, certificates…) */}
