@@ -2,7 +2,10 @@
 
 import Link from "next/link";
 import { useToast } from "@/components/Toast";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import styles from "./joblist.module.css";
+import JobPreviewModal from "@/components/JobPreviewModal";
+import { mapResumeToForm } from "@/utils/jobFormMapper";
 
 import {
   getJobDashboard,
@@ -13,6 +16,10 @@ import {
   archiveJob,
   deleteJob,
 } from "@/services/recruiter/recruiterJobListService";
+import { getJobResume } from "@/services/recruiter/recruiterJobPostService";
+
+/* Turn backend enum-style values (Regular_Hiring, Full_Time) into readable text */
+const humanize = (s) => (s ? s.replace(/_/g, " ") : s);
 
 /* ── reusable pill tag ── */
 const Tag = ({ label }) => {
@@ -73,8 +80,35 @@ const EmployerJobListPage = () => {
   const showToast = useToast();
   const [activeStatus, setActiveStatus] = useState("Active");
   const [activeType, setActiveType] = useState("All Types");
+  const [openMenu, setOpenMenu] = useState(null);
 
+  const [menuPosition, setMenuPosition] = useState({
+    top: 0,
+    left: 0,
+  });
 
+  const menuButtonRefs = useRef({});
+  const menuRef = useRef(null);
+
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewJob, setPreviewJob] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  const handlePreview = async (jobId) => {
+    setOpenMenu(null);
+    setPreviewOpen(true);
+    setPreviewLoading(true);
+    setPreviewJob(null);
+    try {
+      const response = await getJobResume(jobId);
+      setPreviewJob(mapResumeToForm(response));
+    } catch (err) {
+      showToast(err.response?.data?.message || "Unable to load job preview", "error");
+      setPreviewOpen(false);
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
 
   const [dashboard, setDashboard] = useState(null);
   useEffect(() => {
@@ -141,6 +175,10 @@ const EmployerJobListPage = () => {
   };
   const JOB_STATUS_TABS = [
     {
+      label: "Draft",
+      count: dashboard?.draftJobs || 0,
+    },
+    {
       label: "Active",
       count: dashboard?.activeJobs || 0,
     },
@@ -188,6 +226,54 @@ const EmployerJobListPage = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!openMenu) return;
+
+      const clickedButton = Object.values(menuButtonRefs.current).some(
+        (btn) => btn && btn.contains(e.target)
+      );
+
+      if (clickedButton) return;
+
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpenMenu(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [openMenu]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setOpenMenu(null);
+    };
+
+    window.addEventListener("scroll", handleScroll, true);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll, true);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setOpenMenu(null);
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
+
   const loadData = async () => {
     try {
       setLoading(true);
@@ -324,14 +410,17 @@ const EmployerJobListPage = () => {
                   key={job.jobId}
                   className="subuser-hover-card"
                   style={{
-                    background: "#ffffff",
+                    background: "#fff",
                     borderRadius: 24,
-                    boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
-                    padding: 0,
-                    overflow: "hidden",
+                    position: "relative",
+                    zIndex: 1,
                   }}
                 >
-                  <div style={{ padding: "24px 28px" }}>
+                  <div
+                    style={{
+                      padding: "24px 28px",
+                    }}
+                  >
                     <div
                       style={{
                         display: "flex",
@@ -379,21 +468,45 @@ const EmployerJobListPage = () => {
                               marginBottom: 5,
                             }}
                           >
-                            <h5
+                            <div
                               style={{
-                                margin: 0,
-                                color: "#122359",
-                                fontWeight: 800,
-                                fontSize: 17,
-                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                                flexWrap: "wrap",
                               }}
-                              onClick={() =>
-                                showToast(`Viewing: ${job.jobTitle}`, "info")
-                              }
                             >
-                              {job.jobTitle}
-                            </h5>
-                            {/* Post type badge */}
+                              <h5
+                                style={{
+                                  margin: 0,
+                                  color: "#122359",
+                                  fontWeight: 800,
+                                  fontSize: 17,
+                                  cursor: "pointer",
+                                }}
+                                onClick={() => handlePreview(job.jobId)}
+                                title="Click to preview this job posting"
+                              >
+                                {job.jobTitle}
+                              </h5>
+
+                              <span
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  padding: "4px 10px",
+                                  borderRadius: 999,
+                                  background: "#EAF4FF",
+                                  border: "1px solid #B9DCFF",
+                                  color: "#1D4ED8",
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                }}
+                              >
+                                {job.appliedCount} Applicant{job.appliedCount !== 1 ? "s" : ""}
+                              </span>
+                            </div>
+                            {/* Employment type badge (Full Time / Contract / etc.) */}
                             <span
                               style={{
                                 display: "inline-flex",
@@ -407,7 +520,7 @@ const EmployerJobListPage = () => {
                                 fontWeight: 700,
                               }}
                             >
-                              {job.jobType}
+                              {humanize(job.employmentType) || humanize(job.jobType)}
                             </span>
                             {/* Status badge */}
                             <span
@@ -423,7 +536,9 @@ const EmployerJobListPage = () => {
                                       ? "#FEF3C7"
                                       : job.jobStatus === "Closed"
                                         ? "#FEE2E2"
-                                        : "#E5E7EB",
+                                        : job.jobStatus === "Draft"
+                                          ? "#EAF4FF"
+                                          : "#E5E7EB",
 
                                 color:
                                   job.jobStatus === "Active"
@@ -432,7 +547,9 @@ const EmployerJobListPage = () => {
                                       ? "#92400E"
                                       : job.jobStatus === "Closed"
                                         ? "#B91C1C"
-                                        : "#374151",
+                                        : job.jobStatus === "Draft"
+                                          ? "#1D4ED8"
+                                          : "#374151",
                                 fontSize: 11,
                                 fontWeight: 700,
                               }}
@@ -532,18 +649,6 @@ const EmployerJobListPage = () => {
                             </strong>
                           </div>
 
-                          {/* Skill tags */}
-                          <div
-                            style={{
-                              display: "flex",
-                              flexWrap: "wrap",
-                              gap: 6,
-                            }}
-                          >
-                            <Tag label={job.tradeCategory} />
-                            <Tag label={job.jobType} />
-                            <Tag label={job.jobStatus} />
-                          </div>
                         </div>
                       </div>
 
@@ -559,7 +664,7 @@ const EmployerJobListPage = () => {
                         }}
                       >
                         {/* Applicant count pill */}
-                        <div
+                        {/* <div
                           style={{
                             background:
                               job.appliedCount > 0 ? "#EAF4FF" : "#f8fafc",
@@ -594,10 +699,10 @@ const EmployerJobListPage = () => {
                           >
                             Applicant{job.appliedCount !== 1 ? "s" : ""}
                           </div>
-                        </div>
+                        </div> */}
 
                         {/* Action buttons */}
-                        <div
+                        {/* <div
                           style={{
                             display: "flex",
                             flexDirection: "column",
@@ -698,17 +803,283 @@ const EmployerJobListPage = () => {
                               Delete
                             </button>
                           </div>
+                        </div> */}
+
+                        <div
+                          style={{
+                            position: "relative",
+                          }}
+                        >
+                          <button
+                            ref={(el) => (menuButtonRefs.current[job.jobId] = el)}
+                            onClick={() => {
+                              if (openMenu === job.jobId) {
+                                setOpenMenu(null);
+                                return;
+                              }
+
+                              const rect =
+                                menuButtonRefs.current[job.jobId].getBoundingClientRect();
+
+                              setMenuPosition({
+                                top: rect.bottom + 8,
+                                left: rect.left - 190,
+                              });
+
+                              setOpenMenu(job.jobId);
+                            }}
+                            style={{
+                              width: 44,
+                              height: 44,
+                              borderRadius: 14,
+                              border: "1px solid #E5E7EB",
+                              background: "#fff",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              cursor: "pointer",
+                              boxShadow: "0 4px 12px rgba(18,35,89,.08)",
+                              transition: ".25s",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.borderColor = "#FFA300";
+                              e.currentTarget.style.background = "#FFF8EC";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.borderColor = "#E5E7EB";
+                              e.currentTarget.style.background = "#fff";
+                            }}
+                          >
+                            <i
+                              className="fi-rr-menu-dots-vertical"
+                              style={{
+                                fontSize: 18,
+                                color: "#122359",
+                              }}
+                            />
+                          </button>
+
+                          {/* {openMenu === job.jobId && (
+                            <div
+                              style={{
+                                position: "absolute",
+                                top: 0,
+                                right: "52px",
+                                width: 220,
+                                background: "#fff",
+                                borderRadius: 18,
+                                border: "1px solid #EEF2F7",
+                                boxShadow: "0 18px 40px rgba(18,35,89,.12)",
+                                zIndex: 9999,
+                              }}
+                            >
+                              <Link
+                                href={`/dashboard/post-job?jobId=${job.jobId}`}
+                                className={styles.dropdownItem}
+                              >
+                                <>
+                                  <i className="fi-rr-edit" />
+                                  <span>Edit Job</span>
+                                </>
+                              </Link>
+
+                              <Link
+                                href={`/employeer/applicants?jobId=${job.jobId}&jobTitle=${encodeURIComponent(
+                                  job.jobTitle || ""
+                                )}`}
+                                className={styles.dropdownItem}
+                              >
+                                <>
+                                  <i className="fi-rr-users" />
+                                  <span>View Applicants</span>
+                                </>
+                              </Link>
+
+                              {job.jobStatus === "Active" && (
+                                <>
+                                  <button
+                                    className={styles.dropdownItem}
+                                    onClick={() => handlePause(job.jobId)}
+                                  >
+                                    <>
+                                      <i className="fi-rr-pause" />
+                                      <span>Pause Job</span>
+                                    </>
+                                  </button>
+
+                                  <button
+                                    className={styles.dropdownItem}
+                                    onClick={() => handleClose(job.jobId)}
+                                  >
+                                    <>
+                                      <i className="fi-rr-cross-circle" />
+                                      <span>Close Job</span>
+                                    </>
+                                  </button>
+                                </>
+                              )}
+
+                              {job.jobStatus === "Paused" && (
+                                <>
+                                  <button
+                                    className={styles.dropdownItem}
+                                    onClick={() => handleResume(job.jobId)}
+                                  >
+                                    <>
+                                      <i className="fi-rr-play" />
+                                      <span>Resume Job</span>
+                                    </>
+                                  </button>
+
+                                  <button
+                                    className={styles.dropdownItem}
+                                    onClick={() => handleArchive(job.jobId)}
+                                  >
+                                    <>
+                                      <i className="fi-rr-archive" />
+                                      <span>Archive Job</span>
+                                    </>
+                                  </button>
+                                </>
+                              )}
+
+                              {job.jobStatus === "Closed" && (
+                                <button
+                                  className={styles.dropdownItem}
+                                  onClick={() => handleArchive(job.jobId)}
+                                >
+                                  📦 Archive
+                                </button>
+                              )}
+
+                              <button
+                                className={styles.dropdownItem}
+                                onClick={() =>
+                                  handleDelete(job.jobId, job.jobTitle)
+                                }
+                                style={{ color: "#dc2626" }}
+                              >
+                                <>
+                                  <i className="fi-rr-trash" />
+                                  <span>Delete Job</span>
+                                </>
+                              </button>
+                            </div>
+                          )} */}
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
               ))}
+
+              {openMenu && (
+
+                <div
+                  ref={menuRef}
+                  style={{
+                    position: "fixed",
+
+                    top: menuPosition.top,
+                    left: menuPosition.left,
+
+                    width: 240,
+
+                    background: "#fff",
+
+                    borderRadius: 18,
+
+                    border: "1px solid #EEF2F7",
+
+                    boxShadow: "0 24px 50px rgba(18,35,89,.14)",
+
+                    overflow: "hidden",
+
+                    zIndex: 999999,
+                  }}
+                >
+
+                  {jobs
+                    .filter(job => job.jobId === openMenu)
+                    .map(job => (
+
+                      <div key={job.jobId}>
+
+                        <button
+                          type="button"
+                          className={styles.dropdownItem}
+                          onClick={() => handlePreview(job.jobId)}
+                        >
+                          <i className="fi-rr-eye" />
+                          <span>Preview</span>
+                        </button>
+
+                        <Link
+                          href={`/dashboard/post-job?jobId=${job.jobId}`}
+                          className={styles.dropdownItem}
+                        >
+                          <i className={job.jobStatus === "Draft" ? "fi-rr-arrow-right" : "fi-rr-edit"} />
+                          <span>{job.jobStatus === "Draft" ? "Continue Draft" : "Edit Job"}</span>
+                        </Link>
+
+                        <Link
+                          href={`/employeer/applicants?jobId=${job.jobId}&jobTitle=${encodeURIComponent(job.jobTitle || "")}`}
+                          className={styles.dropdownItem}
+                        >
+                          <i className="fi-rr-user" />
+                          <span>Applicants</span>
+                        </Link>
+
+                        {job.jobStatus === "Active" && (
+                          <>
+                            <button
+                              className={styles.dropdownItem}
+                              onClick={() => handlePause(job.jobId)}
+                            >
+                              <i className="fi-rr-pause" />
+                              <span>Pause Job</span>
+                            </button>
+
+                            <button
+                              className={styles.dropdownItem}
+                              onClick={() => handleClose(job.jobId)}
+                            >
+                              <i className="fi-rr-cross-circle" />
+                              <span>Close Job</span>
+                            </button>
+                          </>
+                        )}
+
+                        <button
+                          className={styles.dropdownItem}
+                          onClick={() => handleDelete(job.jobId, job.jobTitle)}
+                          style={{ color: "#dc2626" }}
+                        >
+                          <i className="fi-rr-trash" />
+                          <span>Delete Job</span>
+                        </button>
+
+                      </div>
+
+                    ))}
+
+                </div>
+
+              )}
             </div>
           </div>
         </div>
       </section>
 
+      <JobPreviewModal
+        open={previewOpen}
+        onClose={() => {
+          setPreviewOpen(false);
+          setPreviewJob(null);
+        }}
+        job={previewJob}
+        loading={previewLoading}
+      />
     </main>
   );
 };

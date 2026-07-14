@@ -9,7 +9,7 @@ import styles from "./CandidateSettingsSidebar.module.css";
 const CANDIDATE_SETTINGS_LINKS = [
   { label: "Settings Overview", href: "/candidate-profile/settings" },
   { label: "Notifications", href: "/candidate-profile/settings/notifications" },
-  { label: "Payment History", href: "/candidate-profile/settings/payment-history" },
+  // { label: "Payment History", href: "/candidate-profile/settings/payment-history" },
   { label: "Help & Support", href: "/candidate-profile/settings/help-support" }
 ];
 

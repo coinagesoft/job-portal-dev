@@ -108,13 +108,13 @@ useEffect(() => {
               <JobList filters={filters} />
             </div>
             <div className="col-lg-3 col-md-12 col-sm-12 col-12">
-              <JobFiltersSidebar onFilterChange={handleFiltersChange} />
+              <JobFiltersSidebar jobs={jobs} filters={filters} onFilterChange={handleFiltersChange} />
             </div>
           </div>
         </div>
       </section>
       <NewsSection />
-      <Newsletter />
+      {/* <Newsletter /> */}
       {showFilterSheet && (
         <JobFilterSheet 
           initialFilters={filters}

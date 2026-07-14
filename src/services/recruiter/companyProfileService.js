@@ -32,6 +32,26 @@ const companyProfileService = {
 
     return data;
   },
+
+  // Uploads a single file field (e.g. "CompanyLogo" or "CoverImage") to the
+  // company profile PATCH endpoint. The field name must match
+  // UpdateCompanyProfileDto exactly (IFormFile-bound via [FromForm]).
+  updateCompanyProfileFile: async (fieldName, file) => {
+    const employerId = getEmployerId();
+
+    const formData = new FormData();
+    formData.append(fieldName, file);
+
+    const { data } = await api.patch(
+      `/api/recruiter/company-profile/${employerId}`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      }
+    );
+
+    return data;
+  },
 };
 
 export default companyProfileService;

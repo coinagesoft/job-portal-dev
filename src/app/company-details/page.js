@@ -13,6 +13,14 @@ const humanize = (value) => {
   return value.replace(/_/g, " ");
 };
 
+const iconMap = {
+  industry: "/assets/imgs/page/job-single/industry.svg",
+  jobLevel: "/assets/imgs/page/job-single/job-level.svg",
+  jobType: "/assets/imgs/page/job-single/job-type.svg",
+  updated: "/assets/imgs/page/job-single/updated.svg",
+  location: "/assets/imgs/page/job-single/location.svg",
+};
+
 function CompanyDetailsContent() {
   const searchParams = useSearchParams();
   const employerId = searchParams.get("employerId");
@@ -91,16 +99,57 @@ function CompanyDetailsContent() {
 
   const hasAboutContent = Boolean(
     companyInfo.companyDescription ||
-      (companyInfo.companyHighlights || []).length > 0 ||
-      companyInfo.businessType ||
-      companyInfo.totalEmployees ||
-      companyInfo.reviewCount != null ||
-      companyInfo.isVerified ||
-      companyInfo.gstRegistered ||
-      companyInfo.hasPoeLicence ||
-      companyInfo.hasRpslLicence
+    (companyInfo.companyHighlights || []).length > 0 ||
+    companyInfo.businessType ||
+    companyInfo.totalEmployees ||
+    companyInfo.reviewCount != null ||
+    companyInfo.isVerified ||
+    companyInfo.gstRegistered ||
+    companyInfo.hasPoeLicence ||
+    companyInfo.hasRpslLicence
   );
-
+  const overviewGroups = [
+    {
+      title: "Company Overview",
+      items: [
+        {
+          icon: "industry",
+          label: "Business Type",
+          value: humanize(companyInfo.businessType),
+        },
+        {
+          icon: "jobLevel",
+          label: "Employees",
+          value: companyInfo.totalEmployees
+            ? `${companyInfo.totalEmployees} Employees`
+            : null,
+        },
+        {
+          icon: "updated",
+          label: "Established",
+          value: companyInfo.yearEstablished,
+        },
+        {
+          icon: "industry",
+          label: "Industry",
+          value: companyInfo.industry,
+        },
+        {
+          icon: "jobType",
+          label: "Open Jobs",
+          value: companyInfo.openJobsCount,
+        },
+        {
+          icon: "location",
+          label: "Location",
+          value: `${companyInfo.city}, ${companyInfo.state}`,
+        },
+      ],
+    },
+  ].map((group) => ({
+    ...group,
+    items: group.items.filter((item) => item.value),
+  }));
   return (
     <main className="main">
       <section className="section-box-2">
@@ -131,17 +180,22 @@ function CompanyDetailsContent() {
               <div className="col-lg-8 col-md-12">
                 <h5 className="f-18">
                   {companyInfo.companyName}
-                  {companyInfo.fullLocation && (
+                  {/* {companyInfo.fullLocation && (
                     <span className="card-location font-regular ml-20">
                       {companyInfo.fullLocation}
                     </span>
-                  )}
+                  )} */}
                 </h5>
-                {companyInfo.companyDescription && (
+                {(companyInfo.city || companyInfo.state) && (
+                  <span className="card-location">
+                    {[companyInfo.city, companyInfo.state].filter(Boolean).join(", ")}
+                  </span>
+                )}
+                {/* {companyInfo.companyDescription && (
                   <p className="mt-5 font-md color-text-paragraph-2 mb-15">
                     {companyInfo.companyDescription}
                   </p>
-                )}
+                )} */}
               </div>
               <div className="col-lg-4 col-md-12 text-lg-end">
                 <Link
@@ -156,7 +210,7 @@ function CompanyDetailsContent() {
             </div>
           </div>
 
-          {hasAboutContent && (
+          {/* {hasAboutContent && (
             <div className="box-nav-tabs mt-40 mb-5">
               <ul className="nav" role="tablist">
                 <li>
@@ -173,7 +227,7 @@ function CompanyDetailsContent() {
                 </li>
               </ul>
             </div>
-          )}
+          )} */}
           <div className="border-bottom pt-10 pb-10"></div>
         </div>
       </section>
@@ -193,22 +247,40 @@ function CompanyDetailsContent() {
                     >
                       {companyInfo.companyDescription && (
                         <>
-                          <h4>Welcome to {companyInfo.companyName}</h4>
+                          <h4>About {companyInfo.companyName}</h4>
                           <p>{companyInfo.companyDescription}</p>
                         </>
                       )}
 
-                      {(companyInfo.companyHighlights || []).length > 0 && (
-                        <>
-                          <h4 className="mt-4">Why Candidates Choose Us</h4>
-                          <ul>
-                            {companyInfo.companyHighlights.map((item, index) => (
-                              <li key={index}>{item}</li>
-                            ))}
-                          </ul>
-                        </>
-                      )}
+                      <div className="row mt-3">
+                        {companyInfo.companyHighlights.map((item, index) => (
+                          <div className="col-lg-6 mb-3" key={index}>
+                            <div
+                              style={{
+                                padding: "14px 16px",
+                                borderRadius: "12px",
+                                border: "1px solid rgba(18,35,89,.08)",
+                                background: "#fff",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "10px"
+                              }}
+                            >
+                              <img
+                                src={iconMap.industry}
+                                alt=""
+                                style={{
+                                  width: "16px",
+                                  height: "16px",
+                                  flexShrink: 0,
+                                }}
+                              />
 
+                              <span>{item}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                       {(companyInfo.businessType ||
                         companyInfo.totalEmployees ||
                         companyInfo.reviewCount != null ||
@@ -216,67 +288,105 @@ function CompanyDetailsContent() {
                         companyInfo.gstRegistered ||
                         companyInfo.hasPoeLicence ||
                         companyInfo.hasRpslLicence) && (
-                        <>
-                          <h4 className="mt-4">Company Snapshot</h4>
-                          <div className="row">
-                            {companyInfo.businessType && (
-                              <div className="col-md-6 mb-15">
-                                <span className="color-text-paragraph-2 d-block">Business Type</span>
-                                <strong>{humanize(companyInfo.businessType)}</strong>
-                              </div>
-                            )}
+                          <>
+                            {overviewGroups.map((group, groupIndex) => (
+                              <div
+                                key={group.title}
+                                style={{
+                                  marginTop: groupIndex === 0 ? "30px" : "25px",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "8px",
+                                    marginBottom: "14px",
+                                  }}
+                                >
+                                  <span
+                                    style={{
+                                      width: "4px",
+                                      height: "16px",
+                                      background: "#ffa300",
+                                      borderRadius: "3px",
+                                    }}
+                                  />
 
-                            {companyInfo.totalEmployees > 0 && (
-                              <div className="col-md-6 mb-15">
-                                <span className="color-text-paragraph-2 d-block">Team Size</span>
-                                <strong>{companyInfo.totalEmployees} employees</strong>
-                              </div>
-                            )}
+                                  <span
+                                    style={{
+                                      fontSize: "13px",
+                                      fontWeight: 700,
+                                      color: "#122359",
+                                      textTransform: "uppercase",
+                                      letterSpacing: ".5px",
+                                    }}
+                                  >
+                                    {group.title}
+                                  </span>
+                                </div>
 
-                            {companyInfo.reviewCount != null && (
-                              <div className="col-md-6 mb-15">
-                                <span className="color-text-paragraph-2 d-block">Reviews</span>
-                                <strong>
-                                  {companyInfo.reviewCount > 0
-                                    ? `${companyInfo.reviewCount} review${companyInfo.reviewCount === 1 ? "" : "s"}`
-                                    : "No reviews yet"}
-                                </strong>
-                              </div>
-                            )}
+                                <div
+                                  style={{
+                                    display: "grid",
+                                    gridTemplateColumns: "repeat(auto-fill,minmax(190px,1fr))",
+                                    gap: "14px",
+                                  }}
+                                >
+                                  {group.items.map((item) => (
+                                    <div
+                                      key={item.label}
+                                      style={{
+                                        padding: "14px 16px",
+                                        borderRadius: "12px",
+                                        border: "1px solid rgba(18,35,89,.08)",
+                                        background: "#fff",
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: "8px",
+                                      }}
+                                    >
+                                      <div
+                                        style={{
+                                          display: "flex",
+                                          alignItems: "center",
+                                          gap: "8px",
+                                        }}
+                                      >
+                                        <img
+                                          src={iconMap[item.icon]}
+                                          style={{
+                                            width: "16px",
+                                            height: "16px",
+                                          }}
+                                        />
 
-                            {companyInfo.isVerified && (
-                              <div className="col-md-6 mb-15">
-                                <span className="color-text-paragraph-2 d-block">Verification</span>
-                                <strong style={{ color: "#178A4C" }}>
-                                  <i className="fa-solid fa-circle-check mr-5"></i>
-                                  Verified Employer
-                                </strong>
-                              </div>
-                            )}
+                                        <span
+                                          style={{
+                                            fontSize: "12px",
+                                            color: "#6b7280",
+                                            fontWeight: 600,
+                                          }}
+                                        >
+                                          {item.label}
+                                        </span>
+                                      </div>
 
-                            {companyInfo.gstRegistered && (
-                              <div className="col-md-6 mb-15">
-                                <span className="color-text-paragraph-2 d-block">GST</span>
-                                <strong>Registered</strong>
+                                      <strong
+                                        style={{
+                                          color: "#122359",
+                                          fontSize: "15px",
+                                        }}
+                                      >
+                                        {item.value}
+                                      </strong>
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
-                            )}
-
-                            {companyInfo.hasPoeLicence && (
-                              <div className="col-md-6 mb-15">
-                                <span className="color-text-paragraph-2 d-block">POE Licence</span>
-                                <strong>On File</strong>
-                              </div>
-                            )}
-
-                            {companyInfo.hasRpslLicence && (
-                              <div className="col-md-6 mb-15">
-                                <span className="color-text-paragraph-2 d-block">RPSL Licence</span>
-                                <strong>On File</strong>
-                              </div>
-                            )}
-                          </div>
-                        </>
-                      )}
+                            ))}
+                          </>
+                        )}
                     </div>
                   </div>
                 </div>
@@ -405,7 +515,9 @@ function CompanyDetailsContent() {
                         <div className="sidebar-icon-item">
                           <i className="fi-rr-globe"></i>
                         </div>
-                        <div className="sidebar-text-info">
+                        <div className="sidebar-text-info" style={{
+                          borderBottom: "none",
+                        }}>
                           <span className="text-description" style={{ whiteSpace: "nowrap" }}>
                             Company Website
                           </span>
@@ -429,31 +541,64 @@ function CompanyDetailsContent() {
                   </ul>
                 </div>
 
-                {(companyInfo.addressLine1 || companyInfo.phone || companyInfo.email) && (
+                {(companyInfo.phone || companyInfo.email) && (
                   <div className="sidebar-list-job">
-                    <ul className="ul-disc">
-                      {companyInfo.addressLine1 && <li>{companyInfo.addressLine1}</li>}
-                      {companyInfo.phone && <li>Phone: {companyInfo.phone}</li>}
-                      {companyInfo.email && <li>Email: {companyInfo.email}</li>}
+                    <ul>
+                      {companyInfo.phone && (
+                        <li>
+                          <div className="sidebar-icon-item">
+                            <i className="fi-rr-phone-call"></i>
+                          </div>
+
+                          <div className="sidebar-text-info">
+                            <span className="text-description">Phone</span>
+
+                            <strong className="small-heading">
+                              <a
+                                href={`tel:${companyInfo.phone}`}
+                                style={{
+                                  color: "inherit",
+                                  textDecoration: "none",
+                                  fontWeight: "inherit",
+                                }}
+                              >
+                                {companyInfo.phone}
+                              </a>
+                            </strong>
+                          </div>
+                        </li>
+                      )}
+
+                      {companyInfo.email && (
+                        <li>
+                          <div className="sidebar-icon-item">
+                            <i className="fi-rr-envelope"></i>
+                          </div>
+
+                          <div className="sidebar-text-info">
+                            <span className="text-description">Email</span>
+
+                            <strong className="small-heading">
+                              <a
+                                href={`mailto:${companyInfo.email}`}
+                                style={{
+                                  color: "inherit",
+                                  textDecoration: "none",
+                                  fontWeight: "inherit",
+                                }}
+                              >
+                                {companyInfo.email}
+                              </a>
+                            </strong>
+                          </div>
+                        </li>
+                      )}
                     </ul>
                   </div>
                 )}
               </div>
 
-              <div className="sidebar-border-bg bg-right">
-                <span className="text-grey">WE ARE</span>
-                <span className="text-hiring">HIRING</span>
-                <p className="font-xxs color-text-paragraph mt-5">
-                  {jobs.length > 0
-                    ? `${jobs.length} active job${jobs.length === 1 ? "" : "s"} open right now. Explore and apply directly.`
-                    : "Explore active jobs across the platform and apply directly."}
-                </p>
-                <div className="mt-15">
-                  <Link className="btn btn-paragraph-2" href="/jobs-list">
-                    Know More
-                  </Link>
-                </div>
-              </div>
+             
             </div>
           </div>
         </div>

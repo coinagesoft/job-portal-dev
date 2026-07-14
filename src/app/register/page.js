@@ -4,6 +4,13 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Script from "next/script";
 import { useToast } from "@/components/Toast";
 import {
+  CountrySelector,
+  DialCodePreview,
+  defaultCountries,
+  parseCountry,
+} from "react-international-phone";
+import "react-international-phone/style.css";
+import {
   registerCandidate,
   sendOtp,
   verifyOtp,
@@ -35,21 +42,90 @@ import {
 // ─────────────────────────────────────────────
 // Shared helpers
 // ─────────────────────────────────────────────
-const COUNTRY_CODES = [
-  { code: "+91", label: "🇮🇳 +91", minLen: 10, maxLen: 10 },
-  { code: "+1", label: "🇺🇸 +1", minLen: 10, maxLen: 10 },
-  { code: "+44", label: "🇬🇧 +44", minLen: 10, maxLen: 10 },
-  { code: "+971", label: "🇦🇪 +971", minLen: 9, maxLen: 9 },
-];
+// Built from react-international-phone's full country dataset (~218
+// countries) instead of a hand-picked list of 4. Expected digit-length is
+// derived from each country's format mask (each "." is one digit) so
+// validation still works per-country without hardcoding it.
+const PHONE_COUNTRIES = defaultCountries.map((c) => {
+  const parsed = parseCountry(c);
+  const masks =
+    typeof parsed.format === "string"
+      ? [parsed.format]
+      : parsed.format && typeof parsed.format === "object"
+        ? Object.values(parsed.format)
+        : [];
+  const dotCounts = masks
+    .map((m) => (typeof m === "string" ? (m.match(/\./g) || []).length : 0))
+    .filter((n) => n > 0);
+  return {
+    iso2: parsed.iso2,
+    name: parsed.name,
+    code: `+${parsed.dialCode}`,
+    dialCode: parsed.dialCode,
+    minLen: dotCounts.length ? Math.min(...dotCounts) : 6,
+    maxLen: dotCounts.length ? Math.max(...dotCounts) : 14,
+  };
+});
 
 const INDUSTRIES = [
-  "Construction",
-  "Shipping",
+  "Construction & Infrastructure",
+  "Marine & Shipping",
+  "Oil & Gas",
   "Manufacturing",
-  "Hospitality",
-  "Marine",
+  "Logistics & Transportation",
+  "Warehousing & Supply Chain",
+  "Hospitality & Facilities",
+  "Ports & Terminals",
+  "Mining",
+  "Aviation",
+  "Renewable Energy",
+  "Engineering Services",
+  "Healthcare",
+  "IT & Technology",
+  "Retail",
   "Other",
 ];
+
+const BUSINESS_TYPES = [
+  { value: "Private_Ltd", label: "Private Limited" },
+  { value: "Public_Ltd", label: "Public Limited" },
+  { value: "LLP", label: "Limited Liability Partnership (LLP)" },
+  { value: "Partnership", label: "Partnership" },
+  { value: "Proprietorship", label: "Sole Proprietorship" },
+  { value: "OPC", label: "One Person Company (OPC)" },
+  { value: "Section8", label: "Section 8 Company (Non-Profit)" },
+  { value: "Trust", label: "Trust" },
+  { value: "Society", label: "Society" },
+  { value: "Cooperative", label: "Cooperative Society" },
+  { value: "PSU", label: "Public Sector Undertaking (PSU)" },
+  { value: "Government", label: "Government Entity" },
+  { value: "Branch_Office", label: "Branch Office" },
+  { value: "Liaison_Office", label: "Liaison Office" },
+  { value: "Joint_Venture", label: "Joint Venture" },
+  { value: "Other", label: "Other" },
+];
+
+const COMPANY_SIZES = [
+  { value: "Size_1_10", label: "1-10 employees" },
+  { value: "Size_11_50", label: "11-50 employees" },
+  { value: "Size_51_200", label: "51-200 employees" },
+  { value: "Size_201_500", label: "201-500 employees" },
+  { value: "Size_500_Plus", label: "500+ employees" },
+];
+
+const COMPANY_TYPES = [
+  { value: "startup", label: "Startup" },
+  { value: "mid-size", label: "Mid-size" },
+  { value: "enterprise", label: "Enterprise" },
+  { value: "government", label: "Government" },
+  { value: "non-profit", label: "Non-profit" },
+];
+
+const labelFor = (list, value) =>
+  list.find((o) => o.value === value)?.label || value;
+
+const GSTIN_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[A-Z0-9]{1}[Z]{1}[A-Z0-9]{1}$/;
+const PIN_REGEX = /^[0-9]{6}$/;
 
 const STATES = [
   "Andhra Pradesh",
@@ -78,7 +154,9 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const isValidEmail = (email) => EMAIL_REGEX.test(email.trim());
 
 const getCountryMeta = (code) =>
-  COUNTRY_CODES.find((c) => c.code === code) || COUNTRY_CODES[0];
+  PHONE_COUNTRIES.find((c) => c.code === code) ||
+  PHONE_COUNTRIES.find((c) => c.code === "+91") ||
+  PHONE_COUNTRIES[0];
 
 const isValidMobile = (mobile, countryCode) => {
   const digits = mobile.replace(/\D/g, "");
@@ -171,7 +249,7 @@ function StepBar({ current, total, labels }) {
   );
 }
 
-function Field({ label, hint, required, children }) {
+function Field({ label, hint, required, error, children }) {
   return (
     <div style={{ marginBottom: 16 }}>
       <label
@@ -187,32 +265,50 @@ function Field({ label, hint, required, children }) {
         {required && <span style={{ color: "#E24B4A", marginLeft: 2 }}>*</span>}
       </label>
       {children}
-      {hint && (
+      {error ? (
         <p
           style={{
             fontSize: "var(--font-xs)",
-            color: "var(--color-text-tertiary)",
+            color: "#E24B4A",
             marginTop: 4,
+            fontWeight: 500,
           }}
         >
-          {hint}
+          {error}
         </p>
+      ) : (
+        hint && (
+          <p
+            style={{
+              fontSize: "var(--font-xs)",
+              color: "var(--color-text-tertiary)",
+              marginTop: 4,
+            }}
+          >
+            {hint}
+          </p>
+        )
       )}
     </div>
   );
 }
 
-function Input({ className = "", style = {}, ...props }) {
+function Input({ className = "", style = {}, error, ...props }) {
   return (
     <input
       {...props}
       className={`form-control ${className}`.trim()}
-      style={{ height: 53, ...style }}
+      style={{
+        height: 53,
+        borderColor: error ? "#E24B4A" : undefined,
+        backgroundColor: error ? "#FFF5F5" : undefined,
+        ...style,
+      }}
     />
   );
 }
 
-function Select({ children, className = "", style = {}, ...props }) {
+function Select({ children, className = "", style = {}, error, ...props }) {
   return (
     <select
       {...props}
@@ -226,11 +322,171 @@ function Select({ children, className = "", style = {}, ...props }) {
         appearance: "none",
         WebkitAppearance: "none",
         MozAppearance: "none",
+        borderColor: error ? "#E24B4A" : undefined,
+        backgroundColor: error ? "#FFF5F5" : undefined,
         ...style,
       }}
     >
       {children}
     </select>
+  );
+}
+
+// ── Combobox: type-to-search dropdown, select-only ───────────────────────
+// Accepts either a plain string[] or a {value,label}[] options array.
+// Typing only filters the list below — it never sets the field's value on
+// its own. The value only changes when an option is actually picked (click,
+// or pressing Enter on an exact/singular match). Typing something that
+// matches nothing and clicking away snaps the text back to whatever is
+// actually selected, so nothing gets silently saved.
+function Combobox({ value, onChange, options, placeholder, error, disabled }) {
+  const normalized = (options || []).map((o) =>
+    typeof o === "string" ? { value: o, label: o } : o
+  );
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+  const justSelectedRef = useRef(false);
+
+  const matched = normalized.find((o) => o.value === value);
+  const [query, setQuery] = useState(matched ? matched.label : value || "");
+
+  useEffect(() => {
+    const m = normalized.find((o) => o.value === value);
+    setQuery(m ? m.label : value || "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  const revertIfUnmatched = () => {
+    const m = normalized.find((o) => o.value === value);
+    setQuery(m ? m.label : value || "");
+  };
+
+  useEffect(() => {
+    const onClickOutside = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) {
+        setOpen(false);
+        revertIfUnmatched();
+      }
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, options]);
+
+  const filtered = query
+    ? normalized.filter((o) => o.label.toLowerCase().includes(query.toLowerCase()))
+    : normalized;
+
+  const selectOption = (opt) => {
+    justSelectedRef.current = true;
+    onChange(opt.value);
+    setQuery(opt.label);
+    setOpen(false);
+  };
+
+  return (
+    <div ref={wrapRef} style={{ position: "relative" }}>
+      <Input
+        value={query}
+        disabled={disabled}
+        error={error}
+        placeholder={placeholder || "Type to search…"}
+        autoComplete="off"
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            if (filtered.length === 1) {
+              selectOption(filtered[0]);
+            } else {
+              const exact = normalized.find(
+                (o) => o.label.toLowerCase() === query.trim().toLowerCase()
+              );
+              if (exact) selectOption(exact);
+              else revertIfUnmatched();
+            }
+            setOpen(false);
+          } else if (e.key === "Escape") {
+            setOpen(false);
+            revertIfUnmatched();
+          }
+        }}
+        onBlur={() => {
+          // Give a just-clicked option (onMouseDown, which fires first) a
+          // chance to register before deciding whether to revert.
+          window.setTimeout(() => {
+            if (justSelectedRef.current) {
+              justSelectedRef.current = false;
+              return;
+            }
+            setOpen(false);
+            revertIfUnmatched();
+          }, 0);
+        }}
+      />
+      {open && filtered.length > 0 && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            left: 0,
+            right: 0,
+            zIndex: 40,
+            background: "#fff",
+            border: "0.5px solid var(--color-border-secondary)",
+            borderRadius: 8,
+            boxShadow: "0 12px 28px rgba(18,35,89,0.14)",
+            maxHeight: 220,
+            overflowY: "auto",
+          }}
+        >
+          {filtered.map((opt) => (
+            <div
+              key={opt.value}
+              onMouseDown={() => selectOption(opt)}
+              style={{
+                padding: "9px 14px",
+                fontSize: "var(--font-sm)",
+                cursor: "pointer",
+                color: "var(--color-text-primary)",
+                background: opt.label === query ? "#FFF4E0" : "transparent",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "#FFF4E0")}
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background =
+                  opt.label === query ? "#FFF4E0" : "transparent")
+              }
+            >
+              {opt.label}
+            </div>
+          ))}
+        </div>
+      )}
+      {open && filtered.length === 0 && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            left: 0,
+            right: 0,
+            zIndex: 40,
+            background: "#fff",
+            border: "0.5px solid var(--color-border-secondary)",
+            borderRadius: 8,
+            boxShadow: "0 12px 28px rgba(18,35,89,0.14)",
+            padding: "9px 14px",
+            fontSize: "var(--font-xs)",
+            color: "var(--color-text-tertiary)",
+          }}
+        >
+          No matches — pick from the list
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -301,7 +557,125 @@ function Alert({ type = "info", children }) {
   );
 }
 
-// ── Mobile OTP block with inline ✓ tick in input ──────────────────────────────
+// ── Country code selector backed by react-international-phone's full list ──
+function CountryCodeSelect({ value, onChange, disabled }) {
+  const meta = getCountryMeta(value);
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        height: 53,
+        borderRadius: 8,
+        border: "0.5px solid var(--color-border-secondary)",
+        background: disabled ? "var(--color-background-secondary)" : "#fff",
+        paddingLeft: 2,
+        paddingRight: 10,
+        gap: 2,
+        flexShrink: 0,
+      }}
+    >
+      <CountrySelector
+        selectedCountry={meta.iso2}
+        onSelect={(country) => onChange(`+${country.dialCode}`)}
+        disabled={disabled}
+        buttonStyle={{
+          border: "none",
+          background: "transparent",
+          height: 44,
+          padding: "0 6px",
+        }}
+      />
+      <DialCodePreview
+        dialCode={meta.dialCode}
+        prefix="+"
+        style={{
+          fontWeight: 600,
+          fontSize: "var(--font-sm)",
+          color: "var(--color-text-primary)",
+        }}
+      />
+    </div>
+  );
+}
+
+// ── 6-box OTP input: auto-advances focus, supports backspace and paste ──
+function OtpDigitsInput({ value, onChange, length = 6, disabled, autoFocus }) {
+  const inputsRef = useRef([]);
+  const digits = (value || "")
+    .split("")
+    .concat(Array(length).fill(""))
+    .slice(0, length);
+
+  const focusInput = (idx) => inputsRef.current[idx]?.focus();
+
+  const handleChange = (idx, raw) => {
+    const char = raw.replace(/\D/g, "").slice(-1);
+    const next = [...digits];
+    next[idx] = char;
+    onChange(next.join("").slice(0, length));
+    if (char && idx < length - 1) focusInput(idx + 1);
+  };
+
+  const handleKeyDown = (idx, e) => {
+    if (e.key === "Backspace" && !digits[idx] && idx > 0) focusInput(idx - 1);
+  };
+
+  const handlePaste = (e) => {
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, length);
+    if (pasted) {
+      e.preventDefault();
+      onChange(pasted);
+      focusInput(Math.min(pasted.length, length - 1));
+    }
+  };
+
+  return (
+    <div style={{ display: "flex", gap: 8 }} onPaste={handlePaste}>
+      {digits.map((d, i) => (
+        <input
+          key={i}
+          ref={(el) => (inputsRef.current[i] = el)}
+          type="text"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          maxLength={1}
+          value={d}
+          disabled={disabled}
+          autoFocus={autoFocus && i === 0}
+          onChange={(e) => handleChange(i, e.target.value)}
+          onKeyDown={(e) => handleKeyDown(i, e)}
+          className="form-control"
+          style={{
+            width: 42,
+            height: 48,
+            padding: 0,
+            textAlign: "center",
+            fontSize: 18,
+            fontWeight: 700,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Small resend-cooldown timer shared by both OTP blocks below.
+function useResendCooldown(seconds = 30) {
+  const [remaining, setRemaining] = useState(0);
+  useEffect(() => {
+    if (remaining <= 0) return;
+    const t = setInterval(() => setRemaining((r) => Math.max(0, r - 1)), 1000);
+    return () => clearInterval(t);
+  }, [remaining]);
+  return [remaining, () => setRemaining(seconds)];
+}
+
+// ── Mobile OTP block: country selector + number + boxed OTP entry ──────────
 function MobileOtpField({
   countryCode,
   onCountryCodeChange,
@@ -319,26 +693,26 @@ function MobileOtpField({
   const touched = digitsOnly.length > 0;
   const mobileValid = isValidMobile(mobile, countryCode);
   const showMobileError = touched && !verified && !mobileValid;
+  const [cooldown, startCooldown] = useResendCooldown(30);
+
+  const handleSend = () => {
+    sent ? resendMobileOtp() : sendMobileOtp();
+    startCooldown();
+  };
 
   return (
     <div>
       <div style={{ display: "flex", gap: 8 }}>
-        <Select
+        <CountryCodeSelect
           value={countryCode}
-          onChange={(e) => {
-            onCountryCodeChange(e.target.value);
+          disabled={verified}
+          onChange={(v) => {
+            onCountryCodeChange(v);
             // re-trim number to new country's max length
-            const newMeta = getCountryMeta(e.target.value);
+            const newMeta = getCountryMeta(v);
             onMobileChange(digitsOnly.slice(0, newMeta.maxLen));
           }}
-          style={{ width: 110, flexShrink: 0 }}
-        >
-          {COUNTRY_CODES.map((c) => (
-            <option key={c.code} value={c.code}>
-              {c.label}
-            </option>
-          ))}
-        </Select>
+        />
         <div style={{ position: "relative", flex: 1 }}>
           <Input
             type="tel"
@@ -386,47 +760,80 @@ function MobileOtpField({
         </p>
       )}
 
-      {!verified && (
-        <div style={{ marginTop: 8, display: "flex", gap: 8, alignItems: "center" }}>
+      {!verified && !sent && (
+        <div style={{ marginTop: 8 }}>
           <Btn
             variant="ghost"
-            disabled={!mobileValid || verified}
-            onClick={() => (sent ? resendMobileOtp() : sendMobileOtp())}
-            style={{ flexShrink: 0, fontSize: "var(--font-xs)", padding: "0 12px", height: 38 }}
+            disabled={!mobileValid}
+            onClick={handleSend}
+            style={{ fontSize: "var(--font-xs)", padding: "0 12px", height: 38 }}
           >
-            {sent ? "Resend OTP" : "Send OTP"}
+            Send OTP
           </Btn>
-          {sent && (
-            <>
-              <Input
-                type="text"
-                maxLength={6}
-                placeholder="Enter OTP"
-                value={userVal}
-                onChange={(e) =>
-                  onOtpStateChange({ ...otp, userVal: e.target.value.replace(/\D/g, "") })
-                }
-                style={{ height: 38, flex: 1 }}
-              />
-              <Btn
-                variant="primary"
-                disabled={userVal.length !== 6}
-                onClick={verifyMobileOtp}
-                style={{ flexShrink: 0, fontSize: "var(--font-xs)", padding: "0 14px", height: 38 }}
-              >
-                Verify
-              </Btn>
-            </>
-          )}
+        </div>
+      )}
+
+      {!verified && sent && (
+        <div
+          style={{
+            marginTop: 12,
+            padding: "14px 16px",
+            borderRadius: 10,
+            border: "0.5px solid var(--color-border-secondary)",
+            background: "var(--color-background-secondary)",
+          }}
+        >
+          <p
+            style={{
+              fontSize: "var(--font-xs)",
+              fontWeight: 600,
+              color: "var(--color-text-secondary)",
+              marginBottom: 10,
+            }}
+          >
+            Enter the 6-digit code sent to {meta.code} {mobile}
+          </p>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            <OtpDigitsInput
+              value={userVal}
+              onChange={(v) => onOtpStateChange({ ...otp, userVal: v })}
+              autoFocus
+            />
+            <Btn
+              variant="primary"
+              disabled={userVal.length !== 6}
+              onClick={verifyMobileOtp}
+              style={{ height: 42, padding: "0 18px" }}
+            >
+              Verify
+            </Btn>
+          </div>
+          <div style={{ marginTop: 10 }}>
+            <button
+              type="button"
+              onClick={handleSend}
+              disabled={cooldown > 0}
+              style={{
+                background: "none",
+                border: "none",
+                padding: 0,
+                fontSize: "var(--font-xs)",
+                fontWeight: 600,
+                color: cooldown > 0 ? "var(--color-text-tertiary)" : "#ff9900",
+                cursor: cooldown > 0 ? "not-allowed" : "pointer",
+              }}
+            >
+              {cooldown > 0 ? `Resend OTP in ${cooldown}s` : "Resend OTP"}
+            </button>
+          </div>
         </div>
       )}
     </div>
   );
 }
 
-// Standard OTP block for email
+// Standard OTP block for email — same boxed-input treatment as mobile above.
 function OtpBlock({
-  label,
   target,
   sent,
   verified,
@@ -437,58 +844,111 @@ function OtpBlock({
   setOtpVal,
   disabled,
 }) {
-  return (
-    <div>
-      <div style={{ display: "flex", gap: 8 }}>
-        <Btn
-          variant={verified ? "success" : "ghost"}
-          disabled={disabled || verified}
-          onClick={() => {
-            if (sent) onResend();
-            else onSend();
-          }}
+  const [cooldown, startCooldown] = useResendCooldown(30);
+
+  const handleSend = () => {
+    sent ? onResend() : onSend();
+    startCooldown();
+  };
+
+  if (verified) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          padding: "10px 14px",
+          borderRadius: 8,
+          background: "#EAF3DE",
+          border: "0.5px solid #C0DD97",
+        }}
+      >
+        <span
           style={{
+            width: 20,
+            height: 20,
+            borderRadius: "50%",
+            background: "#3B6D11",
+            color: "#fff",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 11,
+            fontWeight: 700,
             flexShrink: 0,
-            fontSize: "var(--font-xs)",
-            padding: "0 12px",
-            height: 38,
           }}
         >
-          {verified ? "✓ Verified" : sent ? "Resend OTP" : "Send OTP"}
-        </Btn>
-        {sent && !verified && (
-          <div style={{ display: "flex", gap: 6, flex: 1 }}>
-            <Input
-              type="text"
-              maxLength={6}
-              placeholder="Enter OTP"
-              value={otpVal}
-              onChange={(e) => setOtpVal(e.target.value)}
-              style={{ flex: 1 }}
-            />
-            <Btn
-              variant="primary"
-              disabled={otpVal.length !== 6}
-              onClick={onVerify}
-              style={{
-                flexShrink: 0,
-                fontSize: "var(--font-xs)",
-                padding: "0 14px",
-                height: 38,
-              }}
-            >
-              Verify
-            </Btn>
-          </div>
-        )}
+          ✓
+        </span>
+        <span style={{ fontSize: "var(--font-xs)", color: "#3B6D11", fontWeight: 600 }}>
+          {target} verified successfully
+        </span>
       </div>
-      {verified && (
-        <p
-          style={{ fontSize: "var(--font-xs)", color: "#3B6D11", marginTop: 4 }}
+    );
+  }
+
+  if (!sent) {
+    return (
+      <Btn
+        variant="ghost"
+        disabled={disabled}
+        onClick={handleSend}
+        style={{ fontSize: "var(--font-xs)", padding: "0 12px", height: 38 }}
+      >
+        Send OTP
+      </Btn>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        padding: "14px 16px",
+        borderRadius: 10,
+        border: "0.5px solid var(--color-border-secondary)",
+        background: "var(--color-background-secondary)",
+      }}
+    >
+      <p
+        style={{
+          fontSize: "var(--font-xs)",
+          fontWeight: 600,
+          color: "var(--color-text-secondary)",
+          marginBottom: 10,
+        }}
+      >
+        Enter the 6-digit code sent to your {target}
+      </p>
+      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+        <OtpDigitsInput value={otpVal} onChange={setOtpVal} autoFocus />
+        <Btn
+          variant="primary"
+          disabled={otpVal.length !== 6}
+          onClick={onVerify}
+          style={{ height: 42, padding: "0 18px" }}
         >
-          ✓ {target} verified successfully
-        </p>
-      )}
+          Verify
+        </Btn>
+      </div>
+      <div style={{ marginTop: 10 }}>
+        <button
+          type="button"
+          onClick={handleSend}
+          disabled={cooldown > 0}
+          style={{
+            background: "none",
+            border: "none",
+            padding: 0,
+            fontSize: "var(--font-xs)",
+            fontWeight: 600,
+            color: cooldown > 0 ? "var(--color-text-tertiary)" : "#ff9900",
+            cursor: cooldown > 0 ? "not-allowed" : "pointer",
+          }}
+        >
+          {cooldown > 0 ? `Resend OTP in ${cooldown}s` : "Resend OTP"}
+        </button>
+      </div>
     </div>
   );
 }
@@ -529,7 +989,7 @@ function CandidateForm() {
   const [payStatus, setPayStatus] = useState("");
   const [loading, setLoading] = useState(false);
   const [paymentMessage, setPaymentMessage] = useState("");
-
+   const isSocialVerified = !!socialAuth;
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 useEffect(() => {
   const pending = sessionStorage.getItem("linkedinVerifiedState");
@@ -887,35 +1347,23 @@ const handleLinkedInRegister = () => {
         <Input
           placeholder="Enter full name"
           value={form.name}
+            disabled={isSocialVerified}
           onChange={(e) => set("name", e.target.value)}
         />
       </Field>
 
       <Field label="Mobile Number" required>
-        <Input
-          placeholder="Enter mobile number"
-          value={form.mobile}
-          onChange={(e) => set("mobile", e.target.value)}
+        <MobileOtpField
+          countryCode={form.countryCode}
+          onCountryCodeChange={(v) => set("countryCode", v)}
+          mobile={form.mobile}
+          onMobileChange={(v) => set("mobile", v)}
+          otp={mobileOtp}
+          onOtpStateChange={setMobileOtp}
+          sendMobileOtp={sendMobileOtp}
+          verifyMobileOtp={verifyMobileOtp}
+          resendMobileOtp={sendMobileOtp}
         />
-
-        <div style={{ marginTop: 8 }}>
-          <OtpBlock
-            target="mobile"
-            sent={mobileOtp.sent}
-            verified={mobileOtp.verified}
-            disabled={!form.mobile}
-            onSend={sendMobileOtp}
-            onResend={sendMobileOtp}
-            onVerify={verifyMobileOtp}
-            otpVal={mobileOtp.userVal}
-            setOtpVal={(v) =>
-              setMobileOtp((p) => ({
-                ...p,
-                userVal: v,
-              }))
-            }
-          />
-        </div>
       </Field>
 
       <Field label="Email" hint="Optional — verify to improve account security">
@@ -923,6 +1371,7 @@ const handleLinkedInRegister = () => {
           type="email"
           placeholder="john@example.com"
           value={form.email}
+            disabled={isSocialVerified}
           onChange={(e) => set("email", e.target.value)}
         />
         {form.email && (
@@ -1200,6 +1649,9 @@ function EmployerForm() {
   });
   const [ocrLoading, setOcrLoading] = useState(false);
   const [loadingResume, setLoadingResume] = useState(true);
+  const [attempt1, setAttempt1] = useState(false);
+  const [attempt2, setAttempt2] = useState(false);
+  const [attempt3, setAttempt3] = useState(false);
   const logoRef = useRef();
   const licRef = useRef();
 
@@ -1347,9 +1799,15 @@ function EmployerForm() {
     }
   };
 
-  const isStep2Valid = data.hasGst !== null && data.industry;
+  const isGstnValid = !data.hasGst || data.gstn.trim().length === 15;
+  const isStep2Valid = data.hasGst !== null && !!data.industry;
   const isStep3Valid =
-    data.legalName && data.state && data.city && data.pincode;
+    !!data.legalName &&
+    !!data.state &&
+    !!data.city &&
+    PIN_REGEX.test(data.pincode) &&
+    !!data.address &&
+    isGstnValid;
 const isStep4Valid =
   data.contactName &&
   data.designation &&
@@ -1477,13 +1935,19 @@ const isStep4Valid =
 
     resume();
   }, []);
+  const [attempt5, setAttempt5] = useState(false);
   const handleEmployerSubmit = async () => {
+    setAttempt5(true);
+    if (!termsAccepted) {
+      showToast("Please accept the Terms of Service to continue.", "warning");
+      return;
+    }
     try {
       const sessionId = localStorage.getItem("registrationSessionId");
 
       const response = await submitRegistration({
         sessionId,
-        consentGiven: true,
+        consentGiven: termsAccepted,
       });
 
       if (response.data.success) {
@@ -1587,7 +2051,9 @@ const isStep4Valid =
               border:
                 data.hasGst === opt.val
                   ? "2px solid #ff9900"
-                  : "0.5px solid var(--color-border-secondary)",
+                  : attempt1 && data.hasGst === null
+                    ? "1px solid #E24B4A"
+                    : "0.5px solid var(--color-border-secondary)",
               background:
                 data.hasGst === opt.val
                   ? "#ffffff"
@@ -1628,24 +2094,38 @@ const isStep4Valid =
         </Alert>
       )}
 
-      <Field label="Industry Type" required>
-        <Select
+      {attempt1 && data.hasGst === null && (
+        <p style={{ fontSize: "var(--font-xs)", color: "#E24B4A", marginTop: -12, marginBottom: 16, fontWeight: 500 }}>
+          Please select whether your company is GST registered.
+        </p>
+      )}
+
+      <Field
+        label="Industry Type"
+        required
+        hint="Start typing to search, or pick from the list — you can also enter your own industry."
+        error={attempt1 && !data.industry ? "Industry type is required" : null}
+      >
+        <Combobox
           value={data.industry}
-          onChange={(e) => set("industry", e.target.value)}
-        >
-          <option value="">Select industry…</option>
-          {INDUSTRIES.map((i) => (
-            <option key={i} value={i}>
-              {i}
-            </option>
-          ))}
-        </Select>
+          onChange={(v) => set("industry", v)}
+          options={INDUSTRIES}
+          placeholder="Type or select an industry…"
+          error={attempt1 && !data.industry}
+        />
       </Field>
 
       <div
         style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}
       >
-        <Btn variant="primary" disabled={!canGoStep2} onClick={handleStep1}>
+        <Btn
+          variant="primary"
+          onClick={() => {
+            setAttempt1(true);
+            if (data.hasGst === null || !data.industry.trim()) return;
+            handleStep1();
+          }}
+        >
           Continue →
         </Btn>
       </div>
@@ -1716,6 +2196,16 @@ const isStep4Valid =
             label="GSTN"
             required
             hint="15-character alphanumeric GST number"
+            error={
+              attempt2 && data.hasGst && !isGstnValid
+                ? "GSTN must be exactly 15 characters"
+                : attempt2 &&
+                    data.hasGst &&
+                    data.gstn.length === 15 &&
+                    !GSTIN_REGEX.test(data.gstn)
+                  ? "This doesn't look like a valid GSTN format — please double-check"
+                  : null
+            }
           >
             <div style={{ display: "flex", gap: 8 }}>
               <Input
@@ -1723,6 +2213,7 @@ const isStep4Valid =
                 onChange={(e) => set("gstn", e.target.value.toUpperCase())}
                 placeholder="27AAPFU0939F1ZV"
                 maxLength={15}
+                error={attempt2 && data.hasGst && !isGstnValid}
                 style={{ fontFamily: "monospace", flex: 1 }}
               />
               <Btn
@@ -1750,9 +2241,14 @@ const isStep4Valid =
       )}
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-        <Field label="Legal / Company Name" required>
+        <Field
+          label="Legal / Company Name"
+          required
+          error={attempt2 && !data.legalName ? "Legal / company name is required" : null}
+        >
           <Input
             value={data.legalName}
+            error={attempt2 && !data.legalName}
             onChange={(e) => set("legalName", e.target.value)}
             placeholder="Acme Pvt. Ltd."
             style={{
@@ -1784,45 +2280,32 @@ const isStep4Valid =
           </Field>
         )}
 
-        <Field label="Business Type">
-          <Select
+        <Field
+          label="Business Type"
+          hint="Start typing to search, or pick from the list"
+        >
+          <Combobox
             value={data.businessType}
-            onChange={(e) => set("businessType", e.target.value)}
-          >
-            <option value="">Select…</option>
-            <option value="Private_Ltd">Private Limited</option>
-            <option value="Public_Ltd">Public Limited</option>
-            <option value="LLP">LLP</option>
-            <option value="Partnership">Partnership</option>
-            <option value="Proprietorship">Proprietorship</option>
-            <option value="Other">Other</option>
-          </Select>
+            onChange={(v) => set("businessType", v)}
+            options={BUSINESS_TYPES}
+            placeholder="Type or select business type…"
+          />
         </Field>
         <Field label="Company Size">
-          <Select
+          <Combobox
             value={data.companySize}
-            onChange={(e) => set("companySize", e.target.value)}
-          >
-            <option value="">Select size...</option>
-            <option value="Size_1_10">1-10 employees</option>
-            <option value="Size_11_50">11-50 employees</option>
-            <option value="Size_51_200">51-200 employees</option>
-            <option value="Size_201_500">201-500 employees</option>
-            <option value="Size_500_Plus">500+ employees</option>
-          </Select>
+            onChange={(v) => set("companySize", v)}
+            options={COMPANY_SIZES}
+            placeholder="Type or select company size…"
+          />
         </Field>
         <Field label="Company Type">
-          <Select
+          <Combobox
             value={data.companyType}
-            onChange={(e) => set("companyType", e.target.value)}
-          >
-            <option value="">Select type...</option>
-            <option value="startup">Startup</option>
-            <option value="mid-size">Mid-size</option>
-            <option value="enterprise">Enterprise</option>
-            <option value="government">Government</option>
-            <option value="non-profit">Non-profit</option>
-          </Select>
+            onChange={(v) => set("companyType", v)}
+            options={COMPANY_TYPES}
+            placeholder="Type or select company type…"
+          />
         </Field>
 
         {/* GST Registration Date only for GST employers */}
@@ -1866,22 +2349,27 @@ const isStep4Valid =
       </p>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-        <Field label="State" required>
-          <Select
+        <Field
+          label="State"
+          required
+          error={attempt2 && !data.state ? "State is required" : null}
+        >
+          <Combobox
             value={data.state}
-            onChange={(e) => set("state", e.target.value)}
-          >
-            <option value="">Select state…</option>
-            {STATES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </Select>
+            error={attempt2 && !data.state}
+            onChange={(v) => set("state", v)}
+            options={STATES}
+            placeholder="Type or select state…"
+          />
         </Field>
-        <Field label="City" required>
+        <Field
+          label="City"
+          required
+          error={attempt2 && !data.city ? "City is required" : null}
+        >
           <Input
             value={data.city}
+            error={attempt2 && !data.city}
             onChange={(e) => set("city", e.target.value)}
             placeholder="Mumbai"
             style={{
@@ -1889,11 +2377,22 @@ const isStep4Valid =
             }}
           />
         </Field>
-        <Field label="PIN Code" required>
+        <Field
+          label="PIN Code"
+          required
+          error={
+            attempt2 && !data.pincode
+              ? "PIN code is required"
+              : attempt2 && !PIN_REGEX.test(data.pincode)
+                ? "Enter a valid 6-digit PIN code"
+                : null
+          }
+        >
           <Input
             value={data.pincode}
             maxLength={6}
-            onChange={(e) => set("pincode", e.target.value)}
+            error={attempt2 && !PIN_REGEX.test(data.pincode)}
+            onChange={(e) => set("pincode", e.target.value.replace(/\D/g, ""))}
             placeholder="400001"
             style={{
               background: data.hasGst && data.pincode ? "#ffffff" : undefined,
@@ -1909,9 +2408,14 @@ const isStep4Valid =
         </Field>
       </div>
 
-      <Field label="Full Registered Address" required>
+      <Field
+        label="Full Registered Address"
+        required
+        error={attempt2 && !data.address ? "Full registered address is required" : null}
+      >
         <Input
           value={data.address}
+          error={attempt2 && !data.address}
           onChange={(e) => set("address", e.target.value)}
           placeholder="Building, Street, City, State, PIN"
           style={{
@@ -1959,7 +2463,7 @@ const isStep4Valid =
                   marginTop: 4,
                 }}
               >
-                PNG / JPG · Max 2 MB · Recommended 200×200px
+                Any image format · Max 2 MB · Recommended 200×200px
               </p>
             </>
           )}
@@ -1992,15 +2496,12 @@ const isStep4Valid =
         </Btn>
         <Btn
           variant="primary"
-          disabled={
-            ocrLoading ||
-            !data.legalName ||
-            !data.state ||
-            !data.city ||
-            !data.pincode ||
-            !data.address
-          }
-          onClick={handleStep2}
+          disabled={ocrLoading}
+          onClick={() => {
+            setAttempt2(true);
+            if (!isStep3Valid) return;
+            handleStep2();
+          }}
         >
           Continue →
         </Btn>
@@ -2064,16 +2565,26 @@ const isStep4Valid =
       </h3>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-        <Field label="Contact Person Name" required>
+        <Field
+          label="Contact Person Name"
+          required
+          error={attempt3 && !data.contactName ? "Contact person name is required" : null}
+        >
           <Input
             value={data.contactName}
+            error={attempt3 && !data.contactName}
             onChange={(e) => set("contactName", e.target.value)}
             placeholder="Arjun Mehta"
           />
         </Field>
-        <Field label="Designation" required>
+        <Field
+          label="Designation"
+          required
+          error={attempt3 && !data.designation ? "Designation is required" : null}
+        >
           <Input
             value={data.designation}
+            error={attempt3 && !data.designation}
             onChange={(e) => set("designation", e.target.value)}
             placeholder="HR Manager"
           />
@@ -2165,14 +2676,22 @@ const isStep4Valid =
         />
       </Field>
 
+      {attempt3 && !isStep4Valid && (
+        <Alert type="error">
+          Please complete all required fields and verify both your mobile
+          number and company email before continuing.
+        </Alert>
+      )}
+
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
         <Btn variant="outline" onClick={() => setStep(2)}>
           ← Back
         </Btn>
-       <Btn 
-  variant="primary" 
-  disabled={!canGoStep4} 
+       <Btn
+  variant="primary"
   onClick={async () => {
+    setAttempt3(true);
+    if (!isStep4Valid) return;
     await saveStep3();
     setStep(4);
   }}
@@ -2423,6 +2942,8 @@ const isStep4Valid =
   //   </div>
   // );
 
+  const [attempt4, setAttempt4] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const renderStep4 = () => (
     <div>
       <h3
@@ -2434,19 +2955,7 @@ const isStep4Valid =
         }}
       >
         Licence & document upload
-        <span
-          style={{
-            fontSize: "var(--font-xs)",
-            fontWeight: 400,
-            color: "var(--color-text-tertiary)",
-            marginLeft: 10,
-            background: "var(--color-background-secondary)",
-            padding: "2px 8px",
-            borderRadius: 6,
-          }}
-        >
-          Optional
-        </span>
+        <span style={{ color: "#E24B4A", marginLeft: 6 }}>*</span>
       </h3>
 
       <p
@@ -2457,14 +2966,21 @@ const isStep4Valid =
           lineHeight: 1.5,
         }}
       >
-        Upload recruitment licences to earn trust badges displayed on all job
-        listings.
+        Both licences below are required to complete your registration and
+        also earn trust badges displayed on all job listings.
       </p>
 
       <Alert type="info">
         <strong>Blue Tick</strong> requires: GST Verified + one active licence +
         corporate domain email — all simultaneously.
       </Alert>
+
+      {attempt4 && (!data.licDocs.find((d) => d.id === "poe") || !data.licDocs.find((d) => d.id === "rpsl")) && (
+        <Alert type="error">
+          Both the Recruitment Licence and RPSL Licence are required — please
+          upload both files to continue.
+        </Alert>
+      )}
 
       <div
         style={{
@@ -2558,7 +3074,9 @@ const isStep4Valid =
                   document.getElementById(`file-${lic.id}`)?.click()
                 }
                 style={{
-                  border: "1px dashed var(--color-border-secondary,#ffc151)",
+                  border: attempt4 && !file
+                    ? "1px dashed #E24B4A"
+                    : "1px dashed var(--color-border-secondary,#ffc151)",
                   borderRadius: 8,
                   padding: "16px",
                   textAlign: "center",
@@ -2672,16 +3190,139 @@ const isStep4Valid =
         </Btn>
 
         <div style={{ display: "flex", gap: 10 }}>
-          <Btn variant="ghost" onClick={() => setStep(5)}>
-            Skip for now
-          </Btn>
-
-          <Btn variant="primary" onClick={handleStep4}>
+          <Btn
+            variant="primary"
+            onClick={() => {
+              setAttempt4(true);
+              handleStep4();
+            }}
+          >
             Continue →
           </Btn>
         </div>
       </div>
     </div>
+  );
+
+  const ReviewSection = ({ icon, title, editStep, children }) => (
+    <div
+      style={{
+        background: "#ffffff",
+        border: "1px solid rgba(18,35,89,0.08)",
+        borderRadius: 16,
+        padding: "18px 20px",
+        marginBottom: 16,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 14,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 10,
+              flexShrink: 0,
+              background: "linear-gradient(135deg,#122359,#1e3a8a)",
+              color: "#ffa300",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 14,
+            }}
+          >
+            <i className={icon} />
+          </span>
+          <p
+            style={{
+              fontSize: "var(--font-sm)",
+              fontWeight: 700,
+              color: "#122359",
+              margin: 0,
+              letterSpacing: 0.2,
+            }}
+          >
+            {title}
+          </p>
+        </div>
+        {editStep && (
+          <button
+            type="button"
+            onClick={() => setStep(editStep)}
+            style={{
+              background: "none",
+              border: "none",
+              color: "#ff9900",
+              fontSize: "var(--font-xs)",
+              fontWeight: 700,
+              cursor: "pointer",
+              padding: "4px 8px",
+            }}
+          >
+            <i className="fi fi-rr-pencil" style={{ marginRight: 4 }} />
+            Edit
+          </button>
+        )}
+      </div>
+      {children}
+    </div>
+  );
+
+  const ReviewRow = ({ label, val, mono }) => (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        gap: 12,
+        padding: "8px 0",
+        borderBottom: "1px solid #f1f4fb",
+        fontSize: "var(--font-sm)",
+      }}
+    >
+      <span style={{ color: "#66789c" }}>{label}</span>
+      {val ? (
+        <span
+          style={{
+            fontFamily: mono ? "monospace" : undefined,
+            fontWeight: 600,
+            color: "#122359",
+            textAlign: "right",
+            maxWidth: "60%",
+          }}
+        >
+          {val}
+        </span>
+      ) : (
+        <span style={{ color: "#b6c0d6", fontStyle: "italic", fontSize: "var(--font-xs)" }}>
+          Not provided
+        </span>
+      )}
+    </div>
+  );
+
+  const VerifyPill = ({ ok, label }) => (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        padding: "5px 12px",
+        borderRadius: 999,
+        fontSize: "var(--font-xs)",
+        fontWeight: 700,
+        background: ok ? "#DCFCE7" : "#FEF3C7",
+        color: ok ? "#166534" : "#92400E",
+      }}
+    >
+      <i className={ok ? "fi fi-rr-check" : "fi fi-rr-clock"} style={{ fontSize: 10 }} />
+      {label}
+    </span>
   );
 
   // ── Step 5: Review & Submit ───────────────
@@ -2701,39 +3342,51 @@ const isStep4Valid =
         style={{
           fontSize: "var(--font-sm)",
           color: "var(--color-text-secondary)",
-          marginBottom: 20,
+          marginBottom: 18,
         }}
       >
-        Confirm all details before creating your account.
+        Confirm all details before creating your account. Use{" "}
+        <strong>Edit</strong> on any section to make changes.
       </p>
+
+      {/* ── Verification status strip ── */}
       <div
         style={{
-          background: "var(--color-background-primary)",
-          border: "0.5px solid var(--color-border-tertiary)",
-          borderRadius: 10,
-          padding: "14px 16px",
-          marginBottom: 14,
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 8,
+          padding: "12px 14px",
+          marginBottom: 20,
+          background: "#F8FAFF",
+          border: "1px solid rgba(18,35,89,0.08)",
+          borderRadius: 14,
         }}
       >
-        <p
-          style={{
-            fontSize: "var(--font-xs)",
-            fontWeight: 600,
-            color: "var(--color-text-tertiary)",
-            marginBottom: 10,
-            letterSpacing: 0.5,
-          }}
-        >
-          COMPANY
-        </p>
-        <InfoRow label="Legal name" val={data.legalName} />
-        {data.hasGst && <InfoRow label="GSTN" val={data.gstn} mono />}
-        {data.hasGst && <InfoRow label="PAN" val={data.pan} mono />}
-        <InfoRow label="Business type" val={data.businessType} />
-        <InfoRow label="Industry" val={data.industry} />
-        {data.hasGst && <InfoRow label="GST Reg. date" val={data.gstRegDate} />}
-        <InfoRow label="CIN" val={data.cin} mono />
-        <InfoRow
+        <VerifyPill ok={!!data.hasGst} label={data.hasGst ? "GST Verified" : "Non-GST entity"} />
+        <VerifyPill ok={data.mobileOtp.verified} label={data.mobileOtp.verified ? "Mobile Verified" : "Mobile Pending"} />
+        <VerifyPill ok={data.corpEmailOtp.verified} label={data.corpEmailOtp.verified ? "Email Verified" : "Email Pending"} />
+        <VerifyPill
+          ok={data.licDocs.length === 2}
+          label={data.licDocs.length === 2 ? "Licences Uploaded" : "Licences Pending"}
+        />
+      </div>
+
+      <ReviewSection icon="fi fi-rr-briefcase" title="Company Details" editStep={2}>
+        <ReviewRow label="Legal name" val={data.legalName} />
+        <ReviewRow label="Trade name" val={data.tradeName} />
+        {data.hasGst && <ReviewRow label="GSTN" val={data.gstn} mono />}
+        {data.hasGst && <ReviewRow label="PAN" val={data.pan} mono />}
+        <ReviewRow label="Business type" val={labelFor(BUSINESS_TYPES, data.businessType)} />
+        <ReviewRow label="Company size" val={labelFor(COMPANY_SIZES, data.companySize)} />
+        <ReviewRow label="Company type" val={labelFor(COMPANY_TYPES, data.companyType)} />
+        <ReviewRow label="Industry" val={data.industry} />
+        {data.hasGst && <ReviewRow label="GST reg. date" val={data.gstRegDate} />}
+        <ReviewRow label="CIN" val={data.cin} mono />
+        <ReviewRow label="Website" val={data.officialWebsite} />
+      </ReviewSection>
+
+      <ReviewSection icon="fi fi-rr-marker" title="Registered Address" editStep={2}>
+        <ReviewRow
           label="Address"
           val={
             data.address
@@ -2741,119 +3394,103 @@ const isStep4Valid =
               : ""
           }
         />
-        <InfoRow label="Website" val={data.officialWebsite} />
-      </div>
-      <div
-        style={{
-          background: "var(--color-background-primary)",
-          border: "0.5px solid var(--color-border-tertiary)",
-          borderRadius: 10,
-          padding: "14px 16px",
-          marginBottom: 14,
-        }}
-      >
-        <p
-          style={{
-            fontSize: "var(--font-xs)",
-            fontWeight: 600,
-            color: "var(--color-text-tertiary)",
-            marginBottom: 10,
-            letterSpacing: 0.5,
-          }}
-        >
-          CONTACT
-        </p>
-        <InfoRow label="Contact person" val={data.contactName} />
-        <InfoRow label="Designation" val={data.designation} />
-        <InfoRow
-          label="Corporate email"
-          val={`${data.corpEmail} ${data.corpEmailOtp.verified ? "✓" : ""}`}
+      </ReviewSection>
+
+      <ReviewSection icon="fi fi-rr-user" title="Contact & Verification" editStep={3}>
+        <ReviewRow label="Contact person" val={data.contactName} />
+        <ReviewRow label="Designation" val={data.designation} />
+        <ReviewRow label="Personal email" val={data.contactPersonEmail} />
+        <ReviewRow
+          label="Company email"
+          val={data.corpEmail ? `${data.corpEmail}${data.corpEmailOtp.verified ? "  ✓ Verified" : ""}` : ""}
         />
-        <InfoRow
+        <ReviewRow
           label="Mobile"
-          val={`${data.countryCode} ${data.mobile} ${data.mobileOtp.verified ? "✓ Verified" : ""}`}
+          val={data.mobile ? `${data.countryCode} ${data.mobile}${data.mobileOtp.verified ? "  ✓ Verified" : ""}` : ""}
         />
-      </div>
-      <div
-        style={{
-          background: "var(--color-background-primary)",
-          border: "0.5px solid var(--color-border-tertiary)",
-          borderRadius: 10,
-          padding: "14px 16px",
-          marginBottom: 14,
-        }}
-      >
-        <p
-          style={{
-            fontSize: "var(--font-xs)",
-            fontWeight: 600,
-            color: "var(--color-text-tertiary)",
-            marginBottom: 10,
-            letterSpacing: 0.5,
-          }}
-        >
-          DOCUMENTS
-        </p>
-        <InfoRow
+      </ReviewSection>
+
+      <ReviewSection icon="fi fi-rr-document" title="Documents & Licences" editStep={4}>
+        <ReviewRow
           label="Company logo"
-          val={data.companyLogo ? `✓ ${data.companyLogo.name}` : "Not uploaded"}
+          val={data.companyLogo ? `✓ ${data.companyLogo.name}` : ""}
         />
-        <InfoRow
+        <ReviewRow
           label="Licences"
           val={
             data.licDocs.length > 0
               ? data.licDocs.map((d) => d.id.toUpperCase()).join(", ")
-              : "Skipped"
+              : ""
           }
         />
-        <InfoRow label="GST Registered" val={data.hasGst ? "Yes" : "No"} />
-      </div>
+        <ReviewRow label="GST registered" val={data.hasGst ? "Yes" : "No"} />
+      </ReviewSection>
+
       <div
         style={{
-          background: "#ffffff",
-          border: "0.5px solid #ffc151",
-          borderRadius: 10,
-          padding: "14px 16px",
+          background: "#FFF8EC",
+          border: "1px solid #ffc151",
+          borderRadius: 16,
+          padding: "18px 20px",
           marginBottom: 20,
         }}
       >
-        <p
-          style={{
-            fontSize: "var(--font-xs)",
-            fontWeight: 600,
-            color: "#ff9900",
-            marginBottom: 10,
-            letterSpacing: 0.5,
-          }}
-        >
-          TRIAL TERMS
-        </p>
-        <InfoRow label="Trial period" val="14 days" />
-        <InfoRow label="Free credits" val="5 × Band A" />
-        <InfoRow label="CV downloads" val="Disabled during trial" />
-        <InfoRow
-          label="Account status"
-          val="Trial — pending admin verification"
-        />
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+          <span
+            style={{
+              width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+              background: "#ffa300", color: "#122359",
+              display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 14,
+            }}
+          >
+            <i className="fi fi-rr-gift" />
+          </span>
+          <p style={{ fontSize: "var(--font-sm)", fontWeight: 700, color: "#8a5a00", margin: 0, letterSpacing: 0.2 }}>
+            Trial Terms
+          </p>
+        </div>
+        <ReviewRow label="Trial period" val="14 days" />
+        <ReviewRow label="Free credits" val="5 × Band A" />
+        <ReviewRow label="CV downloads" val="Disabled during trial" />
+        <ReviewRow label="Account status" val="Trial — pending admin verification" />
       </div>
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          gap: 10,
+          padding: "12px 14px",
+          marginBottom: 8,
+          borderRadius: 12,
+          border: attempt5 && !termsAccepted ? "1px solid #E24B4A" : "1px solid rgba(18,35,89,0.08)",
+          background: attempt5 && !termsAccepted ? "#FFF5F5" : "#F8FAFF",
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={termsAccepted}
+          onChange={(e) => setTermsAccepted(e.target.checked)}
+          style={{ width: 18, height: 18, marginTop: 2, flexShrink: 0, accentColor: "#ff9900" }}
+        />
+        <label style={{ fontSize: "var(--font-xs)", color: "var(--color-text-secondary)", lineHeight: 1.5 }}>
+          I agree to the Terms of Service and Employer Policy, and confirm
+          that the details provided above are accurate.
+        </label>
+      </div>
+      {attempt5 && !termsAccepted && (
+        <p style={{ fontSize: "var(--font-xs)", color: "#E24B4A", marginTop: 0, marginBottom: 14, fontWeight: 500 }}>
+          Please accept the terms to continue.
+        </p>
+      )}
+
       <Btn
         variant="primary"
-        disabled={!canSubmit}
-        style={{ width: "100%", padding: "13px 0", fontSize: "var(--font-md)" }}
+        style={{ width: "100%", padding: "13px 0", fontSize: "var(--font-md)", marginTop: 6 }}
         onClick={handleEmployerSubmit}
       >
         Create Account & Start Trial
       </Btn>
-      <p
-        style={{
-          fontSize: "var(--font-xs)",
-          color: "var(--color-text-tertiary)",
-          textAlign: "center",
-          marginTop: 10,
-        }}
-      >
-        By submitting you agree to our Terms of Service and Employer Policy
-      </p>
       <div
         style={{ display: "flex", justifyContent: "flex-start", marginTop: 12 }}
       >
@@ -2885,9 +3522,23 @@ const isStep4Valid =
 function RegisterPageInner() {
   const searchParams = useSearchParams();
   const typeParam = searchParams.get("type"); // "candidate" | "employer" | null
-  const [role, setRole] = useState(
-    typeParam === "candidate" || typeParam === "employer" ? typeParam : null,
-  );
+  // Coming in via a direct link (the header's Register ▸ Candidate/Employer
+  // menu) locks the page to that one role — no tab to switch away from it.
+  // Only a plain /register visit (no type in the URL) shows both tiles so
+  // the visitor can choose.
+  const lockedRole =
+    typeParam === "candidate" || typeParam === "employer" ? typeParam : null;
+  const [role, setRole] = useState(lockedRole);
+
+  // Client-side navigation (e.g. clicking Register ▸ Employer while already
+  // on /register?type=candidate) changes the URL without remounting this
+  // component, so the `role` state above — set only once on first mount —
+  // would otherwise keep showing whichever form loaded first. Keep it in
+  // sync with the URL whenever the locked-in type actually changes.
+  useEffect(() => {
+    setRole(lockedRole);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lockedRole]);
 
   return (
     <main
@@ -2978,7 +3629,7 @@ function RegisterPageInner() {
               marginBottom: 8,
             }}
           >
-            SkillBridge
+            <img src="assets/imgs/template/logo.svg"/>
           </div>
           <h1
             style={{
@@ -3016,99 +3667,100 @@ function RegisterPageInner() {
             border: "none",
             borderRadius: 24,
             padding: "38px 34px",
-            overflow: "hidden",
             marginBottom: 0,
             boxSizing: "border-box",
           }}
         >
-          {/* Role selector */}
-          <div style={{ marginBottom: role ? 28 : 8 }}>
-            {!role && (
-              <p
-                style={{
-                  fontSize: "var(--font-xs)",
-                  fontWeight: 600,
-                  color: "var(--color-text-secondary)",
-                  marginBottom: 12,
-                }}
-              >
-                I am registering as…
-              </p>
-            )}
-            <div style={{ display: "flex", gap: 12 }}>
-              {[
-                {
-                  val: "candidate",
-                  icon: "👤",
-                  label: "Job Seeker / Candidate",
-                  sub: "Find jobs, build profile",
-                },
-                {
-                  val: "employer",
-                  icon: "🏢",
-                  label: "Employer / Company",
-                  sub: "Post jobs, hire talent",
-                },
-              ].map((r) => (
-                <div
-                  key={r.val}
-                  onClick={() => setRole(r.val)}
+          {/* Role selector — only shown when no role was locked in via URL */}
+          {!lockedRole && (
+            <div style={{ marginBottom: role ? 28 : 8 }}>
+              {!role && (
+                <p
                   style={{
-                    flex: 1,
-                    padding: role ? "10px 14px" : "18px 14px",
-                    borderRadius: 10,
-                    cursor: "pointer",
-                    border:
-                      role === r.val
-                        ? "2px solid #ff9900"
-                        : "1px solid var(--color-border-secondary, #C7D2E0)",
-                    background:
-                      role === r.val
-                        ? "#ffffff"
-                        : "var(--color-background-secondary)",
-                    transition: "all .15s",
-                    display: "flex",
-                    alignItems: role ? "center" : "flex-start",
-                    gap: 12,
+                    fontSize: "var(--font-xs)",
+                    fontWeight: 600,
+                    color: "var(--color-text-secondary)",
+                    marginBottom: 12,
                   }}
                 >
-                  <span style={{ fontSize: role ? 18 : 24, flexShrink: 0 }}>
-                    {r.icon}
-                  </span>
-                  <div>
-                    <div
-                      style={{
-                        fontSize: role ? 13 : 14,
-                        fontWeight: 600,
-                        color:
-                          role === r.val
-                            ? "#ff9900"
-                            : "var(--color-text-primary)",
-                      }}
-                    >
-                      {r.label}
-                    </div>
-                    {!role && (
+                  I am registering as…
+                </p>
+              )}
+              <div style={{ display: "flex", gap: 12 }}>
+                {[
+                  {
+                    val: "candidate",
+                    icon: "👤",
+                    label: "Job Seeker / Candidate",
+                    sub: "Find jobs, build profile",
+                  },
+                  {
+                    val: "employer",
+                    icon: "🏢",
+                    label: "Employer / Company",
+                    sub: "Post jobs, hire talent",
+                  },
+                ].map((r) => (
+                  <div
+                    key={r.val}
+                    onClick={() => setRole(r.val)}
+                    style={{
+                      flex: 1,
+                      padding: role ? "10px 14px" : "18px 14px",
+                      borderRadius: 10,
+                      cursor: "pointer",
+                      border:
+                        role === r.val
+                          ? "2px solid #ff9900"
+                          : "1px solid var(--color-border-secondary, #C7D2E0)",
+                      background:
+                        role === r.val
+                          ? "#ffffff"
+                          : "var(--color-background-secondary)",
+                      transition: "all .15s",
+                      display: "flex",
+                      alignItems: role ? "center" : "flex-start",
+                      gap: 12,
+                    }}
+                  >
+                    <span style={{ fontSize: role ? 18 : 24, flexShrink: 0 }}>
+                      {r.icon}
+                    </span>
+                    <div>
                       <div
                         style={{
-                          fontSize: "var(--font-xs)",
-                          color: "var(--color-text-secondary)",
-                          marginTop: 2,
+                          fontSize: role ? 13 : 14,
+                          fontWeight: 600,
+                          color:
+                            role === r.val
+                              ? "#ff9900"
+                              : "var(--color-text-primary)",
                         }}
                       >
-                        {r.sub}
+                        {r.label}
                       </div>
-                    )}
+                      {!role && (
+                        <div
+                          style={{
+                            fontSize: "var(--font-xs)",
+                            color: "var(--color-text-secondary)",
+                            marginTop: 2,
+                          }}
+                        >
+                          {r.sub}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {role === "candidate" && <CandidateForm />}
           {role === "employer" && <EmployerForm />}
 
-          {!role && (
+          {!role && !lockedRole && (
             <p
               style={{
                 textAlign: "center",

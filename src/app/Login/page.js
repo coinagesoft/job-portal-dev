@@ -1,7 +1,7 @@
 "use client";
 
 import { useToast } from "@/components/Toast";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -9,6 +9,82 @@ import { setUser } from "@/store/authSlice";
 import { sendOtp, verifyOtp } from "@/services/recruiter/authService";
 import { useGoogleLogin } from "@react-oauth/google";
 import { googleLogin } from "@/services/recruiter/authService";
+
+// ── 6-box OTP input: auto-advances focus, supports backspace and paste ──
+function OtpDigitsInput({ value, onChange, length = 6, disabled, autoFocus }) {
+  const inputsRef = useRef([]);
+  const digits = (value || "")
+    .split("")
+    .concat(Array(length).fill(""))
+    .slice(0, length);
+
+  const focusInput = (idx) => inputsRef.current[idx]?.focus();
+
+  const handleChange = (idx, raw) => {
+    const char = raw.replace(/\D/g, "").slice(-1);
+    const next = [...digits];
+    next[idx] = char;
+    onChange(next.join("").slice(0, length));
+    if (char && idx < length - 1) focusInput(idx + 1);
+  };
+
+  const handleKeyDown = (idx, e) => {
+    if (e.key === "Backspace" && !digits[idx] && idx > 0) focusInput(idx - 1);
+  };
+
+  const handlePaste = (e) => {
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, length);
+    if (pasted) {
+      e.preventDefault();
+      onChange(pasted);
+      focusInput(Math.min(pasted.length, length - 1));
+    }
+  };
+
+  return (
+    <div style={{ display: "flex", gap: 8, justifyContent: "center" }} onPaste={handlePaste}>
+      {digits.map((d, i) => (
+        <input
+          key={i}
+          ref={(el) => (inputsRef.current[i] = el)}
+          type="text"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          maxLength={1}
+          value={d}
+          disabled={disabled}
+          autoFocus={autoFocus && i === 0}
+          onChange={(e) => handleChange(i, e.target.value)}
+          onKeyDown={(e) => handleKeyDown(i, e)}
+          className="form-control"
+          style={{
+            width: 46,
+            height: 54,
+            padding: 0,
+            textAlign: "center",
+            fontSize: 20,
+            fontWeight: 700,
+            borderRadius: 10,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Resend cooldown timer for the Send/Resend OTP button.
+function useResendCooldown(seconds = 30) {
+  const [remaining, setRemaining] = useState(0);
+  useEffect(() => {
+    if (remaining <= 0) return;
+    const t = setInterval(() => setRemaining((r) => Math.max(0, r - 1)), 1000);
+    return () => clearInterval(t);
+  }, [remaining]);
+  return [remaining, () => setRemaining(seconds)];
+}
 
 export default function LoginPage() {
   const showToast = useToast();
@@ -18,6 +94,7 @@ export default function LoginPage() {
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [resendCooldown, startResendCooldown] = useResendCooldown(30);
 
   const dispatch = useDispatch();
   const router = useRouter();
@@ -35,8 +112,15 @@ export default function LoginPage() {
 
   // Detect input type
   const isEmail = input.includes("@");
-  const isMobile = /^\d{10}$/.test(input.replace(/\D/g, ""));
-  const normalizedMobile = input.replace(/\D/g, "").slice(-10);
+  const digitsOnly = input.replace(/\D/g, "");
+  const isMobile = /^\d{10}$/.test(digitsOnly);
+  const normalizedMobile = digitsOnly;
+
+  // Icon shown inside the field: purely about what's typed so far (numbers
+  // vs letters), independent of full validation — so it updates the instant
+  // the user starts typing a digit or a letter.
+  const looksLikePhone =
+    input.trim().length > 0 && /^[\d\s+()-]+$/.test(input.trim());
 
   const isInputValid = isEmail
     ? input.includes("@") && input.includes(".")
@@ -49,7 +133,7 @@ export default function LoginPage() {
       setError("");
 
       const response = await sendOtp({
-        identifier: input,
+        identifier: isMobile ? digitsOnly : input,
         countryCode: isMobile ? "+91" : null,
         userType: "Both",
       });
@@ -60,6 +144,7 @@ export default function LoginPage() {
       }
 
       setOtpSent(true);
+      startResendCooldown();
 
       showToast(
         response.data.message,
@@ -83,7 +168,7 @@ export default function LoginPage() {
 
     try {
       const response = await verifyOtp({
-        identifier: input,
+        identifier: isMobile ? digitsOnly : input,
         countryCode: isMobile ? "+91" : null,
         otpCode: otp,
         userType: "Both",
@@ -341,7 +426,8 @@ const handleLinkedInLogin = () => {
                 marginBottom: 10,
               }}
             >
-              SkillBridge
+              <img src="assets/imgs/template/logo.svg"/>
+
             </div>
 
             <h1
@@ -403,22 +489,68 @@ const handleLinkedInLogin = () => {
                 <span style={{ color: "#E24B4A" }}> *</span>
               </label>
 
-              <input
-                className="form-control"
-                value={input}
-                onChange={(e) => {
-                  setInput(e.target.value);
-                  setError("");
-                }}
-                placeholder="Enter email or mobile"
-                style={{
-                  height: 54,
-                  borderRadius: 10,
-                  border: "1px solid var(--color-border-secondary)",
-                  fontSize: 14,
-                  padding: "0 16px",
-                }}
-              />
+              <div style={{ position: "relative" }}>
+                <i
+                  className={looksLikePhone ? "fi-rr-phone-call" : "fi-rr-envelope"}
+                  aria-hidden="true"
+                  style={{
+                    position: "absolute",
+                    left: 16,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    fontSize: 15,
+                    color: "var(--color-text-tertiary)",
+                    pointerEvents: "none",
+                  }}
+                />
+                <input
+                  className="form-control"
+                  value={input}
+                  disabled={otpSent}
+                  onChange={(e) => {
+                    setInput(e.target.value);
+                    setError("");
+                  }}
+                  placeholder="Enter email or mobile"
+                  style={{
+                    width: "100%",
+                    height: 54,
+                    borderRadius: 10,
+                    border: `1px solid ${
+                      input
+                        ? isInputValid
+                          ? "#3B6D11"
+                          : "var(--color-border-secondary)"
+                        : "var(--color-border-secondary)"
+                    }`,
+                    fontSize: 14,
+                    padding: "0 42px 0 42px",
+                    background: otpSent ? "#f7f7f7" : "#ffffff",
+                  }}
+                />
+                {input && isInputValid && (
+                    <span
+                      style={{
+                        position: "absolute",
+                        right: 14,
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        width: 20,
+                        height: 20,
+                        borderRadius: "50%",
+                        background: "#3B6D11",
+                        color: "#fff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 11,
+                        fontWeight: 700,
+                      }}
+                    >
+                      ✓
+                    </span>
+                  )}
+                </div>
 
               <small
                 style={{
@@ -441,34 +573,69 @@ const handleLinkedInLogin = () => {
               <button
                 type="button"
                 onClick={handleSendOtp}
-                disabled={!isInputValid || loading || otpSent}
+                disabled={
+                  !isInputValid || loading || (otpSent && resendCooldown > 0)
+                }
                 style={{
                   width: "100%",
                   height: 52,
                   borderRadius: 10,
                   border: "1px solid #ff9900",
-                  background: otpSent ? "#f7f7f7" : "#ffffff",
-                  color: "#ff9900",
+                  background:
+                    otpSent && resendCooldown > 0 ? "#f7f7f7" : "#ffffff",
+                  color: otpSent && resendCooldown > 0 ? "#b9884d" : "#ff9900",
                   fontWeight: 700,
                   fontSize: 14,
-                  cursor: "pointer",
+                  cursor:
+                    otpSent && resendCooldown > 0 ? "not-allowed" : "pointer",
                   transition: "all 0.25s ease",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
                 }}
                 onMouseEnter={(e) => {
-                  if (!otpSent) {
+                  if (!(otpSent && resendCooldown > 0)) {
                     e.target.style.background = "#ff9900";
                     e.target.style.color = "#fff";
                   }
                 }}
                 onMouseLeave={(e) => {
-                  if (!otpSent) {
+                  if (!(otpSent && resendCooldown > 0)) {
                     e.target.style.background = "#fff";
                     e.target.style.color = "#ff9900";
                   }
                 }}
               >
-                {otpSent ? "OTP Sent" : "Send OTP"}
+                {loading && (
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      width: 16,
+                      height: 16,
+                      borderRadius: "50%",
+                      border: "2px solid currentColor",
+                      borderTopColor: "transparent",
+                      display: "inline-block",
+                      animation: "loginOtpSpin 0.7s linear infinite",
+                    }}
+                  />
+                )}
+                {loading
+                  ? "Sending…"
+                  : !otpSent
+                    ? "Send OTP"
+                    : resendCooldown > 0
+                      ? `Resend OTP in ${resendCooldown}s`
+                      : "Resend OTP"}
               </button>
+              <style jsx>{`
+                @keyframes loginOtpSpin {
+                  to {
+                    transform: rotate(360deg);
+                  }
+                }
+              `}</style>
             </div>
 
             {/* OTP */}
@@ -485,26 +652,18 @@ const handleLinkedInLogin = () => {
                 >
                   Enter OTP
                 </label>
-
-                <input
-                  className="form-control"
-                  type="text"
-                  maxLength="6"
-                  value={otp}
-                  onChange={(e) =>
-                    setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
-                  }
-                  placeholder="123456"
+                <p
                   style={{
-                    height: 54,
-                    borderRadius: 10,
-                    border: "1px solid var(--color-border-secondary)",
-                    textAlign: "center",
-                    letterSpacing: 4,
-                    fontWeight: 700,
-                    fontSize: 18,
+                    fontSize: 12,
+                    color: "var(--color-text-tertiary)",
+                    marginTop: -2,
+                    marginBottom: 12,
                   }}
-                />
+                >
+                  Sent to {isMobile ? `+91 ${input}` : input}
+                </p>
+
+                <OtpDigitsInput value={otp} onChange={setOtp} autoFocus />
               </div>
             )}
 

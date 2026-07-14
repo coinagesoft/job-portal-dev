@@ -335,7 +335,7 @@ const Card = ({ children, style = {} }) => (
 );
 
 // ─── Step Progress Bar ────────────────────────────────────────────────────────
-const StepBar = ({ current }) => (
+const StepBar = ({ current, onStepClick }) => (
   <div
     style={{
       display: "flex",
@@ -349,15 +349,28 @@ const StepBar = ({ current }) => (
       const n = i + 1;
       const done = n < current;
       const active = n === current;
+      const clickable = typeof onStepClick === "function";
       return (
         <React.Fragment key={step.id}>
           <div
+            onClick={clickable ? () => onStepClick(n) : undefined}
+            role={clickable ? "button" : undefined}
+            tabIndex={clickable ? 0 : undefined}
+            onKeyDown={
+              clickable
+                ? (e) => {
+                    if (e.key === "Enter" || e.key === " ") onStepClick(n);
+                  }
+                : undefined
+            }
+            title={clickable ? `Go to ${step.label}` : undefined}
             style={{
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               gap: 6,
               minWidth: 64,
+              cursor: clickable ? "pointer" : "default",
             }}
           >
             <div
@@ -446,7 +459,7 @@ const StepPersonal = ({
       storeProfilePhotoPreview(previewUrl);
       onChange("avatar", previewUrl);
 
-      console.log("Selected file:", file);
+      // console.log("Selected file:", file);
 
       await onPhotoUpload(file, previewUrl);
     };
@@ -513,7 +526,7 @@ const StepPersonal = ({
             type="file"
             id="avatar-upload"
             onChange={handleAvatar}
-            accept="image/jpeg,image/png,image/jpg"
+            accept="image/*"
             style={{ display: "none" }}
           />
           <label
@@ -852,6 +865,24 @@ const StepPersonal = ({
 };
 
 // ─── STEP 3 — Work Experience ─────────────────────────────────────────────────
+// Pulls a 4-digit year (19xx/20xx) out of the free-text "Year / Details"
+// field (e.g. "Passed: 2014 | Cert No: ITI/2014" or just "2021") so it can
+// be saved as the actual passoutYear the employer-facing profile displays.
+const extractYear = (text) => {
+  const match = String(text || "").match(/\b(19|20)\d{2}\b/);
+  return match ? Number(match[0]) : 0;
+};
+
+const NOTICE_PERIOD_OPTIONS = [
+  "Immediate",
+  "15 Days",
+  "30 Days",
+  "45 Days",
+  "60 Days",
+  "90 Days",
+  "More than 90 Days",
+];
+
 const StepWork = ({ data, onUpdate, onAdd, onRemove }) => {
   const [showForm, setShowForm] = useState(false);
 
@@ -1015,13 +1046,19 @@ const StepWork = ({ data, onUpdate, onAdd, onRemove }) => {
 
               {entry.current && (
                 <Field label="Notice Period" required>
-                  <Inp
+                  <Sel
                     value={entry.noticePeriod || ""}
                     onChange={(e) =>
                       onUpdate(entry.id, "noticePeriod", e.target.value)
                     }
-                    placeholder="e.g. Immediate, 15 Days, 30 Days"
-                  />
+                  >
+                    <option value="">Select notice period…</option>
+                    {NOTICE_PERIOD_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </Sel>
                 </Field>
               )}
               <div style={{ marginBottom: 12 }}>
@@ -1181,7 +1218,7 @@ const StepWork = ({ data, onUpdate, onAdd, onRemove }) => {
           </div>
           {newEntry.current && (
             <Field label="Notice Period" required>
-              <Inp
+              <Sel
                 value={newEntry.noticePeriod || ""}
                 onChange={(e) =>
                   setNewEntry((p) => ({
@@ -1189,8 +1226,14 @@ const StepWork = ({ data, onUpdate, onAdd, onRemove }) => {
                     noticePeriod: e.target.value,
                   }))
                 }
-                placeholder="e.g. Immediate, 15 Days, 30 Days"
-              />
+              >
+                <option value="">Select notice period…</option>
+                {NOTICE_PERIOD_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </Sel>
             </Field>
           )}
 
@@ -1892,13 +1935,11 @@ const PROF_LEVELS = ["Beginner", "Conversational", "Professional", "Native"];
 
 const StepLanguages = ({ data, onAdd, onRemove, onUpdate }) => {
   const [newLang, setNewLang] = useState("");
-  const [newProf, setNewProf] = useState("Conversational");
-
   const handleAdd = () => {
     if (!newLang) return;
     onAdd({
       name: newLang,
-      proficiency: newProf,
+      proficiency: "Conversational",
       reading: true,
       writing: true,
       speaking: true,
@@ -1937,18 +1978,7 @@ const StepLanguages = ({ data, onAdd, onRemove, onUpdate }) => {
             >
               {lang.name}
             </span>
-            <Sel
-              value={lang.proficiency}
-              onChange={(e) =>
-                onUpdate(lang.name, "proficiency", e.target.value)
-              }
-              style={{ flex: 1, height: 40 }}
-            >
-              {PROF_LEVELS.map((p) => (
-                <option key={p}>{p}</option>
-              ))}
-            </Sel>
-            <div style={{ display: "flex", gap: 12 }}>
+            <div style={{ display: "flex", gap: 12, flex: 1 }}>
               {["reading", "writing", "speaking"].map((skill) => (
                 <label
                   key={skill}
@@ -2027,17 +2057,6 @@ const StepLanguages = ({ data, onAdd, onRemove, onUpdate }) => {
               ))}
             </Sel>
           </div>
-          <div style={{ flex: 1 }}>
-            <Sel
-              value={newProf}
-              onChange={(e) => setNewProf(e.target.value)}
-              style={{ height: 44 }}
-            >
-              {PROF_LEVELS.map((p) => (
-                <option key={p}>{p}</option>
-              ))}
-            </Sel>
-          </div>
           <Btn
             onClick={handleAdd}
             disabled={!newLang}
@@ -2053,80 +2072,272 @@ const StepLanguages = ({ data, onAdd, onRemove, onUpdate }) => {
 };
 
 // ─── Completion Summary (final step done) ────────────────────────────────────
-const CompletionSummary = ({ percent, onEdit, router }) => (
-  <div style={{ textAlign: "center", padding: "40px 20px" }}>
+const CompletionSummary = ({
+  completion,
+  onEdit,
+  router,
+}) => {
+  const percent = completion?.overallPct || 0;
+
+  const completedItems =
+    completion?.items?.filter((item) => item.completed) || [];
+
+  const pendingItems =
+    completion?.items?.filter((item) => !item.completed) || [];
+
+  return (
     <div
       style={{
-        width: 96,
-        height: 96,
-        borderRadius: "50%",
-        background: T.successBg,
-        border: `3px solid ${T.success}`,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: 40,
-        margin: "0 auto 20px",
+        maxWidth: 700,
+        margin: "0 auto",
+        padding: "30px 20px",
       }}
     >
-      <i className="fi-rr-check" aria-hidden="true" style={{ lineHeight: 1 }} />
-    </div>
-    <h3 style={{ color: T.navy, margin: "0 0 8px" }}>Profile Complete!</h3>
-    <p style={{ color: T.muted, fontSize: 14, margin: "0 0 24px" }}>
-      Your profile is {percent}% complete. Employers can now find you.
-    </p>
-    <div
-      style={{
-        background: T.bg,
-        borderRadius: 12,
-        padding: "16px 24px",
-        display: "inline-block",
-        marginBottom: 28,
-      }}
-    >
-      <div style={{ fontSize: 13, color: T.muted, marginBottom: 6 }}>
-        Profile Strength
+      {/* Success Icon */}
+      <div style={{ textAlign: "center" }}>
+        <div
+          style={{
+            width: 90,
+            height: 90,
+            borderRadius: "50%",
+            background: "#EAF7EC",
+            border: "3px solid #4CAF50",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            margin: "0 auto 20px",
+            fontSize: 36,
+            color: "#4CAF50",
+          }}
+        >
+          ✓
+        </div>
+
+        <h2
+          style={{
+            color: "#122359",
+            marginBottom: 10,
+          }}
+        >
+          Profile Completion
+        </h2>
+
+        <p
+          style={{
+            color: "#66789C",
+            marginBottom: 30,
+          }}
+        >
+          Your profile is{" "}
+          <strong style={{ color: "#FFA300" }}>
+            {percent}% complete
+          </strong>
+        </p>
       </div>
+
+      {/* Progress Card */}
       <div
         style={{
-          height: 8,
-          background: T.border,
-          borderRadius: 4,
-          width: 220,
-          overflow: "hidden",
+          background: "#fff",
+          border: "1px solid #E8ECF0",
+          borderRadius: 16,
+          padding: 24,
+          marginBottom: 24,
+          boxShadow: "0 8px 24px rgba(18,35,89,.05)",
         }}
       >
         <div
           style={{
-            height: "100%",
-            width: `${percent}%`,
-            background: T.orange,
-            borderRadius: 4,
-            transition: "width .5s",
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: 12,
+            fontWeight: 600,
           }}
-        />
+        >
+          <span>Profile Strength</span>
+
+          <span style={{ color: "#FFA300" }}>
+            {percent}%
+          </span>
+        </div>
+
+        <div
+          style={{
+            height: 10,
+            background: "#EEF2F6",
+            borderRadius: 20,
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              width: `${percent}%`,
+              height: "100%",
+              background: "#FFA300",
+              borderRadius: 20,
+            }}
+          />
+        </div>
       </div>
+
+      {/* Checklist */}
       <div
-        style={{ fontSize: 13, fontWeight: 700, color: T.orange, marginTop: 6 }}
+        style={{
+          background: "#fff",
+          borderRadius: 16,
+          border: "1px solid #E8ECF0",
+          padding: 24,
+          boxShadow: "0 8px 24px rgba(18,35,89,.05)",
+        }}
       >
-        {percent}%
+        <h4
+          style={{
+            marginBottom: 20,
+            color: "#122359",
+          }}
+        >
+          Complete Your Profile
+        </h4>
+
+        {completedItems.map((item) => (
+          <div
+            key={item.key}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "12px 0",
+              borderBottom: "1px solid #F3F4F6",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              <div
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: "50%",
+                  background: "#EAF7EC",
+                  color: "#28A745",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 700,
+                }}
+              >
+                ✓
+              </div>
+
+              <span>{item.label}</span>
+            </div>
+
+            <span
+              style={{
+                color: "#28A745",
+                fontWeight: 600,
+                fontSize: 13,
+              }}
+            >
+              Completed
+            </span>
+          </div>
+        ))}
+
+        {pendingItems.map((item) => (
+          <div
+            key={item.key}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "12px 0",
+              borderBottom: "1px solid #F3F4F6",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              <div
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: "50%",
+                  background: "#FFF5E8",
+                  color: "#FFA300",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 700,
+                }}
+              >
+                !
+              </div>
+
+              <div>
+                <div
+                  style={{
+                    fontWeight: 600,
+                  }}
+                >
+                  {item.label}
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 13,
+                    color: "#66789C",
+                  }}
+                >
+                  {item.actionHint}
+                </div>
+              </div>
+            </div>
+
+            <button
+              style={{
+                border: "none",
+                background: "#FFF5E8",
+                color: "#FFA300",
+                padding: "8px 16px",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              Complete
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          gap: 15,
+          marginTop: 30,
+        }}
+      >
+        <Btn variant="outline" onClick={onEdit}>
+          Edit Profile
+        </Btn>
+
+        <Btn onClick={() => router.push("/jobs-list")}>
+          Browse Jobs
+        </Btn>
       </div>
     </div>
-    <div>
-      <Btn onClick={onEdit} variant="outline" style={{ marginRight: 12 }}>
-        Edit Profile
-      </Btn>
-      <Btn style={{ color: T.white }} onClick={() => router.push("/jobs-list")}>
-        <span style={{ color: T.white }}>Browse Jobs</span>
-        <i
-          className="fi-rr-arrow-small-right"
-          aria-hidden="true"
-          style={{ color: T.white }}
-        />
-      </Btn>
-    </div>
-  </div>
-);
+  );
+};
 
 // ─── Profile Sidebar (progress overview) ─────────────────────────────────────
 const ProfileMini = ({ data, percent, currentStep, onJump }) => (
@@ -2548,12 +2759,12 @@ const loadAvailability = useCallback(async () => {
         `/api/candidate/profile/personal-info?candidateId=${candidateId}`,
       );
 
-      console.log("PROFILE DATA", response.data);
+      // console.log("PROFILE DATA", response.data);
 
       if (response.data.success) {
         const profile = response.data.data;
         const country = COUNTRY_MAP[profile.countryCode] || "IN";
-        console.log("profilePhotoUrl =", profile.profilePhotoUrl);
+        // console.log("profilePhotoUrl =", profile.profilePhotoUrl);
         const names = profile.fullName ? profile.fullName.split(" ") : [];
         const personalInfoData = {
           firstName: names[0] || "",
@@ -2605,12 +2816,12 @@ const loadAvailability = useCallback(async () => {
   ? buildProfilePhotoUrl(profile.profilePhotoUrl)
   : DEFAULT_PROFILE_PHOTO,
         }));
-        console.log(
-          "Final Avatar URL:",
-          profile.profilePhotoUrl
-            ? buildProfilePhotoUrl(profile.profilePhotoUrl)
-            : "default-image",
-        );
+        // console.log(
+        //   "Final Avatar URL:",
+        //   profile.profilePhotoUrl
+        //     ? buildProfilePhotoUrl(profile.profilePhotoUrl)
+        //     : "default-image",
+        // );
       }
     } catch (error) {
       console.error("Failed to load profile", error);
@@ -2618,7 +2829,7 @@ const loadAvailability = useCallback(async () => {
   }, [candidateId]);
 
   useEffect(() => {
-    console.log("API URL =", process.env.NEXT_PUBLIC_API_URL);
+    // console.log("API URL =", process.env.NEXT_PUBLIC_API_URL);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadPersonalInfo();
     loadAvailability();
@@ -2627,7 +2838,7 @@ const loadAvailability = useCallback(async () => {
   //Update profile data to API
 
   const savePersonalInfo = async () => {
-    console.log("Candidate ID:", candidateId);
+    // console.log("Candidate ID:", candidateId);
     if (!candidateId) {
       showToast("Please log in again to save your profile.", "error");
       return false;
@@ -2689,7 +2900,7 @@ const loadAvailability = useCallback(async () => {
       currentlyAvailableForWork: profileData.availableForWork,
       newsletterOptIn: false,
     };
-    console.log("Sending Payload:", currentPersonalInfo);
+    // console.log("Sending Payload:", currentPersonalInfo);
     try {
       await updatePersonalInfo(currentPersonalInfo);
 
@@ -2703,16 +2914,16 @@ const loadAvailability = useCallback(async () => {
 
       return false;
     }
-    console.log("SENDING DATA:", currentPersonalInfo);
+    // console.log("SENDING DATA:", currentPersonalInfo);
     const personalChanged =
       JSON.stringify(currentPersonalInfo) !==
       JSON.stringify(initialPersonalInfo);
 
     try {
       let savedMessage = "Profile saved successfully";
-      console.log("Current:", currentPersonalInfo);
-      console.log("Initial:", initialPersonalInfo);
-      console.log("Changed:", personalChanged);
+      // console.log("Current:", currentPersonalInfo);
+      // console.log("Initial:", initialPersonalInfo);
+      // console.log("Changed:", personalChanged);
 
       if (!personalChanged) {
         await updateAvailability({
@@ -2764,16 +2975,16 @@ const loadAvailability = useCallback(async () => {
 
         showToast(savedMessage, "success");
 
-        console.log("Profile Completion:", response.data.profileCompletionPct);
+        // console.log("Profile Completion:", response.data.profileCompletionPct);
 
         return true; // <-- ADD THIS
       }
 
       return false; // <-- ADD THIS
     } catch (error) {
-      console.log("STATUS:", error.response?.status);
-      console.log("ERROR DATA:", error.response?.data);
-      console.log("PAYLOAD:", payload);
+      // console.log("STATUS:", error.response?.status);
+      // console.log("ERROR DATA:", error.response?.data);
+      // console.log("PAYLOAD:", payload);
 
       console.error("Failed to update profile", error);
 
@@ -3083,7 +3294,7 @@ const loadAvailability = useCallback(async () => {
           instituteName: education.institution,
           yearDetails: education.meta,
           isAiVerified: education.verified || false,
-          passoutYear: Number(education.passoutYear) || 0,
+          passoutYear: extractYear(education.meta),
           certificateNumber: education.certificateNumber || "",
         },
       );
@@ -3104,18 +3315,11 @@ const loadAvailability = useCallback(async () => {
       instituteName: entry.institution,
       yearDetails: entry.meta,
       isAiVerified: false,
-      passoutYear: 0,
+      passoutYear: extractYear(entry.meta),
       certificateNumber: "",
     };
     try {
-      await createEducation({
-        qualificationDegree: entry.title,
-        instituteName: entry.institution,
-        yearDetails: entry.meta,
-        isAiVerified: false,
-        passoutYear: 0,
-        certificateNumber: "",
-      });
+      await createEducation(payload);
 
       await loadEducation();
 
@@ -3393,11 +3597,11 @@ const loadAvailability = useCallback(async () => {
   }, []);
 
 const handleAvailabilityChange = async (checked) => {
-  console.log("Sending:", {
-    availabilityStatus: checked
-      ? "Open_To_Opportunities"
-      : "Not_Available",
-  });
+  // console.log("Sending:", {
+  //   availabilityStatus: checked
+  //     ? "Open_To_Opportunities"
+  //     : "Not_Available",
+  // });
 
   await updateAvailability({
     availabilityStatus: checked
@@ -3475,13 +3679,13 @@ const handleAvailabilityChange = async (checked) => {
   );
 
   const handleSaveStep = async () => {
-    console.log("Current Step:", currentStep);
+    // console.log("Current Step:", currentStep);
     if (currentStep === 1) {
       const saved = await savePersonalInfo();
-      console.log("savePersonalInfo returned:", saved);
+      // console.log("savePersonalInfo returned:", saved);
 
       if (!saved) {
-        console.log("NOT MOVING TO NEXT STEP");
+        // console.log("NOT MOVING TO NEXT STEP");
         return;
       }
     }
@@ -3603,7 +3807,7 @@ const handleAvailabilityChange = async (checked) => {
     try {
       const response = await getDocuments();
 
-      console.log("DOCUMENTS:", response.data);
+      // console.log("DOCUMENTS:", response.data);
 
       if (response.data.success) {
         const docs = response.data.data;
@@ -3794,7 +3998,10 @@ const handleAvailabilityChange = async (checked) => {
                     borderBottom: `1px solid ${T.border}`,
                   }}
                 >
-                  <StepBar current={done ? TOTAL + 1 : currentStep} />
+                  <StepBar
+                    current={done ? TOTAL + 1 : currentStep}
+                    onStepClick={done ? undefined : (n) => setCurrentStep(n)}
+                  />
                 </div>
 
                 {/* Content area */}
@@ -3808,6 +4015,7 @@ const handleAvailabilityChange = async (checked) => {
                         setDone(false);
                         setCurrentStep(1);
                       }}
+                      completion={profileCompletion}
                       router={router}
                     />
                   ) : (

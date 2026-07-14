@@ -1,7 +1,9 @@
 ﻿"use client";
 import React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { getAllJobs } from "@/services/candidate/allJobsService";
+
 
 const COMPANY_RELATED_TAGS = new Set([
   "Verified Employer",
@@ -25,11 +27,15 @@ const getJobDetailsHref = (jobId) =>
   jobId ? `/job-details?jobId=${jobId}` : "/job-details";
 
 const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) => {
+  const router = useRouter();
   const tags = toSafeTags(job.skills);
   const companyTagsFromData = toSafeTags(job.companyTags);
   const jobTagsFromData = toSafeTags(job.jobTags);
   const derivedCompanyBadge = COMPANY_BADGE_BY_POSTED_BY[job.postedBy];
+  const isConfidential = job.companyVisibility === "HideName";
 
+  console.log(job.companyVisibility);
+  console.log(job);
   const companyTags =
     companyTagsFromData.length > 0
       ? companyTagsFromData
@@ -44,17 +50,55 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) 
     jobTagsFromData.length > 0
       ? jobTagsFromData
       : tags.filter((tag) => !COMPANY_RELATED_TAGS.has(tag));
+// console.log("job =", job);
+// console.log("companyVisibility =", job.companyVisibility);
+// console.log("isConfidential =", job.companyVisibility === "HideName");
 
+const getDisplaySalary = (salaryRange, salaryVisibility) => {
+  if (!salaryRange) return "";
+
+  switch (salaryVisibility) {
+    case "Show Range":
+    case "Show_Range":
+      return salaryRange;
+
+    case "Show Min Only":
+      return salaryRange.includes("-")
+        ? salaryRange.split("-")[0].trim()
+        : salaryRange;
+
+    case "Show Max Only":
+      return salaryRange.includes("-")
+        ? salaryRange.split("-")[1].trim()
+        : salaryRange;
+
+    case "Negotiable":
+      return "Negotiable";
+
+    default:
+      return salaryRange;
+  }
+};
   return (
     <>
       <div
         className="card-grid-2 hover-up"
+        onClick={() => router.push(getJobDetailsHref(job.jobId))}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            router.push(getJobDetailsHref(job.jobId));
+          }
+        }}
         style={{
           border: "1px solid rgba(18, 35, 89, 0.08)",
           borderRadius: "24px",
           overflow: "hidden",
           transition: "all 0.35s ease",
           background: "#ffffff",
+          cursor: "pointer",
           boxShadow:
             "0 4px 14px rgba(18,35,89,0.04)",
         }}
@@ -83,26 +127,96 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) 
           <div className="col-lg-6 col-md-6 col-sm-12">
             <div className="card-grid-2-image-left">
               <div className="image-box">
-                <img style={{
-                  width: "52px",
-                  height: "52px",
-                  overflow: "hidden",
-                  objectFit: "cover", borderRadius: "8px",
-                }}
-                  src={job.companyLogoUrl || "/assets/imgs/brands/brand-10.png"}
+                <img
+                  style={{
+                    width: "54px",
+                    height: "54px",
+                    objectFit: "contain",
+                    background: "#fff",
+                    borderRadius: "8px",
+                    padding: "4px",
+                  }}
+                  src={
+                    isConfidential
+                      ? "/assets/imgs/page/job-single/industry.svg"
+                      : job.companyLogoUrl || "/assets/imgs/brands/brand-10.png"
+                  }
                   alt="jobBox"
                 />
               </div>
               <div className="right-info">
-                <Link className="name-job" href={`/company-details?employerId=${job.employerId}`}>
-                  {job.companyName}
-                </Link>
-                <span
-                  className="location-small"
-                  style={{ whiteSpace: "nowrap" }}
+                {isConfidential ? (
+                  <span
+                    className="name-job"
+                    style={{
+                      cursor: "default",
+                      pointerEvents: "none",
+                      textDecoration: "none",
+                      color: "inherit",
+                    }}
+                  >
+                    Confidential Company
+                  </span>
+                ) : (
+                  <Link
+                    className="name-job"
+                    href={`/company-details?employerId=${job.employerId}`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {job.companyName}
+                  </Link>
+                )}
+
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    flexWrap: "wrap",
+                    marginTop: "3px",
+                  }}
                 >
-                  {job.companyLocation}
-                </span>
+                  <span
+                    // className="location-small"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      color: "#98A2B3",
+                    }}
+                  >
+                    <i
+                      className="fi-rr-marker"
+                      style={{
+                        fontSize: "11px",
+                        // color: "#A0ABB8",
+                        color: "#98A2B3",
+                      }}
+                    ></i>
+
+                    {job.jobLocation}
+                  </span>
+
+                  <span
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      fontSize: "12px",
+                      color: "#98A2B3",
+                      fontWeight: 500,
+                    }}
+                  >
+                    <i
+                      className="fi-rr-clock"
+                      style={{
+                        fontSize: "11px",
+                      }}
+                    ></i>
+
+                    {job.timeAgo || "Recently Posted"}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -172,43 +286,46 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) 
                 lineHeight: 1.3,
               }}
             >
-              <Link href={getJobDetailsHref(job.jobId)}>
+              <Link
+                href={getJobDetailsHref(job.jobId)}
+                onClick={(e) => e.stopPropagation()}
+              >
                 {job.jobTitle}
               </Link>
             </h4>
 
             {/* AI MATCH (only when a real per-candidate score exists) */}
             {job.aiMatchPercentage != null && (
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-                padding: "6px 14px",
-                borderRadius: 999,
-                background:
-                  "linear-gradient(135deg, #fff4df 0%, #ffe7ba 100%)",
-                border:
-                  "1px solid rgba(255, 163, 0, 0.22)",
-                color: "#ff9900",
-                fontSize: 12,
-                fontWeight: 700,
-                width: "fit-content",
-                boxShadow:
-                  "0 6px 16px rgba(255,153,0,0.08)",
-              }}
-            >
-              <i
-                className="fa-solid fa-wand-magic-sparkles"
+              <div
                 style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                  padding: "6px 14px",
+                  borderRadius: 999,
+                  background:
+                    "linear-gradient(135deg, #fff4df 0%, #ffe7ba 100%)",
+                  border:
+                    "1px solid rgba(255, 163, 0, 0.22)",
+                  color: "#ff9900",
                   fontSize: 12,
-                  lineHeight: 1,
+                  fontWeight: 700,
+                  width: "fit-content",
+                  boxShadow:
+                    "0 6px 16px rgba(255,153,0,0.08)",
                 }}
-              ></i>
+              >
+                <i
+                  className="fa-solid fa-wand-magic-sparkles"
+                  style={{
+                    fontSize: 12,
+                    lineHeight: 1,
+                  }}
+                ></i>
 
-              AI Match: {job.aiMatchPercentage}%
-            </div>
+                AI Match: {job.aiMatchPercentage}%
+              </div>
             )}
           </div>
           <div className="mt-5" style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
@@ -281,9 +398,7 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) 
               </span>
             )}
 
-            <span className="card-time">
-              {job.timeAgo || "Recently Posted"}
-            </span>
+
           </div>
           <p className="font-sm color-text-paragraph mt-10">{job.description}</p>
           {viewMode === "list" && (
@@ -328,9 +443,9 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) 
           <div className="card-2-bottom mt-20">
             <div className="row">
               <div className="col-lg-7 col-7">
-                <span className="card-text-price">
-                  {job.salaryRange}
-                </span>
+              <span className="card-text-price">
+  {getDisplaySalary(job.salaryRange, job.salaryVisibility)}
+</span>
               </div>
               <div className="col-lg-5 col-5 text-end">
                 {isApplied ? (
@@ -353,7 +468,10 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) 
                     type="button"
                     className="btn btn-apply-now"
                     style={{ color: "#ffffff" }}
-                    onClick={() => onApplyNow?.(job)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onApplyNow?.(job);
+                    }}
                   >
                     Apply now
                   </button>

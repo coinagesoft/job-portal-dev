@@ -2,45 +2,46 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useToast } from "@/components/Toast";
+import styles from "./applicants.module.css";
 import {
   getApplicantsDashboard,
   getApplicants,
   getApplicantDetail,
   moveToReview,
   shortlistApplicant,
-  scheduleInterview,
   rejectApplicant,
   hireApplicant,
+  getScreeningAnswers,
   addNote,
   getNotes,
 } from "@/services/recruiter/recruiterApplicantsService";
 import { getWallet } from "@/services/recruiter/recruiterCreditWalletService";
-import { getJobStats } from "@/services/recruiter/recruiterJobListService";
+
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 const screeningFilters = [
-  { label: "Experience 3+ years", isActive: true, toneClass: "is-success" },
-  { label: "Relocation ready", isActive: false, toneClass: "is-info" },
-  { label: "Notice period <= 30 days", isActive: false, toneClass: "is-brand" },
-  { label: "Mandatory answers complete", isActive: false, toneClass: "is-warning" },
+  { label: "Experience 3+ years" },
+  { label: "Relocation ready" },
+  { label: "Notice period <= 30 days" },
+  { label: "Mandatory answers complete" },
 ];
 
-const STATUS_DISPLAY = {
-  Applied:     { label: "Applied",     statusClass: "is-applied" },
-  InReview:    { label: "In Review",   statusClass: "is-viewed" },
-  Shortlisted: { label: "Shortlisted", statusClass: "is-shortlisted" },
-  Interview:   { label: "Interview",   statusClass: "is-shortlisted" },
-  Hired:       { label: "Hired",       statusClass: "is-success" },
-  Rejected:    { label: "Rejected",    statusClass: "is-rejected" },
-  Withdrawn:   { label: "Withdrawn",   statusClass: "is-muted" },
+/* Status badge colors — mirrors the job-list status-pill treatment */
+const STATUS_BADGE = {
+  Applied:     { label: "Applied",     bg: "#EAF4FF", color: "#1D4ED8" },
+  InReview:    { label: "In Review",   bg: "#FEF3C7", color: "#92400E" },
+  Shortlisted: { label: "Shortlisted", bg: "#DCFCE7", color: "#166534" },
+  Interview:   { label: "Interview",   bg: "#EDE9FE", color: "#6D28D9" },
+  Hired:       { label: "Hired",       bg: "#CCFBF1", color: "#0F766E" },
+  Rejected:    { label: "Rejected",    bg: "#FEE2E2", color: "#B91C1C" },
+  Withdrawn:   { label: "Withdrawn",   bg: "#E5E7EB", color: "#374151" },
 };
 
 const STATUS_OPTIONS = [
   { value: "InReview",    label: "In Review" },
   { value: "Shortlisted", label: "Shortlisted" },
-  { value: "Interview",   label: "Schedule Interview" },
   { value: "Hired",       label: "Hired" },
   { value: "Rejected",    label: "Rejected" },
 ];
@@ -55,32 +56,59 @@ const formatDate = (iso) => {
 };
 
 /**
- * Build the three badge slots that match the static UI exactly:
- *  slot 1 → trade / certification tag  (is-brand)
- *  slot 2 → unlock / shortlist status  (is-info)
- *  slot 3 → experience badge           (is-success)
+ * Build the profile tags for a card: trade, unlock/shortlist status, experience.
  */
 function buildProfileTags(applicant) {
   const tags = [];
 
-  if (applicant.primaryTrade) {
-    tags.push({ label: applicant.primaryTrade, toneClass: "is-brand" });
-  }
+  if (applicant.primaryTrade) tags.push(applicant.primaryTrade);
 
-  if (applicant.isUnlocked) {
-    tags.push({ label: "Profile Unlocked", toneClass: "is-info" });
-  } else if (applicant.cvDownloaded) {
-    tags.push({ label: "CV Downloaded", toneClass: "is-info" });
-  } else if (applicant.isShortlisted) {
-    tags.push({ label: "Shortlisted", toneClass: "is-info" });
-  }
+  if (applicant.isUnlocked) tags.push("Profile Unlocked");
+  else if (applicant.cvDownloaded) tags.push("CV Downloaded");
+  else if (applicant.isShortlisted) tags.push("Shortlisted");
 
-  if (applicant.experienceYears > 0) {
-    tags.push({ label: `${applicant.experienceYears} yrs exp`, toneClass: "is-success" });
-  }
+  if (applicant.experienceYears > 0) tags.push(`${applicant.experienceYears} yrs exp`);
 
   return tags;
 }
+
+/* ─── Reusable pill tag (matches Job List page) ─────────────────────── */
+const Tag = ({ label }) => {
+  const handleEnter = (e) => {
+    e.currentTarget.style.background = "#1D4ED8";
+    e.currentTarget.style.color = "#fff";
+    e.currentTarget.style.transform = "translateY(-2px)";
+    e.currentTarget.style.boxShadow = "0 6px 14px rgba(29,78,216,0.18)";
+  };
+  const handleLeave = (e) => {
+    e.currentTarget.style.background = "#EAF4FF";
+    e.currentTarget.style.color = "#1D4ED8";
+    e.currentTarget.style.transform = "translateY(0)";
+    e.currentTarget.style.boxShadow = "none";
+  };
+  return (
+    <span
+      onMouseEnter={handleEnter}
+      onMouseLeave={handleLeave}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        padding: "5px 12px",
+        borderRadius: 999,
+        background: "#EAF4FF",
+        border: "1px solid #B9DCFF",
+        color: "#1D4ED8",
+        fontSize: 11,
+        fontWeight: 600,
+        lineHeight: 1,
+        cursor: "default",
+        transition: "all 0.25s ease",
+      }}
+    >
+      {label}
+    </span>
+  );
+};
 
 /* ─── Modal ─────────────────────────────────────────────── */
 const Modal = ({ title, onClose, children }) => (
@@ -138,17 +166,23 @@ const EmployerApplicantsClient = () => {
   // Modals
   const [statusPopup, setStatusPopup]       = useState(null);
   const [selectedStatus, setSelectedStatus] = useState("");
-  const [interviewDate, setInterviewDate]   = useState("");
   const [rejectReason, setRejectReason]     = useState("");
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [statusNote, setStatusNote]         = useState("");
+  const [existingNotes, setExistingNotes]   = useState([]);
+  const [notesLoading, setNotesLoading]     = useState(false);
 
   const [detailPopup, setDetailPopup] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
-  const [notesPopup, setNotesPopup] = useState(null);
-  const [notes, setNotes]           = useState([]);
-  const [noteText, setNoteText]     = useState("");
-  const [savingNote, setSavingNote] = useState(false);
+  const [screeningPopup, setScreeningPopup]   = useState(null);
+  const [screeningLoading, setScreeningLoading] = useState(false);
+
+  // Kebab action menu (matches Job List page pattern)
+  const [openMenu, setOpenMenu] = useState(null);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+  const menuButtonRefs = useRef({});
+  const menuRef = useRef(null);
 
   /* ── Load ── */
   const loadData = useCallback(async (status, search, page) => {
@@ -173,6 +207,32 @@ const EmployerApplicantsClient = () => {
 
   useEffect(() => { loadData(activeStatus, searchText, pageNumber); }, [activeStatus, pageNumber, jobId]);
 
+  /* ── Close kebab menu on outside click / scroll / resize ── */
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!openMenu) return;
+      const clickedButton = Object.values(menuButtonRefs.current).some(
+        (btn) => btn && btn.contains(e.target)
+      );
+      if (clickedButton) return;
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpenMenu(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [openMenu]);
+
+  useEffect(() => {
+    const closeMenu = () => setOpenMenu(null);
+    window.addEventListener("scroll", closeMenu, true);
+    window.addEventListener("resize", closeMenu);
+    return () => {
+      window.removeEventListener("scroll", closeMenu, true);
+      window.removeEventListener("resize", closeMenu);
+    };
+  }, []);
+
   /* ── Status tabs ── */
   const statusTabs = dashboard ? [
     { label: "All",         count: dashboard.totalApplicants, value: "" },
@@ -189,17 +249,23 @@ const EmployerApplicantsClient = () => {
     if (!statusPopup || !selectedStatus) return;
     setUpdatingStatus(true);
     try {
-      if      (selectedStatus === "InReview")    await moveToReview(statusPopup.applicationId);
-      else if (selectedStatus === "Shortlisted") await shortlistApplicant(statusPopup.applicationId);
-      else if (selectedStatus === "Interview") {
-        if (!interviewDate) { showToast("Please pick an interview date.", "warning"); setUpdatingStatus(false); return; }
-        await scheduleInterview(statusPopup.applicationId, new Date(interviewDate).toISOString());
-      }
-      else if (selectedStatus === "Rejected")    await rejectApplicant(statusPopup.applicationId, rejectReason);
-      else if (selectedStatus === "Hired")       await hireApplicant(statusPopup.applicationId);
+      if      (selectedStatus === "InReview")    await moveToReview(statusPopup.applicationId, statusNote.trim());
+      else if (selectedStatus === "Shortlisted") await shortlistApplicant(statusPopup.applicationId, statusNote.trim());
+      else if (selectedStatus === "Rejected")    await rejectApplicant(statusPopup.applicationId, rejectReason, statusNote.trim());
+      else if (selectedStatus === "Hired")       await hireApplicant(statusPopup.applicationId, statusNote.trim());
 
-      showToast(`Status updated to: ${STATUS_DISPLAY[selectedStatus]?.label || selectedStatus}`, "success");
-      setStatusPopup(null); setInterviewDate(""); setRejectReason("");
+      // Optional note — only sent if the employer actually typed one.
+      if (statusNote.trim()) {
+        try {
+          await addNote(statusPopup.applicationId, statusNote.trim());
+        } catch (noteErr) {
+          console.error(noteErr);
+          showToast("Status updated, but the note could not be saved.", "warning");
+        }
+      }
+
+      showToast(`Status updated to: ${STATUS_BADGE[selectedStatus]?.label || selectedStatus}`, "success");
+      setStatusPopup(null); setRejectReason(""); setStatusNote(""); setExistingNotes([]);
       loadData(activeStatus, searchText, pageNumber);
     } catch (err) {
       console.error(err);
@@ -229,20 +295,32 @@ const EmployerApplicantsClient = () => {
     finally   { setDetailLoading(false); }
   };
 
-  /* ── Notes ── */
-  const handleOpenNotes = async (applicant) => {
-    setNotesPopup(applicant); setNoteText(""); setNotes([]);
-    try { const res = await getNotes(applicant.applicationId); setNotes(res || []); } catch { setNotes([]); }
-  };
-  const handleAddNote = async () => {
-    if (!noteText.trim() || !notesPopup) return;
-    setSavingNote(true);
+  /* ── Answered Questions ── */
+  const handleViewScreening = async (applicant) => {
+    setScreeningLoading(true);
     try {
-      await addNote(notesPopup.applicationId, noteText.trim());
-      showToast("Note saved.", "success"); setNoteText("");
-      const res = await getNotes(notesPopup.applicationId); setNotes(res || []);
-    } catch { showToast("Failed to save note.", "error"); }
-    finally   { setSavingNote(false); }
+      const res = await getScreeningAnswers(applicant.applicationId);
+      setScreeningPopup({
+        candidateName: applicant.candidateName,
+        jobTitle: res.jobTitle || applicant.jobTitle,
+        screening: res.screening || [],
+      });
+    } catch (err) {
+      console.error(err);
+      showToast("Could not load screening answers.", "error");
+    } finally {
+      setScreeningLoading(false);
+    }
+  };
+
+  /* ── Kebab menu ── */
+  const openActionMenu = (applicant) => {
+    if (openMenu === applicant.applicationId) { setOpenMenu(null); return; }
+    const btn = menuButtonRefs.current[applicant.applicationId];
+    if (!btn) { setOpenMenu(null); return; }
+    const rect = btn.getBoundingClientRect();
+    setMenuPosition({ top: rect.bottom + 8, left: rect.left - 190 });
+    setOpenMenu(applicant.applicationId);
   };
 
   /* ── Search ── */
@@ -252,102 +330,199 @@ const EmployerApplicantsClient = () => {
   };
 
   const totalPages = Math.ceil(totalRecords / PAGE_SIZE);
+  const menuApplicant = applicantList.find((a) => a.applicationId === openMenu) || null;
 
   /* ════════════════════════════════════════════════════════ */
+  if (loading && applicantList.length === 0 && !dashboard) {
+    return <div className="container py-5">Loading applicants...</div>;
+  }
+
   return (
-    <main className="main employer-applicants-page">
+    <main className="main">
       <section className="section-box mt-50 mb-50">
         <div className="container">
           <div className="content-page">
 
-            {/* ── Credit balance banner ── */}
-            <div className="ea-credit-banner">
-              <span className="ea-credit-icon"><i className="fi fi-rr-credit-card" /></span>
-              <span className="ea-credit-text">
-                <strong>{credits !== null ? credits : "—"}</strong> CV download credit
-                {credits === 1 ? "" : "s"} remaining
-                <span className="ea-credit-sub"> · 1 credit per CV download</span>
-              </span>
-              <Link href="/employeer/buy-credits" className="ea-btn ea-btn-ghost ea-btn-xs">
-                <i className="fi fi-rr-plus" /> Buy credits
-              </Link>
-            </div>
-
-            {/* ── Page header ── */}
-            <div className="ea-header">
+            {/* ── Header (matches Job List page) ── */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 28,
+                flexWrap: "wrap",
+                gap: 14,
+              }}
+            >
               <div>
-                <h3>Applicants</h3>
-                <span className="ea-sub">
+                <h3 style={{ color: "#122359", fontWeight: 800, marginBottom: 6 }}>
+                  Applicants
+                </h3>
+                <span className="font-sm color-text-paragraph-2">
                   {totalRecords} applicant{totalRecords !== 1 ? "s" : ""}
                   {jobId ? " for this job" : " across all jobs"}
                 </span>
               </div>
-              <Link className="ea-btn ea-btn-ghost" href="/employeer/job-list">
-                <i className="fi fi-rr-arrow-left" /> Back to job list
+              <Link
+                className="btn btn-default"
+                href="/employeer/job-list"
+                style={{
+                  borderRadius: 12,
+                  fontWeight: 700,
+                  boxShadow: "0 8px 20px rgba(255,163,0,0.18)",
+                }}
+              >
+                <i className="fi-rr-arrow-left" style={{ marginRight: 7 }} />
+                Back to Job List
+              </Link>
+            </div>
+
+            {/* ── Credit balance banner ── */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                padding: "14px 20px",
+                marginBottom: 20,
+                background: "#fff",
+                border: "1px solid rgba(18,35,89,0.08)",
+                borderRadius: 18,
+              }}
+            >
+              <span
+                style={{
+                  width: 38, height: 38, flexShrink: 0,
+                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                  borderRadius: 12,
+                  background: "linear-gradient(135deg,#122359,#1e3a8a)",
+                  color: "#ffa300", fontSize: 16,
+                }}
+              >
+                <i className="fi-rr-credit-card" />
+              </span>
+              <span style={{ fontSize: 13, color: "#66789c" }}>
+                <strong style={{ color: "#122359", fontSize: 14 }}>
+                  {credits !== null ? credits : "—"}
+                </strong>{" "}
+                CV download credit{credits === 1 ? "" : "s"} remaining
+                <span style={{ color: "#94a3b8" }}> · 1 credit per CV download</span>
+              </span>
+              <Link
+                href="/employeer/buy-credits"
+                className="btn btn-border btn-sm"
+                style={{ marginLeft: "auto", borderRadius: 10, fontWeight: 700 }}
+              >
+                <i className="fi-rr-plus" style={{ marginRight: 5 }} /> Buy credits
               </Link>
             </div>
 
             {/* ── Job filter banner (when arriving from Job List) ── */}
             {jobId && (
-              <div className="ea-jobfilter">
-                <span className="ea-jobfilter-icon"><i className="fi fi-rr-filter" /></span>
-                <span className="ea-jobfilter-text">
-                  Showing applicants for <strong>{jobTitleFromUrl || "selected job"}</strong>
+              <div
+                style={{
+                  display: "flex", alignItems: "center", flexWrap: "wrap", gap: 12,
+                  padding: "14px 20px", marginBottom: 20,
+                  background: "#EAF4FF", border: "1px solid #B9DCFF", borderRadius: 18,
+                }}
+              >
+                <span
+                  style={{
+                    width: 34, height: 34, flexShrink: 0,
+                    display: "inline-flex", alignItems: "center", justifyContent: "center",
+                    borderRadius: 10, background: "#dde9ff", color: "#1D4ED8", fontSize: 14,
+                  }}
+                >
+                  <i className="fi-rr-filter" />
                 </span>
-                <Link href="/employeer/applicants" className="ea-btn ea-btn-ghost ea-btn-xs">
-                  <i className="fi fi-rr-cross-small" /> View all applicants
+                <span style={{ fontWeight: 600, color: "#122359", fontSize: 14 }}>
+                  Showing applicants for <strong style={{ color: "#1D4ED8" }}>{jobTitleFromUrl || "selected job"}</strong>
+                </span>
+                <Link
+                  href="/employeer/applicants"
+                  className="btn btn-border btn-sm"
+                  style={{ marginLeft: "auto", borderRadius: 10, fontWeight: 700 }}
+                >
+                  <i className="fi-rr-cross-small" style={{ marginRight: 5 }} /> View all applicants
                 </Link>
               </div>
             )}
 
-            {/* ── Status tabs ── */}
-            <div className="ea-card ea-tabs" role="tablist" aria-label="Filter by status">
+            {/* ── Status filter tabs (matches Job List page style) ── */}
+            <div className="candidate-status-filter mb-30">
               {statusTabs.map((tab) => (
                 <button
                   key={tab.label}
-                  role="tab"
-                  aria-selected={activeStatus === tab.value}
-                  className={`ea-tab ${activeStatus === tab.value ? "is-active" : ""}`}
+                  className={`candidate-status-filter-btn${activeStatus === tab.value ? " active" : ""}`}
                   type="button"
                   onClick={() => { setActiveStatus(tab.value); setPageNumber(1); }}
                 >
                   <span>{tab.label}</span>
-                  <span className="ea-count">{tab.count}</span>
+                  <span className="candidate-status-filter-count">{tab.count}</span>
                 </button>
               ))}
             </div>
 
             {/* ── Search + quick filters toolbar ── */}
-            <div className="ea-card ea-toolbar">
-              <form onSubmit={handleSearch} className="ea-toolbar-row">
-                <div className="ea-search">
-                  <i className="fi fi-rr-search" />
+            <div
+              style={{
+                background: "#fff",
+                border: "1px solid rgba(18,35,89,0.08)",
+                borderRadius: 24,
+                padding: "20px 24px",
+                marginBottom: 24,
+              }}
+            >
+              <form onSubmit={handleSearch} style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                <div style={{ position: "relative", flex: "1 1 320px" }}>
+                  <i
+                    className="fi-rr-search"
+                    style={{
+                      position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)",
+                      color: "#94a3b8", fontSize: 14, pointerEvents: "none",
+                    }}
+                  />
                   <input
                     placeholder="Search by name, trade, or city…"
                     value={searchText}
                     onChange={(e) => setSearchText(e.target.value)}
                     aria-label="Search applicants"
+                    style={{
+                      width: "100%", height: 44, border: "1px solid rgba(18,35,89,0.14)",
+                      borderRadius: 12, padding: "0 14px 0 38px", fontSize: 14, color: "#122359",
+                    }}
                   />
                 </div>
-                <button className="ea-btn ea-btn-primary" type="submit">
-                  <i className="fi fi-rr-search" /> Search
+                <button className="btn btn-default btn-sm" type="submit" style={{ borderRadius: 10, fontWeight: 700 }}>
+                  <i className="fi-rr-search" style={{ marginRight: 5 }} /> Search
                 </button>
                 <button
-                  className="ea-btn ea-btn-ghost"
+                  className="btn btn-border btn-sm"
                   type="button"
+                  style={{ borderRadius: 10, fontWeight: 700 }}
                   onClick={() => { setSearchText(""); setActiveStatus(""); setPageNumber(1); loadData("", "", 1); showToast("Filters reset.", "info"); }}
                 >
-                  <i className="fi fi-rr-refresh" /> Reset
+                  <i className="fi-rr-refresh" style={{ marginRight: 5 }} /> Reset
                 </button>
               </form>
 
-              <div className="ea-chips">
-                <span className="ea-chips-label">Quick filters</span>
+              <div
+                style={{
+                  display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8,
+                  marginTop: 16, paddingTop: 16, borderTop: "1px dashed rgba(18,35,89,0.10)",
+                }}
+              >
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#66789c", textTransform: "uppercase", letterSpacing: "0.4px", marginRight: 4 }}>
+                  Quick filters
+                </span>
                 {screeningFilters.map((filter) => (
                   <button
                     key={filter.label}
                     type="button"
-                    className={`ea-chip ${filter.isActive ? "is-active" : ""}`}
+                    style={{
+                      border: "1px solid rgba(18,35,89,0.12)", background: "#fff", color: "#4f5e64",
+                      borderRadius: 999, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                    }}
                   >
                     {filter.label}
                   </button>
@@ -366,140 +541,230 @@ const EmployerApplicantsClient = () => {
 
             {/* ── Empty state ── */}
             {!loading && applicantList.length === 0 && (
-              <div className="ea-card ea-empty">
-                <span className="ea-empty-icon"><i className="fi fi-rr-inbox" /></span>
-                <h6>No applicants found</h6>
-                <p>{jobId ? "No one has applied to this job yet, or none match your filters." : "Try clearing your filters or search."}</p>
+              <div
+                style={{
+                  background: "#fff", border: "1px solid rgba(18,35,89,0.08)", borderRadius: 24,
+                  padding: "48px 24px", textAlign: "center",
+                }}
+              >
+                <span
+                  style={{
+                    width: 64, height: 64, margin: "0 auto 14px",
+                    display: "inline-flex", alignItems: "center", justifyContent: "center",
+                    borderRadius: 18, background: "#f1f4fb", color: "#9aa7c2", fontSize: 26,
+                  }}
+                >
+                  <i className="fi-rr-inbox" />
+                </span>
+                <h6 style={{ color: "#122359", fontWeight: 800, margin: "0 0 6px" }}>No applicants found</h6>
+                <p style={{ color: "#66789c", fontSize: 14, margin: 0 }}>
+                  {jobId ? "No one has applied to this job yet, or none match your filters." : "Try clearing your filters or search."}
+                </p>
               </div>
             )}
 
-            {/* ── Applicant cards ── */}
+            {/* ── Applicant cards (matches Job List page card style) ── */}
             {!loading && applicantList.length > 0 && (
-              <div className="box-list-jobs display-list">
+              <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
                 {applicantList.map((applicant) => {
-                  const statusInfo   = STATUS_DISPLAY[applicant.applicationStatus] || { label: applicant.applicationStatus, statusClass: "is-applied" };
-                  const profileTags  = buildProfileTags(applicant);
+                  const statusInfo  = STATUS_BADGE[applicant.applicationStatus] || { label: applicant.applicationStatus, bg: "#E5E7EB", color: "#374151" };
+                  const profileTags = buildProfileTags(applicant);
 
                   return (
-                    <div className="col-xl-12 col-12" key={applicant.applicationId}>
-                      <div className="card-grid-2 hover-up employer-applicant-card">
-                        <div className="card-block-info pt-20">
-                          <div className="row">
+                    <div
+                      key={applicant.applicationId}
+                      className="subuser-hover-card"
+                      style={{ background: "#fff", borderRadius: 24, position: "relative", zIndex: 1 }}
+                    >
+                      <div style={{ padding: "24px 28px" }}>
+                        <div style={{ display: "flex", gap: 24, flexWrap: "wrap", alignItems: "flex-start" }}>
 
-                            {/* ── Left: candidate info ── */}
-                            <div className="col-lg-8 col-md-12 col-sm-12">
-                              <div className="card-grid-2-image-left">
-                                <div className="image-box">
-                                  <img
-                                    src="/assets/imgs/page/candidates/candidate-profile.png"
-                                    alt={applicant.candidateName}
-                                  />
-                                </div>
-                                <div className="right-info">
-                                  <Link className="name-job" href={`/employeer/candidate-profile/${applicant.candidateId}`}>
-                                    {applicant.candidateName}
-                                  </Link>
+                          {/* ── Left: candidate icon + info ── */}
+                          <div style={{ display: "flex", gap: 18, flex: 1, minWidth: 280 }}>
+                            <div
+                              style={{
+                                width: 54, height: 54, borderRadius: 16, flexShrink: 0,
+                                background: "linear-gradient(135deg,#122359,#1e3a8a)",
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                color: "#ffa300", fontSize: 22,
+                              }}
+                            >
+                              <i className="fi-rr-user" />
+                            </div>
 
-                                  <span className="location-small">
-                                    {[
-                                      applicant.primaryTrade,
-                                      applicant.experienceYears ? `${applicant.experienceYears} yrs` : null,
-                                      applicant.currentCity,
-                                      applicant.appliedAt ? `Applied ${formatDate(applicant.appliedAt)}` : null,
-                                    ].filter(Boolean).join(" · ")}
+                            <div style={{ flex: 1 }}>
+                              {/* Title row */}
+                              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 5 }}>
+                                <Link
+                                  href={`/employeer/candidate-profile/${applicant.candidateId}`}
+                                  style={{ margin: 0, color: "#122359", fontWeight: 800, fontSize: 17, textDecoration: "none" }}
+                                >
+                                  {applicant.candidateName}
+                                </Link>
+
+                                <span
+                                  style={{
+                                    display: "inline-flex", alignItems: "center", padding: "4px 10px",
+                                    borderRadius: 999, background: statusInfo.bg, color: statusInfo.color,
+                                    fontSize: 11, fontWeight: 700,
+                                  }}
+                                >
+                                  {statusInfo.label}
+                                </span>
+                              </div>
+
+                              {/* Meta */}
+                              <p style={{ margin: "0 0 12px", color: "#66789c", fontSize: 13 }}>
+                                {[applicant.primaryTrade, applicant.experienceYears ? `${applicant.experienceYears} yrs experience` : null]
+                                  .filter(Boolean).join(" · ")}
+                              </p>
+
+                              {/* Info row */}
+                              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 20px", marginBottom: 14 }}>
+                                <span style={{ fontSize: 12, color: "#94a3b8", display: "flex", alignItems: "center", gap: 5 }}>
+                                  <i className="fi-rr-briefcase" style={{ color: "#ffa300" }} />
+                                  {applicant.jobTitle}
+                                </span>
+
+                                {applicant.currentCity && (
+                                  <span style={{ fontSize: 12, color: "#94a3b8", display: "flex", alignItems: "center", gap: 5 }}>
+                                    <i className="fi-rr-marker" style={{ color: "#ffa300" }} />
+                                    {[applicant.currentCity, applicant.currentState].filter(Boolean).join(", ")}
                                   </span>
+                                )}
 
-                                  <div className="ea-jobline">
-                                    <i className="fi fi-rr-briefcase" />
-                                    <span>{applicant.jobTitle}</span>
-                                  </div>
+                                {applicant.appliedAt && (
+                                  <span style={{ fontSize: 12, color: "#94a3b8", display: "flex", alignItems: "center", gap: 5 }}>
+                                    <i className="fi-rr-clock" style={{ color: "#ffa300" }} />
+                                    Applied {formatDate(applicant.appliedAt)}
+                                  </span>
+                                )}
+                              </div>
 
-                                  {/* ── Badge row ── */}
-                                  <div className="employer-applicants-tag-row mt-10">
-                                    {applicant.experienceYears >= 3 && (
-                                      <span className="employer-applicants-tag is-success"
-                                        style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                                        <i className="fi fi-rr-star" style={{ fontSize: "10px" }}></i>
-                                        {applicant.experienceYears}+ yrs
-                                      </span>
-                                    )}
-                                    {profileTags.map((tag) => (
-                                      <span key={tag.label} className={`employer-applicants-tag ${tag.toneClass}`}>
-                                        {tag.label}
-                                      </span>
-                                    ))}
-                                  </div>
-
-                                  {/* ── Location pills ── */}
-                                  {(applicant.currentCity || applicant.currentState) && (
-                                    <div className="ea-location-row">
-                                      <span className="ea-location-label">Location</span>
-                                      {applicant.currentCity && (
-                                        <span className="certificate-pill">{applicant.currentCity}</span>
-                                      )}
-                                      {applicant.currentState && (
-                                        <span className="certificate-pill">{applicant.currentState}</span>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
+                              {/* Tags */}
+                              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                                {profileTags.map((label) => <Tag key={label} label={label} />)}
                               </div>
                             </div>
-
-                            {/* ── Right: status + actions ── */}
-                            <div className="col-lg-4 col-md-12 col-sm-12 ea-right-col">
-                              <span className={`employer-applicants-status ${statusInfo.statusClass}`}>
-                                {statusInfo.label}
-                              </span>
-
-                              <div className="ea-actions">
-                                <button className="btn btn-default btn-sm" type="button"
-                                  onClick={() => {
-                                    setStatusPopup(applicant);
-                                    setSelectedStatus(applicant.applicationStatus);
-                                    setInterviewDate(""); setRejectReason("");
-                                  }}>
-                                  <i className="fi fi-rr-refresh" /> Change status
-                                </button>
-
-                                <button className="btn btn-border btn-sm" type="button"
-                                  onClick={() => handleDownloadCV(applicant)}>
-                                  <i className="fi fi-rr-download" /> Download CV
-                                </button>
-
-                                <button className="btn btn-border btn-sm" type="button"
-                                  onClick={() => handleViewDetail(applicant.applicationId)}
-                                  disabled={detailLoading}>
-                                  <i className="fi fi-rr-eye" /> {detailLoading ? "Loading…" : "View details"}
-                                </button>
-
-                                <button className="btn btn-border btn-sm" type="button"
-                                  onClick={() => handleOpenNotes(applicant)}>
-                                  <i className="fi fi-rr-comment-alt" /> Notes
-                                </button>
-                              </div>
-                            </div>
-
                           </div>
+
+                          {/* ── Right: kebab action menu ── */}
+                          <div style={{ position: "relative" }}>
+                            <button
+                              ref={(el) => (menuButtonRefs.current[applicant.applicationId] = el)}
+                              onClick={() => openActionMenu(applicant)}
+                              style={{
+                                width: 44, height: 44, borderRadius: 14,
+                                border: "1px solid #E5E7EB", background: "#fff",
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                cursor: "pointer", boxShadow: "0 4px 12px rgba(18,35,89,.08)",
+                                transition: ".25s",
+                              }}
+                              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#FFA300"; e.currentTarget.style.background = "#FFF8EC"; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#E5E7EB"; e.currentTarget.style.background = "#fff"; }}
+                            >
+                              <i className="fi-rr-menu-dots-vertical" style={{ fontSize: 18, color: "#122359" }} />
+                            </button>
+                          </div>
+
                         </div>
                       </div>
                     </div>
                   );
                 })}
+
+                {/* ── Floating action menu (shared, positioned per open card) ── */}
+                {openMenu && menuApplicant && (
+                  <div
+                    ref={menuRef}
+                    style={{
+                      position: "fixed",
+                      top: menuPosition.top,
+                      left: menuPosition.left,
+                      width: 240,
+                      background: "#fff",
+                      borderRadius: 18,
+                      border: "1px solid #EEF2F7",
+                      boxShadow: "0 24px 50px rgba(18,35,89,.14)",
+                      overflow: "hidden",
+                      zIndex: 999999,
+                    }}
+                  >
+                    <button
+                      className={styles.dropdownItem}
+                      onClick={async () => {
+                        setStatusPopup(menuApplicant);
+                        setSelectedStatus(menuApplicant.applicationStatus);
+                        setRejectReason(""); setStatusNote("");
+                        setOpenMenu(null);
+
+                        setExistingNotes([]);
+                        setNotesLoading(true);
+                        try {
+                          const res = await getNotes(menuApplicant.applicationId);
+                          setExistingNotes(res?.notes || []);
+                        } catch (err) {
+                          console.error(err);
+                        } finally {
+                          setNotesLoading(false);
+                        }
+                      }}
+                    >
+                      <i className="fi-rr-refresh" />
+                      <span>Change Status</span>
+                    </button>
+
+                    <button
+                      className={styles.dropdownItem}
+                      onClick={() => { handleDownloadCV(menuApplicant); setOpenMenu(null); }}
+                    >
+                      <i className="fi-rr-download" />
+                      <span>Download CV</span>
+                    </button>
+
+                    <button
+                      className={styles.dropdownItem}
+                      disabled={detailLoading}
+                      onClick={() => { handleViewDetail(menuApplicant.applicationId); setOpenMenu(null); }}
+                    >
+                      <i className="fi-rr-eye" />
+                      <span>{detailLoading ? "Loading…" : "View Details"}</span>
+                    </button>
+
+                    <button
+                      className={styles.dropdownItem}
+                      disabled={screeningLoading}
+                      onClick={() => { handleViewScreening(menuApplicant); setOpenMenu(null); }}
+                    >
+                      <i className="fi-rr-list-check" />
+                      <span>{screeningLoading ? "Loading…" : "Answered Questions"}</span>
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
             {/* ── Pagination ── */}
             {!loading && totalPages > 1 && (
-              <div className="ea-pagination">
-                <button className="ea-btn ea-btn-ghost ea-btn-sm" disabled={pageNumber <= 1}
-                  onClick={() => setPageNumber((p) => p - 1)}>
-                  <i className="fi fi-rr-angle-left" /> Prev
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, marginTop: 24 }}>
+                <button
+                  className="btn btn-border btn-sm"
+                  style={{ borderRadius: 10, fontWeight: 700 }}
+                  disabled={pageNumber <= 1}
+                  onClick={() => setPageNumber((p) => p - 1)}
+                >
+                  <i className="fi-rr-angle-left" style={{ marginRight: 5 }} /> Prev
                 </button>
-                <span className="ea-page-info">Page {pageNumber} of {totalPages}</span>
-                <button className="ea-btn ea-btn-ghost ea-btn-sm" disabled={pageNumber >= totalPages}
-                  onClick={() => setPageNumber((p) => p + 1)}>
-                  Next <i className="fi fi-rr-angle-right" />
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#66789c" }}>
+                  Page {pageNumber} of {totalPages}
+                </span>
+                <button
+                  className="btn btn-border btn-sm"
+                  style={{ borderRadius: 10, fontWeight: 700 }}
+                  disabled={pageNumber >= totalPages}
+                  onClick={() => setPageNumber((p) => p + 1)}
+                >
+                  Next <i className="fi-rr-angle-right" style={{ marginLeft: 5 }} />
                 </button>
               </div>
             )}
@@ -524,7 +789,7 @@ const EmployerApplicantsClient = () => {
               {detailPopup.workHistories.map((w, i) => (
                 <div key={i} style={{ fontSize: "13px", marginBottom: "6px", color: "#374151", padding: "6px 0", borderBottom: "1px solid #f3f4f6" }}>
                   <strong>{w.jobTitle}</strong> at {w.companyName}
-                  {w.isOffshore ? <span className="employer-applicants-tag is-info" style={{ marginLeft: "6px", fontSize: "11px" }}>Offshore</span> : null}
+                  {w.isOffshore ? <span style={{ marginLeft: 6, fontSize: 11, display: "inline-flex", alignItems: "center", padding: "2px 8px", borderRadius: 999, background: "#EAF4FF", color: "#1D4ED8" }}>Offshore</span> : null}
                   <span style={{ color: "#6b7280", display: "block", fontSize: "12px", marginTop: "2px" }}>
                     {w.workLocation} &nbsp;·&nbsp;
                     {w.startDate ? formatDate(w.startDate) : ""} → {w.isCurrent ? "Present" : w.endDate ? formatDate(w.endDate) : ""}
@@ -539,9 +804,7 @@ const EmployerApplicantsClient = () => {
               <p style={{ fontWeight: 600, fontSize: "13px", marginBottom: "8px", color: "#374151" }}>Skills & Languages</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                 {detailPopup.skills.map((s, i) => (
-                  <span key={i} className="employer-applicants-tag is-brand">
-                    {s.skillName}{s.yearsOfExperience ? ` (${s.yearsOfExperience}y)` : ""}
-                  </span>
+                  <Tag key={i} label={`${s.skillName}${s.yearsOfExperience ? ` (${s.yearsOfExperience}y)` : ""}`} />
                 ))}
               </div>
             </div>
@@ -587,28 +850,21 @@ const EmployerApplicantsClient = () => {
 
       {/* ══ Change Status Modal ══ */}
       {statusPopup && (
-        <Modal title={`Change Status — ${statusPopup.candidateName}`} onClose={() => setStatusPopup(null)}>
+        <Modal
+          title={`Change Status — ${statusPopup.candidateName}`}
+          onClose={() => { setStatusPopup(null); setStatusNote(""); setExistingNotes([]); }}
+        >
           <div style={{ marginBottom: "16px" }}>
             <label style={{ fontSize: "13px", fontWeight: 600, color: "#374151", marginBottom: "8px", display: "block" }}>
               Select new status:
             </label>
             <select className="form-control" value={selectedStatus}
-              onChange={(e) => { setSelectedStatus(e.target.value); setInterviewDate(""); setRejectReason(""); }}>
+              onChange={(e) => { setSelectedStatus(e.target.value); setRejectReason(""); }}>
               {STATUS_OPTIONS.map((s) => (
                 <option key={s.value} value={s.value}>{s.label}</option>
               ))}
             </select>
           </div>
-
-          {selectedStatus === "Interview" && (
-            <div style={{ marginBottom: "16px" }}>
-              <label style={{ fontSize: "13px", fontWeight: 600, color: "#374151", marginBottom: "8px", display: "block" }}>
-                Interview Date & Time:
-              </label>
-              <input type="datetime-local" className="form-control" value={interviewDate}
-                onChange={(e) => setInterviewDate(e.target.value)} />
-            </div>
-          )}
 
           {selectedStatus === "Rejected" && (
             <div style={{ marginBottom: "16px" }}>
@@ -620,8 +876,65 @@ const EmployerApplicantsClient = () => {
             </div>
           )}
 
+          {existingNotes.length > 0 && (
+            <div style={{ marginBottom: "16px" }}>
+              <label style={{ fontSize: "13px", fontWeight: 600, color: "#374151", marginBottom: "8px", display: "block" }}>
+                Previous notes:
+              </label>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "8px",
+                  maxHeight: "160px",
+                  overflowY: "auto",
+                }}
+              >
+                {existingNotes.map((n, i) => (
+                  <div
+                    key={n.recruiterNoteId || i}
+                    style={{
+                      background: "#f9fafb",
+                      border: "1px solid #f3f4f6",
+                      borderRadius: "10px",
+                      padding: "10px 12px",
+                    }}
+                  >
+                    <p style={{ margin: 0, fontSize: "13px", color: "#374151" }}>
+                      {n.noteText}
+                    </p>
+                    {n.createdAt && (
+                      <p style={{ margin: "4px 0 0", fontSize: "11px", color: "#9ca3af" }}>
+                        {formatDate(n.createdAt)}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {notesLoading && (
+            <p style={{ fontSize: "12px", color: "#9ca3af", marginBottom: "16px" }}>
+              Loading previous notes…
+            </p>
+          )}
+
+          <div style={{ marginBottom: "16px" }}>
+            <label style={{ fontSize: "13px", fontWeight: 600, color: "#374151", marginBottom: "8px", display: "block" }}>
+              Add a note (optional):
+            </label>
+            <textarea
+              className="form-control"
+              rows={3}
+              placeholder="e.g. Strong communication skills, follow up next week…"
+              value={statusNote}
+              onChange={(e) => setStatusNote(e.target.value)}
+            />
+          </div>
+
           <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
-            <button className="btn btn-border btn-sm" onClick={() => setStatusPopup(null)}>Cancel</button>
+            <button className="btn btn-border btn-sm" onClick={() => { setStatusPopup(null); setStatusNote(""); setExistingNotes([]); }}>Cancel</button>
             <button className="btn btn-default btn-sm" onClick={handleStatusUpdate} disabled={updatingStatus}>
               {updatingStatus ? "Updating…" : "Update Status"}
             </button>
@@ -629,211 +942,54 @@ const EmployerApplicantsClient = () => {
         </Modal>
       )}
 
-      {/* ══ Notes Modal ══ */}
-      {notesPopup && (
-        <Modal title={`Notes — ${notesPopup.candidateName}`} onClose={() => { setNotesPopup(null); setNotes([]); }}>
-          <div style={{ marginBottom: "16px", maxHeight: "200px", overflowY: "auto" }}>
-            {notes.length === 0 && <p className="font-sm color-text-paragraph-2">No notes yet.</p>}
-            {notes.map((n, i) => (
-              <div key={i} style={{ marginBottom: "10px", padding: "8px 10px", background: "#f9fafb", borderRadius: "6px", fontSize: "13px" }}>
-                <p style={{ margin: 0, color: "#374151" }}>{n.noteText || n.text || JSON.stringify(n)}</p>
-                {n.createdAt && <span style={{ fontSize: "11px", color: "#9ca3af" }}>{formatDate(n.createdAt)}</span>}
-              </div>
-            ))}
-          </div>
-          <div style={{ display: "flex", gap: "8px" }}>
-            <input type="text" className="form-control" placeholder="Add a note…"
-              value={noteText} onChange={(e) => setNoteText(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleAddNote()} />
-            <button className="btn btn-default btn-sm" onClick={handleAddNote} disabled={savingNote || !noteText.trim()}>
-              {savingNote ? "…" : "Save"}
+      {/* ══ Answered Questions Modal ══ */}
+      {screeningPopup && (
+        <Modal
+          title={`Answered Questions — ${screeningPopup.candidateName}`}
+          onClose={() => setScreeningPopup(null)}
+        >
+          {screeningPopup.jobTitle && (
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginBottom: "14px", fontSize: 12, color: "#4f5e64", fontWeight: 600 }}>
+              <i className="fi fi-rr-briefcase" style={{ color: "#ff9900" }} />
+              <span>{screeningPopup.jobTitle}</span>
+            </div>
+          )}
+
+          {screeningPopup.screening.length === 0 ? (
+            <p className="font-sm color-text-paragraph-2">
+              No screening questions were answered for this application.
+            </p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              {screeningPopup.screening.map((qa, i) => (
+                <div
+                  key={i}
+                  style={{
+                    padding: "12px 14px",
+                    background: "#f9fafb",
+                    borderRadius: "10px",
+                    border: "1px solid #f0f1f5",
+                  }}
+                >
+                  <p style={{ margin: "0 0 6px", fontSize: "13px", fontWeight: 700, color: "#122359" }}>
+                    Q{i + 1}. {qa.question}
+                  </p>
+                  <p style={{ margin: 0, fontSize: "13px", color: "#374151" }}>
+                    <span style={{ fontWeight: 600, color: "#66789c" }}>Answer: </span>
+                    {qa.answer && qa.answer.trim() ? qa.answer : <em style={{ color: "#9ca3af" }}>Not answered</em>}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "18px" }}>
+            <button className="btn btn-border btn-sm" onClick={() => setScreeningPopup(null)}>
+              Close
             </button>
           </div>
         </Modal>
       )}
-
-      {/* ══ Scoped styles — match Jobbox theme (navy #122359 / gold #ffa300) ══ */}
-      <style jsx>{`
-        /* Credit banner */
-        .ea-credit-banner {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 12px 18px;
-          margin-bottom: 20px;
-          background: #fffaf0;
-          border: 1px solid #ffe2a8;
-          border-radius: 14px;
-        }
-        .ea-credit-icon {
-          width: 34px; height: 34px; flex-shrink: 0;
-          display: inline-flex; align-items: center; justify-content: center;
-          border-radius: 10px; background: #fff1d6; color: #ff9900; font-size: 15px;
-        }
-        .ea-credit-text { font-size: 13px; color: #6b4e12; }
-        .ea-credit-text strong { color: #122359; font-size: 14px; }
-        .ea-credit-sub { color: #9a8350; }
-
-        /* Header */
-        .ea-header {
-          display: flex; align-items: flex-end; justify-content: space-between;
-          gap: 16px; flex-wrap: wrap; margin-bottom: 18px;
-        }
-        .ea-header :global(h3) { color: #122359; font-weight: 800; margin: 0 0 4px; }
-        .ea-sub { color: #66789c; font-size: 14px; }
-
-        /* Job filter banner */
-        .ea-jobfilter {
-          display: flex; align-items: center; flex-wrap: wrap; gap: 12px;
-          padding: 12px 18px; margin-bottom: 18px;
-          background: #eef4ff; border: 1px solid #cdddff; border-radius: 14px;
-        }
-        .ea-jobfilter-icon {
-          width: 32px; height: 32px; flex-shrink: 0;
-          display: inline-flex; align-items: center; justify-content: center;
-          border-radius: 9px; background: #dde9ff; color: #2a55e5; font-size: 14px;
-        }
-        .ea-jobfilter-text { font-weight: 600; color: #122359; font-size: 14px; }
-        .ea-jobfilter-text strong { color: #2a55e5; }
-        .ea-jobfilter :global(.ea-btn) { margin-left: auto; }
-
-        /* Shared card shell — matches verification/company cards */
-        .ea-card {
-          background: #ffffff;
-          border: 1px solid rgba(18, 35, 89, 0.07);
-          border-radius: 18px;
-          box-shadow: 0 4px 14px rgba(18, 35, 89, 0.04);
-        }
-
-        /* Status tabs */
-        .ea-tabs {
-          display: flex; gap: 8px; padding: 10px;
-          margin-bottom: 18px; overflow-x: auto;
-        }
-        .ea-tabs::-webkit-scrollbar { height: 6px; }
-        .ea-tabs::-webkit-scrollbar-thumb { background: #e6e9f2; border-radius: 999px; }
-        .ea-tab {
-          flex: 0 0 auto; display: inline-flex; align-items: center; gap: 8px;
-          border: 1px solid rgba(18, 35, 89, 0.10); background: #fff; color: #122359;
-          border-radius: 999px; padding: 9px 16px; font-weight: 700; font-size: 13px;
-          cursor: pointer; transition: all 0.25s ease; white-space: nowrap;
-        }
-        .ea-tab:hover {
-          transform: translateY(-2px); border-color: #ff9900;
-          box-shadow: 0 8px 18px rgba(255, 163, 0, 0.12);
-        }
-        .ea-tab:focus-visible { outline: 2px solid #ffa300; outline-offset: 2px; }
-        .ea-count {
-          display: inline-flex; align-items: center; justify-content: center;
-          min-width: 22px; height: 20px; padding: 0 6px; border-radius: 999px;
-          background: #f1f4fb; color: #66789c; font-size: 11px; font-weight: 800;
-          transition: all 0.25s ease;
-        }
-        .ea-tab.is-active {
-          background: #122359; border-color: #122359; color: #fff;
-          box-shadow: 0 8px 20px rgba(18, 35, 89, 0.18);
-        }
-        .ea-tab.is-active .ea-count { background: #ffa300; color: #122359; }
-
-        /* Toolbar */
-        .ea-toolbar { padding: 18px 20px; margin-bottom: 22px; }
-        .ea-toolbar-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        .ea-search { position: relative; flex: 1 1 320px; }
-        .ea-search :global(i) {
-          position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
-          color: #9aa7c2; font-size: 14px; pointer-events: none;
-        }
-        .ea-search input {
-          width: 100%; height: 44px; border: 1px solid rgba(18, 35, 89, 0.14);
-          border-radius: 12px; padding: 0 14px 0 38px; font-size: 14px;
-          color: #122359; background: #fff; transition: all 0.2s ease;
-        }
-        .ea-search input::placeholder { color: #9aa7c2; }
-        .ea-search input:focus {
-          outline: none; border-color: #ffa300;
-          box-shadow: 0 0 0 3px rgba(255, 163, 0, 0.15);
-        }
-
-        /* Quick-filter chips */
-        .ea-chips {
-          display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
-          margin-top: 16px; padding-top: 16px;
-          border-top: 1px dashed rgba(18, 35, 89, 0.10);
-        }
-        .ea-chips-label {
-          font-size: 12px; font-weight: 700; color: #66789c;
-          text-transform: uppercase; letter-spacing: 0.4px; margin-right: 4px;
-        }
-        .ea-chip {
-          border: 1px solid rgba(18, 35, 89, 0.12); background: #fff; color: #4f5e64;
-          border-radius: 999px; padding: 6px 14px; font-size: 12px; font-weight: 600;
-          cursor: pointer; transition: all 0.25s ease;
-        }
-        .ea-chip:hover { border-color: #ffc151; color: #122359; transform: translateY(-1px); }
-        .ea-chip.is-active { background: #fff7ea; border-color: #ffc151; color: #ff9900; }
-
-        /* Buttons (toolbar / header / pagination) */
-        .ea-btn {
-          height: 44px; border-radius: 12px; padding: 0 18px;
-          font-weight: 700; font-size: 14px; display: inline-flex;
-          align-items: center; gap: 7px; cursor: pointer;
-          transition: all 0.25s ease; border: 1px solid transparent;
-          text-decoration: none; white-space: nowrap;
-        }
-        .ea-btn:focus-visible { outline: 2px solid #ffa300; outline-offset: 2px; }
-        .ea-btn-xs { height: 34px; padding: 0 12px; font-size: 12px; border-radius: 10px; }
-        .ea-btn-sm { height: 40px; padding: 0 16px; font-size: 13px; }
-        .ea-btn-primary { background: #ffa300; color: #122359; border-color: #ffa300; }
-        .ea-btn-primary:hover {
-          background: #ff9900; transform: translateY(-2px);
-          box-shadow: 0 10px 22px rgba(255, 163, 0, 0.28);
-        }
-        .ea-btn-ghost { background: #fff; color: #122359; border-color: rgba(18, 35, 89, 0.14); }
-        .ea-btn-ghost:hover { border-color: #ffa300; color: #ff9900; transform: translateY(-2px); }
-        .ea-btn[disabled] { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
-
-        /* Card: job line + location + action column */
-        .ea-jobline {
-          display: inline-flex; align-items: center; gap: 6px;
-          margin-top: 6px; font-size: 12px; color: #4f5e64; font-weight: 600;
-        }
-        .ea-jobline :global(i) { color: #ff9900; font-size: 12px; }
-        .ea-location-row { margin-top: 10px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
-        .ea-location-label {
-          font-size: 11px; font-weight: 700; color: #9aa7c2;
-          text-transform: uppercase; letter-spacing: 0.4px; margin-right: 6px;
-        }
-        .ea-right-col {
-          display: flex; flex-direction: column; align-items: flex-end;
-          gap: 12px; margin-top: 4px;
-        }
-        .ea-actions { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 220px; }
-        .ea-actions :global(.btn) {
-          width: 100%; justify-content: center; border-radius: 12px !important;
-          font-weight: 700; display: inline-flex; align-items: center; gap: 6px;
-        }
-        @media (max-width: 991px) {
-          .ea-right-col { align-items: stretch; margin-top: 16px; }
-          .ea-actions { max-width: none; }
-        }
-
-        /* Empty state */
-        .ea-empty { padding: 48px 24px; text-align: center; }
-        .ea-empty-icon {
-          width: 64px; height: 64px; margin: 0 auto 14px;
-          display: inline-flex; align-items: center; justify-content: center;
-          border-radius: 18px; background: #f1f4fb; color: #9aa7c2; font-size: 26px;
-        }
-        .ea-empty :global(h6) { color: #122359; font-weight: 800; margin: 0 0 6px; }
-        .ea-empty :global(p) { color: #66789c; font-size: 14px; margin: 0; }
-
-        /* Pagination */
-        .ea-pagination {
-          display: flex; align-items: center; justify-content: center;
-          gap: 14px; margin-top: 24px;
-        }
-        .ea-page-info { font-size: 13px; font-weight: 700; color: #66789c; }
-      `}</style>
     </main>
   );
 };

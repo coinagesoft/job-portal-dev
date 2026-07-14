@@ -119,8 +119,16 @@ const ProfileJobCard = ({ job, isListView, applyToDetails = false }) => {
     >
       {!applyToDetails && <span className="flash"></span>}
       <div className="row">
-        <div className="col-lg-6 col-md-6 col-sm-12">
-          <div className="card-grid-2-image-left">
+       <div className="col-lg-12 col-md-12 col-sm-12">
+          <div
+            className="card-grid-2-image-left"
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              width: "100%",
+              gap: "12px",
+            }}
+          >
             {/* <div className="image-box"> */}
             <div style={{ marginRight: "12px" }}>
 
@@ -137,8 +145,23 @@ const ProfileJobCard = ({ job, isListView, applyToDetails = false }) => {
                 }}
               />
             </div>
-            <div className="right-info">
-              <Link className="name-job" href="/company-details" title={`View ${job.company} details`} data-bs-toggle="tooltip">
+            <div
+              className="right-info"
+              style={{
+                flex: 1,
+                minWidth: 0,
+              }}
+            >
+              <Link
+                className="name-job"
+                href="/company-details"
+                style={{
+                  display: "block",
+                  width: "100%",
+                  whiteSpace: "normal",
+                  wordBreak: "break-word",
+                }}
+              >
                 {job.company}
               </Link>
               <span
@@ -156,31 +179,7 @@ const ProfileJobCard = ({ job, isListView, applyToDetails = false }) => {
             </div>
           </div>
         </div>
-        {!isListView && (
-          <div
-            className={`col-lg-6 text-start text-md-end col-md-6 col-sm-12 ${applyToDetails ? "candidate-saved-job-tags-col" : "pr-60"
-              }`}
-          >
-            <div
-              style={applyToDetails ? JOB_LIST_TAG_WRAP_STYLE : undefined}
-              className={applyToDetails ? "candidate-saved-job-tags-wrap" : "pl-15 mb-15 mt-30"}
-            >
-              {visibleTags.map((tag, index) => (
-                <span
-                  key={index}
-                  className={applyToDetails ? undefined : "btn btn-grey-small mr-5"}
-                  style={applyToDetails ? JOB_LIST_TAG_STYLE : undefined}
-                  title={tag}
-                  data-bs-toggle="tooltip"
-                  onMouseEnter={applyToDetails ? handleTagHoverEnter : undefined}
-                  onMouseLeave={applyToDetails ? handleTagHoverLeave : undefined}
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
+       
       </div>
       <div
         className={`card-block-info${applyToDetails ? " candidate-saved-job-card-info" : ""
@@ -194,7 +193,7 @@ const ProfileJobCard = ({ job, isListView, applyToDetails = false }) => {
         <h4 className={applyToDetails ? "candidate-saved-job-title" : undefined}>
           <Link href="/job-details">{job.title}</Link>
         </h4>
-        <div className="mt-5">
+        <div className="mt-1">
           <span className="card-briefcase">{job.type}</span>
           {applyToDetails ? (
             <span className="card-time">
@@ -266,4 +265,3 @@ const ProfileJobCard = ({ job, isListView, applyToDetails = false }) => {
 };
 
 export default ProfileJobCard;
-  

@@ -8,11 +8,15 @@ const CompanySidebar = ({ job = {} }) => {
   const [isShortlisted, setIsShortlisted] = useState(false);
   const [similarJobs, setSimilarJobs] = useState([]);
 
+  const isConfidential = job.companyVisibility === "HideName";
+
   const humanize = (value) => {
     if (value === null || value === undefined) return value;
     if (typeof value !== 'string') return value;
     return value.replace(/_/g, ' ');
   };
+
+
 
   const formatHourlyPrice = (value) => {
     const text = String(value || '').trim();
@@ -51,9 +55,17 @@ const CompanySidebar = ({ job = {} }) => {
               <img
                 alt="jobBox"
                 src={
-                  job.companyLogoUrl ||
-                  "/assets/imgs/page/homepage1/img1.png"
+                  isConfidential
+                    ? "/assets/imgs/page/job-single/industry.svg"
+                    : job.companyLogoUrl || "/assets/imgs/page/homepage1/img1.png"
                 }
+                style={{
+                  width: '48px',
+                  height: '48px',
+                  objectFit: 'cover',
+                  // borderRadius: '8px',
+                  // border: '1px solid rgba(18, 35, 89, 0.08)',
+                }}
               />
             </figure>
             <div className="sidebar-info">

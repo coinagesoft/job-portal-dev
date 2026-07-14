@@ -1,11 +1,16 @@
 'use client';
 import React, { useState } from 'react';
 import ApplyJobModal from '@/app/Homepage/components/ApplyJobModal';
+import { useSelector } from "react-redux";
+import { saveJob } from "@/services/candidate/savedJobsService";
+import { useToast } from "@/components/Toast";
 
 const JobDetailHero = ({ job = {}, isApplied = false, onApplied }) => {
   const [showModal, setShowModal] = useState(false);
 
   const toggleModal = () => setShowModal(!showModal);
+  const showToast = useToast();
+  const candidateId = useSelector((state) => state.auth.user?.userId);
 
   const getTimeAgo = (dateString) => {
     const now = new Date();
@@ -19,6 +24,57 @@ const JobDetailHero = ({ job = {}, isApplied = false, onApplied }) => {
     if (diffInHours < 24) return `${diffInHours} hours ago`;
 
     return `${diffInDays} days ago`;
+  };
+
+
+  const handleSaveJob = async () => {
+    try {
+      const jobId = job.jobId;
+
+      if (!jobId) {
+        showToast(
+          "Job id is missing. Please open this job from the jobs list.",
+          "error"
+        );
+        return;
+      }
+
+      if (!candidateId) {
+        showToast(
+          "Please log in as a candidate to save jobs.",
+          "error"
+        );
+        return;
+      }
+
+      const response = await saveJob(
+        jobId,
+        candidateId
+      );
+
+      if (response?.data?.success) {
+        showToast(
+          response.data.message || "Job saved successfully!",
+          "success"
+        );
+        return;
+      }
+
+      showToast(
+        response?.data?.message || "Unable to save job",
+        "error"
+      );
+    } catch (error) {
+      console.log("ERROR RESPONSE:", error.response);
+      console.log("ERROR DATA:", error.response?.data);
+
+      showToast(
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to save job",
+        "error"
+      );
+    }
   };
 
   return (
@@ -45,7 +101,7 @@ const JobDetailHero = ({ job = {}, isApplied = false, onApplied }) => {
                 marginTop: '8px',
                 marginBottom: '15px',
                 color: '#66789C',
-                fontSize: '15px',
+                fontSize: '12px',
               }}
             >
               {job.jobLocation && (
@@ -75,14 +131,17 @@ const JobDetailHero = ({ job = {}, isApplied = false, onApplied }) => {
               )}
             </div>
 
-            
+
           </div>
           <div className="col-lg-4 col-md-12 text-lg-end">
             {isApplied ? (
               <div
                 className="btn btn-apply-icon btn-apply btn-apply-big"
-                style={{ opacity: 0.6, cursor: 'default', pointerEvents: 'none' }}
-                aria-disabled="true"
+                style={{
+                  opacity: 0.6,
+                  cursor: "default",
+                  pointerEvents: "none",
+                }}
               >
                 Applied
               </div>
@@ -94,6 +153,14 @@ const JobDetailHero = ({ job = {}, isApplied = false, onApplied }) => {
                 Apply now
               </div>
             )}
+
+            <button
+              type="button"
+              className="btn btn-border ml-10"
+              onClick={handleSaveJob}
+            >
+              Save Job
+            </button>
           </div>
         </div>
         <div className="border-bottom pt-10 pb-10"></div>
