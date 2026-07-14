@@ -30,7 +30,7 @@ export default function HomepageNewPage() {
         <JobsByLocation />
         <JobsOfTheDay />
         <JobsByRole />
-        <ExploreMarketplace />
+        {/* <ExploreMarketplace /> */}
       </main>
     </>
   );

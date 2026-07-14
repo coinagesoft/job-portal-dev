@@ -1,5 +1,5 @@
 "use client";
-
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 const steps = [
@@ -8,22 +8,42 @@ const steps = [
     icon: "fa-solid fa-user-gear",
     title: "Create Your Profile",
     desc: "Upload your trade details and work history in simple steps.",
+    link: "/candidate-profile",
   },
   {
     step: "02",
     icon: "fa-solid fa-briefcase",
     title: "Choose Jobs Fast",
     desc: "Browse jobs by location, role, and salary and apply quickly.",
+    link: "/jobs-list",
   },
   {
     step: "03",
     icon: "fa-solid fa-file-circle-check",
     title: "Track Application",
     desc: "Get updates from recruiters and move ahead with confidence.",
+    link: "/candidate-profile/application-status",
+    requiresLogin: true,
   },
 ];
 
 export default function HowItWorks() {
+
+  const router = useRouter();
+
+  const handleCardClick = (item) => {
+    if (item.requiresLogin) {
+      // Replace "token" with whatever key you're storing
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+    }
+
+    router.push(item.link);
+  };
   return (
     <section className="section-box mt-70 mb-50">
       <div className="container">
@@ -43,8 +63,11 @@ export default function HowItWorks() {
               key={item.step}
               className="col-xl-4 col-lg-4 col-md-6 col-sm-12 col-12 mb-30"
             >
-              <div className="card-grid-2 grid-bd-16 hover-up how-work-card position-relative h-100">
-                
+              <div
+                className="card-grid-2 grid-bd-16 hover-up how-work-card position-relative h-100 cursor-pointer"
+                onClick={() => handleCardClick(item)}
+              >
+
                 {/* Top Step Badge */}
                 <span className="lbl-hot">
                   {item.step}

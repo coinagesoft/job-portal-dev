@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { getJobFilterOptions } from "@/services/candidate/jobFilterService";
 
+// Custom dropdown that always renders BELOW the field (never flips upward,
+// unlike native <select> which the browser can position based on viewport space).
 const CustomDropdown = ({ options, value, onChange, placeholder, loading }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const dropdownRef = React.useRef(null);
@@ -33,17 +35,27 @@ const CustomDropdown = ({ options, value, onChange, placeholder, loading }) => {
           display: "flex",
           alignItems: "center",
           color: value ? "#111111" : "#7c8493",
-          backgroundPosition: "right 14px center",
-          paddingRight: "38px",
+          backgroundColor: "transparent",
+          textAlign: "left",
           minHeight: "50px",
-          lineHeight: "30px",
+          boxSizing: "border-box",
           userSelect: "none",
-          backgroundColor: "#ffffff",
-          textAlign: "left"
+          width: "100%",
+          paddingRight: "30px"
         }}
         onClick={() => setIsOpen(!isOpen)}
       >
-        {loading ? "Loading..." : value || placeholder}
+        <span
+          style={{
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            width: "100%",
+            display: "block"
+          }}
+        >
+          {loading ? "Loading..." : value || placeholder}
+        </span>
       </div>
 
       {isOpen && !loading && (
@@ -51,54 +63,87 @@ const CustomDropdown = ({ options, value, onChange, placeholder, loading }) => {
           className="custom-dropdown-menu"
           style={{
             position: "absolute",
+            // Force the panel to always open downward — never above the field.
             top: "100%",
+            bottom: "auto",
             left: 0,
             right: 0,
             backgroundColor: "#ffffff",
-            border: "1px solid #e0e0e0",
-            borderRadius: "8px",
-            boxShadow: "0px 8px 24px rgba(17, 17, 17, 0.15)",
+            border: "1px solid #7c8493",
+            borderRadius: "0px",
+            boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.15)",
             zIndex: 9999,
-            maxHeight: "250px",
+            maxHeight: "280px",
             overflowY: "auto",
-            marginTop: "6px"
+            marginTop: "4px"
           }}
         >
           <div
             style={{
-              padding: "10px 16px",
+              padding: "6px 12px",
               cursor: "pointer",
-              color: "#7c8493",
-              backgroundColor: !value ? "#f8f9fa" : "transparent",
-              transition: "background-color 0.2s",
-              textAlign: "left"
+              fontSize: "14px",
+              textAlign: "left",
+              backgroundColor: !value ? "#1967d2" : "#ffffff",
+              color: !value ? "#ffffff" : "#111111",
+              transition: "background-color 0.1s, color 0.1s",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis"
             }}
             onClick={() => handleSelect("")}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "#1967d2";
+              e.currentTarget.style.color = "#ffffff";
+            }}
+            onMouseLeave={(e) => {
+              if (value) {
+                e.currentTarget.style.backgroundColor = "transparent";
+                e.currentTarget.style.color = "#111111";
+              } else {
+                e.currentTarget.style.backgroundColor = "#1967d2";
+                e.currentTarget.style.color = "#ffffff";
+              }
+            }}
           >
             {placeholder}
           </div>
-          {options.map((opt) => (
-            <div
-              key={opt}
-              style={{
-                padding: "10px 16px",
-                cursor: "pointer",
-                color: "#111111",
-                backgroundColor: value === opt ? "#f0f4f9" : "transparent",
-                transition: "background-color 0.2s",
-                textAlign: "left"
-              }}
-              onClick={() => handleSelect(opt)}
-              onMouseEnter={(e) => {
-                if (value !== opt) e.currentTarget.style.backgroundColor = "#f8f9fa";
-              }}
-              onMouseLeave={(e) => {
-                if (value !== opt) e.currentTarget.style.backgroundColor = "transparent";
-              }}
-            >
-              {opt}
-            </div>
-          ))}
+          {options.map((opt) => {
+            const isSelected = value === opt;
+            return (
+              <div
+                key={opt}
+                style={{
+                  padding: "6px 12px",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  textAlign: "left",
+                  backgroundColor: isSelected ? "#1967d2" : "#ffffff",
+                  color: isSelected ? "#ffffff" : "#111111",
+                  transition: "background-color 0.1s, color 0.1s",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis"
+                }}
+                onClick={() => handleSelect(opt)}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "#1967d2";
+                  e.currentTarget.style.color = "#ffffff";
+                }}
+                onMouseLeave={(e) => {
+                  if (value === opt) {
+                    e.currentTarget.style.backgroundColor = "#1967d2";
+                    e.currentTarget.style.color = "#ffffff";
+                  } else {
+                    e.currentTarget.style.backgroundColor = "transparent";
+                    e.currentTarget.style.color = "#111111";
+                  }
+                }}
+              >
+                {opt}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -178,7 +223,7 @@ export default function HeroSection() {
     <div>
       <section className="section-box">
         <div className="banner-hero hero-2">
-          <div className="banner-inner" style={{ maxWidth: "1140px" }}>
+          <div className="banner-inner" style={{ maxWidth: "900px" }}>
             <div className="block-banner">
               <div style={{ maxWidth: "725px", margin: "0 auto" }}>
                 <h1 className="text-42 color-white wow animate__animated animate__fadeInUp">
@@ -198,12 +243,12 @@ export default function HeroSection() {
               </div>
 
               <div
-                className="form-find mt-40 wow animate__animated animate__fadeIn"
+                className="form-find text-start mt-40 wow animate__animated animate__fadeInUp"
                 data-wow-delay=".2s"
-                style={{ maxWidth: "850px", margin: "40px auto 0 auto" }}
               >
                 <form className="dashboard-search-form" onSubmit={handleSearch}>
-                  <div style={{ minWidth: "200px", flex: "0 0 200px", position: "relative", marginRight: "12px" }}>
+                  {/* TRADE CATEGORY */}
+                  <div className="box-industry" style={{ minWidth: "260px", flex: "0 0 220px", marginRight: "12px", position: "relative" }}>
                     <CustomDropdown
                       placeholder="Trade Category"
                       options={tradeCategoryOptions}
@@ -213,7 +258,8 @@ export default function HeroSection() {
                     />
                   </div>
 
-                  <div style={{ minWidth: "200px", flex: "0 0 200px", position: "relative", marginRight: "10px" }}>
+                  {/* LOCATION */}
+                  <div style={{ minWidth: "200px", flex: "0 0 200px", marginRight: "10px", position: "relative" }}>
                     <CustomDropdown
                       placeholder="Location"
                       options={cityOptions}
@@ -267,49 +313,6 @@ export default function HeroSection() {
             </div>
 
             <div className="mt-60">
-              {/* <div className="row">
-                <div className="col-lg-3 col-sm-3 col-6 text-center mb-20">
-                  <div className="d-inline-block text-start">
-                    <h4 className="color-white">
-                      <span className="count">265</span>
-                      <span> K+</span>
-                    </h4>
-                    <p className="font-sm color-text-mutted">
-                      Daily Jobs Posted
-                    </p>
-                  </div>
-                </div>
-
-                <div className="col-lg-3 col-sm-3 col-6 text-center mb-20">
-                  <div className="d-inline-block text-start">
-                    <h4 className="color-white">
-                      <span className="count">17</span>
-                      <span> K+</span>
-                    </h4>
-                    <p className="font-sm color-text-mutted">Recruiters</p>
-                  </div>
-                </div>
-
-                <div className="col-lg-3 col-sm-3 col-6 text-center mb-20">
-                  <div className="d-inline-block text-start">
-                    <h4 className="color-white">
-                      <span className="count">15</span>
-                      <span> K+</span>
-                    </h4>
-                    <p className="font-sm color-text-mutted">Freelancers</p>
-                  </div>
-                </div>
-
-                <div className="col-lg-3 col-sm-3 col-6 text-center mb-20">
-                  <div className="d-inline-block text-start">
-                    <h4 className="color-white">
-                      <span className="count">28</span>
-                      <span> K+</span>
-                    </h4>
-                    <p className="font-sm color-text-mutted">Blog Tips</p>
-                  </div>
-                </div>
-              </div> */}
             </div>
           </div>
         </div>

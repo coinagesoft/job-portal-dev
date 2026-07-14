@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getAllJobs  } from '@/services/candidate/allJobsService';
 import { searchJobs } from '@/services/candidate/searchJobsService';
 import JobCardList from './JobCardList';
@@ -53,6 +53,10 @@ const JobList = ({ filters = {} }) => {
   const [activeJob, setActiveJob] = useState(null);
   const [appliedJobIds, setAppliedJobIds] = useState(() => new Set());
 
+  // Tracks the most recently started loadJobs() call so a slower, stale
+  // request can never overwrite the results of a newer one (race condition guard).
+  const requestIdRef = useRef(0);
+
   React.useEffect(() => {
     setCurrentPage(1);
   }, [filters, sortBy, showPerPage]);
@@ -103,6 +107,10 @@ const JobList = ({ filters = {} }) => {
 
 
   const loadJobs = async () => {
+    // Mark this call as the latest one. Any response that comes back after
+    // a newer call has already started will be discarded below.
+    const thisRequestId = ++requestIdRef.current;
+
     try {
       setLoading(true);
 
@@ -325,17 +333,30 @@ const JobList = ({ filters = {} }) => {
 
       // Pagination
       const totalFiltered = sorted.length;
+
+      // If a newer loadJobs() call has started since this one began, this
+      // response is stale — discard it instead of overwriting fresher state.
+      if (thisRequestId !== requestIdRef.current) {
+        return;
+      }
+
       setTotalFilteredCount(totalFiltered);
 
       const paged = sorted.slice((currentPage - 1) * showPerPage, currentPage * showPerPage);
       setFilteredJobs(paged);
 
     } catch (error) {
+      if (thisRequestId !== requestIdRef.current) {
+        // A newer request is already in flight; don't clobber its state with this stale error.
+        return;
+      }
       console.error("Failed to load jobs", error);
       setFilteredJobs([]);
       setTotalFilteredCount(0);
     } finally {
-      setLoading(false);
+      if (thisRequestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
   };
 
