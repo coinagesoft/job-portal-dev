@@ -4,6 +4,13 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Script from "next/script";
 import { useToast } from "@/components/Toast";
 import {
+  CountrySelector,
+  DialCodePreview,
+  defaultCountries,
+  parseCountry,
+} from "react-international-phone";
+import "react-international-phone/style.css";
+import {
   registerCandidate,
   sendOtp,
   verifyOtp,
@@ -29,12 +36,30 @@ import {
 // ─────────────────────────────────────────────
 // Shared helpers
 // ─────────────────────────────────────────────
-const COUNTRY_CODES = [
-  { code: "+91", label: "🇮🇳 +91", minLen: 10, maxLen: 10 },
-  { code: "+1", label: "🇺🇸 +1", minLen: 10, maxLen: 10 },
-  { code: "+44", label: "🇬🇧 +44", minLen: 10, maxLen: 10 },
-  { code: "+971", label: "🇦🇪 +971", minLen: 9, maxLen: 9 },
-];
+// Built from react-international-phone's full country dataset (~218
+// countries) instead of a hand-picked list of 4. Expected digit-length is
+// derived from each country's format mask (each "." is one digit) so
+// validation still works per-country without hardcoding it.
+const PHONE_COUNTRIES = defaultCountries.map((c) => {
+  const parsed = parseCountry(c);
+  const masks =
+    typeof parsed.format === "string"
+      ? [parsed.format]
+      : parsed.format && typeof parsed.format === "object"
+        ? Object.values(parsed.format)
+        : [];
+  const dotCounts = masks
+    .map((m) => (typeof m === "string" ? (m.match(/\./g) || []).length : 0))
+    .filter((n) => n > 0);
+  return {
+    iso2: parsed.iso2,
+    name: parsed.name,
+    code: `+${parsed.dialCode}`,
+    dialCode: parsed.dialCode,
+    minLen: dotCounts.length ? Math.min(...dotCounts) : 6,
+    maxLen: dotCounts.length ? Math.max(...dotCounts) : 14,
+  };
+});
 
 const INDUSTRIES = [
   "Construction & Infrastructure",
@@ -123,7 +148,9 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const isValidEmail = (email) => EMAIL_REGEX.test(email.trim());
 
 const getCountryMeta = (code) =>
-  COUNTRY_CODES.find((c) => c.code === code) || COUNTRY_CODES[0];
+  PHONE_COUNTRIES.find((c) => c.code === code) ||
+  PHONE_COUNTRIES.find((c) => c.code === "+91") ||
+  PHONE_COUNTRIES[0];
 
 const isValidMobile = (mobile, countryCode) => {
   const digits = mobile.replace(/\D/g, "");
@@ -299,19 +326,23 @@ function Select({ children, className = "", style = {}, error, ...props }) {
   );
 }
 
-// ── Combobox: type-to-filter input with a selectable dropdown ────────────
+// ── Combobox: type-to-search dropdown, select-only ───────────────────────
 // Accepts either a plain string[] or a {value,label}[] options array.
-// Free typing is always allowed — the typed text becomes the stored value
-// if it doesn't match any option, so users are never blocked from entering
-// something not on the list.
+// Typing only filters the list below — it never sets the field's value on
+// its own. The value only changes when an option is actually picked (click,
+// or pressing Enter on an exact/singular match). Typing something that
+// matches nothing and clicking away snaps the text back to whatever is
+// actually selected, so nothing gets silently saved.
 function Combobox({ value, onChange, options, placeholder, error, disabled }) {
   const normalized = (options || []).map((o) =>
     typeof o === "string" ? { value: o, label: o } : o
   );
   const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+  const justSelectedRef = useRef(false);
+
   const matched = normalized.find((o) => o.value === value);
   const [query, setQuery] = useState(matched ? matched.label : value || "");
-  const wrapRef = useRef(null);
 
   useEffect(() => {
     const m = normalized.find((o) => o.value === value);
@@ -319,17 +350,33 @@ function Combobox({ value, onChange, options, placeholder, error, disabled }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
+  const revertIfUnmatched = () => {
+    const m = normalized.find((o) => o.value === value);
+    setQuery(m ? m.label : value || "");
+  };
+
   useEffect(() => {
     const onClickOutside = (e) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) {
+        setOpen(false);
+        revertIfUnmatched();
+      }
     };
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, options]);
 
   const filtered = query
     ? normalized.filter((o) => o.label.toLowerCase().includes(query.toLowerCase()))
     : normalized;
+
+  const selectOption = (opt) => {
+    justSelectedRef.current = true;
+    onChange(opt.value);
+    setQuery(opt.label);
+    setOpen(false);
+  };
 
   return (
     <div ref={wrapRef} style={{ position: "relative" }}>
@@ -337,14 +384,43 @@ function Combobox({ value, onChange, options, placeholder, error, disabled }) {
         value={query}
         disabled={disabled}
         error={error}
-        placeholder={placeholder || "Type or select…"}
+        placeholder={placeholder || "Type to search…"}
         autoComplete="off"
         onChange={(e) => {
           setQuery(e.target.value);
-          onChange(e.target.value);
           setOpen(true);
         }}
         onFocus={() => setOpen(true)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            if (filtered.length === 1) {
+              selectOption(filtered[0]);
+            } else {
+              const exact = normalized.find(
+                (o) => o.label.toLowerCase() === query.trim().toLowerCase()
+              );
+              if (exact) selectOption(exact);
+              else revertIfUnmatched();
+            }
+            setOpen(false);
+          } else if (e.key === "Escape") {
+            setOpen(false);
+            revertIfUnmatched();
+          }
+        }}
+        onBlur={() => {
+          // Give a just-clicked option (onMouseDown, which fires first) a
+          // chance to register before deciding whether to revert.
+          window.setTimeout(() => {
+            if (justSelectedRef.current) {
+              justSelectedRef.current = false;
+              return;
+            }
+            setOpen(false);
+            revertIfUnmatched();
+          }, 0);
+        }}
       />
       {open && filtered.length > 0 && (
         <div
@@ -365,11 +441,7 @@ function Combobox({ value, onChange, options, placeholder, error, disabled }) {
           {filtered.map((opt) => (
             <div
               key={opt.value}
-              onMouseDown={() => {
-                onChange(opt.value);
-                setQuery(opt.label);
-                setOpen(false);
-              }}
+              onMouseDown={() => selectOption(opt)}
               style={{
                 padding: "9px 14px",
                 fontSize: "var(--font-sm)",
@@ -386,6 +458,26 @@ function Combobox({ value, onChange, options, placeholder, error, disabled }) {
               {opt.label}
             </div>
           ))}
+        </div>
+      )}
+      {open && filtered.length === 0 && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            left: 0,
+            right: 0,
+            zIndex: 40,
+            background: "#fff",
+            border: "0.5px solid var(--color-border-secondary)",
+            borderRadius: 8,
+            boxShadow: "0 12px 28px rgba(18,35,89,0.14)",
+            padding: "9px 14px",
+            fontSize: "var(--font-xs)",
+            color: "var(--color-text-tertiary)",
+          }}
+        >
+          No matches — pick from the list
         </div>
       )}
     </div>
@@ -459,7 +551,125 @@ function Alert({ type = "info", children }) {
   );
 }
 
-// ── Mobile OTP block with inline ✓ tick in input ──────────────────────────────
+// ── Country code selector backed by react-international-phone's full list ──
+function CountryCodeSelect({ value, onChange, disabled }) {
+  const meta = getCountryMeta(value);
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        height: 53,
+        borderRadius: 8,
+        border: "0.5px solid var(--color-border-secondary)",
+        background: disabled ? "var(--color-background-secondary)" : "#fff",
+        paddingLeft: 2,
+        paddingRight: 10,
+        gap: 2,
+        flexShrink: 0,
+      }}
+    >
+      <CountrySelector
+        selectedCountry={meta.iso2}
+        onSelect={(country) => onChange(`+${country.dialCode}`)}
+        disabled={disabled}
+        buttonStyle={{
+          border: "none",
+          background: "transparent",
+          height: 44,
+          padding: "0 6px",
+        }}
+      />
+      <DialCodePreview
+        dialCode={meta.dialCode}
+        prefix="+"
+        style={{
+          fontWeight: 600,
+          fontSize: "var(--font-sm)",
+          color: "var(--color-text-primary)",
+        }}
+      />
+    </div>
+  );
+}
+
+// ── 6-box OTP input: auto-advances focus, supports backspace and paste ──
+function OtpDigitsInput({ value, onChange, length = 6, disabled, autoFocus }) {
+  const inputsRef = useRef([]);
+  const digits = (value || "")
+    .split("")
+    .concat(Array(length).fill(""))
+    .slice(0, length);
+
+  const focusInput = (idx) => inputsRef.current[idx]?.focus();
+
+  const handleChange = (idx, raw) => {
+    const char = raw.replace(/\D/g, "").slice(-1);
+    const next = [...digits];
+    next[idx] = char;
+    onChange(next.join("").slice(0, length));
+    if (char && idx < length - 1) focusInput(idx + 1);
+  };
+
+  const handleKeyDown = (idx, e) => {
+    if (e.key === "Backspace" && !digits[idx] && idx > 0) focusInput(idx - 1);
+  };
+
+  const handlePaste = (e) => {
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, length);
+    if (pasted) {
+      e.preventDefault();
+      onChange(pasted);
+      focusInput(Math.min(pasted.length, length - 1));
+    }
+  };
+
+  return (
+    <div style={{ display: "flex", gap: 8 }} onPaste={handlePaste}>
+      {digits.map((d, i) => (
+        <input
+          key={i}
+          ref={(el) => (inputsRef.current[i] = el)}
+          type="text"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          maxLength={1}
+          value={d}
+          disabled={disabled}
+          autoFocus={autoFocus && i === 0}
+          onChange={(e) => handleChange(i, e.target.value)}
+          onKeyDown={(e) => handleKeyDown(i, e)}
+          className="form-control"
+          style={{
+            width: 42,
+            height: 48,
+            padding: 0,
+            textAlign: "center",
+            fontSize: 18,
+            fontWeight: 700,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Small resend-cooldown timer shared by both OTP blocks below.
+function useResendCooldown(seconds = 30) {
+  const [remaining, setRemaining] = useState(0);
+  useEffect(() => {
+    if (remaining <= 0) return;
+    const t = setInterval(() => setRemaining((r) => Math.max(0, r - 1)), 1000);
+    return () => clearInterval(t);
+  }, [remaining]);
+  return [remaining, () => setRemaining(seconds)];
+}
+
+// ── Mobile OTP block: country selector + number + boxed OTP entry ──────────
 function MobileOtpField({
   countryCode,
   onCountryCodeChange,
@@ -477,26 +687,26 @@ function MobileOtpField({
   const touched = digitsOnly.length > 0;
   const mobileValid = isValidMobile(mobile, countryCode);
   const showMobileError = touched && !verified && !mobileValid;
+  const [cooldown, startCooldown] = useResendCooldown(30);
+
+  const handleSend = () => {
+    sent ? resendMobileOtp() : sendMobileOtp();
+    startCooldown();
+  };
 
   return (
     <div>
       <div style={{ display: "flex", gap: 8 }}>
-        <Select
+        <CountryCodeSelect
           value={countryCode}
-          onChange={(e) => {
-            onCountryCodeChange(e.target.value);
+          disabled={verified}
+          onChange={(v) => {
+            onCountryCodeChange(v);
             // re-trim number to new country's max length
-            const newMeta = getCountryMeta(e.target.value);
+            const newMeta = getCountryMeta(v);
             onMobileChange(digitsOnly.slice(0, newMeta.maxLen));
           }}
-          style={{ width: 110, flexShrink: 0 }}
-        >
-          {COUNTRY_CODES.map((c) => (
-            <option key={c.code} value={c.code}>
-              {c.label}
-            </option>
-          ))}
-        </Select>
+        />
         <div style={{ position: "relative", flex: 1 }}>
           <Input
             type="tel"
@@ -544,47 +754,80 @@ function MobileOtpField({
         </p>
       )}
 
-      {!verified && (
-        <div style={{ marginTop: 8, display: "flex", gap: 8, alignItems: "center" }}>
+      {!verified && !sent && (
+        <div style={{ marginTop: 8 }}>
           <Btn
             variant="ghost"
-            disabled={!mobileValid || verified}
-            onClick={() => (sent ? resendMobileOtp() : sendMobileOtp())}
-            style={{ flexShrink: 0, fontSize: "var(--font-xs)", padding: "0 12px", height: 38 }}
+            disabled={!mobileValid}
+            onClick={handleSend}
+            style={{ fontSize: "var(--font-xs)", padding: "0 12px", height: 38 }}
           >
-            {sent ? "Resend OTP" : "Send OTP"}
+            Send OTP
           </Btn>
-          {sent && (
-            <>
-              <Input
-                type="text"
-                maxLength={6}
-                placeholder="Enter OTP"
-                value={userVal}
-                onChange={(e) =>
-                  onOtpStateChange({ ...otp, userVal: e.target.value.replace(/\D/g, "") })
-                }
-                style={{ height: 38, flex: 1 }}
-              />
-              <Btn
-                variant="primary"
-                disabled={userVal.length !== 6}
-                onClick={verifyMobileOtp}
-                style={{ flexShrink: 0, fontSize: "var(--font-xs)", padding: "0 14px", height: 38 }}
-              >
-                Verify
-              </Btn>
-            </>
-          )}
+        </div>
+      )}
+
+      {!verified && sent && (
+        <div
+          style={{
+            marginTop: 12,
+            padding: "14px 16px",
+            borderRadius: 10,
+            border: "0.5px solid var(--color-border-secondary)",
+            background: "var(--color-background-secondary)",
+          }}
+        >
+          <p
+            style={{
+              fontSize: "var(--font-xs)",
+              fontWeight: 600,
+              color: "var(--color-text-secondary)",
+              marginBottom: 10,
+            }}
+          >
+            Enter the 6-digit code sent to {meta.code} {mobile}
+          </p>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            <OtpDigitsInput
+              value={userVal}
+              onChange={(v) => onOtpStateChange({ ...otp, userVal: v })}
+              autoFocus
+            />
+            <Btn
+              variant="primary"
+              disabled={userVal.length !== 6}
+              onClick={verifyMobileOtp}
+              style={{ height: 42, padding: "0 18px" }}
+            >
+              Verify
+            </Btn>
+          </div>
+          <div style={{ marginTop: 10 }}>
+            <button
+              type="button"
+              onClick={handleSend}
+              disabled={cooldown > 0}
+              style={{
+                background: "none",
+                border: "none",
+                padding: 0,
+                fontSize: "var(--font-xs)",
+                fontWeight: 600,
+                color: cooldown > 0 ? "var(--color-text-tertiary)" : "#ff9900",
+                cursor: cooldown > 0 ? "not-allowed" : "pointer",
+              }}
+            >
+              {cooldown > 0 ? `Resend OTP in ${cooldown}s` : "Resend OTP"}
+            </button>
+          </div>
         </div>
       )}
     </div>
   );
 }
 
-// Standard OTP block for email
+// Standard OTP block for email — same boxed-input treatment as mobile above.
 function OtpBlock({
-  label,
   target,
   sent,
   verified,
@@ -595,58 +838,111 @@ function OtpBlock({
   setOtpVal,
   disabled,
 }) {
-  return (
-    <div>
-      <div style={{ display: "flex", gap: 8 }}>
-        <Btn
-          variant={verified ? "success" : "ghost"}
-          disabled={disabled || verified}
-          onClick={() => {
-            if (sent) onResend();
-            else onSend();
-          }}
+  const [cooldown, startCooldown] = useResendCooldown(30);
+
+  const handleSend = () => {
+    sent ? onResend() : onSend();
+    startCooldown();
+  };
+
+  if (verified) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          padding: "10px 14px",
+          borderRadius: 8,
+          background: "#EAF3DE",
+          border: "0.5px solid #C0DD97",
+        }}
+      >
+        <span
           style={{
+            width: 20,
+            height: 20,
+            borderRadius: "50%",
+            background: "#3B6D11",
+            color: "#fff",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 11,
+            fontWeight: 700,
             flexShrink: 0,
-            fontSize: "var(--font-xs)",
-            padding: "0 12px",
-            height: 38,
           }}
         >
-          {verified ? "✓ Verified" : sent ? "Resend OTP" : "Send OTP"}
-        </Btn>
-        {sent && !verified && (
-          <div style={{ display: "flex", gap: 6, flex: 1 }}>
-            <Input
-              type="text"
-              maxLength={6}
-              placeholder="Enter OTP"
-              value={otpVal}
-              onChange={(e) => setOtpVal(e.target.value)}
-              style={{ flex: 1 }}
-            />
-            <Btn
-              variant="primary"
-              disabled={otpVal.length !== 6}
-              onClick={onVerify}
-              style={{
-                flexShrink: 0,
-                fontSize: "var(--font-xs)",
-                padding: "0 14px",
-                height: 38,
-              }}
-            >
-              Verify
-            </Btn>
-          </div>
-        )}
+          ✓
+        </span>
+        <span style={{ fontSize: "var(--font-xs)", color: "#3B6D11", fontWeight: 600 }}>
+          {target} verified successfully
+        </span>
       </div>
-      {verified && (
-        <p
-          style={{ fontSize: "var(--font-xs)", color: "#3B6D11", marginTop: 4 }}
+    );
+  }
+
+  if (!sent) {
+    return (
+      <Btn
+        variant="ghost"
+        disabled={disabled}
+        onClick={handleSend}
+        style={{ fontSize: "var(--font-xs)", padding: "0 12px", height: 38 }}
+      >
+        Send OTP
+      </Btn>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        padding: "14px 16px",
+        borderRadius: 10,
+        border: "0.5px solid var(--color-border-secondary)",
+        background: "var(--color-background-secondary)",
+      }}
+    >
+      <p
+        style={{
+          fontSize: "var(--font-xs)",
+          fontWeight: 600,
+          color: "var(--color-text-secondary)",
+          marginBottom: 10,
+        }}
+      >
+        Enter the 6-digit code sent to your {target}
+      </p>
+      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+        <OtpDigitsInput value={otpVal} onChange={setOtpVal} autoFocus />
+        <Btn
+          variant="primary"
+          disabled={otpVal.length !== 6}
+          onClick={onVerify}
+          style={{ height: 42, padding: "0 18px" }}
         >
-          ✓ {target} verified successfully
-        </p>
-      )}
+          Verify
+        </Btn>
+      </div>
+      <div style={{ marginTop: 10 }}>
+        <button
+          type="button"
+          onClick={handleSend}
+          disabled={cooldown > 0}
+          style={{
+            background: "none",
+            border: "none",
+            padding: 0,
+            fontSize: "var(--font-xs)",
+            fontWeight: 600,
+            color: cooldown > 0 ? "var(--color-text-tertiary)" : "#ff9900",
+            cursor: cooldown > 0 ? "not-allowed" : "pointer",
+          }}
+        >
+          {cooldown > 0 ? `Resend OTP in ${cooldown}s` : "Resend OTP"}
+        </button>
+      </div>
     </div>
   );
 }
@@ -966,30 +1262,17 @@ function CandidateForm() {
       </Field>
 
       <Field label="Mobile Number" required>
-        <Input
-          placeholder="Enter mobile number"
-          value={form.mobile}
-          onChange={(e) => set("mobile", e.target.value)}
+        <MobileOtpField
+          countryCode={form.countryCode}
+          onCountryCodeChange={(v) => set("countryCode", v)}
+          mobile={form.mobile}
+          onMobileChange={(v) => set("mobile", v)}
+          otp={mobileOtp}
+          onOtpStateChange={setMobileOtp}
+          sendMobileOtp={sendMobileOtp}
+          verifyMobileOtp={verifyMobileOtp}
+          resendMobileOtp={sendMobileOtp}
         />
-
-        <div style={{ marginTop: 8 }}>
-          <OtpBlock
-            target="mobile"
-            sent={mobileOtp.sent}
-            verified={mobileOtp.verified}
-            disabled={!form.mobile}
-            onSend={sendMobileOtp}
-            onResend={sendMobileOtp}
-            onVerify={verifyMobileOtp}
-            otpVal={mobileOtp.userVal}
-            setOtpVal={(v) =>
-              setMobileOtp((p) => ({
-                ...p,
-                userVal: v,
-              }))
-            }
-          />
-        </div>
       </Field>
 
       <Field label="Email" hint="Optional — verify to improve account security">
@@ -1899,7 +2182,7 @@ const isStep4Valid =
 
         <Field
           label="Business Type"
-          hint="Start typing to search, or pick from the list — you can also enter your own."
+          hint="Start typing to search, or pick from the list"
         >
           <Combobox
             value={data.businessType}
@@ -1909,26 +2192,20 @@ const isStep4Valid =
           />
         </Field>
         <Field label="Company Size">
-          <Select
+          <Combobox
             value={data.companySize}
-            onChange={(e) => set("companySize", e.target.value)}
-          >
-            <option value="">Select size...</option>
-            {COMPANY_SIZES.map((s) => (
-              <option key={s.value} value={s.value}>{s.label}</option>
-            ))}
-          </Select>
+            onChange={(v) => set("companySize", v)}
+            options={COMPANY_SIZES}
+            placeholder="Type or select company size…"
+          />
         </Field>
         <Field label="Company Type">
-          <Select
+          <Combobox
             value={data.companyType}
-            onChange={(e) => set("companyType", e.target.value)}
-          >
-            <option value="">Select type...</option>
-            {COMPANY_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>{t.label}</option>
-            ))}
-          </Select>
+            onChange={(v) => set("companyType", v)}
+            options={COMPANY_TYPES}
+            placeholder="Type or select company type…"
+          />
         </Field>
 
         {/* GST Registration Date only for GST employers */}
@@ -1977,18 +2254,13 @@ const isStep4Valid =
           required
           error={attempt2 && !data.state ? "State is required" : null}
         >
-          <Select
+          <Combobox
             value={data.state}
             error={attempt2 && !data.state}
-            onChange={(e) => set("state", e.target.value)}
-          >
-            <option value="">Select state…</option>
-            {STATES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </Select>
+            onChange={(v) => set("state", v)}
+            options={STATES}
+            placeholder="Type or select state…"
+          />
         </Field>
         <Field
           label="City"
@@ -2091,7 +2363,7 @@ const isStep4Valid =
                   marginTop: 4,
                 }}
               >
-                PNG / JPG · Max 2 MB · Recommended 200×200px
+                Any image format · Max 2 MB · Recommended 200×200px
               </p>
             </>
           )}
@@ -3150,9 +3422,23 @@ const isStep4Valid =
 function RegisterPageInner() {
   const searchParams = useSearchParams();
   const typeParam = searchParams.get("type"); // "candidate" | "employer" | null
-  const [role, setRole] = useState(
-    typeParam === "candidate" || typeParam === "employer" ? typeParam : null,
-  );
+  // Coming in via a direct link (the header's Register ▸ Candidate/Employer
+  // menu) locks the page to that one role — no tab to switch away from it.
+  // Only a plain /register visit (no type in the URL) shows both tiles so
+  // the visitor can choose.
+  const lockedRole =
+    typeParam === "candidate" || typeParam === "employer" ? typeParam : null;
+  const [role, setRole] = useState(lockedRole);
+
+  // Client-side navigation (e.g. clicking Register ▸ Employer while already
+  // on /register?type=candidate) changes the URL without remounting this
+  // component, so the `role` state above — set only once on first mount —
+  // would otherwise keep showing whichever form loaded first. Keep it in
+  // sync with the URL whenever the locked-in type actually changes.
+  useEffect(() => {
+    setRole(lockedRole);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lockedRole]);
 
   return (
     <main
@@ -3285,94 +3571,96 @@ function RegisterPageInner() {
             boxSizing: "border-box",
           }}
         >
-          {/* Role selector */}
-          <div style={{ marginBottom: role ? 28 : 8 }}>
-            {!role && (
-              <p
-                style={{
-                  fontSize: "var(--font-xs)",
-                  fontWeight: 600,
-                  color: "var(--color-text-secondary)",
-                  marginBottom: 12,
-                }}
-              >
-                I am registering as…
-              </p>
-            )}
-            <div style={{ display: "flex", gap: 12 }}>
-              {[
-                {
-                  val: "candidate",
-                  icon: "👤",
-                  label: "Job Seeker / Candidate",
-                  sub: "Find jobs, build profile",
-                },
-                {
-                  val: "employer",
-                  icon: "🏢",
-                  label: "Employer / Company",
-                  sub: "Post jobs, hire talent",
-                },
-              ].map((r) => (
-                <div
-                  key={r.val}
-                  onClick={() => setRole(r.val)}
+          {/* Role selector — only shown when no role was locked in via URL */}
+          {!lockedRole && (
+            <div style={{ marginBottom: role ? 28 : 8 }}>
+              {!role && (
+                <p
                   style={{
-                    flex: 1,
-                    padding: role ? "10px 14px" : "18px 14px",
-                    borderRadius: 10,
-                    cursor: "pointer",
-                    border:
-                      role === r.val
-                        ? "2px solid #ff9900"
-                        : "1px solid var(--color-border-secondary, #C7D2E0)",
-                    background:
-                      role === r.val
-                        ? "#ffffff"
-                        : "var(--color-background-secondary)",
-                    transition: "all .15s",
-                    display: "flex",
-                    alignItems: role ? "center" : "flex-start",
-                    gap: 12,
+                    fontSize: "var(--font-xs)",
+                    fontWeight: 600,
+                    color: "var(--color-text-secondary)",
+                    marginBottom: 12,
                   }}
                 >
-                  <span style={{ fontSize: role ? 18 : 24, flexShrink: 0 }}>
-                    {r.icon}
-                  </span>
-                  <div>
-                    <div
-                      style={{
-                        fontSize: role ? 13 : 14,
-                        fontWeight: 600,
-                        color:
-                          role === r.val
-                            ? "#ff9900"
-                            : "var(--color-text-primary)",
-                      }}
-                    >
-                      {r.label}
-                    </div>
-                    {!role && (
+                  I am registering as…
+                </p>
+              )}
+              <div style={{ display: "flex", gap: 12 }}>
+                {[
+                  {
+                    val: "candidate",
+                    icon: "👤",
+                    label: "Job Seeker / Candidate",
+                    sub: "Find jobs, build profile",
+                  },
+                  {
+                    val: "employer",
+                    icon: "🏢",
+                    label: "Employer / Company",
+                    sub: "Post jobs, hire talent",
+                  },
+                ].map((r) => (
+                  <div
+                    key={r.val}
+                    onClick={() => setRole(r.val)}
+                    style={{
+                      flex: 1,
+                      padding: role ? "10px 14px" : "18px 14px",
+                      borderRadius: 10,
+                      cursor: "pointer",
+                      border:
+                        role === r.val
+                          ? "2px solid #ff9900"
+                          : "1px solid var(--color-border-secondary, #C7D2E0)",
+                      background:
+                        role === r.val
+                          ? "#ffffff"
+                          : "var(--color-background-secondary)",
+                      transition: "all .15s",
+                      display: "flex",
+                      alignItems: role ? "center" : "flex-start",
+                      gap: 12,
+                    }}
+                  >
+                    <span style={{ fontSize: role ? 18 : 24, flexShrink: 0 }}>
+                      {r.icon}
+                    </span>
+                    <div>
                       <div
                         style={{
-                          fontSize: "var(--font-xs)",
-                          color: "var(--color-text-secondary)",
-                          marginTop: 2,
+                          fontSize: role ? 13 : 14,
+                          fontWeight: 600,
+                          color:
+                            role === r.val
+                              ? "#ff9900"
+                              : "var(--color-text-primary)",
                         }}
                       >
-                        {r.sub}
+                        {r.label}
                       </div>
-                    )}
+                      {!role && (
+                        <div
+                          style={{
+                            fontSize: "var(--font-xs)",
+                            color: "var(--color-text-secondary)",
+                            marginTop: 2,
+                          }}
+                        >
+                          {r.sub}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {role === "candidate" && <CandidateForm />}
           {role === "employer" && <EmployerForm />}
 
-          {!role && (
+          {!role && !lockedRole && (
             <p
               style={{
                 textAlign: "center",

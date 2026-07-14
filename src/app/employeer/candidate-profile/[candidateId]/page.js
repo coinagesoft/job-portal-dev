@@ -777,6 +777,20 @@ const EmployerCandidateProfilePage = () => {
                             }}
                           >
                             {skill.skillName}
+                            {skill.skillRole && (
+                              <span
+                                style={{
+                                  color: "#122359",
+                                  fontWeight: 700,
+                                  fontSize: "11px",
+                                  padding: "2px 8px",
+                                  borderRadius: "999px",
+                                  background: "#EAF4FF",
+                                }}
+                              >
+                                {skill.skillRole}
+                              </span>
+                            )}
                             {skill.yearsOfExperience != null && (
                               <span style={{ color: "#c97e00", fontWeight: 600 }}>
                                 {skill.yearsOfExperience}

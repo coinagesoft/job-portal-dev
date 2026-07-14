@@ -1,6 +1,7 @@
 ﻿"use client";
 import React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { getAllJobs } from "@/services/candidate/allJobsService";
 
 
@@ -26,6 +27,7 @@ const getJobDetailsHref = (jobId) =>
   jobId ? `/job-details?jobId=${jobId}` : "/job-details";
 
 const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) => {
+  const router = useRouter();
   const tags = toSafeTags(job.skills);
   const companyTagsFromData = toSafeTags(job.companyTags);
   const jobTagsFromData = toSafeTags(job.jobTags);
@@ -81,12 +83,22 @@ const getDisplaySalary = (salaryRange, salaryVisibility) => {
     <>
       <div
         className="card-grid-2 hover-up"
+        onClick={() => router.push(getJobDetailsHref(job.jobId))}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            router.push(getJobDetailsHref(job.jobId));
+          }
+        }}
         style={{
           border: "1px solid rgba(18, 35, 89, 0.08)",
           borderRadius: "24px",
           overflow: "hidden",
           transition: "all 0.35s ease",
           background: "#ffffff",
+          cursor: "pointer",
           boxShadow:
             "0 4px 14px rgba(18,35,89,0.04)",
         }}
@@ -149,6 +161,7 @@ const getDisplaySalary = (salaryRange, salaryVisibility) => {
                   <Link
                     className="name-job"
                     href={`/company-details?employerId=${job.employerId}`}
+                    onClick={(e) => e.stopPropagation()}
                   >
                     {job.companyName}
                   </Link>
@@ -273,7 +286,10 @@ const getDisplaySalary = (salaryRange, salaryVisibility) => {
                 lineHeight: 1.3,
               }}
             >
-              <Link href={getJobDetailsHref(job.jobId)}>
+              <Link
+                href={getJobDetailsHref(job.jobId)}
+                onClick={(e) => e.stopPropagation()}
+              >
                 {job.jobTitle}
               </Link>
             </h4>
@@ -452,7 +468,10 @@ const getDisplaySalary = (salaryRange, salaryVisibility) => {
                     type="button"
                     className="btn btn-apply-now"
                     style={{ color: "#ffffff" }}
-                    onClick={() => onApplyNow?.(job)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onApplyNow?.(job);
+                    }}
                   >
                     Apply now
                   </button>

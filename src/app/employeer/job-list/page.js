@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useToast } from "@/components/Toast";
 import { useEffect, useState, useRef } from "react";
 import styles from "./joblist.module.css";
+import JobPreviewModal from "@/components/JobPreviewModal";
+import { mapResumeToForm } from "@/utils/jobFormMapper";
 
 import {
   getJobDashboard,
@@ -14,6 +16,7 @@ import {
   archiveJob,
   deleteJob,
 } from "@/services/recruiter/recruiterJobListService";
+import { getJobResume } from "@/services/recruiter/recruiterJobPostService";
 
 /* Turn backend enum-style values (Regular_Hiring, Full_Time) into readable text */
 const humanize = (s) => (s ? s.replace(/_/g, " ") : s);
@@ -87,7 +90,25 @@ const EmployerJobListPage = () => {
   const menuButtonRefs = useRef({});
   const menuRef = useRef(null);
 
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewJob, setPreviewJob] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
+  const handlePreview = async (jobId) => {
+    setOpenMenu(null);
+    setPreviewOpen(true);
+    setPreviewLoading(true);
+    setPreviewJob(null);
+    try {
+      const response = await getJobResume(jobId);
+      setPreviewJob(mapResumeToForm(response));
+    } catch (err) {
+      showToast(err.response?.data?.message || "Unable to load job preview", "error");
+      setPreviewOpen(false);
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
 
   const [dashboard, setDashboard] = useState(null);
   useEffect(() => {
@@ -153,6 +174,10 @@ const EmployerJobListPage = () => {
     }
   };
   const JOB_STATUS_TABS = [
+    {
+      label: "Draft",
+      count: dashboard?.draftJobs || 0,
+    },
     {
       label: "Active",
       count: dashboard?.activeJobs || 0,
@@ -459,9 +484,8 @@ const EmployerJobListPage = () => {
                                   fontSize: 17,
                                   cursor: "pointer",
                                 }}
-                                onClick={() =>
-                                  showToast(`Viewing: ${job.jobTitle}`, "info")
-                                }
+                                onClick={() => handlePreview(job.jobId)}
+                                title="Click to preview this job posting"
                               >
                                 {job.jobTitle}
                               </h5>
@@ -512,7 +536,9 @@ const EmployerJobListPage = () => {
                                       ? "#FEF3C7"
                                       : job.jobStatus === "Closed"
                                         ? "#FEE2E2"
-                                        : "#E5E7EB",
+                                        : job.jobStatus === "Draft"
+                                          ? "#EAF4FF"
+                                          : "#E5E7EB",
 
                                 color:
                                   job.jobStatus === "Active"
@@ -521,7 +547,9 @@ const EmployerJobListPage = () => {
                                       ? "#92400E"
                                       : job.jobStatus === "Closed"
                                         ? "#B91C1C"
-                                        : "#374151",
+                                        : job.jobStatus === "Draft"
+                                          ? "#1D4ED8"
+                                          : "#374151",
                                 fontSize: 11,
                                 fontWeight: 700,
                               }}
@@ -977,12 +1005,21 @@ const EmployerJobListPage = () => {
 
                       <div key={job.jobId}>
 
+                        <button
+                          type="button"
+                          className={styles.dropdownItem}
+                          onClick={() => handlePreview(job.jobId)}
+                        >
+                          <i className="fi-rr-eye" />
+                          <span>Preview</span>
+                        </button>
+
                         <Link
                           href={`/dashboard/post-job?jobId=${job.jobId}`}
                           className={styles.dropdownItem}
                         >
-                          <i className="fi-rr-edit" />
-                          <span>Edit Job</span>
+                          <i className={job.jobStatus === "Draft" ? "fi-rr-arrow-right" : "fi-rr-edit"} />
+                          <span>{job.jobStatus === "Draft" ? "Continue Draft" : "Edit Job"}</span>
                         </Link>
 
                         <Link
@@ -1034,6 +1071,15 @@ const EmployerJobListPage = () => {
         </div>
       </section>
 
+      <JobPreviewModal
+        open={previewOpen}
+        onClose={() => {
+          setPreviewOpen(false);
+          setPreviewJob(null);
+        }}
+        job={previewJob}
+        loading={previewLoading}
+      />
     </main>
   );
 };

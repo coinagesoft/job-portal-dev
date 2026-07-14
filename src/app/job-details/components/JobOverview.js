@@ -45,7 +45,7 @@ const JobOverview = ({ job = {} }) => {
         { icon: 'location', label: 'Employment Mode', value: humanize(job.employmentMode) },
          { icon: 'jobType', label: 'Job Type', value: humanize(job.jobType) },
         { icon: 'location', label: 'Location Type', value: humanize(job.locationType) },
-        { icon: 'location', label: 'Oil Field', value: humanize(job.isOilField) },
+        // { icon: 'location', label: 'Oil Field', value: humanize(job.isOilField) },
       ],
     },
     {

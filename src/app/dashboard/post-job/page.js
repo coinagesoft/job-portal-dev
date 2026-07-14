@@ -1,12 +1,15 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import styles from "./post-job.module.css";
+import { useToast } from "@/components/Toast";
 
 import currencyCodes from "currency-codes";
 import countries from "world-countries";
+import JobPreviewModal from "@/components/JobPreviewModal";
+import { mapResumeToForm } from "@/utils/jobFormMapper";
 
 
 
@@ -44,6 +47,35 @@ const roleCategories = [
   "Machine Operator",
   "Marine Crew",
   "Warehouse",
+  "Carpenter",
+  "Mason",
+  "Painter",
+  "HVAC Technician",
+  "Rigger",
+  "Scaffolder",
+  "Crane Operator",
+  "Forklift Operator",
+  "Mechanic",
+  "Diesel Mechanic",
+  "Pipefitter",
+  "Boilermaker",
+  "Insulation Technician",
+  "Sheet Metal Worker",
+  "CNC Operator",
+  "Quality Inspector",
+  "Safety Officer",
+  "Logistics Coordinator",
+  "Driver",
+  "Security Guard",
+  "Housekeeping Staff",
+  "Chef / Cook",
+  "Waiter / Steward",
+  "Technician (General)",
+  "Civil Engineer",
+  "Site Supervisor",
+  "Store Keeper",
+  "Data Entry Operator",
+  "Customer Service Executive",
   "Other",
 ];
 const jobPostTypes = [
@@ -83,6 +115,67 @@ const suggestedBenefits = [
   "Accommodation",
   "Food Allowance",
   "Transport",
+  "Overtime Pay",
+  "Annual Bonus",
+  "Life Insurance",
+  "Skill Training",
+];
+const suggestedLicenceDocs = [
+  "Government-issued ID",
+  "Aadhaar Card / Identity Proof",
+  "Passport",
+  "Driving License",
+  "ITI Certificate",
+  "Diploma Certificate",
+  "Degree Certificate",
+  "Safety Training Certificate",
+  "Heavy Equipment Operator Certificate",
+  "Forklift Operator License",
+  "Welding Certification (CSWIP / AWS)",
+  "Work Experience Certificate",
+  "Medical Fitness Certificate",
+  "Police Verification Certificate",
+];
+const suggestedLanguages = [
+  "English",
+  "Hindi",
+  "Marathi",
+  "Tamil",
+  "Telugu",
+  "Kannada",
+  "Bengali",
+  "Gujarati",
+  "Punjabi",
+  "Malayalam",
+  "Odia",
+  "Local Language",
+];
+const industryOptions = [
+  "Construction & Infrastructure",
+  "Marine & Shipping",
+  "Oil & Gas",
+  "Manufacturing",
+  "Logistics & Transportation",
+  "Warehousing & Supply Chain",
+  "Hospitality & Facilities",
+  "Ports & Terminals",
+  "Mining",
+  "Aviation",
+  "Renewable Energy",
+  "Engineering Services",
+  "Healthcare",
+  "IT & Technology",
+  "Retail",
+  "Power & Utilities",
+  "Chemicals & Petrochemicals",
+  "Automotive",
+  "Real Estate",
+  "Telecommunications",
+  "Agriculture",
+  "Banking & Financial Services",
+  "Education",
+  "Government / Public Sector",
+  "Other",
 ];
 const departmentOptions = [
   "Operations",
@@ -157,6 +250,55 @@ const JOB_STEPS = [
   { id: "publishing", step: "07", title: "Publishing" },
 ];
 
+/**
+ * Single source of truth for "is this job ready to publish?".
+ * Walks every step's required fields (mirroring each handleStepN's own
+ * checks) so the Step 7 checklist and the final Publish guard never
+ * drift out of sync with each other.
+ * Returns an array of { stepNum, title, message } — empty means all good.
+ */
+function validateAllSteps(jobForm) {
+  const issues = [];
+
+  // Step 1 – Job Details
+  if (!jobForm.JobTitle?.trim())
+    issues.push({ stepNum: 1, title: "Job Details", message: "Job Title is required" });
+  if (!jobForm.TradeCategory)
+    issues.push({ stepNum: 1, title: "Job Details", message: "Trade / Role Category is required" });
+  if (!jobForm.IndustryType)
+    issues.push({ stepNum: 1, title: "Job Details", message: "Industry Type is required" });
+  if (!jobForm.JobType)
+    issues.push({ stepNum: 1, title: "Job Details", message: "Job Type is required" });
+  if (!jobForm.JobDescription?.trim())
+    issues.push({ stepNum: 1, title: "Job Details", message: "Job Description is required" });
+  if (!jobForm.EmploymentType)
+    issues.push({ stepNum: 1, title: "Job Details", message: "Employment Type is required" });
+  if (!jobForm.EmploymentMode)
+    issues.push({ stepNum: 1, title: "Job Details", message: "Employment Mode is required" });
+
+  // Step 2 – Compensation
+  if (!jobForm.SalaryMin)
+    issues.push({ stepNum: 2, title: "Compensation", message: "Minimum Salary is required" });
+  if (!jobForm.SalaryMax)
+    issues.push({ stepNum: 2, title: "Compensation", message: "Maximum Salary is required" });
+
+  // Step 4 – Eligibility
+  if (!jobForm.Vacancies)
+    issues.push({ stepNum: 4, title: "Eligibility", message: "Number of Vacancies is required" });
+
+  // Step 5 – Location
+  if (!jobForm.LocationType)
+    issues.push({ stepNum: 5, title: "Location", message: "Location Type is required" });
+  if (jobForm.LocationType === "Offshore" && !jobForm.OffshoreVesselName?.trim())
+    issues.push({ stepNum: 5, title: "Location", message: "Vessel / Platform Name is required" });
+
+  // Step 7 – Publishing
+  if (!jobForm.ApplicationDeadline)
+    issues.push({ stepNum: 7, title: "Publishing", message: "Application Deadline is required" });
+
+  return issues;
+}
+
 /* ─── helpers ─────────────────────────────────────────────────────────────── */
 function Field({ label, required, hint, children }) {
   return (
@@ -172,17 +314,12 @@ function Field({ label, required, hint, children }) {
 }
 
 /**
- * Dropdown-with-free-text field: pick from a known list, or type your own.
- * Same pattern as the employer registration wizard's Business Type / Industry
- * pickers — cuts down on typing while still allowing anything not on the list.
- */
-/**
- * Dropdown-with-free-text field: pick from a known list, or type your own.
- * Same pattern as the employer registration wizard's Business Type / Industry
- * pickers — cuts down on typing while still allowing anything not on the list.
- * Accepts either a plain string array (value === label) or an array of
- * {value, label} pairs (for enum-backed fields like Job Type, where the
- * stored value differs from the display text).
+ * Dropdown-with-search field: pick from a known list only — typing is purely
+ * a filter/search aid over the option list and never sets the field's value
+ * on its own. The underlying value only changes when the user actually picks
+ * an option (click, or pressing Enter on an exact/singular match). If the
+ * user types something that matches nothing and clicks away/tabs out, the
+ * text snaps back to whatever is actually selected.
  */
 function Combobox({ value, onChange, options, placeholder }) {
   const normalized = (options || []).map((o) =>
@@ -190,41 +327,91 @@ function Combobox({ value, onChange, options, placeholder }) {
   );
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
+  const justSelectedRef = useRef(false);
 
   const matched = normalized.find((o) => o.value === value);
-  const [query, setQuery] = useState(matched ? matched.label : value || "");
+  const [query, setQuery] = useState(matched ? matched.label : (value || ""));
 
+  // Keep the visible text in sync whenever the selected value changes from
+  // outside (loading a draft, parent resetting the field, etc).
   useEffect(() => {
     const m = normalized.find((o) => o.value === value);
-    setQuery(m ? m.label : value || "");
+    setQuery(m ? m.label : (value || ""));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
+  const revertIfUnmatched = () => {
+    const m = normalized.find((o) => o.value === value);
+    setQuery(m ? m.label : (value || ""));
+  };
+
   useEffect(() => {
     const onClickOutside = (e) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) {
+        setOpen(false);
+        revertIfUnmatched();
+      }
     };
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, options]);
 
   const filtered = query
     ? normalized.filter((o) => o.label.toLowerCase().includes(query.toLowerCase()))
     : normalized;
+
+  const selectOption = (opt) => {
+    justSelectedRef.current = true;
+    onChange(opt.value);
+    setQuery(opt.label);
+    setOpen(false);
+  };
 
   return (
     <div ref={wrapRef} style={{ position: "relative" }}>
       <input
         className={styles.control}
         value={query}
-        placeholder={placeholder || "Type or select…"}
+        placeholder={placeholder || "Type to search…"}
         autoComplete="off"
         onChange={(e) => {
+          // Typing only filters the dropdown below — it never submits the
+          // raw text as the field's value. Only selecting an option does.
           setQuery(e.target.value);
-          onChange(e.target.value);
           setOpen(true);
         }}
         onFocus={() => setOpen(true)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            if (filtered.length === 1) {
+              selectOption(filtered[0]);
+            } else {
+              const exact = normalized.find(
+                (o) => o.label.toLowerCase() === query.trim().toLowerCase()
+              );
+              if (exact) selectOption(exact);
+              else revertIfUnmatched();
+            }
+            setOpen(false);
+          } else if (e.key === "Escape") {
+            setOpen(false);
+            revertIfUnmatched();
+          }
+        }}
+        onBlur={() => {
+          // Give a just-clicked option (onMouseDown, which fires first) a
+          // chance to register before deciding whether to revert.
+          window.setTimeout(() => {
+            if (justSelectedRef.current) {
+              justSelectedRef.current = false;
+              return;
+            }
+            setOpen(false);
+            revertIfUnmatched();
+          }, 0);
+        }}
       />
       {open && filtered.length > 0 && (
         <div
@@ -245,11 +432,7 @@ function Combobox({ value, onChange, options, placeholder }) {
           {filtered.map((opt) => (
             <div
               key={opt.value}
-              onMouseDown={() => {
-                onChange(opt.value);
-                setQuery(opt.label);
-                setOpen(false);
-              }}
+              onMouseDown={() => selectOption(opt)}
               style={{
                 padding: "10px 16px",
                 fontSize: "14px",
@@ -266,6 +449,26 @@ function Combobox({ value, onChange, options, placeholder }) {
               {opt.label}
             </div>
           ))}
+        </div>
+      )}
+      {open && filtered.length === 0 && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            left: 0,
+            right: 0,
+            zIndex: 40,
+            background: "#fff",
+            border: "1px solid rgba(18,35,89,0.12)",
+            borderRadius: 10,
+            boxShadow: "0 12px 28px rgba(18,35,89,0.14)",
+            padding: "10px 16px",
+            fontSize: 13,
+            color: "#94a3b8",
+          }}
+        >
+          No matches — pick from the list
         </div>
       )}
     </div>
@@ -384,18 +587,165 @@ const splitComma = (value) =>
 /** Join an array back to a comma-separated display string */
 const joinComma = (arr) => (arr ?? []).join(", ");
 
+/** Toggle a value inside a comma-separated string (add if absent, remove if present) */
+const toggleCommaValue = (currentString, item) => {
+  const list = splitComma(currentString || "");
+  const next = list.includes(item)
+    ? list.filter((x) => x !== item)
+    : [...list, item];
+  return joinComma(next);
+};
+
+/**
+ * "Pick from a list, don't type" multi-select rendered as toggleable chips.
+ * Used for fields that should only ever be built by selecting predefined
+ * options — never free-typed — such as required licences/documents,
+ * languages, and benefits.
+ */
+function ChipSelect({ options, selected, onToggle }) {
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+      {(options || []).map((opt) => {
+        const active = (selected || []).includes(opt);
+        return (
+          <button
+            key={opt}
+            type="button"
+            onClick={() => onToggle(opt)}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "8px 16px",
+              borderRadius: 999,
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+              transition: "all .15s ease",
+              border: active ? "1px solid #FFA300" : "1px solid #E2E8F0",
+              background: active ? "#FFA300" : "#fff",
+              color: active ? "#fff" : "#122359",
+              boxShadow: active ? "0 4px 10px rgba(255,163,0,0.28)" : "none",
+            }}
+          >
+            {active && (
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 16,
+                  height: 16,
+                  borderRadius: "50%",
+                  background: "rgba(255,255,255,0.3)",
+                  fontSize: 10,
+                  lineHeight: 1,
+                }}
+              >
+                ✓
+              </span>
+            )}
+            {opt}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * Same idea as Key Skills: pick from suggested chips, or type your own and
+ * press Enter / click Add. Typing never submits on its own — if what you
+ * typed already matches an existing chip (suggested or previously added),
+ * that chip is simply selected instead of creating a near-duplicate. Only
+ * genuinely new text becomes a new chip.
+ */
+function ChipSelectWithAdd({ options, selected, onToggle, placeholder }) {
+  const [inputValue, setInputValue] = useState("");
+
+  // Suggested options plus any already-selected custom entries that aren't
+  // part of the fixed list, so manually-added chips show up (and can be
+  // removed the same way as any other chip).
+  const allChips = [...(options || [])];
+  (selected || []).forEach((s) => {
+    if (!allChips.some((o) => o.toLowerCase() === s.toLowerCase())) {
+      allChips.push(s);
+    }
+  });
+
+  const commitInput = () => {
+    const value = inputValue.trim();
+    if (!value) return;
+
+    const existing = allChips.find(
+      (o) => o.toLowerCase() === value.toLowerCase()
+    );
+    const target = existing || value;
+    const alreadySelected = (selected || []).some(
+      (s) => s.toLowerCase() === target.toLowerCase()
+    );
+
+    // Only adds a brand-new chip when nothing below already matches it;
+    // otherwise it just selects the existing one.
+    if (!alreadySelected) onToggle(target);
+    setInputValue("");
+  };
+
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+        <input
+          className={styles.control}
+          style={{ flex: 1 }}
+          placeholder={placeholder || "Type and press Enter…"}
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              commitInput();
+            }
+          }}
+        />
+        <button
+          type="button"
+          className="btn btn-sm btn-border"
+          onClick={commitInput}
+        >
+          + Add
+        </button>
+      </div>
+
+      <ChipSelect options={allChips} selected={selected} onToggle={onToggle} />
+    </div>
+  );
+}
+
 /* ─── Top progress bar ────────────────────────────────────────────────────── */
-function StepProgressBar({ activeStep }) {
+function StepProgressBar({ activeStep, onStepClick, lastCompletedStep = 0 }) {
   return (
     <div className={styles.progressContainer}>
       <div className={styles.stepWrapper}>
         {JOB_STEPS.map((s, i) => {
           const n = i + 1;
-          const done = n < activeStep;
           const active = n === activeStep;
+          // A checkmark only appears once that step's data has actually been
+          // saved (Save & Continue) — simply navigating past it doesn't count.
+          const done = n <= lastCompletedStep && !active;
+          const handleClick = () => onStepClick?.(n);
           return (
             <React.Fragment key={s.id}>
-              <div className={styles.stepItem}>
+              <div
+                className={styles.stepItem}
+                onClick={handleClick}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") onStepClick?.(n);
+                }}
+                title={`Go to ${s.title}`}
+                style={{ cursor: "pointer" }}
+              >
                 <div
                   className={[
                     styles.stepCircle,
@@ -492,16 +842,11 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
 
       <div className={styles.grid2}>
         {/* Trade Category */}
-        <Field label="Trade / Role Category" required>
-          <input
-            className={styles.control}
+        <Field label="Trade / Role Category" required hint="Pick from the list, or type your own">
+          <Combobox
             value={jobForm.TradeCategory}
-            onChange={(e) =>
-              setJobForm((p) => ({
-                ...p,
-                TradeCategory: e.target.value,
-              }))
-            }
+            onChange={(v) => setJobForm((p) => ({ ...p, TradeCategory: v }))}
+            options={roleCategories}
             placeholder="e.g. Welding, Electrician, Plumber"
           />
         </Field>
@@ -510,10 +855,19 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
         <Field label="Role / Specialisation">
           <input
             value={jobForm.Role}
-            onChange={(v) => setJobForm((p) => ({ ...p, Role: v }))}
-            // fetchOptions={searchRoles}
+            onChange={(e) => setJobForm((p) => ({ ...p, Role: e.target.value }))}
             className={styles.control}
             placeholder="e.g. Pipe Welder"
+          />
+        </Field>
+
+        {/* Industry Type */}
+        <Field label="Industry Type" required hint="Pick from the list, or type your own">
+          <Combobox
+            value={jobForm.IndustryType}
+            onChange={(v) => setJobForm((p) => ({ ...p, IndustryType: v }))}
+            options={industryOptions}
+            placeholder="e.g. Oil & Gas"
           />
         </Field>
 
@@ -637,7 +991,7 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
           </div>
 
           <div style={{ flex: 1 }}>
-            <Field label="Oil Field">
+            {/* <Field label="Oil Field">
               <label
                 style={{
                   display: "flex",
@@ -658,7 +1012,7 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
                 />
                 Oil field job
               </label>
-            </Field>
+            </Field> */}
           </div>
         </div>
       </div>
@@ -981,86 +1335,54 @@ function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, han
         )}
       </Field> */}
 
-      {/* Licence / Docs Required */}
-      <Field label="Licence / Documents Required" hint="Comma-separated list">
-        <input
-          className={styles.control}
+      {/* Licence / Docs Required — select from suggestions, or type your own */}
+      <Field label="Licence / Documents Required" hint="Select all that apply, or type your own and press Enter / click Add">
+        <ChipSelectWithAdd
+          options={suggestedLicenceDocs}
+          selected={splitComma(jobForm.LicenceDocsRequired || "")}
           placeholder="e.g. ITI Certificate, CSWIP 3.1"
-          value={jobForm.LicenceDocsRequired}
-          onChange={(e) =>
-            setJobForm((p) => ({ ...p, LicenceDocsRequired: e.target.value }))
-          }
-        />
-      </Field>
-
-      {/* Language Required */}
-      <Field label="Language Required" hint="Comma-separated list">
-        <input
-          className={styles.control}
-          placeholder="e.g. English, Hindi"
-          value={jobForm.LanguageRequired}
-          onChange={(e) =>
-            setJobForm((p) => ({ ...p, LanguageRequired: e.target.value }))
-          }
-        />
-      </Field>
-
-      {/* Benefits */}
-      <Field label="Benefits" hint="Comma-separated, or click suggestions below">
-        <input
-          className={styles.control}
-          placeholder="e.g. Health Insurance, Provident Fund"
-          value={jobForm.BenefitsText}
-          onChange={(e) => {
-            const value = e.target.value;
-
-            setJobForm(p => ({
-              ...p,
-              BenefitsText: value,
-              Benefits: splitComma(value)
-            }));
-          }}
-        />
-      </Field>
-
-      <div className={styles.chipRow}>
-        {suggestedBenefits.map((b) => (
-          <button
-            key={b}
-            type="button"
-            className={`btn btn-border btn-sm mr-10 mb-10 ${jobForm.Benefits.includes(b) ? "btn-brand-1" : ""
-              }`}
-            onClick={() =>
-              setJobForm((p) => {
-                const benefits = p.Benefits.includes(b)
-                  ? p.Benefits.filter((x) => x !== b)
-                  : [...p.Benefits, b];
-
-                return {
-                  ...p,
-                  Benefits: benefits,
-                  BenefitsText: benefits.join(", "),
-                };
-              })
-            }
-          >
-            {b}
-          </button>
-        ))}
-      </div>
-
-      {/* Tags */}
-      <Field label="Job Tags" hint="Comma-separated search tags">
-        <input
-          className={styles.control}
-          placeholder="e.g. blue-collar, urgent, offshore"
-          value={jobForm.TagsInput || joinComma(jobForm.Tags)}
-          onChange={(e) =>
+          onToggle={(item) =>
             setJobForm((p) => ({
               ...p,
-              TagsInput: e.target.value,
-              Tags: splitComma(e.target.value),
+              LicenceDocsRequired: toggleCommaValue(p.LicenceDocsRequired, item),
             }))
+          }
+        />
+      </Field>
+
+      {/* Language Required — select from suggestions, or type your own */}
+      <Field label="Language Required" hint="Select all that apply, or type your own and press Enter / click Add">
+        <ChipSelectWithAdd
+          options={suggestedLanguages}
+          selected={splitComma(jobForm.LanguageRequired || "")}
+          placeholder="e.g. English, Hindi"
+          onToggle={(item) =>
+            setJobForm((p) => ({
+              ...p,
+              LanguageRequired: toggleCommaValue(p.LanguageRequired, item),
+            }))
+          }
+        />
+      </Field>
+
+      {/* Benefits — select from suggestions, or type your own */}
+      <Field label="Benefits" hint="Select all that apply, or type your own and press Enter / click Add">
+        <ChipSelectWithAdd
+          options={suggestedBenefits}
+          selected={jobForm.Benefits}
+          placeholder="e.g. Health Insurance, Provident Fund"
+          onToggle={(b) =>
+            setJobForm((p) => {
+              const benefits = p.Benefits.includes(b)
+                ? p.Benefits.filter((x) => x !== b)
+                : [...p.Benefits, b];
+
+              return {
+                ...p,
+                Benefits: benefits,
+                BenefitsText: benefits.join(", "),
+              };
+            })
           }
         />
       </Field>
@@ -1433,7 +1755,7 @@ function Step6({ go, jobForm, setJobForm, onSubmit }) {
 }
 
 /* ─── STEP 7 – Publishing ─────────────────────────────────────────────────── */
-function Step7({ go, jobForm, setJobForm, onSubmit }) {
+function Step7({ go, jobForm, setJobForm, onSubmit, preflightIssues = [] }) {
   return (
     <StepCard
       stepNum={7}
@@ -1443,6 +1765,73 @@ function Step7({ go, jobForm, setJobForm, onSubmit }) {
       onContinue={onSubmit}
       isLast
     >
+      {/* Pre-publish checklist */}
+      <div
+        style={{
+          marginBottom: 24,
+          padding: "16px 18px",
+          borderRadius: 12,
+          border: `1px solid ${preflightIssues.length ? "#FBD5D5" : "#BBF7D0"}`,
+          background: preflightIssues.length ? "#FFF5F5" : "#F0FDF4",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            fontWeight: 700,
+            fontSize: 14,
+            color: preflightIssues.length ? "#B91C1C" : "#166534",
+            marginBottom: preflightIssues.length ? 10 : 0,
+          }}
+        >
+          <span>{preflightIssues.length ? "⚠" : "✓"}</span>
+          {preflightIssues.length
+            ? `${preflightIssues.length} item${preflightIssues.length > 1 ? "s" : ""} need${preflightIssues.length > 1 ? "" : "s"} your attention before publishing`
+            : "Everything looks good — ready to publish"}
+        </div>
+
+        {preflightIssues.length > 0 && (
+          <ul style={{ margin: 0, paddingLeft: 20 }}>
+            {preflightIssues.map((issue, i) => (
+              <li
+                key={i}
+                style={{
+                  fontSize: 13,
+                  color: "#7f1d1d",
+                  marginBottom: 6,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 10,
+                }}
+              >
+                <span>
+                  <strong>{issue.title}:</strong> {issue.message}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => go(issue.stepNum)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "#1D4ED8",
+                    fontWeight: 700,
+                    fontSize: 12,
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                    textDecoration: "underline",
+                  }}
+                >
+                  Fix now
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       <div className={styles.grid2}>
         {/* Application Deadline */}
         <Field label="Application Deadline" required>
@@ -1511,6 +1900,7 @@ const STEP_VIEWS = [Step1, Step2, Step3, Step4, Step5, Step6, Step7];
 /* ─── Page ────────────────────────────────────────────────────────────────── */
 export default function DashboardPostJobPage() {
   const router = useRouter();
+  const showToast = useToast();
   const [editJobId, setEditJobId] = useState(null);
   const [activeStep, setActiveStep] = useState(1);
   const [jdSuggestions, setJdSuggestions] = useState([]);
@@ -1519,8 +1909,10 @@ export default function DashboardPostJobPage() {
   const [loadingAI, setLoadingAI] = useState(false);
   const [skillsLoading, setSkillsLoading] = useState(false);
   const [jobId, setJobId] = useState(null);
+  const [lastCompletedStep, setLastCompletedStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [showPreview, setShowPreview] = useState(false);
 
   /* ── initial state – every API field present ── */
   const [jobForm, setJobForm] = useState({
@@ -1528,9 +1920,10 @@ export default function DashboardPostJobPage() {
     JobTitle: "",
     TradeCategory: roleCategories[0],
     Role: "",
+    IndustryType: "",
     ExperienceMinYears: "",
     ExperienceMaxYears: "",
-    JobType: "Normal_Job",
+    JobType: "",
     EmploymentType: "Full_Time",
     EmploymentMode: "Onsite",
     Department: "",
@@ -1543,8 +1936,8 @@ export default function DashboardPostJobPage() {
     // Step 2
     SalaryMin: "",
     SalaryMax: "",
-    SalaryCurrency: "INR",
-    SalaryDisplayOption: "Show_Range",
+    // SalaryCurrency: "INR",
+    // SalaryDisplayOption: "Show_Range",
 
     // Step 3
     KeySkills: [],
@@ -1619,12 +2012,16 @@ export default function DashboardPostJobPage() {
   }, [jobForm.AdditionalJobDescription]);
 
   /* ── helpers ── */
+  const preflightIssues = useMemo(() => validateAllSteps(jobForm), [jobForm]);
+
   const go = (n) => {
     setActiveStep(n);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const updateDraft = (response) => {
+    setLastCompletedStep(response.stepStatus?.lastCompletedStep ?? 0);
+
     if (response.stepStatus?.lastCompletedStep >= 7) {
       localStorage.removeItem("jobDraft");
       return;
@@ -1640,73 +2037,6 @@ export default function DashboardPostJobPage() {
     );
   };
 
-  /* ── map resume API response → jobForm ── */
-  const mapResumeToForm = (response) => ({
-    // Step 1
-    JobTitle: response.step1Data?.jobTitle ?? "",
-    TradeCategory: response.step1Data?.tradeCategory ?? roleCategories[0],
-    Role: response.step1Data?.role ?? "",
-    ExperienceMinYears: response.step1Data?.experienceMinYears ?? "",
-    ExperienceMaxYears: response.step1Data?.experienceMaxYears ?? "",
-    JobType: response.step1Data?.jobType ?? "Normal_Job",
-    EmploymentType: response.step1Data?.employmentType ?? "Full_Time",
-    EmploymentMode: response.step1Data?.employmentMode ?? "Onsite",
-    Department: response.step1Data?.department ?? "",
-    DutyHoursPerDay: response.step1Data?.dutyHoursPerDay ?? "",
-    IsOilField: response.step1Data?.isOilField ?? false,
-    PaidOvertime: response.step1Data?.paidOvertime ?? false,
-    KeyResponsibilities: response.step1Data?.keyResponsibilities ?? [],
-    JobDescription: response.step1Data?.jobDescription ?? "",
-
-    // Step 2
-    SalaryMin: response.step2Data?.salaryMin?.toString() ?? "",
-    SalaryMax: response.step2Data?.salaryMax?.toString() ?? "",
-    SalaryCurrency: response.step2Data?.salaryCurrency ?? "INR",
-    SalaryDisplayOption: response.step2Data?.salaryDisplayOption ?? "Show_Range",
-
-    // Step 3
-    KeySkills: response.step3Data?.keySkills ?? [],
-    Step3KeyResponsibilities: response.step3Data?.keyResponsibilities ?? [],
-    AdditionalJobDescription: response.step3Data?.additionalJobDescription ?? "",
-    LicenceDocsRequired: response.step3Data?.licenceDocsRequired ?? "",
-    LanguageRequired: response.step3Data?.languageRequired ?? "",
-    Benefits: response.step3Data?.benefits ?? [],
-    Tags: response.step3Data?.tags ?? [],
-
-    // Step 4
-    Vacancies: response.step4Data?.vacancies ?? 1,
-    EducationRequired: response.step4Data?.educationRequired ?? "Any",
-    AgeMin: response.step4Data?.ageMin ?? "",
-    AgeMax: response.step4Data?.ageMax ?? "",
-    GenderPreferred: response.step4Data?.genderPreferred ?? "Any",
-    DisabilityEligible: response.step4Data?.disabilityEligible ?? false,
-    PassportRequired: response.step4Data?.passportRequired ?? false,
-    PassportValidityMonths: response.step4Data?.passportValidityMonths ?? "",
-
-    // Step 5
-    LocationType: response.step5Data?.locationType ?? "Onshore",
-    Country: response.step5Data?.country ?? "India",
-    WorkAddressLine: response.step5Data?.workAddressLine ?? "",
-    OnshoreCity: response.step5Data?.onshoreCity ?? "",
-    OnshoreState: response.step5Data?.onshoreState ?? "",
-    OnshoreCountry: response.step5Data?.onshoreCountry ?? "",
-    OnshorePincode: response.step5Data?.onshorePincode ?? "",
-    OffshoreVesselName: response.step5Data?.offshoreVesselName ?? "",
-    OffshoreRegion: response.step5Data?.offshoreRegion ?? "",
-    OffshoreCountry: response.step5Data?.offshoreCountry ?? "",
-
-    // Step 6
-    questions: response.step6Data?.questions?.length
-      ? response.step6Data.questions
-      : [],
-
-    // Step 7 – publishing data IS returned in resume as step7Data
-    ApplicationDeadline: response.step7Data?.applicationDeadline ?? "",
-    CompanyVisibility: response.step7Data?.companyVisibility ?? "ShowName",
-    PublishingTags: response.step7Data?.publishingTags ?? [],
-    PublishNow: response.step7Data?.publishNow ?? true,
-  });
-
   const loadJobForEdit = async (id) => {
     try {
       const response = await getJobResume(id);
@@ -1716,7 +2046,8 @@ export default function DashboardPostJobPage() {
       console.log("BENEFITS:", response.step3Data?.benefits);
 
       setJobId(id);
-      setJobForm((prev) => ({ ...prev, ...mapResumeToForm(response) }));
+      setJobForm((prev) => ({ ...prev, ...mapResumeToForm(response, roleCategories[0]) }));
+      setLastCompletedStep(response.stepStatus?.lastCompletedStep ?? 0);
 
       const nextStep =
         response.stepStatus?.lastCompletedStep >= 7
@@ -1745,7 +2076,8 @@ export default function DashboardPostJobPage() {
       console.log("STEP 3 DATA:", response.step3Data);
       console.log("BENEFITS:", response.step3Data?.benefits);
 
-      setJobForm((prev) => ({ ...prev, ...mapResumeToForm(response) }));
+      setJobForm((prev) => ({ ...prev, ...mapResumeToForm(response, roleCategories[0]) }));
+      setLastCompletedStep(response.stepStatus?.lastCompletedStep ?? 0);
 
       const nextStep =
         response.stepStatus.lastCompletedStep >= 7
@@ -1823,7 +2155,7 @@ export default function DashboardPostJobPage() {
   /* ── AI skill suggestions (Step 3 — skills are AI-generated only, no manual typing) ── */
   const handleSuggestSkills = async () => {
     if (!jobForm.JobTitle.trim()) {
-      alert("Add a Job Title in Step 1 first so AI knows what skills to suggest.");
+      showToast("Add a Job Title in Step 1 first so AI knows what skills to suggest.", "warning");
       return;
     }
     try {
@@ -1839,7 +2171,7 @@ export default function DashboardPostJobPage() {
       }));
     } catch (error) {
       console.error("suggestSkills:", error);
-      alert("Failed to generate skills. Please try again.");
+      showToast("Failed to generate skills. Please try again.", "error");
     } finally {
       setSkillsLoading(false);
     }
@@ -1904,11 +2236,13 @@ export default function DashboardPostJobPage() {
   ══════════════════════════════════════════════════════════════════════════ */
 
   const handleStep1 = async () => {
-    if (!jobForm.JobTitle.trim()) return alert("Job Title is required");
-    if (!jobForm.TradeCategory) return alert("Trade Category is required");
-    if (!jobForm.JobDescription.trim()) return alert("Job Description is required");
-    if (!jobForm.EmploymentType) return alert("Employment Type is required");
-    if (!jobForm.EmploymentMode) return alert("Employment Mode is required");
+    if (!jobForm.JobTitle.trim()) return showToast("Job Title is required", "error");
+    if (!jobForm.TradeCategory) return showToast("Trade Category is required", "error");
+    if (!jobForm.IndustryType) return showToast("Industry Type is required", "error");
+    if (!jobForm.JobType) return showToast("Job Type is required", "error");
+    if (!jobForm.JobDescription.trim()) return showToast("Job Description is required", "error");
+    if (!jobForm.EmploymentType) return showToast("Employment Type is required", "error");
+    if (!jobForm.EmploymentMode) return showToast("Employment Mode is required", "error");
 
     setLoading(true);
     try {
@@ -1917,6 +2251,7 @@ export default function DashboardPostJobPage() {
         JobTitle: jobForm.JobTitle,
         TradeCategory: jobForm.TradeCategory,
         Role: jobForm.Role,
+        IndustryType: jobForm.IndustryType,
         ExperienceMinYears: jobForm.ExperienceMinYears,
         ExperienceMaxYears: jobForm.ExperienceMaxYears,
         JobType: jobForm.JobType,
@@ -1934,15 +2269,15 @@ export default function DashboardPostJobPage() {
       go(2);
     } catch (error) {
       console.error("Step 1:", error?.response?.data ?? error);
-      alert("Failed to save job details. Please try again.");
+      showToast("Failed to save job details. Please try again.", "error");
     } finally {
       setLoading(false);
     }
   };
 
   const handleStep2 = async () => {
-    if (!jobForm.SalaryMin) return alert("Minimum Salary is required");
-    if (!jobForm.SalaryMax) return alert("Maximum Salary is required");
+    if (!jobForm.SalaryMin) return showToast("Minimum Salary is required", "error");
+    if (!jobForm.SalaryMax) return showToast("Maximum Salary is required", "error");
 
     setLoading(true);
     try {
@@ -1956,7 +2291,7 @@ export default function DashboardPostJobPage() {
       go(3);
     } catch (error) {
       console.error("Step 2:", error?.response?.data ?? error);
-      alert("Failed to save compensation. Please try again.");
+      showToast("Failed to save compensation. Please try again.", "error");
     } finally {
       setLoading(false);
     }
@@ -1983,14 +2318,14 @@ export default function DashboardPostJobPage() {
       go(4);
     } catch (error) {
       console.error("Step 3:", error?.response?.data ?? error);
-      alert("Failed to save skills. Please try again.");
+      showToast("Failed to save skills. Please try again.", "error");
     } finally {
       setLoading(false);
     }
   };
 
   const handleStep4 = async () => {
-    if (!jobForm.Vacancies) return alert("Number of Vacancies is required");
+    if (!jobForm.Vacancies) return showToast("Number of Vacancies is required", "error");
 
     setLoading(true);
     try {
@@ -2008,7 +2343,7 @@ export default function DashboardPostJobPage() {
       go(5);
     } catch (error) {
       console.error("Step 4:", error?.response?.data ?? error);
-      alert("Failed to save eligibility. Please try again.");
+      showToast("Failed to save eligibility. Please try again.", "error");
     } finally {
       setLoading(false);
     }
@@ -2016,7 +2351,7 @@ export default function DashboardPostJobPage() {
 
 
   const handleStep5 = async () => {
-    if (!jobForm.LocationType) return alert("Location Type is required");
+    if (!jobForm.LocationType) return showToast("Location Type is required", "error");
     if (
       jobForm.LocationType === "Offshore" &&
       !jobForm.OffshoreVesselName.trim()
@@ -2052,7 +2387,7 @@ export default function DashboardPostJobPage() {
       go(6);
     } catch (error) {
       console.error("Step 5:", error?.response?.data ?? error);
-      alert("Failed to save location. Please try again.");
+      showToast("Failed to save location. Please try again.", "error");
     } finally {
       setLoading(false);
     }
@@ -2074,15 +2409,23 @@ export default function DashboardPostJobPage() {
       go(7);
     } catch (error) {
       console.error("Step 6:", error?.response?.data ?? error);
-      alert("Failed to save questions. Please try again.");
+      showToast("Failed to save questions. Please try again.", "error");
     } finally {
       setLoading(false);
     }
   };
 
   const handleStep7 = async () => {
-    if (!jobForm.ApplicationDeadline)
-      return alert("Application Deadline is required");
+    const issues = validateAllSteps(jobForm);
+    if (issues.length > 0) {
+      showToast(
+        `Please complete ${issues.length} pending item${issues.length > 1 ? "s" : ""} before publishing — see the checklist below`,
+        "warning"
+      );
+      // jump to whichever earlier step has the first unresolved issue so it's not hidden off-screen
+      if (issues[0].stepNum !== 7) go(issues[0].stepNum);
+      return;
+    }
 
     setLoading(true);
     try {
@@ -2095,10 +2438,11 @@ export default function DashboardPostJobPage() {
         PublishNow: jobForm.PublishNow,
       });
       localStorage.removeItem("jobDraft");
+      showToast("Job published successfully!", "success");
       router.push("/employeer/job-list?success=job-published");
     } catch (error) {
       console.error("Step 7:", error?.response?.data ?? error);
-      alert("Failed to publish job. Please try again.");
+      showToast("Failed to publish job. Please try again.", "error");
     } finally {
       setLoading(false);
     }
@@ -2141,23 +2485,33 @@ export default function DashboardPostJobPage() {
                         if (!jobId) return;
                         try {
                           await saveDraft(jobId);
-                          alert("Draft saved!");
+                          showToast("Draft saved!", "success");
                         } catch (error) {
                           console.error(error);
-                          alert("Could not save draft.");
+                          showToast("Could not save draft.", "error");
                         }
                       }}
                     >
                       Save Draft
                     </button>
-                    <button className="btn btn-default btn-sm">Preview</button>
+                    <button
+                      type="button"
+                      className="btn btn-default btn-sm"
+                      onClick={() => setShowPreview(true)}
+                    >
+                      Preview
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Progress bar */}
-            <StepProgressBar activeStep={activeStep} />
+            <StepProgressBar
+              activeStep={activeStep}
+              onStepClick={go}
+              lastCompletedStep={lastCompletedStep}
+            />
 
             {/* Active step */}
             <div className={styles.body}>
@@ -2183,6 +2537,7 @@ export default function DashboardPostJobPage() {
                   handleJDTab={handleJDTab}
                   handleSuggestSkills={handleSuggestSkills}
                   skillsLoading={skillsLoading}
+                  preflightIssues={preflightIssues}
                 />
 
                 <div className={styles.bottomLink}>
@@ -2193,6 +2548,12 @@ export default function DashboardPostJobPage() {
           </div>
         </div>
       </section>
+
+      <JobPreviewModal
+        open={showPreview}
+        onClose={() => setShowPreview(false)}
+        job={jobForm}
+      />
     </main>
   );
 }

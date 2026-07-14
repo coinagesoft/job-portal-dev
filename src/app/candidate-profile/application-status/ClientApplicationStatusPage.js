@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSelector } from 'react-redux';
@@ -385,7 +385,6 @@ const ClientApplicationStatusPage = () => {
   const [activeFilter, setActiveFilter] = useState('All');
   const [acknowledgedMessages, setAcknowledgedMessages] = useState({});
   const [ackStateReady, setAckStateReady] = useState(false);
-  const reminderSignatureRef = useRef('');
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -516,32 +515,6 @@ const ClientApplicationStatusPage = () => {
     }
   };
 
-  useEffect(() => {
-    if (!ackStateReady) return;
-    const pending = filteredApplications.filter((application) => !acknowledgedMessages[application.id]);
-
-    if (!pending.length) {
-      reminderSignatureRef.current = '';
-      return;
-    }
-
-    const signature = `${activeFilter}:${pending.map((item) => item.id).join(',')}`;
-    if (reminderSignatureRef.current === signature) return;
-    reminderSignatureRef.current = signature;
-
-    if (pending.length === 1) {
-      showToast(
-        `Reminder: Please acknowledge recruiter message from ${pending[0].company}.`,
-        'warning'
-      );
-      return;
-    }
-
-    showToast(
-      `Reminder: ${pending.length} recruiter messages are waiting for acknowledgment.`,
-      'warning'
-    );
-  }, [ackStateReady, acknowledgedMessages, activeFilter, filteredApplications, showToast]);
 
   const statusCounts = useMemo(() => {
     return FILTERS.reduce((acc, filterName) => {
