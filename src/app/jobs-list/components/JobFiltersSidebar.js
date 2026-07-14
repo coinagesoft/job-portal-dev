@@ -1,22 +1,74 @@
 'use client';
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { filterCategories } from "./filterData";
-import { getJobFilterOptions } from "@/services/candidate/jobFilterService";
 
 const normalizeString = (str) => {
   if (!str) return "";
   return str.toLowerCase().replace(/[^a-z0-9]/g, "");
 };
 
+const uniqueValues = (values) =>
+  Array.from(
+    new Set(
+      values
+        .filter(Boolean)
+        .map((v) => String(v).trim())
+        .filter((v) => v.length > 0)
+    )
+  ).sort((a, b) => a.localeCompare(b));
 
-const formatLabel = (value) => {
-  if (!value) return "";
-
-  return value
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+// Parses "45,000-60,000", "45000", etc. into { min, max }. Same convention
+// as JobList.jsx's parseJobSalary — raw numbers, no unit multiplication.
+const parseSalaryRangeToMinMax = (salaryRange) => {
+  const nums = String(salaryRange || "")
+    .replace(/,/g, "")
+    .match(/\d+/g)
+    ?.map(Number) || [];
+  if (nums.length === 0) return null;
+  const min = nums[0];
+  const max = nums[1] ?? nums[0];
+  return { min, max };
 };
 
+// Builds N buckets spanning the actual min/max salary found in the data,
+// rounded to a "nice" step so labels don't show ugly numbers. The last
+// bucket is open-ended ("+"). Returns [] if there's no usable salary data.
+const buildSalaryBuckets = (jobsList, bucketCount = 4) => {
+  const parsed = jobsList
+    .map((job) => parseSalaryRangeToMinMax(job.salaryRange || job.salaryDisplay))
+    .filter(Boolean);
+
+  if (parsed.length === 0) return [];
+
+  const overallMin = Math.min(...parsed.map((p) => p.min));
+  const overallMax = Math.max(...parsed.map((p) => p.max));
+
+  if (!Number.isFinite(overallMin) || !Number.isFinite(overallMax) || overallMax <= overallMin) {
+    return [];
+  }
+
+  const span = overallMax - overallMin;
+  const rawStep = span / bucketCount;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep || 1)));
+  const step = Math.max(magnitude, Math.round(rawStep / magnitude) * magnitude);
+
+  const buckets = [];
+  let cursor = Math.floor(overallMin / step) * step;
+  for (let i = 0; i < bucketCount; i++) {
+    const bucketMin = cursor;
+    const isLast = i === bucketCount - 1;
+    const bucketMax = isLast ? Infinity : cursor + step;
+    buckets.push({
+      label: isLast
+        ? `₹${bucketMin.toLocaleString("en-IN")}+`
+        : `₹${bucketMin.toLocaleString("en-IN")} - ₹${bucketMax.toLocaleString("en-IN")}`,
+      min: bucketMin,
+      max: bucketMax,
+    });
+    cursor += step;
+  }
+  return buckets;
+};
 
 const getOptionCount = (categoryType, optionLabel, jobsList) => {
   if (!Array.isArray(jobsList)) return 0;
@@ -24,11 +76,11 @@ const getOptionCount = (categoryType, optionLabel, jobsList) => {
   return jobsList.filter(job => {
     switch (categoryType) {
       case "cities": {
-        const jobCity = normalizeString(job.jobLocation || job.city);
+        const jobCity = normalizeString(job.city || job.jobLocation);
         return jobCity.includes(normLabel);
       }
       case "states": {
-        const jobState = normalizeString(job.jobLocation || job.state);
+        const jobState = normalizeString(job.state || job.jobLocation);
         return jobState.includes(normLabel);
       }
       case "tradeCategories": {
@@ -70,36 +122,28 @@ const getOptionCount = (categoryType, optionLabel, jobsList) => {
 };
 
 const JobFiltersSidebar = ({ jobs = [], filters = {}, onFilterChange }) => {
-  const [filterOptions, setFilterOptions] = useState({});
-  const [openCategory, setOpenCategory] = useState(null);
+  const [openCategory, setOpenCategory] = useState(filterCategories[0]?.type ?? null);
 
-  useEffect(() => {
-    const loadFilters = async () => {
-      try {
-        const response = await getJobFilterOptions();
-        if (response.data.success) {
-          const data = response.data;
-          const mapped = {
-            tradeCategories: data.tradeCategories.map(item => ({ label: item, count: null })),
-            roles: data.roles.map(item => ({ label: item, count: null })),
-            cities: data.cities.map(item => ({ label: item, count: null })),
-            states: data.states.map(item => ({ label: item, count: null })),
-            locationTypes: data.locationTypes.map(item => ({ label: item, count: null })),
-            employmentTypes: data.employmentTypes.map(item => ({ label: item, count: null })),
-            educationLevels: data.educationLevels.map(item => ({ label: item, count: null })),
-            departments: data.departments.map(item => ({ label: item, count: null })),
-            skills: data.skills.map(item => ({ label: item, count: null })),
-            employmentModes: (data.employmentModes || []).map(item => ({ label: item, count: null })),
-          };
-          setFilterOptions(mapped);
-          setOpenCategory(filterCategories[0]?.type ?? null);
-        }
-      } catch (error) {
-        console.error("Error loading filter options:", error);
-      }
+  // All option lists, including salary buckets, are derived straight from
+  // the jobs data (the same getAllJobs response the page already fetched)
+  // instead of a separate getJobFilterOptions call.
+  const filterOptions = useMemo(() => {
+    const salaryBuckets = buildSalaryBuckets(jobs);
+
+    return {
+      tradeCategories: uniqueValues(jobs.map(j => j.tradeCategory)).map(label => ({ label, count: null })),
+      roles: uniqueValues(jobs.map(j => j.jobTitle || j.role)).map(label => ({ label, count: null })),
+      cities: uniqueValues(jobs.map(j => j.city || j.jobLocation)).map(label => ({ label, count: null })),
+      states: uniqueValues(jobs.map(j => j.state || j.jobLocation)).map(label => ({ label, count: null })),
+      locationTypes: uniqueValues(jobs.map(j => j.locationType)).map(label => ({ label, count: null })),
+      employmentTypes: uniqueValues(jobs.map(j => j.employmentType)).map(label => ({ label, count: null })),
+      educationLevels: uniqueValues(jobs.map(j => j.educationRequired)).map(label => ({ label, count: null })),
+      departments: uniqueValues(jobs.map(j => j.department)).map(label => ({ label, count: null })),
+      skills: uniqueValues(jobs.flatMap(j => Array.isArray(j.skills) ? j.skills : [])).map(label => ({ label, count: null })),
+      employmentModes: uniqueValues(jobs.map(j => j.employmentMode)).map(label => ({ label, count: null })),
+      salary: salaryBuckets.map(b => ({ label: b.label, count: null, min: b.min, max: b.max })),
     };
-    loadFilters();
-  }, []);
+  }, [jobs]);
 
   const toggleCategory = (type) => {
     setOpenCategory(prev => (prev === type ? null : type));
@@ -138,10 +182,21 @@ const JobFiltersSidebar = ({ jobs = [], filters = {}, onFilterChange }) => {
   const optionsWithCounts = useMemo(() => {
     const result = {};
     Object.entries(filterOptions).forEach(([type, opts]) => {
-      result[type] = opts.map(opt => ({
-        ...opt,
-        count: getOptionCount(type, opt.label, jobs)
-      }));
+      if (type === "salary") {
+        result[type] = opts.map(opt => ({
+          ...opt,
+          count: jobs.filter(job => {
+            const jobSal = parseSalaryRangeToMinMax(job.salaryRange || job.salaryDisplay);
+            if (!jobSal) return false;
+            return jobSal.min <= opt.max && jobSal.max >= opt.min;
+          }).length,
+        }));
+      } else {
+        result[type] = opts.map(opt => ({
+          ...opt,
+          count: getOptionCount(type, opt.label, jobs)
+        }));
+      }
     });
     return result;
   }, [filterOptions, jobs]);
@@ -150,11 +205,30 @@ const JobFiltersSidebar = ({ jobs = [], filters = {}, onFilterChange }) => {
     background: '#fff4e6',
     color: '#e68a00',
     border: '1px solid #ffe3c2',
-    // padding:"10px "
   };
 
   return (
-    <div className="sidebar-shadow none-shadow mb-30" style={{ '--primary-navy': '#122359' }}>
+    <div className="sidebar-shadow none-shadow mb-30 job-filters-sidebar" style={{ '--primary-navy': '#122359' }}>
+      {/* Force exactly one separator line per filter block, regardless of
+          any border/margin the theme's own global CSS puts on the list,
+          list items, or form-group wrapper. */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        .job-filters-sidebar .filter-block {
+          border-bottom: 1px solid var(--border-light, #eef0f5) !important;
+          padding-bottom: 12px !important;
+          margin-bottom: 12px !important;
+        }
+        .job-filters-sidebar .filter-block .form-group,
+        .job-filters-sidebar .filter-block .list-checkbox,
+        .job-filters-sidebar .filter-block .list-checkbox li {
+          border: none !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        .job-filters-sidebar .filter-block .list-checkbox li {
+          padding: 6px 0 !important;
+        }
+      `}} />
       <div className="sidebar-filters">
         <div
           className="filter-block mb-30"
@@ -207,10 +281,6 @@ const JobFiltersSidebar = ({ jobs = [], filters = {}, onFilterChange }) => {
             <div
               key={category.type}
               className="filter-block mb-20"
-              style={{
-                borderBottom: '1px solid var(--border-light, #eef0f5)',
-                paddingBottom: isOpen ? 16 : 12,
-              }}
             >
               <h5
                 className="medium-heading"
@@ -246,28 +316,35 @@ const JobFiltersSidebar = ({ jobs = [], filters = {}, onFilterChange }) => {
               </h5>
 
               {isOpen && (
-                <div className="form-group">
-                  <ul className="list-checkbox" style={{
-                    maxHeight: 220, overflowY: "auto",
-                    overflowX: "hidden",
-                  }}>
-                    {options.map((option) => (
-                      <li key={`${category.type}-${option.label}`}>
-                        <label className="cb-container">
-                          <input
-                            type="checkbox"
-                            checked={safeIncludes(filters[category.type], option.label)}
-                            onChange={() => handleCheckbox(category.type, option.label)}
-                          />
-                          <span className="text-small">{option.label}</span>
-                          <span className="checkmark"></span>
-                        </label>
-                        {option.count !== null && option.count !== undefined ? (
-                          <span className="number-item" style={filterBadgeStyle}>{option.count}</span>
-                        ) : null}
-                      </li>
-                    ))}
-                  </ul>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  {options.length === 0 ? (
+                    <p className="text-small color-text-paragraph-2" style={{ margin: 0 }}>
+                      No options available.
+                    </p>
+                  ) : (
+                    <ul className="list-checkbox" style={{
+                      maxHeight: 220, overflowY: "auto",
+                      overflowX: "hidden",
+                      margin: 0,
+                    }}>
+                      {options.map((option) => (
+                        <li key={`${category.type}-${option.label}`}>
+                          <label className="cb-container">
+                            <input
+                              type="checkbox"
+                              checked={safeIncludes(filters[category.type], option.label)}
+                              onChange={() => handleCheckbox(category.type, option.label)}
+                            />
+                            <span className="text-small">{option.label}</span>
+                            <span className="checkmark"></span>
+                          </label>
+                          {option.count !== null && option.count !== undefined ? (
+                            <span className="number-item" style={filterBadgeStyle}>{option.count}</span>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               )}
             </div>

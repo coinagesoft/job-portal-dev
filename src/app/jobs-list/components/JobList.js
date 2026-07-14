@@ -184,8 +184,11 @@ const JobList = ({ filters = {} }) => {
     );
   };
 
+  // Labels are raw numbers (e.g. "₹15,000 - ₹25,000", "₹40,000+") — strip
+  // commas/currency symbols before matching digits, and keep the same
+  // no-multiplier convention as parseJobSalary below so both sides agree.
   const parseSalaryFilter = (label) => {
-    const nums = String(label).match(/\d+/g)?.map(n => Number(n) * 1000) || [];
+    const nums = String(label).replace(/,/g, "").match(/\d+/g)?.map(Number) || [];
     const min = nums[0] || 0;
     const max = label.includes("+") ? Infinity : (nums[1] || min);
     return { min, max };
