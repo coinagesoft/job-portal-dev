@@ -49,12 +49,28 @@ export default function BrowseByCategory() {
         });
 
         // Convert counts object to array of objects
-        const categoryList = Object.keys(counts).map((industry) => ({
-          name: industry,
-          count: counts[industry]
-        }));
+const categoryList = Object.keys(counts).map((industry) => ({
+  name: industry,
+  count: counts[industry]
+}));
 
-        setCategories(categoryList);
+const otherCategory = categoryList.find(
+  (cat) => cat.name.trim().toLowerCase() === "other"
+);
+
+const filteredCategories = categoryList.filter(
+  (cat) => cat.name.trim().toLowerCase() !== "other"
+);
+
+if (otherCategory) {
+  filteredCategories.push(otherCategory);
+}
+
+console.log(filteredCategories.map((item) => item.name));
+
+setCategories(filteredCategories);
+
+
       } catch (error) {
         console.error("Error loading categories:", error);
       } finally {

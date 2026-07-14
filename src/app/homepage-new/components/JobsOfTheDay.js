@@ -64,7 +64,16 @@ export default function JobsOfTheDay() {
         }));
 
         // Sort tabs alphabetically
-        activeTabs.sort((a, b) => a.label.localeCompare(b.label));
+        // Sort alphabetically but always keep "Other" at the end
+activeTabs.sort((a, b) => {
+  const aIsOther = a.label.trim().toLowerCase() === "other";
+  const bIsOther = b.label.trim().toLowerCase() === "other";
+
+  if (aIsOther && !bIsOther) return 1;
+  if (!aIsOther && bIsOther) return -1;
+
+  return a.label.localeCompare(b.label);
+});
 
         setTabs(activeTabs);
         setJobsData(grouped);
