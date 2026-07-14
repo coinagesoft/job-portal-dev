@@ -2778,7 +2778,7 @@ const loadAvailability = useCallback(async () => {
           city: profile.currentCity || "",
           state: profile.currentState || "",
           pin: profile.pincode || "",
-          summary: profile.professionalSummary || "",
+          summary: profile.about || "",
           yearsOfExperience: profile.totalExperienceYears || 0,
           salaryExpectation:
             profile.expectedSalary || profile.salaryExpectation || "",
@@ -2804,7 +2804,7 @@ const loadAvailability = useCallback(async () => {
           state: profile.currentState || "",
           pin: profile.pincode || "",
 
-          summary: profile.professionalSummary || "",
+          summary: profile.about || "",
 
           yearsOfExperience: profile.totalExperienceYears || 0,
           trade: profile.role || profile.jobTitle || "",
@@ -2892,7 +2892,7 @@ const loadAvailability = useCallback(async () => {
       currentState: profileData.state,
       pincode: profileData.pin,
 
-      professionalSummary: profileData.summary,
+      about: profileData.summary,
 
       totalExperienceYears: profileData.yearsOfExperience,
       expectedSalary: profileData.salaryExpectation,

@@ -42,7 +42,7 @@ const CandidateProfilePreviewPage = () => {
   const years = summary?.totalExperienceYears ?? 0;
   const city = summary?.currentCity || "";
   const state = summary?.currentState || "";
-  const about = summary?.professionalSummary || summary?.about || "";
+  const about = summary?.about || "";
 
   return (
     <main className="main">
