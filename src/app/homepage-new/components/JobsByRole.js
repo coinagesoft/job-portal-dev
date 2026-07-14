@@ -99,7 +99,7 @@ export default function JobsByRole() {
                   {roles.map((role) => (
                     <SwiperSlide key={`${role.title}-${role.industry}`} className="hover-up">
                       <div className="card-grid-5 card-category hover-up" style={{ backgroundImage: `url(${role.bg})` }}>
-                        <Link href={`/jobs-list?industry=${encodeURIComponent(role.industry)}`}>
+                        <Link href={`/jobs-list?tradeCategory=${encodeURIComponent(role.industry)}`}>
                           <div className="box-cover-img">
                             <div className="content-bottom">
                               <h6 className="color-white mb-5">{role.title}</h6>

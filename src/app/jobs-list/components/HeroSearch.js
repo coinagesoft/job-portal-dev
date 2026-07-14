@@ -10,7 +10,7 @@ const HeroSearch = ({ jobs = [] }) => {
 
   const [keyword, setKeyword] = React.useState("");
   const [location, setLocation] = React.useState("");
-  const [industries, setIndustries] = React.useState("");
+  const [tradeCategory, setTradeCategory] = React.useState("");
 
   // Real Trade Category + City lists, sourced from the same endpoint the sidebar uses.
   const [tradeCategoryOptions, setTradeCategoryOptions] = React.useState([]);
@@ -34,11 +34,14 @@ const HeroSearch = ({ jobs = [] }) => {
     loadOptions();
   }, []);
 
-  // Keep the form in sync with the URL (e.g. back/forward nav, direct links)
+  // Keep the form in sync with the URL (e.g. back/forward nav, direct links).
+  // Note: this reads "tradeCategory", a separate param from the homepage
+  // category tiles' "industry" param — they're different fields on a job
+  // (tradeCategory vs industryType) and must not share one URL key.
   React.useEffect(() => {
     setKeyword(searchParams.get("q") || "");
     setLocation(searchParams.get("location") || "");
-    setIndustries(searchParams.get("industry") || "");
+    setTradeCategory(searchParams.get("tradeCategory") || "");
   }, [searchParams]);
 
   const handleSearch = (event) => {
@@ -54,8 +57,8 @@ const HeroSearch = ({ jobs = [] }) => {
       params.set("location", location);
     }
 
-    if (industries) {
-      params.set("industry", industries);
+    if (tradeCategory) {
+      params.set("tradeCategory", tradeCategory);
     }
 
     const query = params.toString();
@@ -67,7 +70,7 @@ const HeroSearch = ({ jobs = [] }) => {
     event.preventDefault();
     setKeyword("");
     setLocation("");
-    setIndustries("");
+    setTradeCategory("");
     router.push("/jobs-list");
   };
 
@@ -98,8 +101,8 @@ const HeroSearch = ({ jobs = [] }) => {
                 <div className="box-industry"style={{ minWidth: "220px", flex: "0 0 220px" }} >
                   <select
                     className="form-input mr-12 dashboard-select-arrow"
-                    value={industries}
-                    onChange={(event) => setIndustries(event.target.value)}
+                    value={tradeCategory}
+                    onChange={(event) => setTradeCategory(event.target.value)}
                     disabled={optionsLoading}
                   >
                     <option value="">

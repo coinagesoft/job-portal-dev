@@ -114,17 +114,23 @@ const JobList = ({ filters = {} }) => {
     return selected.some(state => jobState.includes(normalizeString(state)));
   };
 
-  // This is the field that BrowseByCategory.jsx groups/counts by.
-  // Matching on it here (instead of tradeCategory) is what makes the
-  // homepage count and the filtered list agree.
-  const matchesIndustry = (job) => {
-    const selected = [
-      ...(filters.industries || []),
-      ...(filters.tradeCategories || []), // kept for backward compatibility
-    ];
+  // This is the field BrowseByCategory.jsx (homepage tiles) groups/counts by.
+  // Kept separate from tradeCategory below — they are different taxonomies.
+  const matchesIndustryType = (job) => {
+    const selected = filters.industries || [];
     if (selected.length === 0) return true;
-    const jobIndustry = normalizeString(job.industryType || job.tradeCategory);
+    const jobIndustry = normalizeString(job.industryType);
     return selected.some(cat => jobIndustry === normalizeString(cat));
+  };
+
+  // This is the field Hero Search's "Trade Category" dropdown and the
+  // sidebar's "Trade Category" checkboxes both use — kept as its own
+  // independent AND condition rather than merged with industryType.
+  const matchesTradeCategory = (job) => {
+    const selected = filters.tradeCategories || [];
+    if (selected.length === 0) return true;
+    const jobTrade = normalizeString(job.tradeCategory);
+    return selected.some(cat => jobTrade === normalizeString(cat));
   };
 
   const matchesRole = (job) => {
@@ -239,7 +245,8 @@ const JobList = ({ filters = {} }) => {
       matchesLocationSingle(job) &&
       matchesCity(job) &&
       matchesState(job) &&
-      matchesIndustry(job) &&
+      matchesIndustryType(job) &&
+      matchesTradeCategory(job) &&
       matchesRole(job) &&
       matchesEducation(job) &&
       matchesEmploymentType(job) &&
