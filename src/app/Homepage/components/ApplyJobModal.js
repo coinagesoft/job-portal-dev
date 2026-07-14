@@ -689,7 +689,6 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
 
                             <p className="font-xs mb-0">
                               {profile?.about ||
-                                profile?.professionalSummary ||
                                 "No professional summary available"}
                             </p>
                           </div>

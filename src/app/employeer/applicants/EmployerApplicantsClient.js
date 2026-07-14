@@ -777,9 +777,9 @@ const EmployerApplicantsClient = () => {
       {detailPopup && (
         <Modal title={`Profile Details — ${detailPopup.candidateName}`} onClose={() => setDetailPopup(null)}>
 
-          {detailPopup.professionalSummary && (
+          {detailPopup.about && (
             <div style={{ marginBottom: "16px", padding: "10px 12px", background: "#f9fafb", borderRadius: "8px" }}>
-              <p style={{ fontSize: "13px", color: "#374151", margin: 0 }}>{detailPopup.professionalSummary}</p>
+              <p style={{ fontSize: "13px", color: "#374151", margin: 0 }}>{detailPopup.about}</p>
             </div>
           )}
 
