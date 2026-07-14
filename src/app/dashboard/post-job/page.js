@@ -305,6 +305,31 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
           </select>
         </Field>
 
+{/* Is Oil Field */}
+<Field label="Oil Field Job">
+  <select
+    className={`${styles.control} ${styles.selectControl}`}
+    value={
+      jobForm.IsOilField === null || jobForm.IsOilField === undefined
+        ? ""
+        : String(jobForm.IsOilField)
+    }
+    onChange={(e) =>
+      setJobForm((p) => ({
+        ...p,
+        IsOilField:
+          e.target.value === ""
+            ? null
+            : e.target.value === "true",
+      }))
+    }
+  >
+    <option value="">Select</option>
+    <option value="true">Yes</option>
+    <option value="false">No</option>
+  </select>
+</Field>
+
         {/* Employment Mode */}
         <Field label="Employment Mode" required>
           <select
@@ -1224,12 +1249,13 @@ export default function DashboardPostJobPage() {
   const [jobForm, setJobForm] = useState({
     // Step 1
     JobTitle: "",
-    TradeCategory: roleCategories[0],
+    TradeCategory:"",
     Role: "",
     ExperienceMinYears: "",
     ExperienceMaxYears: "",
-    JobType: "Normal_Job",
-    EmploymentType: "Full_Time",
+    JobType: "Normal Job",
+    EmploymentType: "Full Time",
+    IsOilField: null,
     EmploymentMode: "Onsite",
     Department: "",
     DutyHoursPerDay: "",
@@ -1575,6 +1601,7 @@ export default function DashboardPostJobPage() {
         JobType: jobForm.JobType,
         EmploymentType: jobForm.EmploymentType,
         EmploymentMode: jobForm.EmploymentMode,
+        IsOilField:jobForm.IsOilField,
         Department: jobForm.Department,
         DutyHoursPerDay: jobForm.DutyHoursPerDay,
         PaidOvertime: jobForm.PaidOvertime,
