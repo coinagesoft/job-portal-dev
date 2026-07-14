@@ -88,15 +88,18 @@ export const getRolePermissions = async (
 // };
 
 // POST /api/recruiter/sub-users/accept-invite?token={token}
-export const acceptInvite = async (token) => {
+export const acceptInvite = async (payload) => {
   const { data } = await api.post(
-    `/api/recruiter/sub-users/accept-invite`,
-    null,
-    {
-      params: {
-        token,
-      },
-    }
+    "/api/recruiter/sub-users/accept-invite",
+    payload
+  );
+
+  return data;
+};
+
+export const validateInvite = async (token) => {
+  const { data } = await api.get(
+    `/api/recruiter/sub-users/validate-invite/${token}`
   );
 
   return data;
