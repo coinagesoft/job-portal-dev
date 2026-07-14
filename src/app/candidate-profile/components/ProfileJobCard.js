@@ -86,7 +86,7 @@ const handleSavedJobButtonHoverLeave = (event) => {
   event.currentTarget.style.boxShadow = "none";
 };
 
-const ProfileJobCard = ({ job, isListView, applyToDetails = false }) => {
+const ProfileJobCard = ({ job, isListView, applyToDetails = false, onUnsave }) => {
   const formatSalary = (value) => {
     if (!value) return "";
 
@@ -154,7 +154,7 @@ const ProfileJobCard = ({ job, isListView, applyToDetails = false }) => {
             >
               <Link
                 className="name-job"
-                href="/company-details"
+                href={job.employerId ? `/company-details?employerId=${job.employerId}` : "/company-details"}
                 style={{
                   display: "block",
                   width: "100%",
@@ -188,10 +188,11 @@ const ProfileJobCard = ({ job, isListView, applyToDetails = false }) => {
           flex: 1,
           display: "flex",
           flexDirection: "column",
+          maxHeight: "none",
         }}
       >
         <h4 className={applyToDetails ? "candidate-saved-job-title" : undefined}>
-          <Link href="/job-details">{job.title}</Link>
+          <Link href={job.jobId ? `/job-details?jobId=${job.jobId}` : "/job-details"}>{job.title}</Link>
         </h4>
         <div className="mt-1">
           <span className="card-briefcase">{job.type}</span>
@@ -233,19 +234,49 @@ const ProfileJobCard = ({ job, isListView, applyToDetails = false }) => {
                 </>
               ) : null}
             </div>
-            <div className="col-lg-5 col-5 text-end">
+            <div className="col-lg-5 col-5 text-end" style={{ display: "flex", justifyContent: "flex-end", gap: "6px" }}>
               {applyToDetails ? (
-                <Link
-                  className="btn btn-apply-now"
-                  style={SAVED_JOB_ACTION_BUTTON_STYLE}
-                  href="/job-details"
-                  title="View job details"
-                  data-bs-toggle="tooltip"
-                  onMouseEnter={handleSavedJobButtonHoverEnter}
-                  onMouseLeave={handleSavedJobButtonHoverLeave}
-                >
-                  View Job
-                </Link>
+                <>
+                  <button
+                    type="button"
+                    className="btn btn-border"
+                    style={{
+                      padding: "8px 12px",
+                      fontSize: "12px",
+                      lineHeight: "1",
+                      backgroundColor: "#FFF3E0",
+                      borderColor: "#ffa300",
+                      color: "#B15C00",
+                      fontWeight: "600",
+                      borderRadius: "8px",
+                      minWidth: "fit-content",
+                    }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onUnsave?.(job.jobId);
+                    }}
+                  >
+                    Unsave
+                  </button>
+                  <Link
+                    className="btn btn-apply-now"
+                    style={{
+                      ...SAVED_JOB_ACTION_BUTTON_STYLE,
+                      padding: "8px 12px",
+                      fontSize: "12px",
+                      lineHeight: "1",
+                      borderRadius: "8px",
+                      minWidth: "fit-content",
+                    }}
+                    href={job.jobId ? `/job-details?jobId=${job.jobId}` : "/job-details"}
+                    title="View job details"
+                    data-bs-toggle="tooltip"
+                    onMouseEnter={handleSavedJobButtonHoverEnter}
+                    onMouseLeave={handleSavedJobButtonHoverLeave}
+                  >
+                    View Job
+                  </Link>
+                </>
               ) : (
                 <div
                   className="btn btn-apply-now"

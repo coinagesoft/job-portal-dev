@@ -7,6 +7,16 @@ const normalizeString = (str) => {
   return str.toLowerCase().replace(/[^a-z0-9]/g, "");
 };
 
+// Display-only formatting — the underlying option.label stays raw (e.g.
+// "10th_pass") since that's what's compared against job fields elsewhere.
+// This just controls what the user sees on screen.
+const formatLabel = (value) => {
+  if (!value) return "";
+  return value
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
 const uniqueValues = (values) =>
   Array.from(
     new Set(
@@ -335,7 +345,7 @@ const JobFiltersSidebar = ({ jobs = [], filters = {}, onFilterChange }) => {
                               checked={safeIncludes(filters[category.type], option.label)}
                               onChange={() => handleCheckbox(category.type, option.label)}
                             />
-                            <span className="text-small">{option.label}</span>
+                            <span className="text-small">{formatLabel(option.label)}</span>
                             <span className="checkmark"></span>
                           </label>
                           {option.count !== null && option.count !== undefined ? (
