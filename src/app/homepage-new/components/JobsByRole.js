@@ -56,9 +56,69 @@ export default function JobsByRole() {
   return (
     <section className="section-box mt-50">
       <style dangerouslySetInnerHTML={{ __html: `
-        .box-swiper .swiper-button-next::after,
-        .box-swiper .swiper-button-prev::after {
+        /* Same fix as JobsByLocation: the theme's default arrow positioning
+           floats 65px outside the container, which pushes it off-viewport
+           or overlaps the card image. Buttons now straddle the container
+           edge instead (half in, half out), scoped to this component's
+           swiper only. */
+        .swiper-role-next::after,
+        .swiper-role-prev::after {
           content: "" !important;
+        }
+        .swiper-role-next,
+        .swiper-role-prev {
+          position: absolute !important;
+          top: 50% !important;
+          margin-top: 0 !important;
+          width: 42px !important;
+          height: 42px !important;
+          border-radius: 50% !important;
+          background: #fff !important;
+          background-image: none !important;
+          box-shadow: 0 4px 14px rgba(18,35,89,0.16) !important;
+          display: flex !important;
+          align-items: center;
+          justify-content: center;
+          font-size: 18px;
+          font-weight: 700;
+          color: #122359;
+          z-index: 5;
+          cursor: pointer;
+        }
+        .swiper-role-next {
+          left: auto !important;
+          right: 0 !important;
+          transform: translate(50%, -50%) !important;
+        }
+        .swiper-role-prev {
+          left: 0 !important;
+          transform: translate(-50%, -50%) !important;
+        }
+        .swiper-role-next:hover,
+        .swiper-role-prev:hover,
+        .swiper-role-next:active,
+        .swiper-role-prev:active,
+        .swiper-role-next:focus,
+        .swiper-role-prev:focus {
+          background: #ffa300 !important;
+          color: #fff !important;
+          top: 50% !important;
+          margin-top: 0 !important;
+        }
+        .swiper-role-next:hover,
+        .swiper-role-next:active,
+        .swiper-role-next:focus {
+          transform: translate(50%, -50%) !important;
+        }
+        .swiper-role-prev:hover,
+        .swiper-role-prev:active,
+        .swiper-role-prev:focus {
+          transform: translate(-50%, -50%) !important;
+        }
+        .swiper-role-next.swiper-button-disabled,
+        .swiper-role-prev.swiper-button-disabled {
+          opacity: 0.35 !important;
+          cursor: default;
         }
       `}} />
       <div className="section-box wow animate__animated animate__fadeIn">
@@ -116,12 +176,20 @@ export default function JobsByRole() {
                 </Swiper>
                 <div
                   className="swiper-button-next swiper-role-next"
-                  style={{ display: showNav ? "block" : "none" }}
-                ></div>
+                  style={{ display: showNav ? "flex" : "none" }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
                 <div
                   className="swiper-button-prev swiper-role-prev"
-                  style={{ display: showNav ? "block" : "none" }}
-                ></div>
+                  style={{ display: showNav ? "flex" : "none" }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
               </>
             )}
           </div>

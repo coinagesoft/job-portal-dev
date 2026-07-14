@@ -335,7 +335,7 @@ const Card = ({ children, style = {} }) => (
 );
 
 // ─── Step Progress Bar ────────────────────────────────────────────────────────
-const StepBar = ({ current, onStepClick }) => (
+const StepBar = ({ current, onStepClick, completedSteps }) => (
   <div
     style={{
       display: "flex",
@@ -347,7 +347,7 @@ const StepBar = ({ current, onStepClick }) => (
   >
     {STEPS.map((step, i) => {
       const n = i + 1;
-      const done = n < current;
+      const done = completedSteps ? completedSteps.has(n) : n < current;
       const active = n === current;
       const clickable = typeof onStepClick === "function";
       return (
@@ -2340,7 +2340,7 @@ const CompletionSummary = ({
 };
 
 // ─── Profile Sidebar (progress overview) ─────────────────────────────────────
-const ProfileMini = ({ data, percent, currentStep, onJump }) => (
+const ProfileMini = ({ data, percent, currentStep, onJump, completedSteps }) => (
   <div
     style={{
       background: T.white,
@@ -2431,7 +2431,7 @@ const ProfileMini = ({ data, percent, currentStep, onJump }) => (
     <div style={{ padding: "12px 0" }}>
       {STEPS.map((step, i) => {
         const n = i + 1;
-        const done = n < currentStep;
+        const done = completedSteps ? completedSteps.has(n) : n < currentStep;
         const active = n === currentStep;
         const canJump = typeof onJump === "function";
         return (
@@ -3095,6 +3095,66 @@ const loadAvailability = useCallback(async () => {
     return Math.round((checks.filter(Boolean).length / checks.length) * 100);
   }, [profileData]);
 
+  // Which steps get the green check. Derived straight from the loaded data
+  // (not from a session-only "did the user click Save" flag), using the same
+  // required-field rules as each step's own validation. This is recomputed
+  // whenever profileData changes, so it survives a refresh and always
+  // reflects what's actually saved on the server.
+  const completedSteps = useMemo(() => {
+    const set = new Set();
+
+    const personalComplete =
+      Boolean(profileData.firstName?.trim()) &&
+      Boolean(profileData.lastName?.trim()) &&
+      Boolean(profileData.mobile?.trim()) &&
+      /^\d{10}$/.test(String(profileData.mobile || "").replace(/\D/g, "")) &&
+      Boolean(profileData.email?.trim()) &&
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profileData.email || "") &&
+      Boolean(profileData.dob) &&
+      Boolean(profileData.gender) &&
+      Boolean(profileData.city?.trim()) &&
+      Boolean(profileData.state) &&
+      /^\d{6}$/.test(profileData.pin || "") &&
+      Boolean(profileData.nationality?.trim()) &&
+      Boolean(profileData.trade?.trim()) &&
+      Boolean(profileData.summary?.trim()) &&
+      Number(profileData.salaryExpectation) > 0 &&
+      profileData.yearsOfExperience !== "" &&
+      Number(profileData.yearsOfExperience) >= 0;
+    if (personalComplete) set.add(1);
+
+    const documentsComplete = Boolean(
+      profileData.documents?.nationalId?.frontFile ||
+      profileData.documents?.nationalId?.file,
+    );
+    if (documentsComplete) set.add(2);
+
+    const workComplete =
+      profileData.workHistory.length > 0 &&
+      profileData.workHistory.every(
+        (w) =>
+          Boolean(w.title?.trim()) &&
+          Boolean(w.company?.trim()) &&
+          Boolean(w.startDate) &&
+          (w.current || Boolean(w.endDate)) &&
+          Boolean(String(w.noticePeriod ?? "").trim()),
+      );
+    if (workComplete) set.add(3);
+
+    const educationComplete =
+      profileData.education.length > 0 &&
+      profileData.education.every((edu) => Boolean(edu.title?.trim()));
+    if (educationComplete) set.add(4);
+
+    const skillsComplete = (profileData.selectedSkills || []).length > 0;
+    if (skillsComplete) set.add(5);
+
+    const languagesComplete = (profileData.languages || []).length > 0;
+    if (languagesComplete) set.add(6);
+
+    return set;
+  }, [profileData]);
+
   const updateField = useCallback(
     (field, value) => setProfileData((p) => ({ ...p, [field]: value })),
     [],
@@ -3236,6 +3296,11 @@ const loadAvailability = useCallback(async () => {
       return false;
     }
 
+    if (!work.noticePeriod || !String(work.noticePeriod).trim()) {
+      showToast("Notice period is required.", "error");
+      return false;
+    }
+
     return true;
   };
 
@@ -3284,7 +3349,19 @@ const loadAvailability = useCallback(async () => {
       ),
     }));
   };
+  const validateEducationPayload = (education) => {
+    if (!education.title || !String(education.title).trim()) {
+      showToast("Qualification / Degree is required.", "error");
+      return false;
+    }
+    return true;
+  };
+
   const saveEducation = async (education) => {
+    if (!validateEducationPayload(education)) {
+      return false;
+    }
+
     try {
       await updateEducation(
         education.id,
@@ -3302,14 +3379,21 @@ const loadAvailability = useCallback(async () => {
       showToast("Education updated", "success");
 
       await loadEducation();
+      return true;
     } catch (error) {
       console.log(error.response?.data);
       console.error(error);
+      showToast("Failed to update education", "error");
+      return false;
     }
   };
 
   // Add new education entry
   const addEdu = async (entry) => {
+    if (!validateEducationPayload(entry)) {
+      return false;
+    }
+
     const payload = {
       qualificationDegree: entry.title,
       instituteName: entry.institution,
@@ -3324,9 +3408,12 @@ const loadAvailability = useCallback(async () => {
       await loadEducation();
 
       showToast("Education added", "success");
+      return true;
     } catch (error) {
       console.log(error.response?.data);
       console.error(error);
+      showToast("Failed to add education", "error");
+      return false;
     }
   };
 
@@ -3702,6 +3789,18 @@ const handleAvailabilityChange = async (checked) => {
       if (results.some((saved) => !saved)) return;
     }
 
+    if (currentStep === 4) {
+      const serverEducationEntries = profileData.education.filter(
+        (edu) => edu.id && !String(edu.id).startsWith("edu-"),
+      );
+
+      const results = await Promise.all(
+        serverEducationEntries.map((edu) => saveEducation(edu)),
+      );
+
+      if (results.some((saved) => !saved)) return;
+    }
+
     if (currentStep === 5) {
       const results = await Promise.all(
         (profileData.skillMatrix || [])
@@ -3977,6 +4076,7 @@ const handleAvailabilityChange = async (checked) => {
                 percent={profileCompletion?.overallPct || 0}
                 currentStep={currentStep}
                 onJump={done ? null : (n) => setCurrentStep(n)}
+                completedSteps={completedSteps}
               />
             </div>
 
@@ -4001,6 +4101,7 @@ const handleAvailabilityChange = async (checked) => {
                   <StepBar
                     current={done ? TOTAL + 1 : currentStep}
                     onStepClick={done ? undefined : (n) => setCurrentStep(n)}
+                    completedSteps={done ? null : completedSteps}
                   />
                 </div>
 
@@ -4055,12 +4156,11 @@ const handleAvailabilityChange = async (checked) => {
                             width: i + 1 === currentStep ? 20 : 7,
                             height: 7,
                             borderRadius: 4,
-                            background:
-                              i + 1 < currentStep
-                                ? T.success
-                                : i + 1 === currentStep
-                                  ? T.orange
-                                  : T.border,
+                            background: completedSteps.has(i + 1)
+                              ? T.success
+                              : i + 1 === currentStep
+                                ? T.orange
+                                : T.border,
                             transition: "all .2s",
                           }}
                         />

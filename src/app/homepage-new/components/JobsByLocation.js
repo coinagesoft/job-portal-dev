@@ -103,9 +103,72 @@ export default function JobsByLocation() {
   return (
     <section className="section-box mt-50 mb-20">
       <style dangerouslySetInnerHTML={{ __html: `
-        .box-swiper .swiper-button-next::after,
-        .box-swiper .swiper-button-prev::after {
+        /* The theme's default .box-swiper arrow positioning floats the
+           buttons 65px outside the container on each side, which only
+           looks right when there's enough page whitespace around the
+           section — here it pushes them past the edge of the viewport
+           (or lets them collide with neighboring content). Overriding
+           with a self-contained circular button that sits just inside
+           the card row instead, so it never depends on outer page
+           spacing. Scoped to this component's swiper only. */
+        .swiper-location-next::after,
+        .swiper-location-prev::after {
           content: "" !important;
+        }
+        .swiper-location-next,
+        .swiper-location-prev {
+          position: absolute !important;
+          top: 50% !important;
+          margin-top: 0 !important;
+          width: 42px !important;
+          height: 42px !important;
+          border-radius: 50% !important;
+          background: #fff !important;
+          background-image: none !important;
+          box-shadow: 0 4px 14px rgba(18,35,89,0.16) !important;
+          display: flex !important;
+          align-items: center;
+          justify-content: center;
+          font-size: 18px;
+          font-weight: 700;
+          color: #122359;
+          z-index: 5;
+          cursor: pointer;
+        }
+        .swiper-location-next {
+          left: auto !important;
+          right: 0 !important;
+          transform: translate(50%, -50%) !important;
+        }
+        .swiper-location-prev {
+          left: 0 !important;
+          transform: translate(-50%, -50%) !important;
+        }
+        .swiper-location-next:hover,
+        .swiper-location-prev:hover,
+        .swiper-location-next:active,
+        .swiper-location-prev:active,
+        .swiper-location-next:focus,
+        .swiper-location-prev:focus {
+          background: #ffa300 !important;
+          color: #fff !important;
+          top: 50% !important;
+          margin-top: 0 !important;
+        }
+        .swiper-location-next:hover,
+        .swiper-location-next:active,
+        .swiper-location-next:focus {
+          transform: translate(50%, -50%) !important;
+        }
+        .swiper-location-prev:hover,
+        .swiper-location-prev:active,
+        .swiper-location-prev:focus {
+          transform: translate(-50%, -50%) !important;
+        }
+        .swiper-location-next.swiper-button-disabled,
+        .swiper-location-prev.swiper-button-disabled {
+          opacity: 0.35 !important;
+          cursor: default;
         }
       `}} />
       <div className="container">
@@ -181,12 +244,20 @@ export default function JobsByLocation() {
               </Swiper>
               <div
                 className="swiper-button-next swiper-location-next"
-                style={{ display: showNav ? "block" : "none" }}
-              ></div>
+                style={{ display: showNav ? "flex" : "none" }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
               <div
                 className="swiper-button-prev swiper-location-prev"
-                style={{ display: showNav ? "block" : "none" }}
-              ></div>
+                style={{ display: showNav ? "flex" : "none" }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
             </>
           )}
         </div>
