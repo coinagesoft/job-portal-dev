@@ -560,8 +560,8 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
                             </p>
                           ) : (
                             employerQuestions.map((question) => (
-                            <div key={question.id} className="mb-15 apply-job-question-block">
-                              <label className="font-sm fw-600 color-text-mutted mb-8 d-block">
+                            <div key={question.id} className="mb-15 ">
+                              <label className="font-sm fw-600  mb-8 d-block">
                                 {question.label}
                                 {question.required ? " *" : ""}
                               </label>
@@ -607,6 +607,7 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
                                   type="checkbox"
                                   checked={confirmations.passport}
                                   onChange={(e) => togglePassport(e.target.checked)}
+                                  style={{ accentColor: "#F7941D", cursor: "pointer" }}
                                 />
                                 <span className="font-sm">
                                   I have a valid passport (required for this job) *
@@ -620,6 +621,7 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
                                   type="checkbox"
                                   checked={!!confirmations.languages[lang]}
                                   onChange={(e) => toggleLanguage(lang, e.target.checked)}
+                                  style={{ accentColor: "#F7941D", cursor: "pointer" }}
                                 />
                                 <span className="font-sm">I can communicate in {lang} *</span>
                               </label>
@@ -631,6 +633,7 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
                                   type="checkbox"
                                   checked={!!confirmations.certificates[cert]}
                                   onChange={(e) => toggleCertificate(cert, e.target.checked)}
+                                  style={{ accentColor: "#F7941D", cursor: "pointer" }}
                                 />
                                 <span className="font-sm">I hold the {cert} certificate *</span>
                               </label>
@@ -689,7 +692,6 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
 
                             <p className="font-xs mb-0">
                               {profile?.about ||
-                                profile?.professionalSummary ||
                                 "No professional summary available"}
                             </p>
                           </div>
@@ -789,7 +791,7 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
 
                         <div className="login_footer form-group d-flex justify-content-between mt-10 mb-0">
                           <label className="cb-container">
-                            <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} />
+                            <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)}style={{ accentColor: "#F7941D", cursor: "pointer" }} />
                             <span className="text-small">I confirm this CV preview is ready to be shared with employer</span>
                             <span className="checkmark"></span>
                           </label>
@@ -815,7 +817,16 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
         </div>
       </div>
     </>
+  
   );
+
+  <style jsx>{`
+  .apply-job-form input[type="checkbox"],
+  .apply-job-form input[type="radio"] {
+    accent-color: #F7941D;
+    cursor: pointer;
+  }
+`}</style>
 };
 
 export default ApplyJobModal;

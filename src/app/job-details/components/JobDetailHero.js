@@ -5,7 +5,13 @@ import { useSelector } from "react-redux";
 import { saveJob } from "@/services/candidate/savedJobsService";
 import { useToast } from "@/components/Toast";
 
-const JobDetailHero = ({ job = {}, isApplied = false, onApplied }) => {
+const JobDetailHero = ({
+  job = {},
+  isApplied = false,
+  onApplied,
+  isSaved = false,
+  onSavedToggle,
+}) => {
   const [showModal, setShowModal] = useState(false);
 
   const toggleModal = () => setShowModal(!showModal);
@@ -25,7 +31,6 @@ const JobDetailHero = ({ job = {}, isApplied = false, onApplied }) => {
 
     return `${diffInDays} days ago`;
   };
-
 
   const handleSaveJob = async () => {
     try {
@@ -47,14 +52,12 @@ const JobDetailHero = ({ job = {}, isApplied = false, onApplied }) => {
         return;
       }
 
-      const response = await saveJob(
-        jobId,
-        candidateId
-      );
+      const response = await saveJob(jobId);
 
       if (response?.data?.success) {
+        onSavedToggle?.();
         showToast(
-          response.data.message || "Job saved successfully!",
+          response.data.message || (isSaved ? "Job unsaved successfully!" : "Job saved successfully!"),
           "success"
         );
         return;
@@ -126,11 +129,11 @@ const JobDetailHero = ({ job = {}, isApplied = false, onApplied }) => {
                     day: 'numeric',
                     month: 'short',
                     year: 'numeric',
+                    timeZone: 'UTC',
                   })}
                 </span>
               )}
             </div>
-
 
           </div>
           <div className="col-lg-4 col-md-12 text-lg-end">
@@ -157,9 +160,19 @@ const JobDetailHero = ({ job = {}, isApplied = false, onApplied }) => {
             <button
               type="button"
               className="btn btn-border ml-10"
+              style={
+                isSaved
+                  ? {
+                      backgroundColor: "#FFF3E0",
+                      borderColor: "#ffa300",
+                      color: "#B15C00",
+                      fontWeight: "600",
+                    }
+                  : {}
+              }
               onClick={handleSaveJob}
             >
-              Save Job
+              {isSaved ? "Unsave" : "Save Job"}
             </button>
           </div>
         </div>

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import ProfileJobCard from "./ProfileJobCard";
-import { getSavedJobs } from "@/services/candidate/savedJobsService";
+import { getSavedJobs, saveJob } from "@/services/candidate/savedJobsService";
 import { getAllJobs } from "@/services/candidate/allJobsService";
 
 const SavedJobsTab = () => {
@@ -44,6 +44,7 @@ const SavedJobsTab = () => {
               "/assets2/imgs/brands/brand-1.png",
 
             company: job.companyName,
+            employerId: job.employerId || matchedJob?.employerId || null,
 
             location:
               matchedJob?.jobLocation ||
@@ -83,6 +84,17 @@ const SavedJobsTab = () => {
       console.error("Saved Jobs Error:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUnsave = async (jobId) => {
+    try {
+      const response = await saveJob(jobId);
+      if (response?.data?.success) {
+        loadSavedJobs();
+      }
+    } catch (error) {
+      console.error("Failed to unsave job:", error);
     }
   };
 
@@ -129,6 +141,7 @@ const SavedJobsTab = () => {
               job={job}
               isListView={false}
               applyToDetails
+              onUnsave={handleUnsave}
             />
           </div>
         ))}

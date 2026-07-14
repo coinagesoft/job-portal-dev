@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Preloader from "@/app/Homepage/components/Preloader";
 import ExploreMarketplace from "@/app/Homepage/components/ExploreMarketplace";
 import BrowseByCategory from "./components/BrowseByCategory";
@@ -19,7 +20,9 @@ export default function HomepageNewPage() {
     <>
       <Preloader />
       <main className="main">
-        <HeroSection />
+        <Suspense fallback={<div className="container py-4 text-center text-white">Loading search...</div>}>
+          <HeroSection />
+        </Suspense>
         <BrowseByCategory />
         <StatsSectionNew />
         <HowItWorks />
@@ -27,7 +30,7 @@ export default function HomepageNewPage() {
         <JobsByLocation />
         <JobsOfTheDay />
         <JobsByRole />
-        <ExploreMarketplace />
+        {/* <ExploreMarketplace /> */}
       </main>
     </>
   );

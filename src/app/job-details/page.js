@@ -11,6 +11,7 @@ import Newsletter from './components/Newsletter';
 import { mapApiJobToDetailedJob } from './data';
 import { getJobDetails } from '@/services/candidate/jobDetailsService';
 import { getMyApplications } from '@/services/candidate/myApplicationsService';
+import { getSavedJobs } from '@/services/candidate/savedJobsService';
 import JobRequirements from './components/JobRequirements';
 
 const JobDetailsContent = () => {
@@ -20,6 +21,7 @@ const JobDetailsContent = () => {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [isApplied, setIsApplied] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
 
   // Single source of truth for "has this candidate applied", shared by the
   // Apply button in the hero AND the Apply button at the bottom of the page —
@@ -36,18 +38,30 @@ const JobDetailsContent = () => {
     }
   }, [jobId]);
 
+  const checkSaved = useCallback(async () => {
+    if (!jobId) return;
+    try {
+      const res = await getSavedJobs();
+      const list = res?.data?.savedJobs || [];
+      const ids = list.map((j) => j.jobId).filter(Boolean);
+      setIsSaved(ids.includes(jobId));
+    } catch (error) {
+      console.log('saved check skipped', error?.message || error);
+    }
+  }, [jobId]);
+
   useEffect(() => {
     const loadJobDetails = async () => {
       setLoading(true);
       setNotFound(false);
-
+  
       if (!jobId) {
         setJob(null);
         setNotFound(true);
         setLoading(false);
         return;
       }
-
+  
       try {
         const response = await getJobDetails(jobId);
         if (!response?.data) {
@@ -64,10 +78,11 @@ const JobDetailsContent = () => {
         setLoading(false);
       }
     };
-
+  
     loadJobDetails();
     checkApplied();
-  }, [jobId, checkApplied]);
+    checkSaved();
+  }, [jobId, checkApplied, checkSaved]);
 
   if (loading) {
     return (
@@ -92,7 +107,13 @@ const JobDetailsContent = () => {
 
   return (
     <main className="main">
-      <JobDetailHero job={job} isApplied={isApplied} onApplied={checkApplied} />
+      <JobDetailHero
+        job={job}
+        isApplied={isApplied}
+        onApplied={checkApplied}
+        isSaved={isSaved}
+        onSavedToggle={checkSaved}
+      />
       <section className="section-box mt-50">
         <div className="container">
           <div className="row">

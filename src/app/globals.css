@@ -1940,3 +1940,50 @@ textarea {
 .notification-hover-card:hover p:first-child {
   color: #ff9900 !important;
 }
+.jobs-location-prev,
+.jobs-location-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%) !important;
+
+    width: 54px;
+    height: 54px;
+
+    border-radius: 50%;
+    background: #fff;
+
+    border: 1px solid rgba(255,163,0,.18);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    cursor: pointer;
+
+    box-shadow: 0 10px 25px rgba(18,35,89,.08);
+
+    color: #122359;
+
+    transition: background .25s,
+                color .25s,
+                border-color .25s,
+                box-shadow .25s !important;
+
+    z-index: 50;
+}
+
+.jobs-location-prev {
+    left: -28px;
+}
+
+.jobs-location-next {
+    right: -28px;
+}
+
+.jobs-location-prev:hover,
+.jobs-location-next:hover{
+    transform: translateY(-50%) !important;
+    background:#ffa300;
+    color:#fff;
+    border-color:#ffa300;
+}

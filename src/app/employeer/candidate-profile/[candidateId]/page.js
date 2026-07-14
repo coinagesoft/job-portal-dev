@@ -595,7 +595,7 @@ const EmployerCandidateProfilePage = () => {
                       </div>
                     </div>
 
-                    {(summary.about || summary.professionalSummary) && (
+                    {summary.about && (
                       <div
                         className="employer-cv-surface-card"
                         style={{
@@ -606,49 +606,20 @@ const EmployerCandidateProfilePage = () => {
                           boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
                         }}
                       >
-                        {summary.about && (
-                          <div>
-                            <h5
-                              style={{
-                                color: "#122359",
-                                fontWeight: 700,
-                                marginBottom: "10px",
-                              }}
-                            >
-                              About
-                            </h5>
-                            <p className="font-sm color-text-paragraph mb-0">
-                              {summary.about}
-                            </p>
-                          </div>
-                        )}
-
-                        {summary.about && summary.professionalSummary && (
-                          <div
+                        <div>
+                          <h5
                             style={{
-                              height: "1px",
-                              background: "rgba(18,35,89,0.08)",
-                              margin: "22px 0",
+                              color: "#122359",
+                              fontWeight: 700,
+                              marginBottom: "10px",
                             }}
-                          />
-                        )}
-
-                        {summary.professionalSummary && (
-                          <div>
-                            <h5
-                              style={{
-                                color: "#122359",
-                                fontWeight: 700,
-                                marginBottom: "10px",
-                              }}
-                            >
-                              Professional Summary
-                            </h5>
-                            <p className="font-sm color-text-paragraph mb-0">
-                              {summary.professionalSummary}
-                            </p>
-                          </div>
-                        )}
+                          >
+                            About
+                          </h5>
+                          <p className="font-sm color-text-paragraph mb-0">
+                            {summary.about}
+                          </p>
+                        </div>
                       </div>
                     )}
 

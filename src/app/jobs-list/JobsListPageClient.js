@@ -16,40 +16,43 @@ const JobsListPageClient = () => {
   const [filters, setFilters] = useState({});
   const [showFilterSheet, setShowFilterSheet] = useState(false);
   const [jobs, setJobs] = useState([]);
-const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
-useEffect(() => {
-  const fetchJobs = async () => {
-    try {
-      const response = await getAllJobs();
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const response = await getAllJobs();
 
-      console.log("ALL JOBS:", response.data);
+        console.log("ALL JOBS:", response.data);
 
-      setJobs(response.data || []);
-      // OR setJobs(response.data.data || []);
-      // depending on your API response structure
-    } catch (error) {
-      console.error("Failed to fetch jobs:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+        setJobs(response.data || []);
+        // OR setJobs(response.data.data || []);
+        // depending on your API response structure
+      } catch (error) {
+        console.error("Failed to fetch jobs:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  fetchJobs();
-}, []);
+    fetchJobs();
+  }, []);
 
   const filtersFromQuery = useMemo(() => {
     const queryFilters = {};
     const keyword = (searchParams.get('q') || '').trim();
     const location = (searchParams.get('location') || '').trim();
+
+    // Homepage category tiles (BrowseByCategory.jsx) → job.industryType
     const industries = searchParams.getAll('industry').map((item) => item.trim()).filter(Boolean);
+
+    // Hero Search dropdown + sidebar checkboxes → job.tradeCategory
+    const tradeCategories = searchParams.getAll('tradeCategory').map((item) => item.trim()).filter(Boolean);
 
     if (keyword) queryFilters.keyword = keyword;
     if (location) queryFilters.locationSingle = location;
-    if (industries.length) {
-      queryFilters.industries = industries;
-      queryFilters.industry = industries;
-    }
+    if (industries.length) queryFilters.industries = industries;
+    if (tradeCategories.length) queryFilters.tradeCategories = tradeCategories;
 
     return queryFilters;
   }, [searchParams]);
@@ -59,8 +62,8 @@ useEffect(() => {
       const next = { ...prev };
       delete next.keyword;
       delete next.locationSingle;
-      delete next.industry;
       delete next.industries;
+      delete next.tradeCategories;
       return { ...next, ...filtersFromQuery };
     });
   }, [filtersFromQuery]);
@@ -127,4 +130,3 @@ useEffect(() => {
 };
 
 export default JobsListPageClient;
-

@@ -260,121 +260,140 @@ const ApplicationStatusCard = ({ application, isAcknowledged, onAcknowledge, onW
         </span> */}
       </div>
 
-      {/* Recruiter note: single line, expandable */}
-      <div
-        style={{
-          marginTop: 18,
-          padding: 16,
-          borderRadius: 14,
-          background: "#F8FAFD",
-          border: "1px solid #EDF2F7",
-          paddingTop: 10,
-          borderTop: '1px solid rgba(18,35,89,0.06)',
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: 8
-        }}
-      >
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <span style={{
-            fontWeight: 700,
-            color: "#122359",
-            marginBottom: 8,
-            fontSize: 13,
-          }}>
-            Recruiter note:
-          </span>
-          <span
-            style={{
-              fontSize: 12.5,
-              color: '#4a5578',
-              display: noteExpanded ? 'inline' : 'inline-block',
-              maxWidth: noteExpanded ? 'none' : '100%',
-              overflow: noteExpanded ? 'visible' : 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: noteExpanded ? 'normal' : 'nowrap',
-              verticalAlign: 'bottom'
-            }}
-          >
-            {application.recruiterNote || "No note from the recruiter yet."}
-          </span>
-          <div
-            style={{
-              marginTop: 10,
-              fontSize: 12,
-              color: "#8891ab",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-            }}
-          >
-
-            <span>Updated {application.updatedOn}</span>
-          </div>
-          {application.recruiterNote && application.recruiterNote.length > 60 && (
-            <button
-              type="button"
-              onClick={() => setNoteExpanded((v) => !v)}
+      {/* Recruiter note: conditional display, centered when empty */}
+      {application.recruiterNote ? (
+        <div
+          style={{
+            marginTop: 18,
+            padding: 16,
+            borderRadius: 14,
+            background: "#F8FAFD",
+            border: "1px solid #EDF2F7",
+            paddingTop: 10,
+            borderTop: '1px solid rgba(18,35,89,0.06)',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 8
+          }}
+        >
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <span style={{
+              fontWeight: 700,
+              color: "#122359",
+              marginBottom: 8,
+              fontSize: 13,
+            }}>
+              Recruiter note:
+            </span>
+            <span
               style={{
-                marginLeft: 6,
-                fontSize: 11.5,
-                fontWeight: 600,
-                color: '#ff9900',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: "6px 14px",
-
+                fontSize: 12.5,
+                color: '#4a5578',
+                display: noteExpanded ? 'inline' : 'inline-block',
+                maxWidth: noteExpanded ? 'none' : '100%',
+                overflow: noteExpanded ? 'visible' : 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: noteExpanded ? 'normal' : 'nowrap',
+                verticalAlign: 'bottom'
               }}
             >
-              {noteExpanded ? 'Hide' : 'View'}
-            </button>
-          )}
-        </div>
+              {application.recruiterNote}
+            </span>
+            <div
+              style={{
+                marginTop: 10,
+                fontSize: 12,
+                color: "#8891ab",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <span>Updated {application.updatedOn}</span>
+            </div>
+            {application.recruiterNote.length > 60 && (
+              <button
+                type="button"
+                onClick={() => setNoteExpanded((v) => !v)}
+                style={{
+                  marginLeft: 6,
+                  fontSize: 11.5,
+                  fontWeight: 600,
+                  color: '#ff9900',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: "6px 14px",
+                }}
+              >
+                {noteExpanded ? 'Hide' : 'View'}
+              </button>
+            )}
+          </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-          <span
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 ,justifyContent:"center" }}>
+            {canWithdraw && (
+              <button
+                type="button"
+                style={{ ...ACTION_BTN_STYLE, background: 'transparent', color: '#b23b3b', border: '1px solid #e89999' }}
+                onClick={() => onWithdraw(application.id, application.company)}
+              >
+                Withdraw
+              </button>
+            )}
+
+            <Link
+              href={getJobDetailsHref(application.jobId)}
+              style={{ ...ACTION_BTN_STYLE, background: '#ff9900', color: '#fff', display: 'inline-block' }}
+            >
+              View Job
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <div
+          style={{
+            marginTop: 18,
+            padding: "12px 16px",
+            borderRadius: 14,
+            background: "#F8FAFD",
+            border: "1px solid #EDF2F7",
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+          }}
+        >
+          <div
             style={{
-              fontSize: 11,
-              fontWeight: 600,
-              padding: "6px 14px",
-              borderRadius: 999,
-              background: isAcknowledged ? '#e9f7ef' : '#fff6e6',
-              color: isAcknowledged ? '#1c7a45' : '#a86a00',
-              whiteSpace: 'nowrap'
+              fontSize: 12,
+              color: "#8891ab",
+              fontWeight: 500,
             }}
           >
-            {isAcknowledged ? 'Acknowledged' : 'Pending'}
-          </span>
+            Updated {application.updatedOn}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {canWithdraw && (
+              <button
+                type="button"
+                style={{ ...ACTION_BTN_STYLE, background: 'transparent', color: '#b23b3b', border: '1px solid #e89999' }}
+                onClick={() => onWithdraw(application.id, application.company)}
+              >
+                Withdraw
+              </button>
+            )}
 
-          {!isAcknowledged && (
-            <button
-              type="button"
-              style={{ ...ACTION_BTN_STYLE, background: '#122359', color: '#fff' }}
-              onClick={() => onAcknowledge(application.id, application.company)}
+            <Link
+              href={getJobDetailsHref(application.jobId)}
+              style={{ ...ACTION_BTN_STYLE, background: '#ff9900', color: '#fff', display: 'inline-block' }}
             >
-              Acknowledge
-            </button>
-          )}
-
-          {canWithdraw && (
-            <button
-              type="button"
-              style={{ ...ACTION_BTN_STYLE, background: 'transparent', color: '#b23b3b', border: '1px solid #e89999' }}
-              onClick={() => onWithdraw(application.id, application.company)}
-            >
-              Withdraw
-            </button>
-          )}
-
-          <Link
-            href={getJobDetailsHref(application.jobId)}
-            style={{ ...ACTION_BTN_STYLE, background: '#ff9900', color: '#fff', display: 'inline-block' }}
-          >
-            View Job
-          </Link>
+              View Job
+            </Link>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

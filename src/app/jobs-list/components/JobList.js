@@ -1,51 +1,21 @@
 'use client';
-import React, { useState, useEffect } from 'react';
-import { getAllJobs  } from '@/services/candidate/allJobsService';
-import { searchJobs } from '@/services/candidate/searchJobsService';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { getAllJobs } from '@/services/candidate/allJobsService';
 import JobCardList from './JobCardList';
-import { mockJobs } from './data';
 import ApplyJobModal from '@/app/Homepage/components/ApplyJobModal';
 import Pagination from './Pagination';
 import { getJobDetails } from "@/services/candidate/jobDetailsService";
 import { getMyApplications } from "@/services/candidate/myApplicationsService";
-import { getCandidateId } from "@/utils/authHelper";
 
-const toSafeArray = (value) => (Array.isArray(value) ? value : []);
-
-const parseRelativeAgeInDays = (value) => {
-  const text = String(value || '').toLowerCase();
-  const match = text.match(/(\d+)\s*(min|mins|minute|minutes|hour|hours|day|days|week|weeks|month|months)/);
-
-  if (!match) {
-    return Number.MAX_SAFE_INTEGER;
-  }
-
-  const amount = Number.parseInt(match[1], 10);
-  const unit = match[2];
-
-  if (unit.startsWith('min')) return amount / (24 * 60);
-  if (unit.startsWith('hour')) return amount / 24;
-  if (unit.startsWith('day')) return amount;
-  if (unit.startsWith('week')) return amount * 7;
-  if (unit.startsWith('month')) return amount * 30;
-
-  return Number.MAX_SAFE_INTEGER;
-};
-
-const extractSalaryLpa = (salaryRange) => {
-  const text = String(salaryRange || '');
-  const values = text.match(/\d+/g)?.map((value) => Number.parseInt(value, 10)) || [];
-  if (values.length === 0) return { min: 0, max: 0 };
-  if (text.includes('+')) return { min: values[0], max: 1000 };
-  if (values.length === 1) return { min: values[0], max: values[0] };
-  return { min: values[0], max: values[1] };
+const normalizeString = (str) => {
+  if (!str) return "";
+  return String(str).toLowerCase().replace(/[^a-z0-9]/g, "");
 };
 
 const JobList = ({ filters = {} }) => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [filteredJobs, setFilteredJobs] = useState([]);
-  const [totalFilteredCount, setTotalFilteredCount] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [allJobs, setAllJobs] = useState([]);       // full unfiltered dataset, fetched once
+  const [loading, setLoading] = useState(true);
   const [showPerPage, setShowPerPage] = useState(12);
   const [sortBy, setSortBy] = useState('Best Match');
   const [viewMode, setViewMode] = useState('list');
@@ -53,15 +23,37 @@ const JobList = ({ filters = {} }) => {
   const [activeJob, setActiveJob] = useState(null);
   const [appliedJobIds, setAppliedJobIds] = useState(() => new Set());
 
+  const requestIdRef = useRef(0);
+
+  // ---- Fetch the full job list ONCE (not on every filter/page/sort change) ----
+  useEffect(() => {
+    const thisRequestId = ++requestIdRef.current;
+    const load = async () => {
+      try {
+        setLoading(true);
+        const response = await getAllJobs();
+        const jobs = response.data || [];
+        if (thisRequestId !== requestIdRef.current) return; // stale response guard
+        const processed = jobs.map((job) => ({
+          ...job,
+          salaryDisplay: job.salaryDisplay || job.salaryRange,
+        }));
+        setAllJobs(processed);
+      } catch (error) {
+        if (thisRequestId !== requestIdRef.current) return;
+        console.error("Failed to load jobs", error);
+        setAllJobs([]);
+      } finally {
+        if (thisRequestId === requestIdRef.current) setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
   React.useEffect(() => {
     setCurrentPage(1);
   }, [filters, sortBy, showPerPage]);
 
-  const showingFrom = totalFilteredCount === 0 ? 0 : (currentPage - 1) * showPerPage + 1;
-  const showingTo = totalFilteredCount === 0 ? 0 : Math.min(currentPage * showPerPage, totalFilteredCount);
-  const totalPages = Math.max(1, Math.ceil(totalFilteredCount / showPerPage));
-
-  // Load the candidate's already-applied job ids so the card can show "Applied".
   const loadAppliedJobs = async () => {
     try {
       const res = await getMyApplications();
@@ -70,7 +62,6 @@ const JobList = ({ filters = {} }) => {
         .filter(Boolean);
       setAppliedJobIds(new Set(ids));
     } catch (error) {
-      // not logged in / no applications — leave the set empty
       console.log("applied jobs load skipped", error?.message || error);
     }
   };
@@ -82,266 +73,212 @@ const JobList = ({ filters = {} }) => {
 
   const openApplyModal = async (job) => {
     try {
-      const response = await getJobDetails(
-        job.jobId
-      );
-
-      console.log(
-        "JOB DETAILS RESPONSE",
-        response.data
-      );
-
+      const response = await getJobDetails(job.jobId);
       setActiveJob(response.data);
       setShowApplyModal(true);
     } catch (error) {
-      console.error(
-        "Failed to load job details",
-        error
-      );
+      console.error("Failed to load job details", error);
     }
   };
 
+  // ---------------- Client-side filtering (single source of truth: industryType) ----------------
 
-  const loadJobs = async () => {
-    try {
-      setLoading(true);
+  const matchesKeyword = (job) => {
+    const keyword = (filters.keyword || "").trim();
+    if (!keyword) return true;
+    const nk = normalizeString(keyword);
+    const haystack = normalizeString(
+      [job.jobTitle, job.tradeCategory, job.industryType, job.companyName, job.description].join(" ")
+    );
+    return haystack.includes(nk);
+  };
 
-      const params = {
-        Keyword: filters.keyword || "",
-        Location: filters.locationSingle || "",
-        Page: 1,
-        PageSize: 50,
-        candidateId: getCandidateId() || undefined,
-      };
+  const matchesLocationSingle = (job) => {
+    const loc = (filters.locationSingle || "").trim();
+    if (!loc) return true;
+    const jobLoc = normalizeString(job.jobLocation || job.city);
+    return jobLoc.includes(normalizeString(loc));
+  };
 
-      let allJobsList = [];
-      const response = await searchJobs(params);
-      const data = response.data || {};
-      allJobsList = [...(data.jobs || [])];
+  const matchesCity = (job) => {
+    const selected = filters.cities || [];
+    if (selected.length === 0) return true;
+    const jobCity = normalizeString(job.jobLocation || job.city);
+    return selected.some(city => jobCity.includes(normalizeString(city)));
+  };
 
-      const totalCount = data.totalCount ?? allJobsList.length;
-      if (totalCount > 50) {
-        const remainingPages = Math.ceil(totalCount / 50);
-        for (let p = 2; p <= remainingPages; p++) {
-          try {
-            const nextRes = await searchJobs({ ...params, Page: p });
-            if (nextRes.data && nextRes.data.jobs) {
-              allJobsList = [...allJobsList, ...nextRes.data.jobs];
-            }
-          } catch (e) {
-            console.error("Failed to load page " + p, e);
-          }
-        }
+  const matchesState = (job) => {
+    const selected = filters.states || [];
+    if (selected.length === 0) return true;
+    const jobState = normalizeString(job.jobLocation || job.state);
+    return selected.some(state => jobState.includes(normalizeString(state)));
+  };
+
+  // This is the field BrowseByCategory.jsx (homepage tiles) groups/counts by.
+  // Kept separate from tradeCategory below — they are different taxonomies.
+  const matchesIndustryType = (job) => {
+    const selected = filters.industries || [];
+    if (selected.length === 0) return true;
+    const jobIndustry = normalizeString(job.industryType);
+    return selected.some(cat => jobIndustry === normalizeString(cat));
+  };
+
+  // This is the field Hero Search's "Trade Category" dropdown and the
+  // sidebar's "Trade Category" checkboxes both use — kept as its own
+  // independent AND condition rather than merged with industryType.
+  const matchesTradeCategory = (job) => {
+    const selected = filters.tradeCategories || [];
+    if (selected.length === 0) return true;
+    const jobTrade = normalizeString(job.tradeCategory);
+    return selected.some(cat => jobTrade === normalizeString(cat));
+  };
+
+  const matchesRole = (job) => {
+    const selected = [...(filters.roles || []), ...(filters.role || [])];
+    if (selected.length === 0) return true;
+    const jobRole = normalizeString(job.jobTitle || job.role);
+    return selected.some(role => jobRole.includes(normalizeString(role)));
+  };
+
+  const matchesEducation = (job) => {
+    const selected = filters.educationLevels || [];
+    if (selected.length === 0) return true;
+    const jobEdu = normalizeString(job.educationRequired);
+    return selected.some(edu => jobEdu === normalizeString(edu));
+  };
+
+  const matchesEmploymentType = (job) => {
+    const selected = filters.employmentTypes || [];
+    if (selected.length === 0) return true;
+    const jobEmpType = normalizeString(job.employmentType);
+    return selected.some(type => jobEmpType === normalizeString(type));
+  };
+
+  const matchesLocationType = (job) => {
+    const selected = filters.locationTypes || [];
+    if (selected.length === 0) return true;
+    const jobLocType = normalizeString(job.locationType);
+    return selected.some(type => jobLocType === normalizeString(type));
+  };
+
+  const matchesEmploymentMode = (job) => {
+    const selected = filters.employmentModes || [];
+    if (selected.length === 0) return true;
+    const jobEmpMode = normalizeString(job.employmentMode);
+    return selected.some(mode => jobEmpMode === normalizeString(mode));
+  };
+
+  const matchesDepartment = (job) => {
+    const selected = filters.departments || [];
+    if (selected.length === 0) return true;
+    const jobDept = normalizeString(job.department);
+    return selected.some(dept => jobDept === normalizeString(dept));
+  };
+
+  const matchesSkills = (job) => {
+    const selected = filters.skills || [];
+    if (selected.length === 0) return true;
+    if (!Array.isArray(job.skills)) return false;
+    return selected.some(skill =>
+      job.skills.some(jobSkill => normalizeString(jobSkill) === normalizeString(skill))
+    );
+  };
+
+  // Labels are raw numbers (e.g. "₹15,000 - ₹25,000", "₹40,000+") — strip
+  // commas/currency symbols before matching digits, and keep the same
+  // no-multiplier convention as parseJobSalary below so both sides agree.
+  const parseSalaryFilter = (label) => {
+    const nums = String(label).replace(/,/g, "").match(/\d+/g)?.map(Number) || [];
+    const min = nums[0] || 0;
+    const max = label.includes("+") ? Infinity : (nums[1] || min);
+    return { min, max };
+  };
+
+  const parseJobSalary = (salaryRange) => {
+    const nums = String(salaryRange || "").replace(/,/g, "").match(/\d+/g)?.map(Number) || [];
+    const min = nums[0] || 0;
+    const max = nums[1] || min;
+    return { min, max };
+  };
+
+  const salaryOverlap = (jobSal, filterSal) => jobSal.min <= filterSal.max && jobSal.max >= filterSal.min;
+
+  const matchesSalary = (job) => {
+    const selected = filters.salary || [];
+    if (selected.length === 0) return true;
+    const jobSal = parseJobSalary(job.salaryRange);
+    return selected.some(label => salaryOverlap(jobSal, parseSalaryFilter(label)));
+  };
+
+  const parseExperienceFilter = (label) => {
+    const nums = String(label).match(/\d+/g)?.map(Number) || [];
+    if (label.toLowerCase().includes("fresher")) return { min: 0, max: 1 };
+    const min = nums[0] || 0;
+    const max = label.includes("+") ? Infinity : (nums[1] || min);
+    return { min, max };
+  };
+
+  const parseJobExperience = (experienceDisplay) => {
+    const text = String(experienceDisplay || "").toLowerCase();
+    const nums = text.match(/\d+/g)?.map(Number) || [];
+    if (text.includes("fresher")) return { min: 0, max: 1 };
+    if (nums.length === 0) return { min: 0, max: Infinity };
+    const min = nums[0];
+    const max = nums[1] || min;
+    return { min, max };
+  };
+
+  const experienceOverlap = (jobExp, filterExp) => jobExp.min <= filterExp.max && jobExp.max >= filterExp.min;
+
+  const matchesExperience = (job) => {
+    const selected = filters.experience || [];
+    if (selected.length === 0) return true;
+    const jobExp = parseJobExperience(job.experienceDisplay);
+    return selected.some(label => experienceOverlap(jobExp, parseExperienceFilter(label)));
+  };
+
+  const getJobTime = (job) => (job.postedOn ? new Date(job.postedOn).getTime() : 0);
+  const getJobMatch = (job) => Number(job.aiMatchPercentage) || 0;
+
+  // All filtering + sorting happens here, in memory, against the single
+  // `allJobs` array fetched once above — no API round-trip per filter change.
+  const sortedFilteredJobs = useMemo(() => {
+    const filtered = allJobs.filter(job =>
+      matchesKeyword(job) &&
+      matchesLocationSingle(job) &&
+      matchesCity(job) &&
+      matchesState(job) &&
+      matchesIndustryType(job) &&
+      matchesTradeCategory(job) &&
+      matchesRole(job) &&
+      matchesEducation(job) &&
+      matchesEmploymentType(job) &&
+      matchesLocationType(job) &&
+      matchesEmploymentMode(job) &&
+      matchesDepartment(job) &&
+      matchesSkills(job) &&
+      matchesSalary(job) &&
+      matchesExperience(job)
+    );
+
+    return [...filtered].sort((a, b) => {
+      if (sortBy === 'Newest Post') return getJobTime(b) - getJobTime(a);
+      if (sortBy === 'Oldest Post') return getJobTime(a) - getJobTime(b);
+      if (sortBy === 'Best Match') {
+        const diff = getJobMatch(b) - getJobMatch(a);
+        if (diff !== 0) return diff;
+        return getJobTime(b) - getJobTime(a);
       }
+      return 0;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allJobs, filters, sortBy]);
 
-      // Map salaryDisplay
-      let processedJobs = allJobsList.map((job) => ({
-        ...job,
-        salaryDisplay: job.salaryDisplay || job.salaryRange,
-      }));
-
-      // Helper for normalization
-      const normalizeString = (str) => {
-        if (!str) return "";
-        return str.toLowerCase().replace(/[^a-z0-9]/g, "");
-      };
-
-      // Client-side filtering logic
-      const matchesCity = (job) => {
-        const selected = filters.cities || [];
-        if (selected.length === 0) return true;
-        const jobCity = normalizeString(job.jobLocation || job.city);
-        return selected.some(city => jobCity.includes(normalizeString(city)));
-      };
-
-      const matchesState = (job) => {
-        const selected = filters.states || [];
-        if (selected.length === 0) return true;
-        const jobState = normalizeString(job.jobLocation || job.state);
-        return selected.some(state => jobState.includes(normalizeString(state)));
-      };
-
-      const matchesTradeCategory = (job) => {
-        const selected = [...(filters.tradeCategories || []), ...(filters.industries || [])];
-        if (selected.length === 0) return true;
-        const jobTrade = normalizeString(job.tradeCategory);
-        return selected.some(cat => jobTrade.includes(normalizeString(cat)));
-      };
-
-      const matchesRole = (job) => {
-        const selected = [...(filters.roles || []), ...(filters.role || [])];
-        if (selected.length === 0) return true;
-        const jobRole = normalizeString(job.jobTitle || job.role);
-        return selected.some(role => jobRole.includes(normalizeString(role)));
-      };
-
-      const matchesEducation = (job) => {
-        const selected = filters.educationLevels || [];
-        if (selected.length === 0) return true;
-        const jobEdu = normalizeString(job.educationRequired);
-        return selected.some(edu => jobEdu === normalizeString(edu));
-      };
-
-      const matchesEmploymentType = (job) => {
-        const selected = filters.employmentTypes || [];
-        if (selected.length === 0) return true;
-        const jobEmpType = normalizeString(job.employmentType);
-        return selected.some(type => jobEmpType === normalizeString(type));
-      };
-
-      const matchesLocationType = (job) => {
-        const selected = filters.locationTypes || [];
-        if (selected.length === 0) return true;
-        const jobLocType = normalizeString(job.locationType);
-        return selected.some(type => jobLocType === normalizeString(type));
-      };
-
-      const matchesEmploymentMode = (job) => {
-        const selected = filters.employmentModes || [];
-        if (selected.length === 0) return true;
-        const jobEmpMode = normalizeString(job.employmentMode);
-        return selected.some(mode => jobEmpMode === normalizeString(mode));
-      };
-
-      const matchesDepartment = (job) => {
-        const selected = filters.departments || [];
-        if (selected.length === 0) return true;
-        const jobDept = normalizeString(job.department);
-        return selected.some(dept => jobDept === normalizeString(dept));
-      };
-
-      const matchesSkills = (job) => {
-        const selected = filters.skills || [];
-        if (selected.length === 0) return true;
-        if (!Array.isArray(job.skills)) return false;
-        return selected.some(skill => 
-          job.skills.some(jobSkill => normalizeString(jobSkill) === normalizeString(skill))
-        );
-      };
-
-      // Salary helpers
-      const parseSalaryFilter = (label) => {
-        const nums = String(label).match(/\d+/g)?.map(n => Number(n) * 1000) || [];
-        const min = nums[0] || 0;
-        const max = label.includes("+") ? Infinity : (nums[1] || min);
-        return { min, max };
-      };
-
-      const parseJobSalary = (salaryRange) => {
-        const nums = String(salaryRange || "").replace(/,/g, "").match(/\d+/g)?.map(Number) || [];
-        const min = nums[0] || 0;
-        const max = nums[1] || min;
-        return { min, max };
-      };
-
-      const salaryOverlap = (jobSal, filterSal) => {
-        return jobSal.min <= filterSal.max && jobSal.max >= filterSal.min;
-      };
-
-      const matchesSalary = (job) => {
-        const selected = filters.salary || [];
-        if (selected.length === 0) return true;
-        const jobSal = parseJobSalary(job.salaryRange);
-        return selected.some(label => salaryOverlap(jobSal, parseSalaryFilter(label)));
-      };
-
-      // Experience helpers
-      const parseExperienceFilter = (label) => {
-        const nums = String(label).match(/\d+/g)?.map(Number) || [];
-        if (label.toLowerCase().includes("fresher")) {
-          return { min: 0, max: 1 };
-        }
-        const min = nums[0] || 0;
-        const max = label.includes("+") ? Infinity : (nums[1] || min);
-        return { min, max };
-      };
-
-      const parseJobExperience = (experienceDisplay) => {
-        const text = String(experienceDisplay || "").toLowerCase();
-        const nums = text.match(/\d+/g)?.map(Number) || [];
-        if (text.includes("fresher")) {
-          return { min: 0, max: 1 };
-        }
-        if (nums.length === 0) {
-          return { min: 0, max: Infinity };
-        }
-        const min = nums[0];
-        const max = nums[1] || min;
-        return { min, max };
-      };
-
-      const experienceOverlap = (jobExp, filterExp) => {
-        return jobExp.min <= filterExp.max && jobExp.max >= filterExp.min;
-      };
-
-      const matchesExperience = (job) => {
-        const selected = filters.experience || [];
-        if (selected.length === 0) return true;
-        const jobExp = parseJobExperience(job.experienceDisplay);
-        return selected.some(label => experienceOverlap(jobExp, parseExperienceFilter(label)));
-      };
-
-      // Perform filtering
-      const filtered = processedJobs.filter(job => 
-        matchesCity(job) &&
-        matchesState(job) &&
-        matchesTradeCategory(job) &&
-        matchesRole(job) &&
-        matchesEducation(job) &&
-        matchesEmploymentType(job) &&
-        matchesLocationType(job) &&
-        matchesEmploymentMode(job) &&
-        matchesDepartment(job) &&
-        matchesSkills(job) &&
-        matchesSalary(job) &&
-        matchesExperience(job)
-      );
-
-      // Sorting helpers
-      const getJobTime = (job) => {
-        if (!job.postedOn) return 0;
-        return new Date(job.postedOn).getTime();
-      };
-
-      const getJobMatch = (job) => {
-        return Number(job.aiMatchPercentage) || 0;
-      };
-
-      // Perform sorting
-      const sorted = [...filtered].sort((a, b) => {
-        if (sortBy === 'Newest Post') {
-          return getJobTime(b) - getJobTime(a);
-        }
-        if (sortBy === 'Oldest Post') {
-          return getJobTime(a) - getJobTime(b);
-        }
-        if (sortBy === 'Best Match') {
-          const diff = getJobMatch(b) - getJobMatch(a);
-          if (diff !== 0) return diff;
-          return getJobTime(b) - getJobTime(a);
-        }
-        return 0;
-      });
-
-      // Pagination
-      const totalFiltered = sorted.length;
-      setTotalFilteredCount(totalFiltered);
-
-      const paged = sorted.slice((currentPage - 1) * showPerPage, currentPage * showPerPage);
-      setFilteredJobs(paged);
-
-    } catch (error) {
-      console.error("Failed to load jobs", error);
-      setFilteredJobs([]);
-      setTotalFilteredCount(0);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadJobs();
-  }, [filters, currentPage, showPerPage, sortBy]);
+  const totalFilteredCount = sortedFilteredJobs.length;
+  const totalPages = Math.max(1, Math.ceil(totalFilteredCount / showPerPage));
+  const showingFrom = totalFilteredCount === 0 ? 0 : (currentPage - 1) * showPerPage + 1;
+  const showingTo = totalFilteredCount === 0 ? 0 : Math.min(currentPage * showPerPage, totalFilteredCount);
+  const filteredJobs = sortedFilteredJobs.slice((currentPage - 1) * showPerPage, currentPage * showPerPage);
 
   return (
     <div className="content-page">
@@ -386,20 +323,14 @@ const JobList = ({ filters = {} }) => {
                 <a
                   className={`view-type ${viewMode === 'list' ? 'active' : ''}`}
                   href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setViewMode('list');
-                  }}
+                  onClick={(e) => { e.preventDefault(); setViewMode('list'); }}
                 >
                   <img src="/assets/imgs/template/icons/icon-list.svg" alt="List" />
                 </a>
                 <a
                   className={`view-type ${viewMode === 'grid' ? 'active' : ''}`}
                   href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setViewMode('grid');
-                  }}
+                  onClick={(e) => { e.preventDefault(); setViewMode('grid'); }}
                 >
                   <img src="/assets/imgs/template/icons/icon-grid-hover.svg" alt="Grid" />
                 </a>
@@ -411,13 +342,10 @@ const JobList = ({ filters = {} }) => {
 
       {loading ? (
         <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '300px', width: '100%' }}>
-          <img 
-            src="/assets/imgs/template/loading.gif" 
-            alt="Loading..." 
-            style={{ 
-              maxWidth: '120px',
-              filter: 'hue-rotate(195deg)'
-            }} 
+          <img
+            src="/assets/imgs/template/loading.gif"
+            alt="Loading..."
+            style={{ maxWidth: '120px', filter: 'hue-rotate(195deg)' }}
           />
         </div>
       ) : filteredJobs.length === 0 ? (

@@ -1,10 +1,11 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import ApplyJobModal from '@/app/Homepage/components/ApplyJobModal';
 
 import { saveJob } from "@/services/candidate/savedJobsService";
 import { useToast } from "@/components/Toast";
+import { getCompanyDetails } from "@/services/candidate/companyService";
 
 const verificationBadges = [
   { key: 'gst', label: '✔ GST Verified', style: { background: '#d1fae5', color: '#065f46', border: '1px solid #6ee7b7' } },
@@ -114,6 +115,7 @@ const renderJobDescription = (text) => {
 
 const JobContent = ({ job = {}, isApplied = false, onApplied }) => {
   const [showModal, setShowModal] = useState(false);
+  const [companyDetails, setCompanyDetails] = useState(null);
   const toggleModal = () => setShowModal(!showModal);
 
   const showToast = useToast();
@@ -157,17 +159,32 @@ const JobContent = ({ job = {}, isApplied = false, onApplied }) => {
         "error"
       );
     } catch (error) {
-  console.log("ERROR RESPONSE:", error.response);
-  console.log("ERROR DATA:", error.response?.data);
+      console.log("ERROR RESPONSE:", error.response);
+      console.log("ERROR DATA:", error.response?.data);
 
-  showToast(
-    error.response?.data?.message ||
-    error.message ||
-    "Failed to save job",
-    "error"
-  );
-}
+      showToast(
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to save job",
+        "error"
+      );
+    }
   };
+
+  useEffect(() => {
+    const fetchCompany = async () => {
+      if (!job?.employerId) return;
+
+      try {
+        const data = await getCompanyDetails(job.employerId);
+        setCompanyDetails(data);
+      } catch (error) {
+        console.error("Failed to load company details", error);
+      }
+    };
+
+    fetchCompany();
+  }, [job?.employerId]);
 
   const verifications = job.verifications || {};
   const hasAnyVerification = Object.values(verifications).some(Boolean);
@@ -200,42 +217,42 @@ const JobContent = ({ job = {}, isApplied = false, onApplied }) => {
 
       <div className="job-content">
 
-  {/* Job Description */}
-  <div
-    style={{
-      background: '#ffffff',
-      border: '1px solid rgba(18,35,89,0.08)',
-      borderRadius: '16px',
-      padding: '22px 24px',
-      marginBottom: '24px',
-      boxShadow: '0 4px 14px rgba(18,35,89,0.04)',
-    }}
-  >
-    <h5 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-      <span
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: '34px',
-          height: '34px',
-          borderRadius: '10px',
-          background: '#FFF3E0',
-          color: '#ff9900',
-          flexShrink: 0,
-        }}
-      >
-        <i className="fa-solid fa-file-lines"></i>
-      </span>
-      Job Description
-    </h5>
-    <div style={{ marginTop: '12px' }}>
-      {renderJobDescription(job.jobDescription)}
-    </div>
-  </div>
+        {/* Job Description */}
+        <div
+          style={{
+            background: '#ffffff',
+            border: '1px solid rgba(18,35,89,0.08)',
+            borderRadius: '16px',
+            padding: '22px 24px',
+            marginBottom: '24px',
+            boxShadow: '0 4px 14px rgba(18,35,89,0.04)',
+          }}
+        >
+          <h5 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '34px',
+                height: '34px',
+                borderRadius: '10px',
+                background: '#FFF3E0',
+                color: '#ff9900',
+                flexShrink: 0,
+              }}
+            >
+              <i className="fa-solid fa-file-lines"></i>
+            </span>
+            Job Description
+          </h5>
+          <div style={{ marginTop: '12px' }}>
+            {renderJobDescription(job.jobDescription)}
+          </div>
+        </div>
 
-  {/* Key Responsibilities */}
-  {/* {job.keyResponsibilities?.length > 0 && (
+        {/* Key Responsibilities */}
+        {/* {job.keyResponsibilities?.length > 0 && (
     <div
       style={{
         background: '#ffffff',
@@ -291,106 +308,106 @@ const JobContent = ({ job = {}, isApplied = false, onApplied }) => {
     </div>
   )} */}
 
-  {/* Professional Skills */}
-  {job.professionalSkills?.length > 0 && (
-    <div
-      style={{
-        background: '#ffffff',
-        border: '1px solid rgba(18,35,89,0.08)',
-        borderRadius: '16px',
-        padding: '22px 24px',
-        marginBottom: '24px',
-        boxShadow: '0 4px 14px rgba(18,35,89,0.04)',
-      }}
-    >
-      <h5 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <span
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '34px',
-            height: '34px',
-            borderRadius: '10px',
-            background: '#F0FBF3',
-            color: '#178A4C',
-            flexShrink: 0,
-          }}
-        >
-          <i className="fa-solid fa-star"></i>
-        </span>
-        Professional Skills
-      </h5>
-      <div style={{ marginTop: '14px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-        {job.professionalSkills.map((skill, index) => (
-          <span
-            key={index}
+        {/* Professional Skills */}
+        {job.professionalSkills?.length > 0 && (
+          <div
             style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              padding: '7px 14px',
-              borderRadius: 999,
-              background: '#F0FBF3',
-              border: '1px solid #B7E8C2',
-              color: '#178A4C',
-              fontSize: '13px',
-              fontWeight: 600,
+              background: '#ffffff',
+              border: '1px solid rgba(18,35,89,0.08)',
+              borderRadius: '16px',
+              padding: '22px 24px',
+              marginBottom: '24px',
+              boxShadow: '0 4px 14px rgba(18,35,89,0.04)',
             }}
           >
-            {skill}
-          </span>
-        ))}
-      </div>
-    </div>
-  )}
-
-  {/* Perks & Benefits */}
-  {job.perksAndBenefits?.length > 0 && (
-    <div
-      style={{
-        background: '#ffffff',
-        border: '1px solid rgba(18,35,89,0.08)',
-        borderRadius: '16px',
-        padding: '22px 24px',
-        marginBottom: '24px',
-        boxShadow: '0 4px 14px rgba(18,35,89,0.04)',
-      }}
-    >
-      <h5 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <span
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '34px',
-            height: '34px',
-            borderRadius: '10px',
-            background: '#FEF3E2',
-            color: '#B15C00',
-            flexShrink: 0,
-          }}
-        >
-          <i className="fa-solid fa-gift"></i>
-        </span>
-        Perks &amp; Benefits
-      </h5>
-      <div className="row" style={{ marginTop: '14px' }}>
-        {job.perksAndBenefits.map((perk, index) => (
-          <div key={index} className="col-md-6" style={{ marginBottom: '10px' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-              <i
-                className="fa-solid fa-circle-check"
-                style={{ color: '#B15C00', marginTop: '4px', flexShrink: 0 }}
-              ></i>
-              <span style={{ lineHeight: 1.6 }}>{perk}</span>
+            <h5 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '34px',
+                  height: '34px',
+                  borderRadius: '10px',
+                  background: '#F0FBF3',
+                  color: '#178A4C',
+                  flexShrink: 0,
+                }}
+              >
+                <i className="fa-solid fa-star"></i>
+              </span>
+              Professional Skills
+            </h5>
+            <div style={{ marginTop: '14px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {job.professionalSkills.map((skill, index) => (
+                <span
+                  key={index}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    padding: '7px 14px',
+                    borderRadius: 999,
+                    background: '#F0FBF3',
+                    border: '1px solid #B7E8C2',
+                    color: '#178A4C',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                  }}
+                >
+                  {skill}
+                </span>
+              ))}
             </div>
           </div>
-        ))}
-      </div>
-    </div>
-  )}
+        )}
 
-</div>
+        {/* Perks & Benefits */}
+        {job.perksAndBenefits?.length > 0 && (
+          <div
+            style={{
+              background: '#ffffff',
+              border: '1px solid rgba(18,35,89,0.08)',
+              borderRadius: '16px',
+              padding: '22px 24px',
+              marginBottom: '24px',
+              boxShadow: '0 4px 14px rgba(18,35,89,0.04)',
+            }}
+          >
+            <h5 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '34px',
+                  height: '34px',
+                  borderRadius: '10px',
+                  background: '#FEF3E2',
+                  color: '#B15C00',
+                  flexShrink: 0,
+                }}
+              >
+                <i className="fa-solid fa-gift"></i>
+              </span>
+              Perks &amp; Benefits
+            </h5>
+            <div className="row" style={{ marginTop: '14px' }}>
+              {job.perksAndBenefits.map((perk, index) => (
+                <div key={index} className="col-md-6" style={{ marginBottom: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                    <i
+                      className="fa-solid fa-circle-check"
+                      style={{ color: '#B15C00', marginTop: '4px', flexShrink: 0 }}
+                    ></i>
+                    <span style={{ lineHeight: 1.6 }}>{perk}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+      </div>
       <div className="author-single">
         <span>{job.companyName}</span>
       </div>
@@ -413,7 +430,7 @@ const JobContent = ({ job = {}, isApplied = false, onApplied }) => {
             )}
 
             <button
-              type="button" 
+              type="button"
               className="btn btn-border"
               onClick={handleSaveJob}
             >
@@ -421,11 +438,61 @@ const JobContent = ({ job = {}, isApplied = false, onApplied }) => {
             </button>
           </div>
           <div className="col-md-7 text-lg-end social-share">
-            <h6 className="color-text-paragraph-2 d-inline-block d-baseline mr-10">Share this</h6>
-            <a className="mr-5 d-inline-block d-middle" href="#"><img alt="jobBox" src="/assets/imgs/template/icons/share-fb.svg" /></a>
-            <a className="mr-5 d-inline-block d-middle" href="#"><img alt="jobBox" src="/assets/imgs/template/icons/share-tw.svg" /></a>
-            <a className="mr-5 d-inline-block d-middle" href="#"><img alt="jobBox" src="/assets/imgs/template/icons/share-red.svg" /></a>
-            <a className="d-inline-block d-middle" href="#"><img alt="jobBox" src="/assets/imgs/template/icons/share-whatsapp.svg" /></a>
+            <h6 className="color-text-paragraph-2 d-inline-block d-baseline mr-10">
+              Follow us
+            </h6>
+
+            <a
+              href={companyDetails?.facebookUrl || "#"}
+              target={companyDetails?.facebookUrl ? "_blank" : "_self"}
+              rel="noopener noreferrer"
+              className="mr-5 d-inline-block d-middle"
+              style={{
+                opacity: companyDetails?.facebookUrl ? 1 : 0.6,
+                pointerEvents: companyDetails?.facebookUrl ? "auto" : "none",
+              }}
+            >
+              <img alt="Facebook" src="/assets/imgs/template/icons/share-fb.svg" />
+            </a>
+
+            <a
+              href={companyDetails?.linkedInUrl || "#"}
+              target={companyDetails?.linkedInUrl ? "_blank" : "_self"}
+              rel="noopener noreferrer"
+              className="mr-5 d-inline-block d-middle"
+              style={{
+                opacity: companyDetails?.linkedInUrl ? 1 : 0.6,
+                pointerEvents: companyDetails?.linkedInUrl ? "auto" : "none",
+              }}
+            >
+              <img alt="LinkedIn" src="/assets/imgs/template/icons/share-tw.svg" />
+            </a>
+
+            <a
+              href={companyDetails?.instagramUrl || "#"}
+              target={companyDetails?.instagramUrl ? "_blank" : "_self"}
+              rel="noopener noreferrer"
+              className="mr-5 d-inline-block d-middle"
+              style={{
+                opacity: companyDetails?.instagramUrl ? 1 : 0.6,
+                pointerEvents: companyDetails?.instagramUrl ? "auto" : "none",
+              }}
+            >
+              <img alt="Instagram" src="/assets/imgs/template/icons/share-red.svg" />
+            </a>
+
+            <a
+              href={companyDetails?.websiteUrl || "#"}
+              target={companyDetails?.websiteUrl ? "_blank" : "_self"}
+              rel="noopener noreferrer"
+              className="d-inline-block d-middle"
+              style={{
+                opacity: companyDetails?.websiteUrl ? 1 : 0.6,
+                pointerEvents: companyDetails?.websiteUrl ? "auto" : "none",
+              }}
+            >
+              <img alt="Website" src="/assets/imgs/template/icons/share-whatsapp.svg" />
+            </a>
           </div>
         </div>
       </div>

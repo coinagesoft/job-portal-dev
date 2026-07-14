@@ -8,6 +8,9 @@ const CompanySidebar = ({ job = {} }) => {
   const [isShortlisted, setIsShortlisted] = useState(false);
   const [similarJobs, setSimilarJobs] = useState([]);
 
+  const [companyId, setCompanyId] = useState(null);
+  const [employerId, setEmployerId] = useState(job.employerId || null);
+
   const isConfidential = job.companyVisibility === "HideName";
 
   const humanize = (value) => {
@@ -24,33 +27,55 @@ const CompanySidebar = ({ job = {} }) => {
     return text.includes('$') ? text : `$${text}`;
   };
   useEffect(() => {
-    const loadSimilarJobs = async () => {
-      try {
-        const response = await getAllJobs();
+    if (job.employerId) {
+      setEmployerId(job.employerId);
+    }
+  }, [job.employerId]);
 
-        const jobs = response.data || [];
+  useEffect(() => {
+  const loadData = async () => {
+    try {
+      const response = await getAllJobs();
+      const jobs = response.data || [];
 
-        const filteredJobs = jobs
-          .filter((item) => item.jobId !== job.jobId)
-          .slice(0, 5);
+      // Find the current job
+      const currentJob = jobs.find(
+        (item) => item.jobId === job.jobId
+      );
 
-        setSimilarJobs(filteredJobs);
-      } catch (error) {
-        console.error(
-          "Failed to load similar jobs",
-          error
-        );
-      }
-    };
+     console.log(currentJob);
 
-    loadSimilarJobs();
-  }, [job.jobId]);
+if (currentJob) {
+    setCompanyId(currentJob.companyId);
+    if (!job.employerId) {
+      setEmployerId(currentJob.employerId || null);
+    }
+}
+
+      // Similar jobs
+      const filteredJobs = jobs
+        .filter((item) => item.jobId !== job.jobId)
+        .slice(0, 5);
+
+      setSimilarJobs(filteredJobs);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  loadData();
+}, [job.jobId]);
   return (
     <>
       {/* ── Company Card ─────────────────────────────────── */}
       <div className="sidebar-border employer-cv-surface-card">
         <div className="sidebar-heading">
-          <div className="avatar-sidebar">
+          <Link
+            href={employerId ? `/company-details?employerId=${employerId}` : "#"}
+            className="avatar-sidebar"
+            style={{ textDecoration: 'none', color: 'inherit', cursor: employerId ? 'pointer' : 'default' }}
+            onClick={(e) => { if (!employerId) e.preventDefault(); }}
+          >
             <figure>
               <img
                 alt="jobBox"
@@ -60,11 +85,10 @@ const CompanySidebar = ({ job = {} }) => {
                     : job.companyLogoUrl || "/assets/imgs/page/homepage1/img1.png"
                 }
                 style={{
-                  width: '48px',
-                  height: '48px',
-                  objectFit: 'cover',
-                  // borderRadius: '8px',
-                  // border: '1px solid rgba(18, 35, 89, 0.08)',
+                  width: "48px",
+                  height: "48px",
+                  objectFit: "cover",
+                  cursor: "pointer",
                 }}
               />
             </figure>
@@ -79,13 +103,13 @@ const CompanySidebar = ({ job = {} }) => {
                 </span>
               )}
               {job.openJobs != null && (
-                <a className="link-underline mt-15" href="#">
+                <span className="link-underline mt-15">
                   <i className="fa-solid fa-briefcase mr-5"></i>
                   {job.openJobs} Open Jobs
-                </a>
+                </span>
               )}
             </div>
-          </div>
+          </Link>
         </div>
 
 
