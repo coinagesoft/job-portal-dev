@@ -68,3 +68,14 @@ export const EMPLOYER_PROTECTED_PREFIXES = ["/employeer", "/dashboard"];
 // Used by both AuthRouteGuard (skip the login redirect) and Header (skip
 // rendering the logged-in-session nav).
 export const PUBLIC_ROUTE_EXCEPTIONS = ["/employeer/accept-invite"];
+
+// Pages that need a specific permission flag beyond just "logged in as
+// employer" — a sub-user lacking the flag gets redirected away instead of
+// seeing the page at all. `ownerOnly: true` means no sub-user may access it,
+// regardless of their individual flags (matches "Only the account owner can
+// buy credits or invite users" shown on the Sub-Users page itself).
+export const ROUTE_PERMISSION_RULES = [
+  { prefix: "/dashboard/post-job", permission: "canPostJobs" },
+  { prefix: "/employeer/sub-user", ownerOnly: true },
+  { prefix: "/employeer/buy-credits", ownerOnly: true },
+];
