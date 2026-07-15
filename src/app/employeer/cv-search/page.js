@@ -415,115 +415,157 @@ const EmployerCvSearchPage = () => {
                 tags.
               </div>
 
-              <div className="form-find text-start mt-40">
-                <form>
-                  <div className="box-industry">
-                    <select
-                      className="form-input mr-10 select-active input-industry"
-                      value={filters.tradeCategory}
-                      onChange={(e) =>
-                        setFilters({
-                          ...filters,
-                          tradeCategory: e.target.value,
-                        })
-                      }
-                    >
-                      <option value="">Any trade</option>
+<div className="form-find text-start mt-40" style={{ width: "100%" }}>
+  <form
+    onSubmit={(e) => {
+      e.preventDefault();
+      handleSearch();
+    }}
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: "16px",
+      width: "100%",
+      flexWrap: "nowrap", 
+    }}
+  >
+    {/* Trade */}
+    <div style={{ flex: "1 1 100px", minWidth: "100px" }}>
+      <select
+        className="form-input select-active input-industry dashboard-select-arrow"
+        value={filters.tradeCategory}
+        onChange={(e) =>
+          updateFilterAndSearch({ tradeCategory: e.target.value })
+        }
+        style={{
+          width: "100%",
+          height: "50px",
+          borderRadius: "8px",
+        }}
+      >
+        <option value="">Any Trade</option>
+        {(filterOptions?.tradeCategories ?? []).map((tradeOption) => (
+          <option key={tradeOption} value={tradeOption}>
+            {tradeOption}
+          </option>
+        ))}
+      </select>
+    </div>
 
-                      {(filterOptions?.tradeCategories ?? []).map(
-                        (tradeOption) => (
-                          <option key={tradeOption} value={tradeOption}>
-                            {tradeOption}
-                          </option>
-                        ),
-                      )}
-                    </select>
-                  </div>
+    {/* AI Match */}
+    <div style={{ flex: "1.2 1 120px", minWidth: "120px" }}>
+      <select
+        className="form-input select-active input-industry dashboard-select-arrow"
+        value={filters.jobId}
+        onChange={(e) => handleJobChange(e.target.value)}
+        style={{
+          width: "100%",
+          height: "50px",
+          borderRadius: "8px",
+        }}
+      >
+        <option value="">AI Match: Select Job</option>
+        {jobs.map((job) => (
+          <option key={job.jobId} value={job.jobId}>
+            {job.jobTitle}
+          </option>
+        ))}
+      </select>
+    </div>
 
-                  <div className="box-industry">
-                    <select
-                      className="form-input mr-10 select-active input-industry"
-                      value={filters.jobId}
-                      onChange={(e) => handleJobChange(e.target.value)}
-                      title="Rank candidates by AI match against one of your jobs"
-                    >
-                      <option value="">AI match: select a job…</option>
-                      {jobs.map((job) => (
-                        <option key={job.jobId} value={job.jobId}>
-                          {job.jobTitle}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+    {/* Keyword */}
+    <div style={{ flex: "2 1 120px", minWidth: "120px" }}>
+     <input
+  className="form-input input-keysearch dashboard-search-text"
+  type="text"
+  value={filters.keyword}
+  onChange={(e) =>
+    setFilters({
+      ...filters,
+      keyword: e.target.value,
+    })
+  }
+  placeholder="Trade, Skill, Name, Location"
+  list="cv-keyword-suggestions"
+  style={{
+    width: "100%",
+    height: "50px",
+    borderRadius: "8px",
+    paddingLeft: "45px", // Increase this
+  }}
+/>
 
-                  <input
-                    className="form-input input-keysearch mr-5"
-                    type="text"
-                    value={filters.keyword}
-                    onChange={(e) =>
-                      setFilters({
-                        ...filters,
-                        keyword: e.target.value,
-                      })
-                    }
-                    placeholder="Trade, skill, name, location"
-                    list="cv-keyword-suggestions"
-                  />
+      <datalist id="cv-keyword-suggestions">
+        <option value="welder" />
+        <option value="electrician" />
+        <option value="driver" />
+        <option value="iti certified" />
+        <option value="passport valid" />
+        <option value="mumbai" />
+        <option value="pipeline" />
+      </datalist>
+    </div>
 
-                  <datalist id="cv-keyword-suggestions">
-                    <option value="welder" />
-                    <option value="electrician" />
-                    <option value="driver" />
-                    <option value="iti certified" />
-                    <option value="passport valid" />
-                    <option value="mumbai" />
-                    <option value="pipeline" />
-                  </datalist>
+    {/* Availability */}
+    <div style={{ flex: "1 1 120px", minWidth: "120px" }}>
+      <select
+        className="form-input select-active dashboard-select-arrow"
+        value={filters.availabilityStatus}
+        onChange={(e) =>
+          updateFilterAndSearch({
+            availabilityStatus: e.target.value,
+          })
+        }
+        style={{
+          width: "100%",
+          height: "50px",
+          borderRadius: "8px",
+        }}
+      >
+        <option value="">Any Availability</option>
+        <option value="Available">Available Now</option>
+        <option value="Unavailable">Not Available</option>
+      </select>
+    </div>
 
-                  <select
-                    className="form-input mr-10 select-active"
-                    value={filters.availabilityStatus}
-                    onChange={(e) =>
-                      setFilters({
-                        ...filters,
-                        availabilityStatus: e.target.value,
-                      })
-                    }
-                  >
-                    <option value="">Any availability</option>
-                    <option value="Available">Available now</option>
-                    <option value="Unavailable">Not available</option>
-                  </select>
+    {/* Search */}
+    <button
+      className="btn btn-default btn-find font-sm"
+      type="submit"
+      style={{
+        height: "50px",
+        minWidth: "120px",
+        padding: "0 24px",
+        borderRadius: "8px",
+        whiteSpace: "nowrap",
+        flexShrink: 0,
+      }}
+    >
+      Search
+    </button>
 
-                  <button
-                    className="btn btn-default btn-find font-sm"
-                    type="button"
-                    onClick={handleSearch}
-                  >
-                    Search
-                  </button>
-                  <button
-                    type="button"
-                    onClick={resetFilters}
-                    className="btn font-sm"
-                    style={{
-                      border: "none",
-                      outline: "none",
-                      boxShadow: "none",
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.outline = "none";
-                      e.target.style.boxShadow = "none";
-                    }}
-                    onMouseDown={(e) => {
-                      e.target.style.outline = "none";
-                      e.target.style.boxShadow = "none";
-                    }}
-                  >
-                    Reset
-                  </button>
-                </form>
-              </div>
+    {/* Reset */}
+    <button
+      type="button"
+      onClick={resetFilters}
+      className="btn"
+      style={{
+        height: "50px",
+        minWidth: "90px",
+        padding: "0 20px",
+        borderRadius: "8px",
+        // border: "1px solid #d9d9d9",
+        background: "#fff",
+        color: "#6b7280",
+        cursor: "pointer",
+        whiteSpace: "nowrap",
+        flexShrink: 0,
+      }}
+    >
+      Reset
+    </button>
+  </form>
+</div>
             </div>
           </div>
         </div>
