@@ -1874,22 +1874,6 @@ function Step7({ go, jobForm, setJobForm, onSubmit, preflightIssues = [] }) {
             ))} 
           </select> 
         </Field> */} 
- 
-        {/* Publish Now */} 
-        <Field label="Publish Now"> 
-          <div style={{ paddingTop: 12 }}> 
-            <label style={{ display: "flex", alignItems: "center", gap: 8 }}> 
-              <input 
-                type="checkbox" 
-                checked={jobForm.PublishNow} 
-                onChange={(e) => 
-                  setJobForm((p) => ({ ...p, PublishNow: e.target.checked })) 
-                } 
-              /> 
-              Publish immediately after saving 
-            </label> 
-          </div> 
-        </Field> 
       </div> 
     </StepCard> 
   ); 
@@ -2049,12 +2033,11 @@ export default function DashboardPostJobPage() {
       setJobForm((prev) => ({ ...prev, ...mapResumeToForm(response, roleCategories[0]) })); 
       setLastCompletedStep(response.stepStatus?.lastCompletedStep ?? 0); 
  
-      const nextStep = 
-        response.stepStatus?.lastCompletedStep >= 7 
-          ? 7 
-          : (response.stepStatus?.lastCompletedStep ?? 0) + 1; 
- 
-      setActiveStep(nextStep); 
+      // Editing an existing (even fully-published) job should always start
+      // the wizard at step 1 with everything prefilled — not jump to
+      // whichever step happens to be "last completed", which for an
+      // already-published job is always step 7.
+      setActiveStep(1); 
     } catch (error) { 
       console.error("loadJobForEdit:", error); 
     } 
@@ -2435,7 +2418,7 @@ export default function DashboardPostJobPage() {
         CompanyVisibility: jobForm.CompanyVisibility, 
         JobType: jobForm.JobType, 
         PublishingTags: jobForm.PublishingTags, 
-        PublishNow: jobForm.PublishNow, 
+        PublishNow: true, // "Save & Publish" always publishes directly — draft saving has its own separate button 
       }); 
       localStorage.removeItem("jobDraft"); 
       showToast("Job published successfully!", "success"); 
