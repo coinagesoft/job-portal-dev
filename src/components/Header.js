@@ -73,6 +73,20 @@ const isExactPathActive = (
   );
 };
 
+// Pages meant to stand completely on their own — e.g. an invite link opened
+// by someone who isn't (or shouldn't appear as) the account currently logged
+// in on this browser. The global site header/nav is skipped entirely here.
+const STANDALONE_ROUTES = [
+  "/employeer/accept-invite",
+];
+
+const isStandaloneRoute = (pathname) => {
+  const current = normalizePath(pathname);
+  return STANDALONE_ROUTES.some(
+    (route) => current === route || current.startsWith(`${route}/`)
+  );
+};
+
 const Header = () => {
   const pathname = usePathname();
 
@@ -426,6 +440,10 @@ const Header = () => {
       </li>
     </>
   );
+
+  if (isStandaloneRoute(pathname)) {
+    return null;
+  }
 
   return (
     <header className="header sticky-bar">
