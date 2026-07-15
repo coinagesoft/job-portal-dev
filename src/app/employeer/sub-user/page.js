@@ -369,6 +369,25 @@ const EmployerSubUserPage = () => {
                       <div
                         style={{
                           display: "flex",
+                          alignItems: "center",
+                          justifyContent: "flex-end",
+                          gap: "8px",
+                          marginBottom: "16px",
+                          fontSize: "12px",
+                          color: "#66789c",
+                        }}
+                      >
+                        <span>
+                          <strong style={{ color: "#0f172a" }}>
+                            {user.remainingCredits ?? 0}
+                          </strong>{" "}
+                          / {user.allocatedCredits ?? 0} credits allocated
+                        </span>
+                      </div>
+
+                      <div
+                        style={{
+                          display: "flex",
                           flexWrap: "wrap",
                           gap: "8px",
                           justifyContent: "flex-end",

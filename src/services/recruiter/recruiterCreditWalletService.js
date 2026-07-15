@@ -92,6 +92,17 @@ export const allocateCredits = async (subUserId, credits) => {
 };
 
 /**
+ * GET /api/recruiter/my-credit-balance
+ * Returns the caller's own allocated/used/remaining credits — null for the
+ * account owner (they use the shared wallet directly), a real object for a
+ * sub-user.
+ */
+export const getMyCreditBalance = async () => {
+  const { data } = await api.get("/api/recruiter/my-credit-balance");
+  return data;
+};
+
+/**
  * POST /api/recruiter/plans/create-order
  */
 export const createCreditPlanOrder = async (planId) => {
