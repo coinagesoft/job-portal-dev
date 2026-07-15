@@ -294,24 +294,35 @@ const ApplicationStatusCard = ({ application, isAcknowledged, onAcknowledge, onW
               gap: 16,
             }}
           >
-            <div style={{ flex: 1 }}>
-              <h4
-                style={{
-                  fontSize: 17,
-                  margin: 0,
-                  lineHeight: 1.3,
-                  color: "#122359",
-                }}
-              >
-                <Link
-                  href={getJobDetailsHref(application.jobId)}
-                  style={{ color: "#122359" }}
-                >
-                  {application.title}
-                </Link>
-              </h4>
+<div style={{ flex: 1 }}>
+  <h4
+    style={{
+      fontSize: 17,
+      margin: 0,
+      lineHeight: 1.3,
+      color: "#122359",
+    }}
+  >
+    <Link
+      href={getJobDetailsHref(application.jobId)}
+      style={{ color: "#122359" }}
+    >
+      {application.title}
+    </Link>
+  </h4>
 
-            </div>
+  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
+    <img
+      src={iconMap.industry}
+      alt="Company"
+      width={14}
+      height={14}
+    />
+    <span style={{ fontSize: 13, color: "#4a5578", fontWeight: 500 }}>
+      {application.company}
+    </span>
+  </div>
+</div>
 
             <span
               style={{
@@ -344,34 +355,34 @@ const ApplicationStatusCard = ({ application, isAcknowledged, onAcknowledge, onW
           </div>
 
           <div style={{
-            display: 'flex', alignItems: 'center', gap: 12,
-            marginTop: 12, flexWrap: 'wrap'
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <img
-                src={iconMap.industry}
-                alt="Company"
-                width={16}
-                height={16}
-              />
-              <span>{application.company}</span>
-            </div>
+  display: 'flex', alignItems: 'center', gap: 12,
+  marginTop: 12, flexWrap: 'wrap'
+}}>
+  {/* <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+    <img
+      src={iconMap.industry}
+      alt="Company"
+      width={16}
+      height={16}
+    />
+    <span>{application.company}</span>
+  </div> */}
 
-            {application.location && (
-              <span style={{ fontSize: 12, color: '#8891ab' }}> {application.location}</span>
-            )}
-            {application.type && (
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <img
-                  src={iconMap.jobType}
-                  alt="Job Type"
-                  width={16}
-                  height={16}
-                />
-               <span>{formatEmploymentType(application.type)}</span>
-              </div>
-            )}
-          </div>
+  {application.location && (
+    <span style={{ fontSize: 12, color: '#8891ab' }}> {application.location}</span>
+  )}
+  {/* {application.type && (
+    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      <img
+        src={iconMap.jobType}
+        alt="Job Type"
+        width={16}
+        height={16}
+      />
+     <span>{formatEmploymentType(application.type)}</span>
+    </div>
+  )} */}
+</div>
           <div
             style={{
               display: "flex",
