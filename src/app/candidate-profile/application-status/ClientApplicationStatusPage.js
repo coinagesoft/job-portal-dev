@@ -312,12 +312,12 @@ const ApplicationStatusCard = ({ application, isAcknowledged, onAcknowledge, onW
   </h4>
 
   <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
-    <img
-      src={iconMap.industry}
+    {/* <img
+      // src={iconMap.industry}
       alt="Company"
       width={14}
       height={14}
-    />
+    /> */}
     <span style={{ fontSize: 13, color: "#4a5578", fontWeight: 500 }}>
       {application.company}
     </span>

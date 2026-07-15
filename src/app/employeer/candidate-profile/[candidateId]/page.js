@@ -241,7 +241,7 @@ const EmployerCandidateProfilePage = () => {
   const unlockStatus = profile.unlockStatus || {};
 
   const isUnlocked = unlockStatus.isUnlocked ?? overview.isUnlocked ?? false;
-  const cvAvailable = !!cv?.cvAvailable;
+  const cvAvailable = !!(cv?.cvAvailable || cv?.canDownloadCv || cv?.cvUrl || cv?.resumeUrl || cv?.fileName || cv?.documentUrl);
 
   return (
     <main className="main">
@@ -344,7 +344,7 @@ const EmployerCandidateProfilePage = () => {
                   <button
                     className="btn btn-outline-custom btn-lg"
                     type="button"
-                    disabled={!isUnlocked || !cvAvailable || downloading}
+                    disabled={!cvAvailable || downloading}
                     onClick={handleDownloadCv}
                   >
                     {downloading ? "Downloading…" : "Download CV"}

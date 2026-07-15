@@ -1,47 +1,6 @@
-const profileVisibilityRows = [
-  {
-    field: "display_name",
-    value: "Ramesh Kumar Sharma",
-    status: "Pre-unlock",
-    statusClass: "badge bg-primary",
-  },
-  {
-    field: "trade",
-    value: "Welder (6G Certified)",
-    status: "Visible",
-    statusClass: "badge bg-success",
-  },
-  {
-    field: "experience_years",
-    value: "8",
-    status: "Visible",
-    statusClass: "badge bg-success",
-  },
-  {
-    field: "current_location",
-    value: "Mumbai, Maharashtra",
-    status: "Visible",
-    statusClass: "badge bg-success",
-  },
-  {
-    field: "mobile_number",
-    value: "+91 XXXXXXXXXX",
-    status: "Locked",
-    statusClass: "badge bg-warning text-dark",
-  },
-  {
-    field: "email",
-    value: "rXXXXX@XXXX.com",
-    status: "Locked",
-    statusClass: "badge bg-warning text-dark",
-  },
-  {
-    field: "cv_download",
-    value: "Available after unlock",
-    status: "Locked",
-    statusClass: "badge bg-warning text-dark",
-  },
-];
+"use client";
+import React, { useState } from "react";
+import { useToast } from "@/components/Toast";
 
 const profileSkills = [
   "6G Welding",
@@ -82,22 +41,130 @@ const workHistory = [
   },
 ];
 
-export const metadata = {
-  title: "Employer Candidate Profile - Job Portal",
-  description:
-    "Employer view for candidate profile with unlock and private tagging.",
-};
-
 const EmployerCandidateProfilePage = () => {
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [unlocking, setUnlocking] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const { showToast } = useToast();
+
+  const handleUnlock = async () => {
+    setUnlocking(true);
+    setTimeout(() => {
+      setIsUnlocked(true);
+      setUnlocking(false);
+      showToast("Profile unlocked. 2 credit(s) used.", "success");
+    }, 600);
+  };
+
+  const handleDownloadCv = () => {
+    setDownloading(true);
+    setTimeout(() => {
+      try {
+        const blob = new Blob(
+          [
+            `%PDF-1.5
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [ 3 0 R ] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [ 0 0 595 842 ] /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 50 >>
+stream
+BT /F1 24 Tf 50 700 Td (Ramesh Kumar Sharma - Welder (6G) CV) Tj ET
+endstream
+endobj
+xref
+0 5
+0000000000 65535 f 
+0000000009 00000 n 
+0000000056 00000 n 
+0000000111 00000 n 
+0000000202 00000 n 
+trailer
+<< /Size 5 /Root 1 0 R >>
+startxref
+301
+%%EOF`
+          ],
+          { type: "application/pdf" }
+        );
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "Ramesh_Kumar_Sharma_CV.pdf";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        showToast("CV downloaded. 0 credit(s) used.", "success");
+      } catch (err) {
+        console.error(err);
+        showToast("Unable to download CV.", "error");
+      } finally {
+        setDownloading(false);
+      }
+    }, 1000);
+  };
+
+  const profileVisibilityRows = [
+    {
+      field: "display_name",
+      value: "Ramesh Kumar Sharma",
+      status: "Pre-unlock",
+      statusClass: "badge bg-primary",
+    },
+    {
+      field: "trade",
+      value: "Welder (6G Certified)",
+      status: "Visible",
+      statusClass: "badge bg-success",
+    },
+    {
+      field: "experience_years",
+      value: "8",
+      status: "Visible",
+      statusClass: "badge bg-success",
+    },
+    {
+      field: "current_location",
+      value: "Mumbai, Maharashtra",
+      status: "Visible",
+      statusClass: "badge bg-success",
+    },
+    {
+      field: "mobile_number",
+      value: isUnlocked ? "+91 98765 43210" : "+91 XXXXXXXXXX",
+      status: isUnlocked ? "Visible" : "Locked",
+      statusClass: isUnlocked ? "badge bg-success" : "badge bg-warning text-dark",
+    },
+    {
+      field: "email",
+      value: isUnlocked ? "ramesh.sharma@gmail.com" : "rXXXXX@XXXX.com",
+      status: isUnlocked ? "Visible" : "Locked",
+      statusClass: isUnlocked ? "badge bg-success" : "badge bg-warning text-dark",
+    },
+    {
+      field: "cv_download",
+      value: isUnlocked ? "Available for download" : "Available after unlock",
+      status: isUnlocked ? "Visible" : "Locked",
+      statusClass: isUnlocked ? "badge bg-success" : "badge bg-warning text-dark",
+    },
+  ];
+
   return (
     <main className="main">
       <section className="section-box-2">
         <div className="container">
           <div className="banner-hero banner-image-single">
-            <img
+            {/* <img
               src="/assets/imgs/page/blue-collar/welding.jpg"
               alt="candidate banner"
-            />
+            /> */}
           </div>
           <div className="box-company-profile">
             <div className="image-compay">
@@ -164,17 +231,29 @@ const EmployerCandidateProfilePage = () => {
                     type="button"
                     title="Unlock this candidate's full profile"
                     style={{ whiteSpace: "nowrap" }}
+                    disabled={isUnlocked || unlocking}
+                    onClick={handleUnlock}
                   >
-                    Unlock Profile - 2 Credits
+                    {isUnlocked
+                      ? "Profile Unlocked"
+                      : unlocking
+                        ? "Unlocking…"
+                        : "Unlock Profile - 2 Credits"}
                   </button>
 
                   <button
                     className="btn btn-outline-custom btn-lg"
                     type="button"
-                    title="Unlock required before downloading CV"
+                    title={isUnlocked ? "Download candidate CV" : "Unlock required before downloading CV"}
                     style={{ whiteSpace: "nowrap" }}
+                    disabled={!isUnlocked || downloading}
+                    onClick={handleDownloadCv}
                   >
-                    Download CV - 2 Credits
+                    {downloading
+                      ? "Downloading…"
+                      : isUnlocked
+                        ? "Download CV"
+                        : "Download CV - 2 Credits"}
                   </button>
                 </div>
               </div>
@@ -682,9 +761,9 @@ const EmployerCandidateProfilePage = () => {
                 <div className="sidebar-list-job">
                   <h6 className="mb-10">Contact & CV Access</h6>
                   <ul className="ul-disc">
-                    <li>Mobile: +91 XXXXXXXXXX (locked)</li>
-                    <li>Email: rXXXXX@XXXX.com (locked)</li>
-                    <li>CV: Available after unlock</li>
+                    <li>Mobile: {isUnlocked ? "+91 98765 43210" : "+91 XXXXXXXXXX (locked)"}</li>
+                    <li>Email: {isUnlocked ? "ramesh.sharma@gmail.com" : "rXXXXX@XXXX.com (locked)"}</li>
+                    <li>CV: {isUnlocked ? "Available for download" : "Available after unlock"}</li>
                     <li>Unlock expiry window: 60 days</li>
                   </ul>
                   {/* <div className="mt-30">

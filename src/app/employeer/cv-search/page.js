@@ -44,6 +44,26 @@ const tokenizeSearch = (value) =>
 const formatLocation = (candidate) =>
   `${candidate.currentCity}, ${candidate.currentState}`;
 
+// Dedupes locations case-insensitively, keeping the first-seen casing as the
+// display label — so "Pune" and "pune" collapse into a single option instead
+// of showing up as two separate entries.
+const getUniqueLocations = (optionsFromApi, candidates) => {
+  const raw =
+    optionsFromApi ??
+    candidates.map((c) => c.currentCity).filter(Boolean);
+
+  const seen = new Map(); // lowercased key -> display label
+
+  raw.forEach((loc) => {
+    const key = loc.trim().toLowerCase();
+    if (key && !seen.has(key)) {
+      seen.set(key, loc.trim());
+    }
+  });
+
+  return Array.from(seen.values()).sort((a, b) => a.localeCompare(b));
+};
+
 const formatExperience = (candidate) => `${candidate.experienceYears} yrs exp`;
 
 const availabilityLabel = (availability) =>
@@ -95,6 +115,7 @@ const CANDIDATE_ACTION_BUTTON_STYLE = {
   alignItems: "center",
   justifyContent: "center",
   whiteSpace: "nowrap",
+  borderRadius:"8px"
 };
 
 const EXPERIENCE_RANGES = [
@@ -987,26 +1008,17 @@ const EmployerCvSearchPage = () => {
                       <div className="form-group">
                         <label className="mb-5">Location</label>
                         <select
-                          className="form-control form-icons select-active"
-                          value={filters.location}
-                          onChange={(e) => updateFilterAndSearch({ location: e.target.value })}
-                        >
-                          <option value="">Any location</option>
-                          {(
-                            filterOptions?.locations ??
-                            Array.from(
-                              new Set(
-                                cvCandidates
-                                  .map((c) => c.currentCity)
-                                  .filter(Boolean)
-                              )
-                            )
-                          ).map((loc) => (
-                            <option key={loc} value={loc}>
-                              {loc}
-                            </option>
-                          ))}
-                        </select>
+  className="form-control form-icons select-active"
+  value={filters.location}
+  onChange={(e) => updateFilterAndSearch({ location: e.target.value })}
+>
+  <option value="">Any location</option>
+  {getUniqueLocations(filterOptions?.locations, cvCandidates).map((loc) => (
+    <option key={loc} value={loc}>
+      {loc}
+    </option>
+  ))}
+</select>
                       </div>
                     </div>
 
