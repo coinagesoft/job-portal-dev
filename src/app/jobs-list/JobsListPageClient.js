@@ -10,6 +10,7 @@ import FilterButton from './components/FilterButton';
 import JobFilterSheet from './components/JobFilterSheet';
 import { useSearchParams } from 'next/navigation';
 import { getAllJobs } from "@/services/candidate/allJobsService";
+import { getCandidateId } from "@/utils/authHelper";
 
 const JobsListPageClient = () => {
   const searchParams = useSearchParams();
@@ -21,13 +22,12 @@ const JobsListPageClient = () => {
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const response = await getAllJobs();
+        const candidateId = getCandidateId();
+        const response = await getAllJobs(candidateId ? { candidateId } : {});
 
         console.log("ALL JOBS:", response.data);
 
         setJobs(response.data || []);
-        // OR setJobs(response.data.data || []);
-        // depending on your API response structure
       } catch (error) {
         console.error("Failed to fetch jobs:", error);
       } finally {

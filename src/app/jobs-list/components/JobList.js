@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { getAllJobs } from '@/services/candidate/allJobsService';
+import { getCandidateId } from '@/utils/authHelper';
 import JobCardList from './JobCardList';
 import ApplyJobModal from '@/app/Homepage/components/ApplyJobModal';
 import Pagination from './Pagination';
@@ -31,7 +32,9 @@ const JobList = ({ filters = {} }) => {
     const load = async () => {
       try {
         setLoading(true);
-        const response = await getAllJobs();
+        const candidateId = getCandidateId();
+        const response = await getAllJobs(candidateId ? { candidateId } : {});
+
         const jobs = response.data || [];
         if (thisRequestId !== requestIdRef.current) return; // stale response guard
         const processed = jobs.map((job) => ({
@@ -238,7 +241,10 @@ const JobList = ({ filters = {} }) => {
   };
 
   const getJobTime = (job) => (job.postedOn ? new Date(job.postedOn).getTime() : 0);
-  const getJobMatch = (job) => Number(job.aiMatchPercentage) || 0;
+  const getJobMatch = (job) => {
+    const matchScore = job.aiMatchPercentage ?? job.matchPercentage ?? job.aiMatch ?? job.aiMatchScore;
+    return Number(matchScore) || 0;
+  };
 
   // All filtering + sorting happens here, in memory, against the single
   // `allJobs` array fetched once above — no API round-trip per filter change.

@@ -293,22 +293,34 @@ function Field({ label, hint, required, error, children }) {
   );
 }
 
-function Input({ className = "", style = {}, error, ...props }) {
+function Input({ className = "", style = {}, error, onFocus, onBlur, ...props }) {
   return (
     <input
       {...props}
       className={`form-control ${className}`.trim()}
       style={{
         height: 53,
-        borderColor: error ? "#E24B4A" : undefined,
+        border: error
+          ? "1px solid #E24B4A"
+          : "1px solid var(--color-border-secondary, #C7D2E0)",
         backgroundColor: error ? "#FFF5F5" : undefined,
+        outline: "none",
+        boxSizing: "border-box",
         ...style,
+      }}
+      onFocus={(e) => {
+        if (!error) e.currentTarget.style.border = "1px solid #ff9900";
+        onFocus?.(e);
+      }}
+      onBlur={(e) => {
+        if (!error) e.currentTarget.style.border = "1px solid var(--color-border-secondary, #C7D2E0)";
+        onBlur?.(e);
       }}
     />
   );
 }
 
-function Select({ children, className = "", style = {}, error, ...props }) {
+function Select({ children, className = "", style = {}, error, onFocus, onBlur, ...props }) {
   return (
     <select
       {...props}
@@ -322,9 +334,21 @@ function Select({ children, className = "", style = {}, error, ...props }) {
         appearance: "none",
         WebkitAppearance: "none",
         MozAppearance: "none",
-        borderColor: error ? "#E24B4A" : undefined,
+        border: error
+          ? "1px solid #E24B4A"
+          : "1px solid var(--color-border-secondary, #C7D2E0)",
         backgroundColor: error ? "#FFF5F5" : undefined,
+        outline: "none",
+        boxSizing: "border-box",
         ...style,
+      }}
+      onFocus={(e) => {
+        if (!error) e.currentTarget.style.border = "1px solid #ff9900";
+        onFocus?.(e);
+      }}
+      onBlur={(e) => {
+        if (!error) e.currentTarget.style.border = "1px solid var(--color-border-secondary, #C7D2E0)";
+        onBlur?.(e);
       }}
     >
       {children}
@@ -1373,45 +1397,50 @@ const handleLinkedInRegister = () => {
         />
       </Field>
 
-      <Field label="Email" hint="Optional — verify to improve account security">
-        <Input
-          type="email"
-          placeholder="john@example.com"
-          value={form.email}
-          disabled={isSocialVerified || emailOtp.verified}
-          onChange={(e) => {
-            const val = e.target.value;
-            if (val && /^\d+$/.test(val)) return;
-            set("email", val);
-          }}
-          style={{
-            borderColor: emailOtp.verified ? "#3B6D11" : undefined,
-            backgroundColor: emailOtp.verified ? "#f4f9f1" : undefined,
-            color: emailOtp.verified ? "#2b4e0c" : undefined,
-            border: emailOtp.verified ? "1px solid #3B6D11" : undefined,
-          }}
-        />
-        {form.email && (
-          <div style={{ marginTop: 8 }}>
-            <OtpBlock
-              target="email"
-              sent={emailOtp.sent}
-              verified={emailOtp.verified}
-              disabled={!form.email}
-              onSend={sendEmail}
-              onResend={sendEmail}
-              onVerify={verifyEmail}
-              otpVal={emailOtp.userVal}
-              setOtpVal={(v) =>
-                setEmailOtp((p) => ({
-                  ...p,
-                  userVal: v,
-                }))
-              }
-            />
-          </div>
-        )}
-      </Field>
+      <Field
+  label="Email"
+  hint={!form.email || isValidEmail(form.email) ? "Optional — verify to improve account security" : null}
+  error={form.email && !isValidEmail(form.email) ? "Enter a complete, valid email address" : null}
+>
+  <Input
+    type="email"
+    placeholder="john@example.com"
+    value={form.email}
+    error={form.email && !isValidEmail(form.email)}
+    disabled={isSocialVerified || emailOtp.verified}
+    onChange={(e) => {
+      const val = e.target.value;
+      if (val && /^\d+$/.test(val)) return;
+      set("email", val);
+    }}
+    style={{
+      borderColor: emailOtp.verified ? "#3B6D11" : undefined,
+      backgroundColor: emailOtp.verified ? "#f4f9f1" : undefined,
+      color: emailOtp.verified ? "#2b4e0c" : undefined,
+      border: emailOtp.verified ? "1px solid #3B6D11" : undefined,
+    }}
+  />
+  {form.email && isValidEmail(form.email) && (
+    <div style={{ marginTop: 8 }}>
+      <OtpBlock
+        target="email"
+        sent={emailOtp.sent}
+        verified={emailOtp.verified}
+        disabled={!isValidEmail(form.email)}
+        onSend={sendEmail}
+        onResend={sendEmail}
+        onVerify={verifyEmail}
+        otpVal={emailOtp.userVal}
+        setOtpVal={(v) =>
+          setEmailOtp((p) => ({
+            ...p,
+            userVal: v,
+          }))
+        }
+      />
+    </div>
+  )}
+</Field>
 
       {canShowPayment && (
         <Field label="Registration Fee">

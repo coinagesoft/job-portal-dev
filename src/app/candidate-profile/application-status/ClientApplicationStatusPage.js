@@ -10,7 +10,7 @@ import { useToast } from '@/components/Toast';
 import { getMyApplications } from "@/services/candidate/myApplicationsService";
 import { acknowledgeNote, withdrawApplication } from "@/services/candidate/applicationActionsService";
 
-const FILTERS = ['All', 'Applied', 'In Review', 'Shortlisted', 'Interview', 'Rejected'];
+const FILTERS = ['All', 'Applied', 'In Review', 'Shortlisted', 'Interview', 'Rejected', 'Withdrawn'];
 const ACK_STORAGE_KEY = 'candidate_application_message_acknowledged';
 
 const STATUS_CLASS_MAP = {
@@ -18,7 +18,8 @@ const STATUS_CLASS_MAP = {
   'In Review': 'in-review',
   Shortlisted: 'shortlisted',
   Interview: 'interview',
-  Rejected: 'rejected'
+  Rejected: 'rejected',
+  Withdrawn: 'withdrawn',
 };
 
 const STATUS_COLOR_MAP = {
@@ -26,8 +27,10 @@ const STATUS_COLOR_MAP = {
   'In Review': { bg: '#fff6e6', color: '#a86a00', border: '#ffe3ad' },
   Shortlisted: { bg: '#e9f7ef', color: '#1c7a45', border: '#c3ebd3' },
   Interview: { bg: '#e8f0fe', color: '#1a56c4', border: '#c7dcff' },
-  Rejected: { bg: '#fdecec', color: '#b23b3b', border: '#f5c9c9' }
+  Rejected: { bg: '#fdecec', color: '#b23b3b', border: '#f5c9c9' },
+  Withdrawn: { bg: '#f1f2f5', color: '#6b7280', border: '#e2e4e9' },
 };
+
 
 const CARD_STYLE = {
   border: '1px solid rgba(18, 35, 89, 0.08)',
@@ -575,7 +578,9 @@ const ClientApplicationStatusPage = () => {
       ['Applied', 'In Review', 'Shortlisted'].includes(item.status)
     ).length;
     const interviewCount = applications.filter((item) => item.status === 'Interview').length;
-    const rejectedCount = applications.filter((item) => item.status === 'Rejected').length;
+   const rejectedCount = applications.filter((item) =>
+  ['Rejected', 'Withdrawn'].includes(item.status)
+).length;
 
     return [
       { id: 'total', label: 'Total Applications', value: applications.length, tone: 'brand' },
@@ -691,25 +696,29 @@ const ClientApplicationStatusPage = () => {
 
   // Step 2: only runs once the user confirms in the modal.
   const handleWithdrawConfirm = async () => {
-    if (!withdrawTarget) return;
-    const { applicationId, companyName } = withdrawTarget;
+  if (!withdrawTarget) return;
+  const { applicationId, companyName } = withdrawTarget;
 
-    setWithdrawSubmitting(true);
-    try {
-      await withdrawApplication(applicationId);
-      setApplications((prev) => prev.filter((a) => a.id !== applicationId));
-      showToast(`Application to ${companyName} withdrawn.`, 'success');
-      setWithdrawTarget(null);
-    } catch (error) {
-      console.error('Failed to withdraw application', error);
-      showToast(
-        error?.response?.data?.message || 'Could not withdraw application.',
-        'error',
-      );
-    } finally {
-      setWithdrawSubmitting(false);
-    }
-  };
+  setWithdrawSubmitting(true);
+  try {
+    await withdrawApplication(applicationId);
+    setApplications((prev) =>
+      prev.map((a) =>
+        a.id === applicationId ? { ...a, status: 'Withdrawn' } : a
+      )
+    );
+    showToast(`Application to ${companyName} withdrawn.`, 'success');
+    setWithdrawTarget(null);
+  } catch (error) {
+    console.error('Failed to withdraw application', error);
+    showToast(
+      error?.response?.data?.message || 'Could not withdraw application.',
+      'error',
+    );
+  } finally {
+    setWithdrawSubmitting(false);
+  }
+};
 
 
   const statusCounts = useMemo(() => {

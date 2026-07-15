@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -295,7 +295,7 @@ const getDisplaySalary = (salaryRange, salaryVisibility) => {
             </h4>
 
             {/* AI MATCH (only when a real per-candidate score exists) */}
-            {job.aiMatchPercentage != null && (
+            {(job.aiMatchPercentage ?? job.matchPercentage ?? job.aiMatch ?? job.aiMatchScore) != null && (
               <div
                 style={{
                   display: "inline-flex",
@@ -324,7 +324,7 @@ const getDisplaySalary = (salaryRange, salaryVisibility) => {
                   }}
                 ></i>
 
-                AI Match: {job.aiMatchPercentage}%
+                AI Match: {job.aiMatchPercentage ?? job.matchPercentage ?? job.aiMatch ?? job.aiMatchScore}%
               </div>
             )}
           </div>
