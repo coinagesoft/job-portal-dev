@@ -18,6 +18,24 @@ const formatDate = (iso) => {
   });
 };
 
+// Backend sends the raw C# enum name (e.g. "CvDownload", "ProfileUnlock",
+// "CreditAllocation") for credit-usage rows, and the literal string
+// "PlanPurchase" for plan-purchase rows. Map every value to its own label —
+// don't collapse anything into a shared fallback.
+const TRANSACTION_TYPE_META = {
+  PlanPurchase: { label: "Plan Purchase", background: "#dcfce7", color: "#166534" },
+  ProfileUnlock: { label: "Profile Unlock", background: "#fef9c3", color: "#854d0e" },
+  CvDownload: { label: "CV Download", background: "#dbeafe", color: "#1e40af" },
+  CreditAllocation: { label: "Credit Allocation", background: "#ede9fe", color: "#5b21b6" },
+};
+
+const getTransactionTypeMeta = (transactionType) =>
+  TRANSACTION_TYPE_META[transactionType] || {
+    label: transactionType || "-",
+    background: "#f3f4f6",
+    color: "#374151",
+  };
+
 const EmployerCreditWalletPage = () => {
   const [dashboard, setDashboard] = useState(null);
   const [transactions, setTransactions] = useState([]);
@@ -235,19 +253,21 @@ const EmployerCreditWalletPage = () => {
                                 </td>
                               </tr>
                             ) : (
-                              transactions.map((txn) => (
+                              transactions.map((txn) => {
+                                const typeMeta = getTransactionTypeMeta(txn.transactionType);
+                                return (
                                 <tr key={txn.transactionId}>
                                   <td>{formatDate(txn.createdAt)}</td>
                                   <td>
                                     <span
                                       className="btn btn-grey-small"
                                       style={{
-                                        background: txn.transactionType === "PlanPurchase" ? "#dcfce7" : "#fef9c3",
-                                        color: txn.transactionType === "PlanPurchase" ? "#166534" : "#854d0e",
+                                        background: typeMeta.background,
+                                        color: typeMeta.color,
                                         fontSize: "11px",
                                       }}
                                     >
-                                      {txn.transactionType === "PlanPurchase" ? "Plan Purchase" : "Profile Unlock"}
+                                      {typeMeta.label}
                                     </span>
                                   </td>
                                   <td className="font-sm">{txn.category}</td>
@@ -273,7 +293,8 @@ const EmployerCreditWalletPage = () => {
                                     )}
                                   </td>
                                 </tr>
-                              ))
+                                );
+                              })
                             )}
                           </tbody>
                         </table>
