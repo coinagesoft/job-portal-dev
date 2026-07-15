@@ -558,7 +558,7 @@ function Alert({ type = "info", children }) {
 }
 
 // ── Country code selector backed by react-international-phone's full list ──
-function CountryCodeSelect({ value, onChange, disabled }) {
+function CountryCodeSelect({ value, onChange, disabled, verified }) {
   const meta = getCountryMeta(value);
 
   return (
@@ -568,8 +568,8 @@ function CountryCodeSelect({ value, onChange, disabled }) {
         alignItems: "center",
         height: 53,
         borderRadius: 8,
-        border: "0.5px solid var(--color-border-secondary)",
-        background: disabled ? "var(--color-background-secondary)" : "#fff",
+        border: verified ? "1px solid #3B6D11" : "0.5px solid var(--color-border-secondary)",
+        background: verified ? "#f4f9f1" : disabled ? "var(--color-background-secondary)" : "#fff",
         paddingLeft: 2,
         paddingRight: 10,
         gap: 2,
@@ -706,6 +706,7 @@ function MobileOtpField({
         <CountryCodeSelect
           value={countryCode}
           disabled={verified}
+          verified={verified}
           onChange={(v) => {
             onCountryCodeChange(v);
             // re-trim number to new country's max length
@@ -726,7 +727,13 @@ function MobileOtpField({
                 e.target.value.replace(/\D/g, "").slice(0, meta.maxLen)
               )
             }
-            style={{ paddingRight: verified ? 40 : undefined }}
+            style={{
+              paddingRight: verified ? 40 : undefined,
+              borderColor: verified ? "#3B6D11" : undefined,
+              backgroundColor: verified ? "#f4f9f1" : undefined,
+              color: verified ? "#2b4e0c" : undefined,
+              border: verified ? "1px solid #3B6D11" : undefined,
+            }}
           />
           {verified && (
             <span
@@ -1371,8 +1378,18 @@ const handleLinkedInRegister = () => {
           type="email"
           placeholder="john@example.com"
           value={form.email}
-            disabled={isSocialVerified}
-          onChange={(e) => set("email", e.target.value)}
+          disabled={isSocialVerified || emailOtp.verified}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val && /^\d+$/.test(val)) return;
+            set("email", val);
+          }}
+          style={{
+            borderColor: emailOtp.verified ? "#3B6D11" : undefined,
+            backgroundColor: emailOtp.verified ? "#f4f9f1" : undefined,
+            color: emailOtp.verified ? "#2b4e0c" : undefined,
+            border: emailOtp.verified ? "1px solid #3B6D11" : undefined,
+          }}
         />
         {form.email && (
           <div style={{ marginTop: 8 }}>
@@ -2602,7 +2619,11 @@ const isStep4Valid =
             type="email"
             value={data.contactPersonEmail}
             error={contactEmailTouched && !contactEmailValid}
-            onChange={(e) => set("contactPersonEmail", e.target.value.trim())}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val && /^\d+$/.test(val.trim())) return;
+              set("contactPersonEmail", val.trim());
+            }}
             placeholder="contact@personal.com"
           />
         </Field>
@@ -2622,8 +2643,18 @@ const isStep4Valid =
           value={data.corpEmail}
           error={corpEmailTouched && !corpEmailValid && !data.corpEmailOtp.verified}
           disabled={data.corpEmailOtp.verified}
-          onChange={(e) => set("corpEmail", e.target.value.trim())}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val && /^\d+$/.test(val.trim())) return;
+            set("corpEmail", val.trim());
+          }}
           placeholder="you@yourcompany.com"
+          style={{
+            borderColor: data.corpEmailOtp.verified ? "#3B6D11" : undefined,
+            backgroundColor: data.corpEmailOtp.verified ? "#f4f9f1" : undefined,
+            color: data.corpEmailOtp.verified ? "#2b4e0c" : undefined,
+            border: data.corpEmailOtp.verified ? "1px solid #3B6D11" : undefined,
+          }}
         />
 
         {data.corpEmail && corpEmailValid && (

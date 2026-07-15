@@ -255,8 +255,8 @@ const EmployerCvSearchPage = () => {
       console.error(error);
       alert(
         error?.response?.data?.message ||
-          error?.response?.data?.Message ||
-          "Unable to download CV",
+        error?.response?.data?.Message ||
+        "Unable to download CV",
       );
     }
   };
@@ -359,6 +359,28 @@ const EmployerCvSearchPage = () => {
     }
   }, [filters.minExperience, filters.maxExperience]);
 
+  // const handleReset = () => {
+  //   const defaultFilters = {
+  //     keyword: "",
+  //     tradeCategory: "",
+  //     minExperience: "",
+  //     maxExperience: "",
+  //     location: "",
+  //     availabilityStatus: "",
+  //     itiCertifiedOnly: false,
+  //     passportValidOnly: false,
+  //     offshoreOnly: false,
+  //     unlockedProfilesOnly: false,
+  //     sortBy: "KeywordMatch",
+  //     pageNumber: 1,
+  //     pageSize: 10,
+  //     jobId: "",
+  //   };
+
+  //   setFilters(defaultFilters);
+  //   loadCandidates(defaultFilters);
+  // };
+
   return (
     <main className="main">
       <section className="section-box-2">
@@ -416,7 +438,7 @@ const EmployerCvSearchPage = () => {
                   </div>
 
                   <input
-                    className="form-input input-keysearch mr-10"
+                    className="form-input input-keysearch mr-5"
                     type="text"
                     value={filters.keyword}
                     onChange={(e) =>
@@ -461,6 +483,26 @@ const EmployerCvSearchPage = () => {
                   >
                     Search
                   </button>
+                  <button
+                    type="button"
+                    onClick={resetFilters}
+                    className="btn font-sm"
+                    style={{
+                      border: "none",
+                      outline: "none",
+                      boxShadow: "none",
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.outline = "none";
+                      e.target.style.boxShadow = "none";
+                    }}
+                    onMouseDown={(e) => {
+                      e.target.style.outline = "none";
+                      e.target.style.boxShadow = "none";
+                    }}
+                  >
+                    Reset
+                  </button>
                 </form>
               </div>
             </div>
@@ -484,7 +526,7 @@ const EmployerCvSearchPage = () => {
                         job using skills, trade, experience, and location.
                       </p>
                     </div>
-                    <div className="col-xl-5 col-lg-5 text-lg-end mt-sm-15">
+                    {/* <div className="col-xl-5 col-lg-5 text-lg-end mt-sm-15">
                       <div className="display-flex2">
                         <div className="box-border mr-10">
                           <span className="text-sortby">Credits:</span>
@@ -496,7 +538,7 @@ const EmployerCvSearchPage = () => {
                         <span className="btn btn-grey-small mr-5">B = 2cr</span>
                         <span className="btn btn-grey-small">C = 3cr</span>
                       </div>
-                    </div>
+                    </div> */}
                   </div>
 
                   {/* {activeFilterTags.length > 0 ? (
@@ -540,9 +582,8 @@ const EmployerCvSearchPage = () => {
                         key={candidate.candidateId}
                       >
                         <div
-                          className={`card-grid-2 hover-up cv-search-candidate-card ${
-                            candidate.isUnlocked ? "is-unlocked" : ""
-                          }`}
+                          className={`card-grid-2 hover-up cv-search-candidate-card ${candidate.isUnlocked ? "is-unlocked" : ""
+                            }`}
                         >
                           <div className="row">
                             <div className="col-lg-7 col-md-7 col-sm-12">
@@ -552,8 +593,8 @@ const EmployerCvSearchPage = () => {
                                     src={
                                       candidate.profilePhotoUrl ||
                                       "/assets/imgs/page/candidates/candidate-profile.png"
-                                    } 
-                                    style={{width:'85px',height:'85px'}}
+                                    }
+                                    style={{ width: '85px', height: '85px' }}
                                     alt={candidate.fullName}
                                     onError={(e) => {
                                       e.currentTarget.onerror = null;
@@ -571,17 +612,31 @@ const EmployerCvSearchPage = () => {
                                     {candidate.fullName}
                                   </Link>
 
-                                  <span className="location-small d-block">
-                                    {formatExperience(candidate)} -{" "}
-                                    {formatLocation(candidate)}
-                                  </span>
+                                  <div>
+                                    {formatExperience(candidate) &&
+                                      formatExperience(candidate) !== "null" &&
+                                      formatExperience(candidate) !== "undefined" && (
+                                        <span className="card-briefcase">
+                                          {formatExperience(candidate)}
+                                        </span>
+                                      )}
+
+                                    {formatLocation(candidate) &&
+                                      formatLocation(candidate) !== "null, null" &&
+                                      formatLocation(candidate) !== "null," &&
+                                      formatLocation(candidate) !== "undefined" && (
+                                        <span className="card-location">
+                                          <span>{formatLocation(candidate)}</span>
+                                        </span>
+                                      )}
+                                  </div>
 
                                   {candidate.availabilityStatus?.toLowerCase() ===
                                     "available" && (
-                                    <span className="available-now-text">
-                                      Available now
-                                    </span>
-                                  )}
+                                      <span className="available-now-text">
+                                        Available now
+                                      </span>
+                                    )}
                                 </div>
                               </div>
                             </div>
@@ -609,7 +664,7 @@ const EmployerCvSearchPage = () => {
                               </Link>
                             </h4>
 
-                            <div className="mt-5">
+                            {/* <div className="mt-5">
                               <span className="card-briefcase">
                                 {formatExperience(candidate)}
                               </span>
@@ -617,7 +672,7 @@ const EmployerCvSearchPage = () => {
                               <span className="card-time">
                                 <span>{formatLocation(candidate)}</span>
                               </span>
-                            </div>
+                            </div> */}
 
                             <div className="cv-search-skill-tags mt-10 mb-10">
                               {candidate.skills?.map((skill) => (
@@ -645,11 +700,11 @@ const EmployerCvSearchPage = () => {
                                       "Select a job for AI match"
                                     )}
                                   </span>
-
+                                  {/* 
                                   <span className="font-xs color-text-mutted ml-10">
                                     Band {candidate.band} -{" "}
                                     {candidate.unlockCredits} cr
-                                  </span>
+                                  </span> */}
                                 </div>
 
                                 <div className="col-lg-5 col-5 text-end">
@@ -692,7 +747,7 @@ const EmployerCvSearchPage = () => {
                                         href={`/employeer/candidate-profile/${candidate.candidateId}`}
                                         style={CANDIDATE_ACTION_BUTTON_STYLE}
                                       >
-                                        Unlock ({candidate.unlockCredits} cr)
+                                        Unlock ({candidate.unlockCredits} Credits)
                                       </Link>
                                     )}
                                   </div>
@@ -757,11 +812,10 @@ const EmployerCvSearchPage = () => {
                           <button
                             key={page}
                             type="button"
-                            className={`btn btn-sm ${
-                              page === filters.pageNumber
-                                ? "btn-default"
-                                : "btn-border"
-                            }`}
+                            className={`btn btn-sm ${page === filters.pageNumber
+                              ? "btn-default"
+                              : "btn-border"
+                              }`}
                             disabled={loading}
                             onClick={() => goToPage(page)}
                             style={{ minWidth: 40 }}

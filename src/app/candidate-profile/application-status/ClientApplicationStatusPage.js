@@ -95,6 +95,165 @@ const formatEmploymentType = (type) => {
     .replace(/_/g, " ")
     .replace(/\b\w/g, (char) => char.toUpperCase());
 };
+
+// ---- Custom confirmation modal (replaces window.confirm) ----
+// Styled with the site's own tokens/classes (see apply-job-modal-shell,
+// candidate-settings-actions .btn, and the Rejected status colors above)
+// instead of one-off inline styles.
+const WithdrawConfirmModal = ({ open, companyName, onConfirm, onCancel, isSubmitting }) => {
+  if (!open) return null;
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="withdraw-confirm-title"
+      className="withdraw-confirm-backdrop"
+      onClick={onCancel}
+    >
+      <div
+        className="withdraw-confirm-modal-shell"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="withdraw-confirm-icon">!</div>
+
+        <h4 id="withdraw-confirm-title" className="withdraw-confirm-title">
+          Withdraw this application?
+        </h4>
+        <p className="withdraw-confirm-body font-sm color-text-paragraph-2">
+          {companyName
+            ? `You're about to withdraw your application to ${companyName}. This can't be undone.`
+            : "You're about to withdraw this application. This can't be undone."}
+        </p>
+
+        <div className="withdraw-confirm-actions">
+          <button
+            type="button"
+            className="btn btn-default withdraw-confirm-btn"
+            onClick={onCancel}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="btn btn-danger withdraw-confirm-btn"
+            onClick={onConfirm}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'Withdrawing…' : 'Withdraw'}
+          </button>
+        </div>
+      </div>
+
+      <style jsx>{`
+        .withdraw-confirm-backdrop {
+          position: fixed;
+          inset: 0;
+          background: rgba(18, 35, 89, 0.45);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+          padding: 16px;
+        }
+
+        .withdraw-confirm-modal-shell {
+          width: 100%;
+          max-width: 400px;
+          background: var(--color-background-primary);
+          border: 1px solid var(--border-light);
+          border-radius: 16px;
+          box-shadow:
+            0 22px 44px rgba(18, 35, 89, 0.16),
+            0 8px 18px rgba(18, 35, 89, 0.08);
+          padding: 24px;
+          font-family: var(--font-family-base);
+        }
+
+        .withdraw-confirm-icon {
+          width: 44px;
+          height: 44px;
+          border-radius: 12px;
+          background: #fdecec;
+          color: #b23b3b;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: var(--font-xl);
+          font-weight: 700;
+          margin-bottom: 14px;
+        }
+
+        .withdraw-confirm-title {
+          margin: 0;
+          font-size: var(--font-h6);
+          color: var(--text-dark);
+          line-height: var(--lh-tight);
+        }
+
+        .withdraw-confirm-body {
+          margin-top: 8px;
+          margin-bottom: 0;
+          color: var(--text-mid);
+        }
+
+        .withdraw-confirm-actions {
+          display: flex;
+          justify-content: flex-end;
+          gap: 10px;
+          margin-top: 22px;
+        }
+
+        .withdraw-confirm-btn.btn {
+          min-width: 96px;
+          min-height: 46px;
+          border-radius: 12px;
+          font-size: var(--font-sm);
+          font-weight: 700;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.25s ease;
+        }
+
+        .withdraw-confirm-btn.btn-default {
+          border: 1px solid rgba(18, 35, 89, 0.2);
+          background: var(--color-background-primary);
+          color: var(--text-dark);
+        }
+
+        .withdraw-confirm-btn.btn-default:hover:not(:disabled) {
+          border-color: var(--primary-navy);
+          background: var(--primary-navy);
+          color: #ffffff;
+          transform: translateY(-2px);
+        }
+
+        .withdraw-confirm-btn.btn-danger {
+          border: 1px solid #b23b3b;
+          background: linear-gradient(180deg, #d05c5c 0%, #b23b3b 100%);
+          color: #ffffff;
+          box-shadow: 0 10px 22px rgba(178, 59, 59, 0.22);
+        }
+
+        .withdraw-confirm-btn.btn-danger:hover:not(:disabled) {
+          background: linear-gradient(180deg, #c14a4a 0%, #9e3232 100%);
+          border-color: #9e3232;
+          transform: translateY(-2px);
+          box-shadow: 0 14px 26px rgba(178, 59, 59, 0.28);
+        }
+
+        .withdraw-confirm-btn:disabled {
+          opacity: 0.65;
+          cursor: not-allowed;
+          transform: none !important;
+        }
+      `}</style>
+    </div>
+  );
+};
+
 const ApplicationStatusCard = ({ application, isAcknowledged, onAcknowledge, onWithdraw }) => {
   const [noteExpanded, setNoteExpanded] = useState(false);
   const statusClass = STATUS_CLASS_MAP[application.status] || 'applied';
@@ -407,6 +566,10 @@ const ClientApplicationStatusPage = () => {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // Withdraw confirmation modal state (replaces window.confirm)
+  const [withdrawTarget, setWithdrawTarget] = useState(null); // { applicationId, companyName } | null
+  const [withdrawSubmitting, setWithdrawSubmitting] = useState(false);
+
   const statusSummary = useMemo(() => {
     const activeCount = applications.filter((item) =>
       ['Applied', 'In Review', 'Shortlisted'].includes(item.status)
@@ -516,21 +679,35 @@ const ClientApplicationStatusPage = () => {
     }
   };
 
-  const handleWithdraw = async (applicationId, companyName) => {
-    if (typeof window !== 'undefined' &&
-      !window.confirm(`Withdraw your application to ${companyName}?`)) {
-      return;
-    }
+  // Step 1: clicking "Withdraw" on a card just opens the confirmation modal.
+  const handleWithdrawRequest = (applicationId, companyName) => {
+    setWithdrawTarget({ applicationId, companyName });
+  };
+
+  const handleWithdrawCancel = () => {
+    if (withdrawSubmitting) return;
+    setWithdrawTarget(null);
+  };
+
+  // Step 2: only runs once the user confirms in the modal.
+  const handleWithdrawConfirm = async () => {
+    if (!withdrawTarget) return;
+    const { applicationId, companyName } = withdrawTarget;
+
+    setWithdrawSubmitting(true);
     try {
       await withdrawApplication(applicationId);
       setApplications((prev) => prev.filter((a) => a.id !== applicationId));
       showToast(`Application to ${companyName} withdrawn.`, 'success');
+      setWithdrawTarget(null);
     } catch (error) {
       console.error('Failed to withdraw application', error);
       showToast(
         error?.response?.data?.message || 'Could not withdraw application.',
         'error',
       );
+    } finally {
+      setWithdrawSubmitting(false);
     }
   };
 
@@ -589,7 +766,7 @@ const ClientApplicationStatusPage = () => {
                   application={application}
                   isAcknowledged={Boolean(acknowledgedMessages[application.id])}
                   onAcknowledge={handleAcknowledge}
-                  onWithdraw={handleWithdraw}
+                  onWithdraw={handleWithdrawRequest}
                 />
               ))}
             </div>
@@ -619,6 +796,14 @@ const ClientApplicationStatusPage = () => {
           </div>
         </div>
       </section>
+
+      <WithdrawConfirmModal
+        open={Boolean(withdrawTarget)}
+        companyName={withdrawTarget?.companyName}
+        onConfirm={handleWithdrawConfirm}
+        onCancel={handleWithdrawCancel}
+        isSubmitting={withdrawSubmitting}
+      />
     </main>
   );
 };

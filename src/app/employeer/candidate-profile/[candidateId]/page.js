@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import candidateProfileService from "@/services/recruiter/Candidateprofileservice.js";
+import { useToast } from "@/components/Toast";
 
 /* Format a DateOnly ("2015-06-01") or ISO date to "Jun 2015" */
 const fmtMonthYear = (d) => {
@@ -21,8 +22,29 @@ const fmtDate = (d) => {
 const fmtSalary = (n) =>
   n == null ? null : `₹${Number(n).toLocaleString("en-IN")}`;
 
+// A "low credits" failure can come back a few different ways depending on
+// the endpoint (message text, an explicit code, or a 402). Treat any of
+// those as the same "credit issue" toast rather than a generic error.
+const isCreditIssue = (err, result) => {
+  const code = err?.response?.data?.code || result?.code;
+  const status = err?.response?.status;
+  const text = (
+    err?.response?.data?.message ||
+    err?.response?.data?.Message ||
+    result?.message ||
+    ""
+  ).toLowerCase();
+
+  return (
+    code === "INSUFFICIENT_CREDITS" ||
+    status === 402 ||
+    text.includes("credit")
+  );
+};
+
 const EmployerCandidateProfilePage = () => {
   const { candidateId } = useParams();
+  const showToast = useToast();
 
   const [profile, setProfile] = useState(null);
   const [wallet, setWallet] = useState(null);
@@ -84,27 +106,38 @@ const EmployerCandidateProfilePage = () => {
     try {
       const result = await candidateProfileService.unlockCandidate(candidateId);
       if (result?.success) {
-        setActionMessage({
-          type: "success",
-          text:
-            result.message ||
-            `Profile unlocked. ${result.creditsDeducted ?? 0} credit(s) used.`,
-        });
+        const successText =
+          result.message ||
+          `Profile unlocked. ${result.creditsDeducted ?? 0} credit(s) used.`;
+        setActionMessage({ type: "success", text: successText });
+        showToast(successText, "success");
         await loadData();
+      } else if (isCreditIssue(null, result)) {
+        const text =
+          result?.message ||
+          "Not enough credits to unlock this profile. Please top up your wallet.";
+        setActionMessage({ type: "error", text });
+        showToast(text, "error");
       } else {
-        setActionMessage({
-          type: "error",
-          text: result?.message || "Unlock failed.",
-        });
+        const text = result?.message || "Unlock failed.";
+        setActionMessage({ type: "error", text });
+        showToast(text, "error");
       }
     } catch (err) {
-      setActionMessage({
-        type: "error",
-        text:
+      if (isCreditIssue(err, null)) {
+        const text =
+          err.response?.data?.message ||
+          "Not enough credits to unlock this profile. Please top up your wallet.";
+        setActionMessage({ type: "error", text });
+        showToast(text, "error");
+      } else {
+        const text =
           err.response?.data?.message ||
           err.response?.data?.Message ||
-          "Unlock failed.",
-      });
+          "Unlock failed.";
+        setActionMessage({ type: "error", text });
+        showToast(text, "error");
+      }
     } finally {
       setUnlocking(false);
     }
@@ -120,10 +153,12 @@ const EmployerCandidateProfilePage = () => {
       const result = await candidateProfileService.downloadCv(candidateId);
 
       if (!result?.success) {
-        setActionMessage({
-          type: "error",
-          text: result?.message || "Unable to download CV.",
-        });
+        const text = isCreditIssue(null, result)
+          ? result?.message ||
+            "Not enough credits to download this CV. Please top up your wallet."
+          : result?.message || "Unable to download CV.";
+        setActionMessage({ type: "error", text });
+        showToast(text, "error");
         return;
       }
 
@@ -136,30 +171,32 @@ const EmployerCandidateProfilePage = () => {
       );
 
       if (!dl?.success) {
-        setActionMessage({
-          type: "error",
-          text: dl?.message || "Unable to download the watermarked CV.",
-        });
+        const text = isCreditIssue(null, dl)
+          ? dl?.message ||
+            "Not enough credits to download this CV. Please top up your wallet."
+          : dl?.message || "Unable to download the watermarked CV.";
+        setActionMessage({ type: "error", text });
+        showToast(text, "error");
         return;
       }
 
-      setActionMessage({
-        type: "success",
-        text:
-          result.message ||
-          `CV downloaded. ${result.creditsDeducted ?? 0} credit(s) used.`,
-      });
+      const successText =
+        result.message ||
+        `CV downloaded. ${result.creditsDeducted ?? 0} credit(s) used.`;
+      setActionMessage({ type: "success", text: successText });
+      showToast(successText, "success");
 
       await loadData();
     } catch (err) {
-      setActionMessage({
-        type: "error",
-        text:
-          err.response?.data?.message ||
+      const text = isCreditIssue(err, null)
+        ? err.response?.data?.message ||
+          "Not enough credits to download this CV. Please top up your wallet."
+        : err.response?.data?.message ||
           err.response?.data?.Message ||
           err.message ||
-          "Unable to download CV.",
-      });
+          "Unable to download CV.";
+      setActionMessage({ type: "error", text });
+      showToast(text, "error");
     } finally {
       setDownloading(false);
     }
