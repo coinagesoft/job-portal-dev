@@ -24,6 +24,7 @@ import { logout } from "@/store/authSlice";
 import {
   CANDIDATE_HEADER_SECTIONS,
   EMPLOYER_HEADER_TABS,
+  PUBLIC_ROUTE_EXCEPTIONS,
   ROLE_DEFAULT_ROUTE,
 } from "@/constants/panelConfig";
 
@@ -70,6 +71,17 @@ const isExactPathActive = (
   return (
     normalizePath(pathname) ===
     normalizePath(href)
+  );
+};
+
+// Pages meant to stand completely on their own — e.g. an invite link opened
+// by someone who isn't (or shouldn't appear as) the account currently logged
+// in on this browser. The global site header/nav is skipped entirely here.
+// Shared with AuthRouteGuard so the two never drift out of sync.
+const isStandaloneRoute = (pathname) => {
+  const current = normalizePath(pathname);
+  return PUBLIC_ROUTE_EXCEPTIONS.some(
+    (route) => current === route || current.startsWith(`${route}/`)
   );
 };
 
@@ -426,6 +438,10 @@ const Header = () => {
       </li>
     </>
   );
+
+  if (isStandaloneRoute(pathname)) {
+    return null;
+  }
 
   return (
     <header className="header sticky-bar">
