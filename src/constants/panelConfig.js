@@ -61,3 +61,10 @@ export const EMPLOYER_HEADER_TABS = [
 
 export const CANDIDATE_PROTECTED_PREFIXES = ["/candidate-profile"];
 export const EMPLOYER_PROTECTED_PREFIXES = ["/employeer", "/dashboard"];
+
+// Routes that fall under a protected prefix above (e.g. "/employeer") but
+// must stay fully public — they're meant to be opened by someone who isn't
+// logged in at all (or is logged in as a different account on that device).
+// Used by both AuthRouteGuard (skip the login redirect) and Header (skip
+// rendering the logged-in-session nav).
+export const PUBLIC_ROUTE_EXCEPTIONS = ["/employeer/accept-invite"];

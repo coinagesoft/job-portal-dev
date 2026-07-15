@@ -24,6 +24,7 @@ import { logout } from "@/store/authSlice";
 import {
   CANDIDATE_HEADER_SECTIONS,
   EMPLOYER_HEADER_TABS,
+  PUBLIC_ROUTE_EXCEPTIONS,
   ROLE_DEFAULT_ROUTE,
 } from "@/constants/panelConfig";
 
@@ -76,13 +77,10 @@ const isExactPathActive = (
 // Pages meant to stand completely on their own — e.g. an invite link opened
 // by someone who isn't (or shouldn't appear as) the account currently logged
 // in on this browser. The global site header/nav is skipped entirely here.
-const STANDALONE_ROUTES = [
-  "/employeer/accept-invite",
-];
-
+// Shared with AuthRouteGuard so the two never drift out of sync.
 const isStandaloneRoute = (pathname) => {
   const current = normalizePath(pathname);
-  return STANDALONE_ROUTES.some(
+  return PUBLIC_ROUTE_EXCEPTIONS.some(
     (route) => current === route || current.startsWith(`${route}/`)
   );
 };
