@@ -18,6 +18,7 @@ import {
   getNotes,
 } from "@/services/recruiter/recruiterApplicantsService";
 import { getWallet } from "@/services/recruiter/recruiterCreditWalletService";
+import candidateProfileService from "@/services/recruiter/Candidateprofileservice";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
@@ -276,13 +277,50 @@ const EmployerApplicantsClient = () => {
   };
 
   /* ── Download CV ── */
-  const handleDownloadCV = (applicant) => {
+  const handleDownloadCV = async (applicant) => {
     if (credits !== null && credits <= 0) {
       showToast("Insufficient credits. Please buy more credits.", "error");
       return;
     }
-    showToast(`CV downloaded for ${applicant.candidateName}. 1 credit deducted.`, "info");
-    setCredits((c) => Math.max(0, (c ?? 1) - 1));
+
+    try {
+      const result = await candidateProfileService.downloadCv(applicant.candidateId);
+
+      if (!result?.success) {
+        showToast(result?.message || "Unable to download CV.", "error");
+        return;
+      }
+
+      const dl = await candidateProfileService.downloadWatermarkedCv(
+        applicant.candidateId,
+        applicant.candidateName,
+      );
+
+      if (!dl?.success) {
+        showToast(dl?.message || "Unable to download the CV.", "error");
+        return;
+      }
+
+      showToast(
+        result.message ||
+          `CV downloaded for ${applicant.candidateName}. ${result.creditsDeducted ?? 0} credit(s) used.`,
+        "success",
+      );
+
+      try {
+        const walletRes = await getWallet();
+        setCredits(Math.max(0, walletRes.availableCredits ?? 0));
+      } catch {
+        setCredits((c) => (c === null ? c : Math.max(0, c - 1)));
+      }
+    } catch (err) {
+      showToast(
+        err.response?.data?.message ||
+          err.response?.data?.Message ||
+          "Unable to download CV.",
+        "error",
+      );
+    }
   };
 
   /* ── Detail / View Questions ── */
