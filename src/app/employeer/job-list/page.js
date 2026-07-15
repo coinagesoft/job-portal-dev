@@ -6,6 +6,8 @@ import { useEffect, useState, useRef } from "react";
 import styles from "./joblist.module.css";
 import JobPreviewModal from "@/components/JobPreviewModal";
 import { mapResumeToForm } from "@/utils/jobFormMapper";
+import companyProfileService from "@/services/recruiter/companyProfileService";
+import { getEmployerId } from "@/utils/authHelper";
 
 import {
   getJobDashboard,
@@ -81,6 +83,7 @@ const EmployerJobListPage = () => {
   const [activeStatus, setActiveStatus] = useState("Active");
   const [activeType, setActiveType] = useState("All Types");
   const [openMenu, setOpenMenu] = useState(null);
+  const [companyLogos, setCompanyLogos] = useState({});
 
   const [menuPosition, setMenuPosition] = useState({
     top: 0,
@@ -285,12 +288,47 @@ const EmployerJobListPage = () => {
 
       setDashboard(dashboardRes);
 
-      setJobs(jobsRes.jobs || []);
+     const jobsList = jobsRes.jobs || [];
+
+setJobs(jobsList);
+
+await loadCompanyLogos(jobsList);
     } catch (error) {
       console.error(error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadCompanyLogos = async (jobsList) => {
+    const logos = {};
+    const fallbackEmployerId = getEmployerId();
+
+    try {
+      const profile = await companyProfileService.getCompanyProfile();
+      const recruiterLogo = profile?.companyLogoUrl || profile?.companyLogo || "";
+      if (fallbackEmployerId) {
+        logos[fallbackEmployerId] = recruiterLogo;
+      }
+    } catch (err) {
+      console.error("Error loading recruiter profile logo:", err);
+    }
+
+    await Promise.all(
+      jobsList.map(async (job) => {
+        try {
+          const empId = job.employerId || fallbackEmployerId;
+          if (!empId || logos[empId] !== undefined) return;
+
+          const res = await companyProfileService.getPublicCompanyDetails(empId);
+          logos[empId] = (res && (res.companyLogoUrl || res.companyLogo)) || "";
+        } catch (err) {
+          console.error(err);
+        }
+      })
+    );
+
+    setCompanyLogos(logos);
   };
   const applyFilters = async () => {
     try {
@@ -405,17 +443,19 @@ const EmployerJobListPage = () => {
 
             {/* ── Job Cards ── */}
             <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-              {jobs.map((job) => (
-                <div
-                  key={job.jobId}
-                  className="subuser-hover-card"
-                  style={{
-                    background: "#fff",
-                    borderRadius: 24,
-                    position: "relative",
-                    zIndex: 1,
-                  }}
-                >
+             {jobs.map((job) => (
+  <div
+    key={job.jobId}
+    className="subuser-hover-card"
+    onClick={() => handlePreview(job.jobId)}
+    style={{
+      background: "#fff",
+      borderRadius: 24,
+      position: "relative",
+      zIndex: 1,
+      cursor: "pointer",
+    }}
+  >
                   <div
                     style={{
                       padding: "24px 28px",
@@ -439,24 +479,36 @@ const EmployerJobListPage = () => {
                         }}
                       >
                         {/* Job icon */}
-                        <div
-                          style={{
-                            width: 54,
-                            height: 54,
-                            borderRadius: 16,
-                            flexShrink: 0,
-                            background:
-                              "linear-gradient(135deg,#122359,#1e3a8a)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: "#ffa300",
-                            fontSize: 22,
-                          }}
-                        >
-                          <i className="fi-rr-briefcase" />
-                        </div>
-
+                       <div
+  style={{
+    width: 54,
+    height: 54,
+    borderRadius: 8,
+    flexShrink: 0,
+    overflow: "hidden",
+    border: "1px solid #E5E7EB",
+    background: "#fff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  }}
+>
+<img
+  src={
+    companyLogos[job.employerId || getEmployerId()] ||  
+    "/assets/imgs/page/company/company.png"
+  }
+  alt="Company Logo"
+  style={{
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+  }}
+  onError={(e) => {
+    e.currentTarget.src = "/assets/imgs/page/company/company.png";
+  }}
+/>
+</div>
                         <div style={{ flex: 1 }}>
                           {/* Title row */}
                           <div
@@ -807,27 +859,66 @@ const EmployerJobListPage = () => {
 
                         <div
                           style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
                             position: "relative",
                           }}
                         >
+                          {/* <button
+                            type="button"
+                            onClick={() => handlePreview(job.jobId)}
+                            title="Preview"
+                            style={{
+                              width: 44,
+                              height: 44,
+                              borderRadius: 14,
+                              border: "1px solid #E5E7EB",
+                              background: "#fff",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              cursor: "pointer",
+                              boxShadow: "0 4px 12px rgba(18,35,89,.08)",
+                              transition: ".25s",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.borderColor = "#FFA300";
+                              e.currentTarget.style.background = "#FFF8EC";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.borderColor = "#E5E7EB";
+                              e.currentTarget.style.background = "#fff";
+                            }}
+                          >
+                            <i
+                              className="fi-rr-eye"
+                              style={{
+                                fontSize: 18,
+                                color: "#122359",
+                              }}
+                            />
+                          </button> */}
                           <button
                             ref={(el) => (menuButtonRefs.current[job.jobId] = el)}
-                            onClick={() => {
-                              if (openMenu === job.jobId) {
-                                setOpenMenu(null);
-                                return;
-                              }
+                            onClick={(e) => {
+    e.stopPropagation();
 
-                              const rect =
-                                menuButtonRefs.current[job.jobId].getBoundingClientRect();
+    if (openMenu === job.jobId) {
+      setOpenMenu(null);
+      return;
+    }
 
-                              setMenuPosition({
-                                top: rect.bottom + 8,
-                                left: rect.left - 190,
-                              });
+    const rect =
+      menuButtonRefs.current[job.jobId].getBoundingClientRect();
 
-                              setOpenMenu(job.jobId);
-                            }}
+    setMenuPosition({
+      top: rect.bottom + 8,
+      left: rect.left - 190,
+    });
+
+    setOpenMenu(job.jobId);
+  }}
                             style={{
                               width: 44,
                               height: 44,
@@ -1005,14 +1096,14 @@ const EmployerJobListPage = () => {
 
                       <div key={job.jobId}>
 
-                        <button
+                        {/* <button
                           type="button"
                           className={styles.dropdownItem}
                           onClick={() => handlePreview(job.jobId)}
                         >
                           <i className="fi-rr-eye" />
                           <span>Preview</span>
-                        </button>
+                        </button> */}
 
                         <Link
                           href={`/dashboard/post-job?jobId=${job.jobId}`}
@@ -1081,7 +1172,7 @@ const EmployerJobListPage = () => {
         loading={previewLoading}
       />
     </main>
-  );
+  );  
 };
 
 export default EmployerJobListPage;

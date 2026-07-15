@@ -192,7 +192,7 @@ const EmployerCreditWalletPage = () => {
                         </p>
                         <h4 className="color-brand-1 mb-0">
                           {dashboard.sharedWalletEnabled
-                            ? `Yes — ${dashboard.totalSubUsers} sub-user${dashboard.totalSubUsers !== 1 ? "s" : ""}`
+                            ? `${dashboard.totalSubUsers} sub-user${dashboard.totalSubUsers !== 1 ? "s" : ""}`
                             : "No"}
                         </h4>
                       </div>
