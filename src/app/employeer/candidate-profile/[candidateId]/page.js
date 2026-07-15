@@ -84,9 +84,9 @@ const EmployerCandidateProfilePage = () => {
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          err.response?.data?.Message ||
-          err.message ||
-          "Failed to load candidate profile.",
+        err.response?.data?.Message ||
+        err.message ||
+        "Failed to load candidate profile.",
       );
     } finally {
       setLoading(false);
@@ -155,7 +155,7 @@ const EmployerCandidateProfilePage = () => {
       if (!result?.success) {
         const text = isCreditIssue(null, result)
           ? result?.message ||
-            "Not enough credits to download this CV. Please top up your wallet."
+          "Not enough credits to download this CV. Please top up your wallet."
           : result?.message || "Unable to download CV.";
         setActionMessage({ type: "error", text });
         showToast(text, "error");
@@ -173,7 +173,7 @@ const EmployerCandidateProfilePage = () => {
       if (!dl?.success) {
         const text = isCreditIssue(null, dl)
           ? dl?.message ||
-            "Not enough credits to download this CV. Please top up your wallet."
+          "Not enough credits to download this CV. Please top up your wallet."
           : dl?.message || "Unable to download the watermarked CV.";
         setActionMessage({ type: "error", text });
         showToast(text, "error");
@@ -190,11 +190,11 @@ const EmployerCandidateProfilePage = () => {
     } catch (err) {
       const text = isCreditIssue(err, null)
         ? err.response?.data?.message ||
-          "Not enough credits to download this CV. Please top up your wallet."
+        "Not enough credits to download this CV. Please top up your wallet."
         : err.response?.data?.message ||
-          err.response?.data?.Message ||
-          err.message ||
-          "Unable to download CV.";
+        err.response?.data?.Message ||
+        err.message ||
+        "Unable to download CV.";
       setActionMessage({ type: "error", text });
       showToast(text, "error");
     } finally {
@@ -261,9 +261,18 @@ const EmployerCandidateProfilePage = () => {
                   overview.profilePhotoUrl ||
                   "/assets/imgs/page/candidates/candidate-profile.png"
                 }
-                style={{width:'85px',height:'85px'}}
-                className="mt-3"
-                alt="candidate profile"
+                alt="Candidate Profile"
+                style={{
+                  width: "85px",
+                  height: "85px",
+                  borderRadius: "25%",
+                  objectFit: "cover",
+                  border: "2px solid #dadfe6",
+                }}
+                onError={(e) => {
+                  e.currentTarget.src =
+                    "/assets/imgs/page/candidates/candidate-profile.png";
+                }}
               />
             </div>
 
@@ -344,11 +353,10 @@ const EmployerCandidateProfilePage = () => {
 
                 {actionMessage && (
                   <p
-                    className={`mt-10 font-sm ${
-                      actionMessage.type === "success"
-                        ? "text-success"
-                        : "text-danger"
-                    }`}
+                    className={`mt-10 font-sm ${actionMessage.type === "success"
+                      ? "text-success"
+                      : "text-danger"
+                      }`}
                   >
                     {actionMessage.text}
                   </p>
@@ -529,9 +537,8 @@ const EmployerCandidateProfilePage = () => {
                       {/* LOCKED / UNLOCKED ACCESS CARD */}
                       <div className="col-lg-6 mb-25">
                         <div
-                          className={`candidate-visibility-card ${
-                            isUnlocked ? "visible-card" : "locked-card"
-                          }`}
+                          className={`candidate-visibility-card ${isUnlocked ? "visible-card" : "locked-card"
+                            }`}
                         >
                           <div className="visibility-card-header">
                             <div>
@@ -543,9 +550,8 @@ const EmployerCandidateProfilePage = () => {
                               </p>
                             </div>
                             <span
-                              className={`visibility-badge ${
-                                isUnlocked ? "success" : "warning"
-                              }`}
+                              className={`visibility-badge ${isUnlocked ? "success" : "warning"
+                                }`}
                             >
                               {isUnlocked ? "Visible" : "Locked"}
                             </span>
@@ -561,7 +567,7 @@ const EmployerCandidateProfilePage = () => {
                                 <h6 className="visibility-value">
                                   {isUnlocked
                                     ? fmtSalary(summary.preferredSalary) ||
-                                      "Not specified"
+                                    "Not specified"
                                     : "Hidden"}
                                 </h6>
                               </div>
@@ -1111,67 +1117,97 @@ const EmployerCandidateProfilePage = () => {
                   {workHistories.length === 0 && (
                     <p className="color-text-paragraph-2">No work history listed.</p>
                   )}
-                  {workHistories.map((item) => (
-                    <div className="col-xl-12 col-12" key={`work-card-${item.workId}`}>
-                      <div className="card-grid-2 hover-up">
-                        <div className="row">
-                          <div className="col-lg-6 col-md-6 col-sm-12">
-                            <div className="card-grid-2-image-left">
-                              <div className="image-box">
-                                <img
-                                  src="/assets/imgs/brands/brand-6.png"
-                                  alt="company logo"
-                                />
-                              </div>
-                              <div className="right-info">
-                                <a className="name-job" href="#">
-                                  {item.companyName}
-                                </a>
-                                <span className="location-small">
-                                  {item.workLocation}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="col-lg-6 text-start text-md-end pr-60 col-md-6 col-sm-12">
-                            <div className="pl-15 mb-15 mt-30">
-                              <span className="btn btn-grey-small mr-5">
-                                {item.isCurrent ? "Current" : "Past"}
-                              </span>
-                              <span className="btn btn-grey-small mr-5">
-                                {fmtMonthYear(item.startDate)} -{" "}
-                                {item.isCurrent ? "Present" : fmtMonthYear(item.endDate)}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="card-block-info">
-                          <h4>
-                            <a href="#">{item.jobTitle}</a>
-                          </h4>
-                          {item.jobDescription && (
-                            <p className="font-sm color-text-paragraph mt-10">
-                              {item.jobDescription}
-                            </p>
-                          )}
-                          <div className="card-2-bottom mt-20">
-                            <div className="row">
-                              <div className="col-lg-7 col-7">
-                                <span className="card-text-price">
-                                  Status:
-                                  <span className="text-success">
-                                    {" "}
-                                    {item.isOffshore ? "Offshore" : "Onshore"}
-                                  </span>
-                                </span>
-                              </div>
-                              <div className="col-lg-5 col-5 text-end"></div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                 {workHistories.map((item) => (
+  <div className="col-xl-12 col-12" key={`work-card-${item.workId}`}>
+    <div className="card-grid-2 hover-up">
+      <div className="row">
+        <div className="col-lg-6 col-md-6 col-sm-12">
+          <div className="card-grid-2-image-left" style={{ display: "flex", alignItems: "center", gap: 14 }}>
+  <div
+    style={{
+      width: 54,
+      height: 54,
+      borderRadius: 16,
+      flexShrink: 0,
+      background: "linear-gradient(135deg,#122359,#1e3a8a)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      color: "#ffa300",
+      fontSize: 22,
+    }}
+  >
+    <i className="fi-rr-briefcase" />
+  </div>
+
+  <div className="right-info">
+    <h5
+      style={{
+        margin: 0,
+        color: "#122359",
+        fontWeight: 700,
+        fontSize: 18,
+      }}
+    >
+      {item.companyName}
+    </h5>
+
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        marginTop: 6,
+        color: "#66789c",
+        fontSize: 13,
+      }}
+    >
+      <i className="fi-rr-marker" style={{ color: "#FFA300" }} />
+      {item.workLocation || "Location not specified"}
+    </div>
+  </div>
+</div>
+        </div>
+
+        <div className="col-lg-6 text-start text-md-end pr-60 col-md-6 col-sm-12">
+          <div className="pl-15 mb-15 mt-30">
+            <span className="btn btn-grey-small mr-5">
+              {item.isCurrent ? "Current" : "Past"}
+            </span>
+            <span className="btn btn-grey-small mr-5">
+              {fmtMonthYear(item.startDate)} -{" "}
+              {item.isCurrent ? "Present" : fmtMonthYear(item.endDate)}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="card-block-info">
+        <h4>
+          <a href="#">{item.jobTitle}</a>
+        </h4>
+
+        {item.jobDescription && (
+          <p className="font-sm color-text-paragraph mt-10">
+            {item.jobDescription}
+          </p>
+        )}
+
+        <div className="card-2-bottom mt-20">
+          <div className="row">
+            <div className="col-lg-7 col-7">
+              <span className="card-text-price">
+                Status:
+                <span className="text-success"> {item.isOffshore ? "Offshore" : "Onshore"}</span>
+              </span>
+            </div>
+            <div className="col-lg-5 col-5 text-end"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+))}
                 </div>
               </div>
             </div>
@@ -1237,7 +1273,7 @@ const EmployerCandidateProfilePage = () => {
                       Mobile:{" "}
                       {isUnlocked && candidateDetails
                         ? `${candidateDetails.countryCode || ""} ${candidateDetails.mobileNumber || ""}`.trim() ||
-                          "Not provided"
+                        "Not provided"
                         : "+91 XXXXXXXXXX"}
                     </li>
                     <li>
@@ -1268,7 +1304,7 @@ const EmployerCandidateProfilePage = () => {
         </div>
       </section>
 
-      <section className="section-box mt-50 mb-20">
+      {/* <section className="section-box mt-50 mb-20">
         <div className="container">
           <div className="box-newsletter orange-newsletter">
             <div className="row">
@@ -1308,7 +1344,7 @@ const EmployerCandidateProfilePage = () => {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
     </main>
   );
 };

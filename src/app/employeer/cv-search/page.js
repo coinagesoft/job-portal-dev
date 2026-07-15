@@ -594,7 +594,7 @@ const EmployerCvSearchPage = () => {
                                       candidate.profilePhotoUrl ||
                                       "/assets/imgs/page/candidates/candidate-profile.png"
                                     }
-                                    style={{ width: '85px', height: '85px' }}
+                                    style={{ width: '85px', height: '85px'  ,borderRadius:"8px"}}
                                     alt={candidate.fullName}
                                     onError={(e) => {
                                       e.currentTarget.onerror = null;

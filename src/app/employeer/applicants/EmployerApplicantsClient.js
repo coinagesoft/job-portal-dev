@@ -687,23 +687,41 @@ const EmployerApplicantsClient = () => {
                           </div>
 
                           {/* ── Right: kebab action menu ── */}
-                          <div style={{ position: "relative" }}>
-                            <button
-                              ref={(el) => (menuButtonRefs.current[applicant.applicationId] = el)}
-                              onClick={() => openActionMenu(applicant)}
-                              style={{
-                                width: 44, height: 44, borderRadius: 14,
-                                border: "1px solid #E5E7EB", background: "#fff",
-                                display: "flex", alignItems: "center", justifyContent: "center",
-                                cursor: "pointer", boxShadow: "0 4px 12px rgba(18,35,89,.08)",
-                                transition: ".25s",
-                              }}
-                              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#FFA300"; e.currentTarget.style.background = "#FFF8EC"; }}
-                              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#E5E7EB"; e.currentTarget.style.background = "#fff"; }}
-                            >
-                              <i className="fi-rr-menu-dots-vertical" style={{ fontSize: 18, color: "#122359" }} />
-                            </button>
-                          </div>
+                        {/* ── Right: view + kebab action buttons ── */}
+<div style={{ display: "flex", gap: 10, position: "relative" }}>
+  <button
+    onClick={() => handleViewDetail(applicant.applicationId)}
+    disabled={detailLoading}
+    title="View Details"
+    style={{
+      width: 44, height: 44, borderRadius: 14,
+      border: "1px solid #E5E7EB", background: "#fff",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      cursor: "pointer", boxShadow: "0 4px 12px rgba(18,35,89,.08)",
+      transition: ".25s",
+    }}
+    onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#FFA300"; e.currentTarget.style.background = "#FFF8EC"; }}
+    onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#E5E7EB"; e.currentTarget.style.background = "#fff"; }}
+  >
+    <i className="fi-rr-eye" style={{ fontSize: 18, color: "#122359" }} />
+  </button>
+
+  <button
+    ref={(el) => (menuButtonRefs.current[applicant.applicationId] = el)}
+    onClick={() => openActionMenu(applicant)}
+    style={{
+      width: 44, height: 44, borderRadius: 14,
+      border: "1px solid #E5E7EB", background: "#fff",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      cursor: "pointer", boxShadow: "0 4px 12px rgba(18,35,89,.08)",
+      transition: ".25s",
+    }}
+    onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#FFA300"; e.currentTarget.style.background = "#FFF8EC"; }}
+    onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#E5E7EB"; e.currentTarget.style.background = "#fff"; }}
+  >
+    <i className="fi-rr-menu-dots-vertical" style={{ fontSize: 18, color: "#122359" }} />
+  </button>
+</div>
 
                         </div>
                       </div>
@@ -759,7 +777,7 @@ const EmployerApplicantsClient = () => {
                       <i className="fi-rr-download" />
                       <span>Download CV</span>
                     </button>
-
+{/* 
                     <button
                       className={styles.dropdownItem}
                       disabled={detailLoading}
@@ -767,7 +785,7 @@ const EmployerApplicantsClient = () => {
                     >
                       <i className="fi-rr-eye" />
                       <span>{detailLoading ? "Loading…" : "View Details"}</span>
-                    </button>
+                    </button> */}
 
                     <button
                       className={styles.dropdownItem}
