@@ -1,8 +1,9 @@
 import api from "@/services/api";
 
 /**
- * Reads employer identity needed for [FromHeader] params on the backend.
- * Adjust this if you store these values differently (e.g. JWT decode, context/redux).
+ * Reads employer identity needed for [FromQuery] params on endpoints that
+ * still expect it that way (full-profile, unlock-status) — those live on a
+ * different controller that wasn't part of this pass.
  */
 function getEmployerHeaders() {
   const token = localStorage.getItem("token");
@@ -45,32 +46,26 @@ const candidateProfileService = {
   getFullProfile: async (candidateId) => {
     const { EmployerId } = getEmployerHeaders();
 
-    console.log("CandidateId:", candidateId);
-    console.log("EmployerId:", EmployerId);
     const { data } = await api.get(
       `/api/recruiter/candidates/${candidateId}/full-profile`,
       { params: { employerId: EmployerId } },
     );
     return data;
   },
-/**
- * GET /api/recruiter/candidate/{candidateId}
- * Returns contact information after unlock
- */
-getCandidateDetails: async (candidateId) => {
-  const { EmployerId } = getEmployerHeaders();
 
-  const { data } = await api.get(
-    `/api/recruiter/candidate/${candidateId}`,
-    {
-      headers: {
-        EmployerId,
-      },
-    }
-  );
+  /**
+   * GET /api/recruiter/candidate/{candidateId}
+   * Returns contact information after unlock. EmployerId now comes from
+   * the JWT — no header needed.
+   */
+  getCandidateDetails: async (candidateId) => {
+    const { data } = await api.get(
+      `/api/recruiter/candidate/${candidateId}`,
+    );
 
-  return data;
-},
+    return data;
+  },
+
   /**
    * GET /api/recruiter/candidates/{candidateId}/unlock-status?employerId=...
    */
@@ -84,80 +79,54 @@ getCandidateDetails: async (candidateId) => {
   },
 
   /**
-   * GET /api/employer/wallet  (header: EmployerId)
+   * GET /api/recruiter/wallet
+   * EmployerId now comes from the JWT — no header needed.
    */
   getWallet: async () => {
-    const { EmployerId } = getEmployerHeaders();
-
-    const { data } = await api.get("/api/recruiter/wallet", {
-      headers: {
-        EmployerId,
-      },
-    });
+    const { data } = await api.get("/api/recruiter/wallet");
 
     return data;
   },
 
   /**
-   * POST /api/employer/candidate/unlock
-   * headers: EmployerId, UserId, IsSubUser
+   * POST /api/recruiter/candidate/unlock
    * body: { candidateId }
+   * EmployerId/UserId/IsSubUser now all come from the JWT — no headers needed.
    */
-unlockCandidate: async (candidateId) => {
-  const headers = getEmployerHeaders();
+  unlockCandidate: async (candidateId) => {
+    const { data } = await api.post(
+      "/api/recruiter/candidate/unlock",
+      { candidateId },
+    );
 
-  const { data } = await api.post(
-    "/api/recruiter/candidate/unlock",
-    { candidateId },
-    { headers }
-  );
-
-  return data;
-},
-getCandidateDetails: async (candidateId) => {
-  const { EmployerId } = getEmployerHeaders();
-
-  const { data } = await api.get(
-    `/api/recruiter/candidate/${candidateId}`,
-    {
-      headers: {
-        EmployerId,
-      },
-    }
-  );
-
-  return data;
-},
+    return data;
+  },
 
   /**
-   * POST /api/employer/candidate/download-cv
-   * headers: EmployerId, UserId, IsSubUser
+   * POST /api/recruiter/candidate/download-cv
    * body: { candidateId }
+   * EmployerId/UserId/IsSubUser now all come from the JWT — no headers needed.
    */
   downloadCv: async (candidateId) => {
-    const headers = getEmployerHeaders();
     const { data } = await api.post(
       "/api/recruiter/candidate/download-cv",
       { candidateId },
-      { headers },
     );
     return data;
   },
 
   /**
-   * GET /api/recruiter/candidate/{candidateId}/cv/download  (header: EmployerId)
+   * GET /api/recruiter/candidate/{candidateId}/cv/download
    * Streams a watermarked PDF (company name + date). Only works when the
-   * profile is unlocked. Triggers a browser download; nothing is stored server-side.
+   * profile is unlocked. Triggers a browser download; nothing is stored
+   * server-side. EmployerId now comes from the JWT — no header needed.
    * Returns { success, message } — on failure the server sends JSON instead of a PDF.
    */
   downloadWatermarkedCv: async (candidateId, candidateName = "Candidate") => {
-    const { EmployerId } = getEmployerHeaders();
-
     try {
       const response = await api.get(
         `/api/recruiter/candidate/${candidateId}/cv/download`,
         {
-          headers: { EmployerId },
           responseType: "blob",
         },
       );

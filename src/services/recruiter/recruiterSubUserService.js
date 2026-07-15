@@ -1,5 +1,20 @@
 import api from "@/services/api";
 
+/**
+ * GET /api/recruiter/sub-users/my-permissions
+ * Returns the caller's CURRENT permission flags — the account owner always
+ * gets every flag true; a sub-user gets their actual, live flags (so if the
+ * owner changes them mid-session, the next call — e.g. on page refresh —
+ * reflects it, not a stale login snapshot).
+ */
+export const getMyPermissions = async () => {
+  const { data } = await api.get(
+    "/api/recruiter/sub-users/my-permissions"
+  );
+
+  return data;
+};
+
 export const getSubUsers = async () => {
   const { data } = await api.get(
     "/api/recruiter/sub-users"
