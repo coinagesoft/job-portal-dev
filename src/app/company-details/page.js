@@ -14,6 +14,20 @@ const humanize = (value) => {
   return value.replace(/_/g, " ");
 };
 
+const cleanUrl = (url) => {
+  if (!url || url === "#") return "#";
+  let cleaned = url.trim();
+  // If there are multiple http/https occurrences, take the last one
+  if (cleaned.includes("http://") || cleaned.includes("https://")) {
+    const parts = cleaned.split(/(?=https?:\/\/)/i);
+    cleaned = parts[parts.length - 1];
+  }
+  if (!/^https?:\/\//i.test(cleaned)) {
+    cleaned = `https://${cleaned}`;
+  }
+  return cleaned;
+};
+
 const iconMap = {
   industry: "/assets/imgs/page/job-single/industry.svg",
   jobLevel: "/assets/imgs/page/job-single/job-level.svg",
@@ -286,32 +300,28 @@ function CompanyDetailsContent() {
                   >
                     {companyInfo.websiteUrl && (
                       <SocialIconLink
-                        href={
-                          companyInfo.websiteUrl.startsWith("http")
-                            ? companyInfo.websiteUrl
-                            : `https://${companyInfo.websiteUrl}`
-                        }
+                        href={cleanUrl(companyInfo.websiteUrl)}
                         label="Website"
                         iconClass="fa-solid fa-globe"
                       />
                     )}
                     {companyInfo.linkedInUrl && (
                       <SocialIconLink
-                        href={companyInfo.linkedInUrl}
+                        href={cleanUrl(companyInfo.linkedInUrl)}
                         label="LinkedIn"
                         iconClass="fa-brands fa-linkedin-in"
                       />
                     )}
                     {companyInfo.instagramUrl && (
                       <SocialIconLink
-                        href={companyInfo.instagramUrl}
+                        href={cleanUrl(companyInfo.instagramUrl)}
                         label="Instagram"
                         iconClass="fa-brands fa-instagram"
                       />
                     )}
                     {companyInfo.facebookUrl && (
                       <SocialIconLink
-                        href={companyInfo.facebookUrl}
+                        href={cleanUrl(companyInfo.facebookUrl)}
                         label="Facebook"
                         iconClass="fa-brands fa-facebook-f"
                       />
@@ -645,11 +655,7 @@ function CompanyDetailsContent() {
                           </span>
                           <strong className="small-heading">
                             <a
-                              href={
-                                companyInfo.websiteUrl.startsWith("http")
-                                  ? companyInfo.websiteUrl
-                                  : `https://${companyInfo.websiteUrl}`
-                              }
+                              href={cleanUrl(companyInfo.websiteUrl)}
                               target="_blank"
                               rel="noopener noreferrer"
                               style={{ color: "inherit", textDecoration: "none", fontWeight: "inherit" }}

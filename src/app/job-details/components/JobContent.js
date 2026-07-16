@@ -292,9 +292,8 @@ const JobContent = ({ job = {}, isApplied = false, isSaved = false, onSavedToggl
       </div>
     </div>
   )} */}
-
-        {/* Professional Skills */}
-        {job.professionalSkills?.length > 0 && (
+  {/* Key Responsibilities */}
+  {job.keyResponsibilities?.length > 0 && (
           <div
             style={{
               background: '#ffffff',
@@ -314,8 +313,66 @@ const JobContent = ({ job = {}, isApplied = false, isSaved = false, onSavedToggl
                   width: '34px',
                   height: '34px',
                   borderRadius: '10px',
-                  background: '#F0FBF3',
-                  color: '#178A4C',
+                  background: '#FFF3E0',
+                  color: '#ff9900',
+                  flexShrink: 0,
+                }}
+              >
+                <i className="fa-solid fa-list-check"></i>
+              </span>
+              Key Responsibilities
+            </h5>
+            <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {job.keyResponsibilities.map((item, index) => (
+                <div key={index} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '20px',
+                      height: '20px',
+                      borderRadius: '50%',
+                      background: '#FFF3E0',
+                      color: '#ff9900',
+                      fontSize: '10px',
+                      flexShrink: 0,
+                      marginTop: '3px',
+                      border: '1px solid #FFD699',
+                    }}
+                  >
+                    <i className="fa-solid fa-check"></i>
+                  </span>
+                  <span style={{ lineHeight: 1.6, color: '#374151' }}>{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Professional Skills */}
+     {job.professionalSkills?.length > 0 && (
+          <div
+            style={{
+              background: '#ffffff',
+              border: '1px solid rgba(18,35,89,0.08)',
+              borderRadius: '16px',
+              padding: '22px 24px',
+              marginBottom: '24px',
+              boxShadow: '0 4px 14px rgba(18,35,89,0.04)',
+            }}
+          >
+            <h5 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '34px',
+                  height: '34px',
+                  borderRadius: '10px',
+                  background: '#FFF8EE',
+                  color: '#D98F2B',
                   flexShrink: 0,
                 }}
               >
@@ -332,9 +389,9 @@ const JobContent = ({ job = {}, isApplied = false, isSaved = false, onSavedToggl
                     alignItems: 'center',
                     padding: '7px 14px',
                     borderRadius: 999,
-                    background: '#F0FBF3',
-                    border: '1px solid #B7E8C2',
-                    color: '#178A4C',
+                    background: '#FFF8EE',
+                    border: '1px solid #FFE4B8',
+                    color: '#B8792A',
                     fontSize: '13px',
                     fontWeight: 600,
                   }}
@@ -345,7 +402,6 @@ const JobContent = ({ job = {}, isApplied = false, isSaved = false, onSavedToggl
             </div>
           </div>
         )}
-
         {/* Perks & Benefits */}
         {job.perksAndBenefits?.length > 0 && (
           <div
