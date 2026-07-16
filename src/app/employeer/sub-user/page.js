@@ -90,6 +90,40 @@ const EmployerSubUserPage = () => {
     role: "Recruiter",
   });
 
+  const [formErrors, setFormErrors] = useState({});
+
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+  const validateInviteForm = () => {
+    const errors = {};
+
+    if (!inviteForm.subUserName.trim()) {
+      errors.subUserName = "Name is required";
+    } else if (inviteForm.subUserName.trim().length < 2) {
+      errors.subUserName = "Name looks too short";
+    }
+
+    if (!inviteForm.subUserEmail.trim()) {
+      errors.subUserEmail = "Email is required";
+    } else if (!EMAIL_REGEX.test(inviteForm.subUserEmail.trim())) {
+      errors.subUserEmail = "Enter a valid email address";
+    }
+
+    const digitsOnly = inviteForm.subUserMobile.replace(/\D/g, "");
+    if (!digitsOnly) {
+      errors.subUserMobile = "Mobile number is required";
+    } else if (digitsOnly.length < 7 || digitsOnly.length > 12) {
+      errors.subUserMobile = "Mobile number must be 7–12 digits";
+    }
+
+    if (!inviteForm.role) {
+      errors.role = "Role is required";
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   // Maps the visible permission labels to the API/DTO keys.
   const PERMISSION_FIELDS = [
     { label: "Search candidates", key: "canSearchCandidates" },
@@ -123,6 +157,7 @@ const EmployerSubUserPage = () => {
 
   const resetInviteForm = () => {
     setEditingUser(null);
+    setFormErrors({});
     setInviteForm({
       subUserName: "",
       subUserEmail: "",
@@ -445,6 +480,7 @@ const EmployerSubUserPage = () => {
                           className="btn btn-border btn-sm"
                           onClick={() => {
                             setEditingUser(user);
+                            setFormErrors({});
 
                             setInviteForm({
                               subUserName: user.subUserName || "",
@@ -586,15 +622,25 @@ const EmployerSubUserPage = () => {
                               color: "#66789c",
                               cursor: "not-allowed",
                             }
-                          : undefined
+                          : formErrors.subUserName
+                            ? { borderColor: "#E24B4A" }
+                            : undefined
                       }
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setInviteForm({
                           ...inviteForm,
                           subUserName: e.target.value,
-                        })
-                      }
+                        });
+                        if (formErrors.subUserName) {
+                          setFormErrors((prev) => ({ ...prev, subUserName: undefined }));
+                        }
+                      }}
                     />
+                    {formErrors.subUserName && !editingUser && (
+                      <p style={{ color: "#E24B4A", fontSize: 12, marginTop: 6, marginBottom: 0 }}>
+                        {formErrors.subUserName}
+                      </p>
+                    )}
                   </div>
 
                   <div className="form-group">
@@ -612,15 +658,25 @@ const EmployerSubUserPage = () => {
                               color: "#66789c",
                               cursor: "not-allowed",
                             }
-                          : undefined
+                          : formErrors.subUserEmail
+                            ? { borderColor: "#E24B4A" }
+                            : undefined
                       }
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setInviteForm({
                           ...inviteForm,
                           subUserEmail: e.target.value,
-                        })
-                      }
+                        });
+                        if (formErrors.subUserEmail) {
+                          setFormErrors((prev) => ({ ...prev, subUserEmail: undefined }));
+                        }
+                      }}
                     />
+                    {formErrors.subUserEmail && !editingUser && (
+                      <p style={{ color: "#E24B4A", fontSize: 12, marginTop: 6, marginBottom: 0 }}>
+                        {formErrors.subUserEmail}
+                      </p>
+                    )}
                   </div>
 
                   <div className="form-group">
@@ -638,40 +694,34 @@ const EmployerSubUserPage = () => {
                               color: "#66789c",
                               cursor: "not-allowed",
                             }
-                          : undefined
+                          : formErrors.subUserMobile
+                            ? { borderColor: "#E24B4A" }
+                            : undefined
                       }
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        const digitsOnly = e.target.value.replace(/\D/g, "").slice(0, 12);
                         setInviteForm({
                           ...inviteForm,
-                          subUserMobile: e.target.value,
-                        })
-                      }
+                          subUserMobile: digitsOnly,
+                        });
+                        if (formErrors.subUserMobile) {
+                          setFormErrors((prev) => ({ ...prev, subUserMobile: undefined }));
+                        }
+                      }}
                     />
+                    {formErrors.subUserMobile && !editingUser && (
+                      <p style={{ color: "#E24B4A", fontSize: 12, marginTop: 6, marginBottom: 0 }}>
+                        {formErrors.subUserMobile}
+                      </p>
+                    )}
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">
-                      Role
-                      {editingUser && (
-                        <span style={{ fontWeight: 400, color: "#94a3b8", marginLeft: 6 }}>
-                          (fixed at invite — adjust access below)
-                        </span>
-                      )}
-                    </label>
+                    <label className="form-label">Role</label>
 
                     <select
                       className="form-control form-select"
                       value={inviteForm.role || "Recruiter"}
-                      disabled={!!editingUser}
-                      style={
-                        editingUser
-                          ? {
-                              background: "#f4f5f7",
-                              color: "#66789c",
-                              cursor: "not-allowed",
-                            }
-                          : undefined
-                      }
                       onChange={(e) => {
                         const role = e.target.value;
                         setInviteForm({
@@ -691,6 +741,9 @@ const EmployerSubUserPage = () => {
                     <label className="form-label d-block mb-12">
                       Permissions
                     </label>
+                    <p style={{ fontSize: 12, color: "#66789c", marginTop: -6, marginBottom: 12 }}>
+                      Set automatically by the selected role — pick a different role above to change these.
+                    </p>
 
                     <div
                       style={{
@@ -700,62 +753,46 @@ const EmployerSubUserPage = () => {
                       }}
                     >
                       {PERMISSION_FIELDS.map(({ label, key }) => (
-                        <label
+                        <span
                           key={key}
+                          title="Set by the selected role"
                           style={{
-                            position: "relative",
-                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            padding: "8px 14px",
+                            borderRadius: "999px",
+                            background: permissions[key] ? "#1D4ED8" : "#EAF4FF",
+                            border: "1px solid #B9DCFF",
+                            color: permissions[key] ? "#ffffff" : "#1D4ED8",
+                            fontSize: "12px",
+                            fontWeight: 600,
+                            whiteSpace: "nowrap",
+                            lineHeight: 1,
+                            cursor: "default",
+                            userSelect: "none",
+                            opacity: permissions[key] ? 1 : 0.6,
                           }}
                         >
-                          <input
-                            type="checkbox"
-                            checked={!!permissions[key]}
-                            onChange={(e) =>
-                              setPermissions((prev) => ({
-                                ...prev,
-                                [key]: e.target.checked,
-                              }))
-                            }
-                            className="permission-checkbox"
-                          />
-
-                          <span
-                            className="permission-tag"
+                          <i
+                            className="fi fi-rr-check"
                             style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              padding: "8px 14px",
-                              borderRadius: "999px",
-                              background: permissions[key]
-                                ? "#1D4ED8"
-                                : "#EAF4FF",
-                              border: "1px solid #B9DCFF",
-                              color: permissions[key] ? "#ffffff" : "#1D4ED8",
-                              fontSize: "12px",
-                              fontWeight: 600,
-                              whiteSpace: "nowrap",
-                              lineHeight: 1,
-                              transition: "all 0.25s ease",
-                              cursor: "pointer",
-                              userSelect: "none",
+                              fontSize: "10px",
+                              marginRight: "6px",
                             }}
-                          >
-                            <i
-                              className="fi fi-rr-check"
-                              style={{
-                                fontSize: "10px",
-                                marginRight: "6px",
-                              }}
-                            />
-                            {label}
-                          </span>
-                        </label>
+                          />
+                          {label}
+                        </span>
                       ))}
                     </div>
                   </div>
                   <button
                     onClick={async () => {
+                      if (!editingUser && !validateInviteForm()) {
+                        showToast("Please fix the highlighted fields", "error");
+                        return;
+                      }
+
                       try {
                         if (editingUser) {
                           await updateSubUser(editingUser.subUserId, {

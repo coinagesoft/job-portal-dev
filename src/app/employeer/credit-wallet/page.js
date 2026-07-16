@@ -163,9 +163,11 @@ const EmployerCreditWalletPage = () => {
                   </span>
                 </div>
                 <div className="col-xl-5 col-lg-5 text-lg-end mt-sm-15">
-                  <Link className="btn btn-default btn-sm mr-10 mb-5" href="/employeer/buy-credits">
-                    Buy more credits
-                  </Link>
+                  {!isSubUser && (
+                    <Link className="btn btn-default btn-sm mr-10 mb-5" href="/employeer/buy-credits">
+                      Buy more credits
+                    </Link>
+                  )}
                   <Link className="btn btn-border btn-sm mb-5" href="/employeer/invoices">
                     View invoices
                   </Link>
@@ -220,41 +222,45 @@ const EmployerCreditWalletPage = () => {
                   </div>
                 )}
 
-                {/* Balance card */}
-                <div className="card-grid-2 hover-up cv-search-candidate-card mt-10">
-                  <div className="card-block-info pt-20">
-                    <div className="row align-items-center">
-                      <div className="col-lg-8 col-md-12 col-sm-12">
-                        <h4>
-                          {dashboard.remainingCredits > 0
-                            ? `${dashboard.remainingCredits} credits remaining`
-                            : "No credits remaining"}
-                        </h4>
-                        <p className="font-sm color-text-paragraph mt-10">
-                          {dashboard.planName} — Expires{" "}
-                          {formatDate(dashboard.planExpiryDate)}
-                        </p>
-                      </div>
-                      <div className="col-lg-4 col-md-12 col-sm-12 text-lg-end mt-md-15 mt-sm-15">
-                        {expiryDays !== null && expiryDays <= 30 && expiryDays > 0 && (
-                          <>
-                            <span className="font-xs color-text-paragraph-2 d-block mb-5">
-                              Package expiry reminder enabled
+                {/* Balance card — the shared company-wide pool. A sub-user
+                    only ever draws from their own allocation (shown above),
+                    so this total isn't theirs to see. */}
+                {!isSubUser && (
+                  <div className="card-grid-2 hover-up cv-search-candidate-card mt-10">
+                    <div className="card-block-info pt-20">
+                      <div className="row align-items-center">
+                        <div className="col-lg-8 col-md-12 col-sm-12">
+                          <h4>
+                            {dashboard.remainingCredits > 0
+                              ? `${dashboard.remainingCredits} credits remaining`
+                              : "No credits remaining"}
+                          </h4>
+                          <p className="font-sm color-text-paragraph mt-10">
+                            {dashboard.planName} — Expires{" "}
+                            {formatDate(dashboard.planExpiryDate)}
+                          </p>
+                        </div>
+                        <div className="col-lg-4 col-md-12 col-sm-12 text-lg-end mt-md-15 mt-sm-15">
+                          {expiryDays !== null && expiryDays <= 30 && expiryDays > 0 && (
+                            <>
+                              <span className="font-xs color-text-paragraph-2 d-block mb-5">
+                                Package expiry reminder enabled
+                              </span>
+                              <span className="btn btn-grey-small">
+                                Expiry alert in {expiryDays}d
+                              </span>
+                            </>
+                          )}
+                          {expiryDays !== null && expiryDays <= 0 && (
+                            <span className="btn btn-grey-small" style={{ background: "#fee2e2", color: "#991b1b" }}>
+                              Plan Expired
                             </span>
-                            <span className="btn btn-grey-small">
-                              Expiry alert in {expiryDays}d
-                            </span>
-                          </>
-                        )}
-                        {expiryDays !== null && expiryDays <= 0 && (
-                          <span className="btn btn-grey-small" style={{ background: "#fee2e2", color: "#991b1b" }}>
-                            Plan Expired
-                          </span>
-                        )}
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* Metric cards */}
                 <div className="row mt-20">
@@ -262,10 +268,12 @@ const EmployerCreditWalletPage = () => {
                     <div className="card-grid-2 hover-up cv-search-candidate-card">
                       <div className="card-block-info pt-20 pb-20 text-center">
                         <p className="font-xs color-text-paragraph-2 mb-10">
-                          Credits used (this month)
+                          {isSubUser ? "Credits used by you" : "Credits used (this month)"}
                         </p>
                         <h4 className="color-brand-1 mb-0">
-                          {dashboard.creditsUsedThisMonth}
+                          {isSubUser
+                            ? myBalance?.usedCredits ?? 0
+                            : dashboard.creditsUsedThisMonth}
                         </h4>
                       </div>
                     </div>
@@ -274,28 +282,35 @@ const EmployerCreditWalletPage = () => {
                     <div className="card-grid-2 hover-up cv-search-candidate-card">
                       <div className="card-block-info pt-20 pb-20 text-center">
                         <p className="font-xs color-text-paragraph-2 mb-10">
-                          Profiles unlocked
+                          {isSubUser ? "Profiles unlocked by you" : "Profiles unlocked"}
                         </p>
                         <h4 className="color-brand-1 mb-0">
-                          {dashboard.profilesUnlocked}
+                          {isSubUser
+                            ? unlockedCandidates.length
+                            : dashboard.profilesUnlocked}
                         </h4>
                       </div>
                     </div>
                   </div>
-                  <div className="col-lg-4 col-md-6 col-sm-12">
-                    <div className="card-grid-2 hover-up cv-search-candidate-card">
-                      <div className="card-block-info pt-20 pb-20 text-center">
-                        <p className="font-xs color-text-paragraph-2 mb-10">
-                          Shared wallet
-                        </p>
-                        <h4 className="color-brand-1 mb-0">
-                          {dashboard.sharedWalletEnabled
-                            ? `${dashboard.totalSubUsers} sub-user${dashboard.totalSubUsers !== 1 ? "s" : ""}`
-                            : "No"}
-                        </h4>
+                  {/* Shared wallet / sub-user count — account-owner-only
+                      administration info, not relevant to an individual
+                      sub-user's own usage. */}
+                  {!isSubUser && (
+                    <div className="col-lg-4 col-md-6 col-sm-12">
+                      <div className="card-grid-2 hover-up cv-search-candidate-card">
+                        <div className="card-block-info pt-20 pb-20 text-center">
+                          <p className="font-xs color-text-paragraph-2 mb-10">
+                            Shared wallet
+                          </p>
+                          <h4 className="color-brand-1 mb-0">
+                            {dashboard.sharedWalletEnabled
+                              ? `${dashboard.totalSubUsers} sub-user${dashboard.totalSubUsers !== 1 ? "s" : ""}`
+                              : "No"}
+                          </h4>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Tabs */}
@@ -307,7 +322,7 @@ const EmployerCreditWalletPage = () => {
                       {[
                         { key: "transactions", label: "All Transactions" },
                         { key: "unlocked", label: "Unlocked Profiles" },
-                        { key: "allocations", label: "Credit Allocations" },
+                        ...(isSubUser ? [] : [{ key: "allocations", label: "Credit Allocations" }]),
                       ].map((tab) => (
                         <li className="nav-item" key={tab.key}>
                           <button
@@ -339,6 +354,7 @@ const EmployerCreditWalletPage = () => {
                               <th>Date</th>
                               <th>Type</th>
                               <th>Category</th>
+                              <th>User</th>
                               <th>Details</th>
                               <th className="text-end">Credits / Amount</th>
                             </tr>
@@ -346,7 +362,7 @@ const EmployerCreditWalletPage = () => {
                           <tbody>
                             {transactions.length === 0 ? (
                               <tr>
-                                <td colSpan={5} className="text-center color-text-paragraph-2">
+                                <td colSpan={6} className="text-center color-text-paragraph-2">
                                   No transactions found.
                                 </td>
                               </tr>
@@ -369,6 +385,17 @@ const EmployerCreditWalletPage = () => {
                                     </span>
                                   </td>
                                   <td className="font-sm">{txn.category}</td>
+                                  <td className="font-sm">
+                                    {txn.actionByName || "-"}
+                                    {txn.actionByRole && (
+                                      <span
+                                        className="color-text-paragraph-2 ml-5"
+                                        style={{ fontSize: "11px" }}
+                                      >
+                                        ({txn.actionByRole})
+                                      </span>
+                                    )}
+                                  </td>
                                   <td className="font-sm">
                                     {txn.candidateName
                                       ? txn.candidateName
