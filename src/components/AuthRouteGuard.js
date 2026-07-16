@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
+import { useToast } from "@/components/Toast";
 import {
   CANDIDATE_PROTECTED_PREFIXES,
   EMPLOYER_PROTECTED_PREFIXES,
@@ -27,6 +28,7 @@ const matchingPermissionRule = (pathname) =>
 const AuthRouteGuard = () => {
   const pathname = usePathname();
   const router = useRouter();
+  const showToast = useToast();
 
   const role = useSelector((state) => state.auth.user?.role);
   const user = useSelector((state) => state.auth.user);
@@ -34,9 +36,6 @@ const AuthRouteGuard = () => {
   const initialized = useSelector(
     (state) => state.auth.initialized
   );
-
-  console.log("ROLE", role);
-  console.log("INITIALIZED", initialized);
 
   useEffect(() => {
     if (!initialized) return;
@@ -106,11 +105,15 @@ const AuthRouteGuard = () => {
           : isSubUser && user?.[rule.permission] === false;
 
         if (lacksAccess) {
+          showToast(
+            "You don't have permission to access this page. Please contact your account owner.",
+            "error"
+          );
           router.replace(ROLE_DEFAULT_ROUTE.employer);
         }
       }
     }
-  }, [pathname, role, user, initialized, router]);
+  }, [pathname, role, user, initialized, router, showToast]);
 
   return null;
 };

@@ -1524,6 +1524,7 @@ function Step4({ go, jobForm, setJobForm, onSubmit }) {
 /* ─── STEP 5 – Location ───────────────────────────────────────────────────── */ 
 function Step5({ go, jobForm, setJobForm, onSubmit, errors, }) { 
   const isOnshore = jobForm.LocationType === "Onshore"; 
+  const isOffshore = jobForm.LocationType === "Offshore"; 
  
   return ( 
     <StepCard 
@@ -1610,7 +1611,7 @@ function Step5({ go, jobForm, setJobForm, onSubmit, errors, }) {
         )} 
  
         {/* ── OFFSHORE fields ── */} 
-        {!isOnshore && ( 
+        {isOffshore && ( 
           <> 
             <Field label="Vessel / Platform Name" required> 
               <input 
@@ -1902,14 +1903,14 @@ export default function DashboardPostJobPage() {
   const [jobForm, setJobForm] = useState({ 
     // Step 1 
     JobTitle: "", 
-    TradeCategory: roleCategories[0], 
+    TradeCategory: "", 
     Role: "", 
     IndustryType: "", 
     ExperienceMinYears: "", 
     ExperienceMaxYears: "", 
     JobType: "", 
-    EmploymentType: "Full_Time", 
-    EmploymentMode: "Onsite", 
+    EmploymentType: "", 
+    EmploymentMode: "", 
     Department: "", 
     DutyHoursPerDay: "", 
     IsOilField: false, 
@@ -1937,18 +1938,18 @@ export default function DashboardPostJobPage() {
     Tags: [], 
  
     // Step 4 
-    Vacancies: "1", 
-    EducationRequired: "Any", 
+    Vacancies: "", 
+    EducationRequired: "", 
     AgeMin: "", 
     AgeMax: "", 
-    GenderPreferred: "Any", 
+    GenderPreferred: "", 
     DisabilityEligible: false, 
     PassportRequired: false, 
     PassportValidityMonths: "", 
  
     // Step 5 
-    LocationType: "Onshore", 
-    Country: "India", 
+    LocationType: "", 
+    Country: "", 
     WorkAddressLine: "", 
     OnshoreCity: "", 
     OnshoreState: "", 
@@ -1979,9 +1980,13 @@ export default function DashboardPostJobPage() {
   useEffect(() => { 
     if (editJobId) { 
       loadJobForEdit(editJobId); 
-    } else { 
-      loadDraft(); 
     } 
+    // No editJobId means the user opened a fresh "Post a Job" — always
+    // start blank. Resuming a specific draft happens explicitly via the
+    // "Continue Draft" link on the Job List page, which passes ?jobId=...
+    // Silently pulling in whatever old draft happened to be sitting in
+    // localStorage here caused unrelated, stale data (e.g. a previous
+    // job's trade/role) to reappear on a brand-new post.
   }, [editJobId]); 
  
   /* ── inline AI suggestions ── */ 
@@ -2040,36 +2045,6 @@ export default function DashboardPostJobPage() {
       setActiveStep(1); 
     } catch (error) { 
       console.error("loadJobForEdit:", error); 
-    } 
-  }; 
- 
-  const loadDraft = async () => { 
-    try { 
-      const draft = localStorage.getItem("jobDraft"); 
-      if (!draft) return; 
- 
-      const parsed = JSON.parse(draft); 
-      if (!parsed?.jobId) return; 
- 
-      setJobId(parsed.jobId); 
- 
-      const response = await getJobResume(parsed.jobId); 
- 
-      console.log("FULL RESPONSE:", response); 
-      console.log("STEP 3 DATA:", response.step3Data); 
-      console.log("BENEFITS:", response.step3Data?.benefits); 
- 
-      setJobForm((prev) => ({ ...prev, ...mapResumeToForm(response, roleCategories[0]) })); 
-      setLastCompletedStep(response.stepStatus?.lastCompletedStep ?? 0); 
- 
-      const nextStep = 
-        response.stepStatus.lastCompletedStep >= 7 
-          ? 7 
-          : response.stepStatus.lastCompletedStep + 1; 
- 
-      setActiveStep(nextStep); 
-    } catch (error) { 
-      console.error("loadDraft:", error); 
     } 
   }; 
  

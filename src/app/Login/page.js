@@ -75,6 +75,9 @@ function OtpDigitsInput({ value, onChange, length = 6, disabled, autoFocus }) {
   );
 }
 
+// Proper email format check (not just "has @ and .").
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
 // Resend cooldown timer for the Send/Resend OTP button.
 function useResendCooldown(seconds = 30) {
   const [remaining, setRemaining] = useState(0);
@@ -123,8 +126,18 @@ export default function LoginPage() {
     input.trim().length > 0 && /^[\d\s+()-]+$/.test(input.trim());
 
   const isInputValid = isEmail
-    ? input.includes("@") && input.includes(".")
+    ? EMAIL_REGEX.test(input.trim())
     : isMobile;
+
+  // Keep only digits and cap at 10 while the user is clearly typing a
+  // phone number (no letters/@ typed). Email entry is left untouched.
+  const handleInputChange = (e) => {
+    const raw = e.target.value;
+    const hasLetterOrAt = /[a-zA-Z@]/.test(raw);
+    const next = hasLetterOrAt ? raw : raw.replace(/\D/g, "").slice(0, 10);
+    setInput(next);
+    setError("");
+  };
 
   // Send OTP
   const handleSendOtp = async () => {
@@ -200,12 +213,13 @@ export default function LoginPage() {
           token: response.data.token,
         })
       );
+      console.log("response"+response)
       localStorage.setItem(
         "token",
         response.data.token
       );
-      if (response.data.userType === "Candidate" && response.data.userId) {
-        localStorage.setItem("candidateId", response.data.userId);
+      if (response.data.userType === "Candidate" && response.data.candidateId) {
+        localStorage.setItem("candidateId", response.data.candidateId);
       }
       if (response.data.employerId) {
         localStorage.setItem("employerId", response.data.employerId);
@@ -278,8 +292,8 @@ export default function LoginPage() {
           "token",
           response.data.token
         );
-        if (response.data.userType === "Candidate" && response.data.userId) {
-          localStorage.setItem("candidateId", response.data.userId);
+        if (response.data.userType === "Candidate" && response.data.candidateId) {
+          localStorage.setItem("candidateId", response.data.candidateId);
         }
         if (response.data.employerId) {
           localStorage.setItem("employerId", response.data.employerId);
@@ -520,10 +534,7 @@ const handleLinkedInLogin = () => {
                   className="form-control"
                   value={input}
                   disabled={otpSent}
-                  onChange={(e) => {
-                    setInput(e.target.value);
-                    setError("");
-                  }}
+                  onChange={handleInputChange}
                   placeholder="Enter email or mobile"
                   style={{
                     width: "100%",
@@ -541,28 +552,6 @@ const handleLinkedInLogin = () => {
                     background: otpSent ? "#f7f7f7" : "#ffffff",
                   }}
                 />
-                {input && isInputValid && (
-                    <span
-                      style={{
-                        position: "absolute",
-                        right: 14,
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        width: 20,
-                        height: 20,
-                        borderRadius: "50%",
-                        background: "#3B6D11",
-                        color: "#fff",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: 11,
-                        fontWeight: 700,
-                      }}
-                    >
-                      ✓
-                    </span>
-                  )}
                 </div>
 
               <small
