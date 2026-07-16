@@ -359,8 +359,8 @@ const StepBar = ({ current, onStepClick, completedSteps }) => (
             onKeyDown={
               clickable
                 ? (e) => {
-                    if (e.key === "Enter" || e.key === " ") onStepClick(n);
-                  }
+                  if (e.key === "Enter" || e.key === " ") onStepClick(n);
+                }
                 : undefined
             }
             title={clickable ? `Go to ${step.label}` : undefined}
@@ -840,7 +840,7 @@ const StepPersonal = ({
           type="checkbox"
           id="available"
           checked={!!data.availableForWork}
-         onChange={(e) => onAvailabilityChange(e.target.checked)}
+          onChange={(e) => onAvailabilityChange(e.target.checked)}
           style={{
             width: 18,
             height: 18,
@@ -1541,10 +1541,28 @@ const StepEducation = ({ data, onUpdate, onAdd, onRemove }) => {
 const StepSkills = ({ data, onToggle, onUpdateSkill }) => {
   const [customSkill, setCustomSkill] = useState("");
   const PROFICIENCY = ["Beginner", "Intermediate", "Expert"];
+  const MAX_SKILLS = 30;
 
   const addCustom = () => {
-    if (!customSkill.trim()) return;
-    onToggle(customSkill.trim());
+    const skill = customSkill.trim();
+
+    if (!skill) return;
+
+    if ((data.selectedSkills || []).length >= MAX_SKILLS) {
+      alert(`You can select a maximum of ${MAX_SKILLS} skills.`);
+      return;
+    }
+
+    const exists = (data.selectedSkills || []).some(
+      (s) => s.toLowerCase() === skill.toLowerCase()
+    );
+
+    if (exists) {
+      alert("This skill is already selected.");
+      return;
+    }
+
+    onToggle(skill);
     setCustomSkill("");
   };
 
@@ -1577,17 +1595,36 @@ const StepSkills = ({ data, onToggle, onUpdateSkill }) => {
             return (
               <button
                 key={skill}
-                onClick={() => onToggle(skill)}
+                disabled={
+                  !selected &&
+                  (data.selectedSkills || []).length >= MAX_SKILLS
+                }
+                onClick={() => {
+                  if (selected) {
+                    onToggle(skill);
+                    return;
+                  }
+
+                  onToggle(skill);
+                }}
                 style={{
                   padding: "7px 14px",
                   borderRadius: 20,
                   fontSize: 13,
                   fontWeight: 600,
-                  cursor: "pointer",
+                  cursor:
+                    !selected &&
+                      (data.selectedSkills || []).length >= MAX_SKILLS
+                      ? "not-allowed"
+                      : "pointer",
+                  opacity:
+                    !selected &&
+                      (data.selectedSkills || []).length >= MAX_SKILLS
+                      ? 0.5
+                      : 1,
                   border: `1.5px solid ${selected ? T.orange : T.border}`,
                   background: selected ? T.orange : T.white,
                   color: selected ? T.white : T.text,
-                  transition: "all .15s",
                 }}
               >
                 {skill}
@@ -1605,7 +1642,10 @@ const StepSkills = ({ data, onToggle, onUpdateSkill }) => {
           />
           <Btn
             onClick={addCustom}
-            disabled={!customSkill.trim()}
+            disabled={
+              !customSkill.trim() ||
+              (data.selectedSkills || []).length >= MAX_SKILLS
+            }
             style={{ padding: "8px 16px" }}
           >
             + Add
@@ -1709,10 +1749,18 @@ const StepSkills = ({ data, onToggle, onUpdateSkill }) => {
         </Card>
       )}
 
-      <p style={{ fontSize: 12, color: T.muted }}>
-        {(data.selectedSkills || []).length} skill
-        {(data.selectedSkills || []).length !== 1 ? "s" : ""} selected
-      </p>
+      <p
+  style={{
+    fontSize: 12,
+    color:
+      (data.selectedSkills || []).length >= MAX_SKILLS
+        ? "#dc3545"
+        : T.muted,
+    fontWeight: 500,
+  }}
+>
+  {(data.selectedSkills || []).length}/{MAX_SKILLS} skills selected
+</p>
     </div>
   );
 };
@@ -2662,32 +2710,32 @@ const CandidateProfilePage = () => {
   const [initialPersonalInfo, setInitialPersonalInfo] = useState(null);
   const [initialWorkHistory, setInitialWorkHistory] = useState([]);
 
-const loadAvailability = useCallback(async () => {
-  if (!candidateId) return;
+  const loadAvailability = useCallback(async () => {
+    if (!candidateId) return;
 
-  try {
-    const response = await getAvailability();
+    try {
+      const response = await getAvailability();
 
-    if (response.data.success) {
-      setProfileData((prev) => ({
-        ...prev,
-        availableForWork:
-          response.data.data.availabilityStatus === "Available",
-      }));
+      if (response.data.success) {
+        setProfileData((prev) => ({
+          ...prev,
+          availableForWork:
+            response.data.data.availabilityStatus === "Available",
+        }));
+      }
+    } catch (error) {
+      console.error("Failed to load availability", error);
     }
-  } catch (error) {
-    console.error("Failed to load availability", error);
-  }
-}, [candidateId]);
+  }, [candidateId]);
   useEffect(() => {
-  loadAvailability();
-}, [loadAvailability]);
+    loadAvailability();
+  }, [loadAvailability]);
   //load ITI info from API
   const loadITIInfo = useCallback(async () => {
     if (!candidateId) return;
 
     try {
-    const response = await getPersonalInfo();
+      const response = await getPersonalInfo();
 
       if (response.data.success) {
         setItiInfo(response.data.data);
@@ -2813,8 +2861,8 @@ const loadAvailability = useCallback(async () => {
             profile.expectedSalary || profile.salaryExpectation || "",
 
           avatar: profile.profilePhotoUrl
-  ? buildProfilePhotoUrl(profile.profilePhotoUrl)
-  : DEFAULT_PROFILE_PHOTO,
+            ? buildProfilePhotoUrl(profile.profilePhotoUrl)
+            : DEFAULT_PROFILE_PHOTO,
         }));
         // console.log(
         //   "Final Avatar URL:",
@@ -3683,24 +3731,24 @@ const loadAvailability = useCallback(async () => {
     }));
   }, []);
 
-const handleAvailabilityChange = async (checked) => {
-  // console.log("Sending:", {
-  //   availabilityStatus: checked
-  //     ? "Open_To_Opportunities"
-  //     : "Not_Available",
-  // });
+  const handleAvailabilityChange = async (checked) => {
+    // console.log("Sending:", {
+    //   availabilityStatus: checked
+    //     ? "Open_To_Opportunities"
+    //     : "Not_Available",
+    // });
 
-  await updateAvailability({
-    availabilityStatus: checked
-      ? "Available"
-      : "Not Available",
-  });
+    await updateAvailability({
+      availabilityStatus: checked
+        ? "Available"
+        : "Not Available",
+    });
 
-  setProfileData((prev) => ({
-    ...prev,
-    availableForWork: checked,
-  }));
-};
+    setProfileData((prev) => ({
+      ...prev,
+      availableForWork: checked,
+    }));
+  };
 
   // Documents
   const uploadDoc = useCallback(

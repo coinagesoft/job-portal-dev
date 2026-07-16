@@ -195,12 +195,13 @@ export default function LoginPage() {
           token: response.data.token,
         })
       );
+      console.log("response"+response)
       localStorage.setItem(
         "token",
         response.data.token
       );
-      if (response.data.userType === "Candidate" && response.data.userId) {
-        localStorage.setItem("candidateId", response.data.userId);
+      if (response.data.userType === "Candidate" && response.data.candidateId) {
+        localStorage.setItem("candidateId", response.data.candidateId);
       }
       if (response.data.employerId) {
         localStorage.setItem("employerId", response.data.employerId);
@@ -269,8 +270,8 @@ export default function LoginPage() {
           "token",
           response.data.token
         );
-        if (response.data.userType === "Candidate" && response.data.userId) {
-          localStorage.setItem("candidateId", response.data.userId);
+        if (response.data.userType === "Candidate" && response.data.candidateId) {
+          localStorage.setItem("candidateId", response.data.candidateId);
         }
         if (response.data.employerId) {
           localStorage.setItem("employerId", response.data.employerId);
