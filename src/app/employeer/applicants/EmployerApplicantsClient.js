@@ -23,10 +23,10 @@ import candidateProfileService from "@/services/recruiter/Candidateprofileservic
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 const screeningFilters = [
-  { label: "Experience 3+ years" },
-  { label: "Relocation ready" },
-  { label: "Notice period <= 30 days" },
-  { label: "Mandatory answers complete" },
+  { key: "minExperience3Years", label: "Experience 3+ years" },
+  { key: "relocationReady", label: "Relocation ready", unavailable: true },
+  { key: "noticePeriodMax30Days", label: "Notice period <= 30 days" },
+  { key: "mandatoryAnswersComplete", label: "Mandatory answers complete" },
 ];
 
 /* Status badge colors — mirrors the job-list status-pill treatment */
@@ -162,6 +162,7 @@ const EmployerApplicantsClient = () => {
   const [activeStatus, setActiveStatus]  = useState("");
   const [searchText, setSearchText]      = useState("");
   const [pageNumber, setPageNumber]      = useState(1);
+  const [activeQuickFilters, setActiveQuickFilters] = useState([]);
   const PAGE_SIZE = 10;
 
   // Modals
@@ -186,12 +187,21 @@ const EmployerApplicantsClient = () => {
   const menuRef = useRef(null);
 
   /* ── Load ── */
-  const loadData = useCallback(async (status, search, page) => {
+  const loadData = useCallback(async (status, search, page, quickFilters = []) => {
     try {
       setLoading(true);
       const [dash, listRes, walletRes] = await Promise.all([
         getApplicantsDashboard(),
-        getApplicants({ jobId: jobId || undefined, status: status || undefined, search: search || undefined, pageNumber: page, pageSize: PAGE_SIZE }),
+        getApplicants({
+          jobId: jobId || undefined,
+          status: status || undefined,
+          search: search || undefined,
+          minExperience3Years: quickFilters.includes("minExperience3Years") || undefined,
+          noticePeriodMax30Days: quickFilters.includes("noticePeriodMax30Days") || undefined,
+          mandatoryAnswersComplete: quickFilters.includes("mandatoryAnswersComplete") || undefined,
+          pageNumber: page,
+          pageSize: PAGE_SIZE,
+        }),
         getWallet(),
       ]);
       setDashboard(dash);
@@ -206,7 +216,10 @@ const EmployerApplicantsClient = () => {
     }
   }, [jobId]);
 
-  useEffect(() => { loadData(activeStatus, searchText, pageNumber); }, [activeStatus, pageNumber, jobId]);
+  useEffect(() => {
+    loadData(activeStatus, searchText, pageNumber, activeQuickFilters);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeStatus, pageNumber, jobId, activeQuickFilters]);
 
   /* ── Close kebab menu on outside click / scroll / resize ── */
   useEffect(() => {
@@ -364,7 +377,7 @@ const EmployerApplicantsClient = () => {
   /* ── Search ── */
   const handleSearch = (e) => {
     e.preventDefault(); setPageNumber(1);
-    loadData(activeStatus, searchText, 1);
+    loadData(activeStatus, searchText, 1, activeQuickFilters);
   };
 
   const totalPages = Math.ceil(totalRecords / PAGE_SIZE);
@@ -538,7 +551,14 @@ const EmployerApplicantsClient = () => {
                   className="btn btn-border btn-sm"
                   type="button"
                   style={{ borderRadius: 10, fontWeight: 700 }}
-                  onClick={() => { setSearchText(""); setActiveStatus(""); setPageNumber(1); loadData("", "", 1); showToast("Filters reset.", "info"); }}
+                  onClick={() => {
+                    setSearchText("");
+                    setActiveStatus("");
+                    setActiveQuickFilters([]);
+                    setPageNumber(1);
+                    loadData("", "", 1, []);
+                    showToast("Filters reset.", "info");
+                  }}
                 >
                   <i className="fi-rr-refresh" style={{ marginRight: 5 }} /> Reset
                 </button>
@@ -553,18 +573,43 @@ const EmployerApplicantsClient = () => {
                 <span style={{ fontSize: 12, fontWeight: 700, color: "#66789c", textTransform: "uppercase", letterSpacing: "0.4px", marginRight: 4 }}>
                   Quick filters
                 </span>
-                {screeningFilters.map((filter) => (
-                  <button
-                    key={filter.label}
-                    type="button"
-                    style={{
-                      border: "1px solid rgba(18,35,89,0.12)", background: "#fff", color: "#4f5e64",
-                      borderRadius: 999, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer",
-                    }}
-                  >
-                    {filter.label}
-                  </button>
-                ))}
+                {screeningFilters.map((filter) => {
+                  const active = activeQuickFilters.includes(filter.key);
+                  return (
+                    <button
+                      key={filter.key}
+                      type="button"
+                      disabled={filter.unavailable}
+                      title={
+                        filter.unavailable
+                          ? "Not available — candidates don't currently provide a relocation preference"
+                          : undefined
+                      }
+                      onClick={() => {
+                        if (filter.unavailable) return;
+                        const next = active
+                          ? activeQuickFilters.filter((k) => k !== filter.key)
+                          : [...activeQuickFilters, filter.key];
+                        setActiveQuickFilters(next);
+                        setPageNumber(1);
+                      }}
+                      style={{
+                        border: active ? "1px solid #FFA300" : "1px solid rgba(18,35,89,0.12)",
+                        background: active ? "#FFA300" : "#fff",
+                        color: filter.unavailable ? "#c2c9d6" : active ? "#fff" : "#4f5e64",
+                        borderRadius: 999,
+                        padding: "6px 14px",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: filter.unavailable ? "not-allowed" : "pointer",
+                        boxShadow: active ? "0 4px 10px rgba(255,163,0,0.28)" : "none",
+                      }}
+                    >
+                      {active && <i className="fi-rr-check" style={{ marginRight: 6, fontSize: 10 }} />}
+                      {filter.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -890,17 +935,7 @@ const EmployerApplicantsClient = () => {
             </div>
           )}
 
-          {detailPopup.cvs?.length > 0 && (
-            <div>
-              <p style={{ fontWeight: 600, fontSize: "13px", marginBottom: "8px", color: "#374151" }}>CV</p>
-              {detailPopup.cvs.map((cv) => (
-                <a key={cv.cvId} href={`${BASE_URL}${cv.cvFileUrl}`} target="_blank" rel="noopener noreferrer"
-                  className="btn btn-border btn-sm mr-10">
-                  <i className="fi fi-rr-download" style={{ marginRight: 5 }} /> Download CV
-                </a>
-              ))}
-            </div>
-          )}
+         
         </Modal>
       )}
 

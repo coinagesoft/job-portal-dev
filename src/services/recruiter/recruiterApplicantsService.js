@@ -27,13 +27,25 @@ export const getApplicantsDashboard = async () => {
  * Params: JobId, Status, Search, PageNumber, PageSize
  * Returns { totalRecords, pageNumber, pageSize, applicants[] }
  */
-export const getApplicants = async ({ jobId, status, search, pageNumber = 1, pageSize = 10 } = {}) => {
+export const getApplicants = async ({
+  jobId,
+  status,
+  search,
+  minExperience3Years,
+  noticePeriodMax30Days,
+  mandatoryAnswersComplete,
+  pageNumber = 1,
+  pageSize = 10,
+} = {}) => {
   const { data } = await api.get("/api/recruiter/applicants", {
     params: {
       employerId: getEmployerId(),
       JobId: jobId || undefined,
       Status: status || undefined,
       Search: search || undefined,
+      MinExperience3Years: minExperience3Years || undefined,
+      NoticePeriodMax30Days: noticePeriodMax30Days || undefined,
+      MandatoryAnswersComplete: mandatoryAnswersComplete || undefined,
       PageNumber: pageNumber,
       PageSize: pageSize,
     },

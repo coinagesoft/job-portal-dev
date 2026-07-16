@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import candidateProfileService from "@/services/recruiter/Candidateprofileservice.js";
 import { useToast } from "@/components/Toast";
@@ -232,6 +233,7 @@ const EmployerCandidateProfilePage = () => {
   // Safe destructure (all camelCase from API)
   // ---------------------------------------------
   const overview = profile.overview || {};
+  const relatedCandidates = profile.relatedCandidates || [];
   const summary = profile.summary || {};
   const skills = profile.skills || [];
   const languages = profile.languages || [];
@@ -1298,6 +1300,71 @@ const EmployerCandidateProfilePage = () => {
                     </li>
                   </ul>
                 </div>
+              </div>
+
+              {/* ===================== RELATED CANDIDATES ===================== */}
+              <div className="sidebar-border mt-30">
+                <h5 className="f-18">Related Candidates</h5>
+                <p className="font-sm color-text-paragraph-2 mb-15">
+                  Other candidates in {overview.role || overview.primaryTrade || "this trade"}
+                </p>
+
+                {relatedCandidates.length === 0 ? (
+                  <p className="font-sm color-text-paragraph-2" style={{ margin: 0 }}>
+                    No other candidates match this trade yet.
+                  </p>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                    {relatedCandidates.map((rc) => (
+                      <Link
+                        key={rc.candidateId}
+                        href={`/employeer/candidate-profile/${rc.candidateId}`}
+                        className="card-grid-2 hover-up cv-search-candidate-card"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "14px",
+                          padding: "14px",
+                          textDecoration: "none",
+                        }}
+                      >
+                        <img
+                          src={rc.profilePhotoUrl || "/assets/imgs/page/homepage1/user3.png"}
+                          alt={rc.fullName}
+                          style={{
+                            width: "48px",
+                            height: "48px",
+                            borderRadius: "50%",
+                            objectFit: "cover",
+                            flexShrink: 0,
+                          }}
+                        />
+                        <div style={{ minWidth: 0 }}>
+                          <strong
+                            className="small-heading d-block"
+                            style={{
+                              color: "#122359",
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            {rc.fullName}
+                          </strong>
+                          <span className="font-xs color-text-paragraph-2 d-block">
+                            {rc.primaryTrade || "—"}
+                            {rc.totalExperienceYears ? ` · ${rc.totalExperienceYears} yrs` : ""}
+                          </span>
+                          {(rc.currentCity || rc.currentState) && (
+                            <span className="font-xs color-text-paragraph-2 d-block">
+                              {[rc.currentCity, rc.currentState].filter(Boolean).join(", ")}
+                            </span>
+                          )}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
