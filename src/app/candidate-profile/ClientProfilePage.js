@@ -2906,6 +2906,10 @@ const loadAvailability = useCallback(async () => {
 
       showToast("Personal information updated successfully", "success");
 
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("profileUpdate"));
+      }
+
       return true;
     } catch (error) {
       console.error(error);
@@ -3026,6 +3030,10 @@ const loadAvailability = useCallback(async () => {
       }
 
       showToast("Profile photo uploaded successfully", "success");
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("profileUpdate"));
+      }
     } catch (error) {
       console.error("UPLOAD ERROR", error);
 

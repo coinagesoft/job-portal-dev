@@ -30,7 +30,7 @@ const isChecked = (value) => {
   );
 };
 
-const normalizeText = (value) =>
+const normalizeText = (value) =>  
   String(value || "")
     .toLowerCase()
     .trim();

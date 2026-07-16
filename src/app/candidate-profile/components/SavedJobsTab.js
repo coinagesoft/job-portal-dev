@@ -4,8 +4,10 @@ import React, { useEffect, useMemo, useState } from "react";
 import ProfileJobCard from "./ProfileJobCard";
 import { getSavedJobs, saveJob } from "@/services/candidate/savedJobsService";
 import { getAllJobs } from "@/services/candidate/allJobsService";
+import { useToast } from "@/components/Toast";
 
 const SavedJobsTab = () => {
+  const showToast = useToast();
   const [savedJobs, setSavedJobs] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -87,14 +89,20 @@ const SavedJobsTab = () => {
     }
   };
 
-  const handleUnsave = async (jobId) => {
+ const handleUnsave = async (jobId) => {
     try {
       const response = await saveJob(jobId);
       if (response?.data?.success) {
+        showToast(response.data.message || "Job unsaved", "success");
         loadSavedJobs();
+      } else {
+        showToast(response?.data?.message || "Unable to unsave this job", "error");
       }
     } catch (error) {
-      console.error("Failed to unsave job:", error);
+      showToast(
+        error.response?.data?.message || error.message || "Failed to unsave job",
+        "error"
+      );
     }
   };
 

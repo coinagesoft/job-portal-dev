@@ -219,7 +219,7 @@ const CandidateSettingsPage = () => {
               </div>
 
               <div className="col-xl-5 col-lg-5 col-md-12">
-                <div className="candidate-settings-card mb-20">
+                {/* <div className="candidate-settings-card mb-20">
                   <h6 className="mb-15">Security Snapshot</h6>
                   <ul className="candidate-settings-simple-list">
                     {[
@@ -247,7 +247,7 @@ const CandidateSettingsPage = () => {
                   <Link className="candidate-settings-inline-link" href="/candidate-profile/settings/help-support">
                     Need help with account security?
                   </Link>
-                </div>
+                </div> */}
 
                 <div className="candidate-settings-card">
                   <h6 className="mb-15">Account Status</h6>
