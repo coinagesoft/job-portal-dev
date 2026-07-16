@@ -79,6 +79,14 @@ const getDisplaySalary = (salaryRange, salaryVisibility) => {
       return salaryRange;
   }
 };
+const formatTimeAgo = (timeAgo) => {
+  if (!timeAgo) return "Recently Posted";
+
+  return timeAgo
+    .replace(" day(s)", timeAgo.startsWith("1 ") ? " day" : " days")
+    .replace(" hour(s)", timeAgo.startsWith("1 ") ? " hour" : " hours")
+    .replace(" minute(s)", timeAgo.startsWith("1 ") ? " minute" : " minutes");
+};
   return (
     <>
       <div
@@ -214,7 +222,7 @@ const getDisplaySalary = (salaryRange, salaryVisibility) => {
                       }}
                     ></i>
 
-                    {job.timeAgo || "Recently Posted"}
+                    {formatTimeAgo(job.timeAgo)}
                   </span>
                 </div>
               </div>

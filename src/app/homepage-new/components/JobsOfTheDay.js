@@ -180,7 +180,7 @@ activeTabs.sort((a, b) => {
                               : job.salaryRange
                                 ? job.salaryRange.includes("$")
                                   ? job.salaryRange
-                                  : `$${job.salaryRange}`
+                                  : `${job.salaryRange}`
                                 : "Negotiable";
 
                           const cardTags = (job.tags && job.tags.length > 0)

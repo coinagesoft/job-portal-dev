@@ -376,9 +376,9 @@ const Header = () => {
               {profileName || "Account Owner"}
             </strong>
 
-            <span className="font-xs color-text-paragraph-2 icon-down">
+            {/* <span className="font-xs color-text-paragraph-2 icon-down">
               {roleLabel}
-            </span>
+            </span> */}
           </div>
         </button>
 
