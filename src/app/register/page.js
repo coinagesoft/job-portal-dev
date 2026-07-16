@@ -1376,7 +1376,7 @@ const handleLinkedInRegister = () => {
 
       <Field label="Full Name" required>
         <Input
-          placeholder="Enter full name"
+          placeholder="Enter your full name (e.g. Arjun Mehta)"
           value={form.name}
             disabled={isSocialVerified}
           onChange={(e) => set("name", e.target.value)}
@@ -1404,7 +1404,7 @@ const handleLinkedInRegister = () => {
 >
   <Input
     type="email"
-    placeholder="john@example.com"
+    placeholder="Enter your email address (e.g. john@example.com)"
     value={form.email}
     error={form.email && !isValidEmail(form.email)}
     disabled={isSocialVerified || emailOtp.verified}
@@ -2156,7 +2156,7 @@ const isStep4Valid =
           value={data.industry}
           onChange={(v) => set("industry", v)}
           options={INDUSTRIES}
-          placeholder="Type or select an industry…"
+          placeholder="Type or select your industry (e.g. IT Services, Manufacturing)"
           error={attempt1 && !data.industry}
         />
       </Field>
@@ -2257,7 +2257,7 @@ const isStep4Valid =
               <Input
                 value={data.gstn}
                 onChange={(e) => set("gstn", e.target.value.toUpperCase())}
-                placeholder="27AAPFU0939F1ZV"
+                placeholder="Enter your 15-character GSTN (e.g. 27AAPFU0939F1ZV)"
                 maxLength={15}
                 error={attempt2 && data.hasGst && !isGstnValid}
                 style={{ fontFamily: "monospace", flex: 1 }}
@@ -2296,7 +2296,7 @@ const isStep4Valid =
             value={data.legalName}
             error={attempt2 && !data.legalName}
             onChange={(e) => set("legalName", e.target.value)}
-            placeholder="Acme Pvt. Ltd."
+            placeholder="Enter your registered company name (e.g. Acme Pvt. Ltd.)"
             style={{
               background: data.hasGst && data.legalName ? "#ffffff" : undefined,
             }}
@@ -2306,7 +2306,7 @@ const isStep4Valid =
           <Input
             value={data.tradeName}
             onChange={(e) => set("tradeName", e.target.value)}
-            placeholder="Acme"
+            placeholder="Enter your brand/trade name (e.g. Acme)"
           />
         </Field>
 
@@ -2316,7 +2316,7 @@ const isStep4Valid =
             <Input
               value={data.pan}
               onChange={(e) => set("pan", e.target.value.toUpperCase())}
-              placeholder="AAPFU0939F"
+              placeholder="Enter your 10-character PAN (e.g. AAPFU0939F)"
               maxLength={10}
               style={{
                 fontFamily: "monospace",
@@ -2334,7 +2334,7 @@ const isStep4Valid =
             value={data.businessType}
             onChange={(v) => set("businessType", v)}
             options={BUSINESS_TYPES}
-            placeholder="Type or select business type…"
+            placeholder="Type or select business type (e.g. Private Limited)"
           />
         </Field>
         <Field label="Company Size">
@@ -2342,7 +2342,7 @@ const isStep4Valid =
             value={data.companySize}
             onChange={(v) => set("companySize", v)}
             options={COMPANY_SIZES}
-            placeholder="Type or select company size…"
+            placeholder="Type or select company size (e.g. 51-200 employees)"
           />
         </Field>
         <Field label="Company Type">
@@ -2350,7 +2350,7 @@ const isStep4Valid =
             value={data.companyType}
             onChange={(v) => set("companyType", v)}
             options={COMPANY_TYPES}
-            placeholder="Type or select company type…"
+            placeholder="Type or select company type (e.g. Product-based)"
           />
         </Field>
 
@@ -2370,7 +2370,7 @@ const isStep4Valid =
           <Input
             value={data.cin}
             onChange={(e) => set("cin", e.target.value.toUpperCase())}
-            placeholder="U74999MH2018PTC..."
+            placeholder="Enter your CIN, if applicable (e.g. U74999MH2018PTC123456)"
             style={{ fontFamily: "monospace" }}
           />
         </Field>
@@ -2405,7 +2405,7 @@ const isStep4Valid =
             error={attempt2 && !data.state}
             onChange={(v) => set("state", v)}
             options={STATES}
-            placeholder="Type or select state…"
+            placeholder="Type or select your state (e.g. Maharashtra)"
           />
         </Field>
         <Field
@@ -2417,7 +2417,7 @@ const isStep4Valid =
             value={data.city}
             error={attempt2 && !data.city}
             onChange={(e) => set("city", e.target.value)}
-            placeholder="Mumbai"
+            placeholder="Enter your city (e.g. Mumbai)"
             style={{
               background: data.hasGst && data.city ? "#ffffff" : undefined,
             }}
@@ -2439,7 +2439,7 @@ const isStep4Valid =
             maxLength={6}
             error={attempt2 && !PIN_REGEX.test(data.pincode)}
             onChange={(e) => set("pincode", e.target.value.replace(/\D/g, ""))}
-            placeholder="400001"
+            placeholder="Enter your 6-digit PIN code (e.g. 400001)"
             style={{
               background: data.hasGst && data.pincode ? "#ffffff" : undefined,
             }}
@@ -2449,7 +2449,7 @@ const isStep4Valid =
           <Input
             value={data.officialWebsite}
             onChange={(e) => set("officialWebsite", e.target.value)}
-            placeholder="https://www.company.com"
+            placeholder="Enter your company website (e.g. https://www.company.com)"
           />
         </Field>
       </div>
@@ -2463,7 +2463,7 @@ const isStep4Valid =
           value={data.address}
           error={attempt2 && !data.address}
           onChange={(e) => set("address", e.target.value)}
-          placeholder="Building, Street, City, State, PIN"
+          placeholder="Enter your full registered address (e.g. 4th Floor, Business Park, Andheri, Mumbai, MH, 400001)"
           style={{
             background: data.hasGst && data.address ? "#ffffff" : undefined,
           }}
@@ -2620,7 +2620,7 @@ const isStep4Valid =
             value={data.contactName}
             error={attempt3 && !data.contactName}
             onChange={(e) => set("contactName", e.target.value)}
-            placeholder="Arjun Mehta"
+            placeholder="Enter contact person's full name (e.g. Arjun Mehta)"
           />
         </Field>
         <Field
@@ -2632,7 +2632,7 @@ const isStep4Valid =
             value={data.designation}
             error={attempt3 && !data.designation}
             onChange={(e) => set("designation", e.target.value)}
-            placeholder="HR Manager"
+            placeholder="Enter their designation/role (e.g. HR Manager)"
           />
         </Field>
         <Field
@@ -2653,7 +2653,7 @@ const isStep4Valid =
               if (val && /^\d+$/.test(val.trim())) return;
               set("contactPersonEmail", val.trim());
             }}
-            placeholder="contact@personal.com"
+            placeholder="Enter contact person's email (e.g. contact@personal.com)"
           />
         </Field>
       </div>
@@ -2677,7 +2677,7 @@ const isStep4Valid =
             if (val && /^\d+$/.test(val.trim())) return;
             set("corpEmail", val.trim());
           }}
-          placeholder="you@yourcompany.com"
+          placeholder="Enter your official company email (e.g. hr@yourcompany.com)"
           style={{
             borderColor: data.corpEmailOtp.verified ? "#3B6D11" : undefined,
             backgroundColor: data.corpEmailOtp.verified ? "#f4f9f1" : undefined,
@@ -3488,35 +3488,6 @@ const isStep4Valid =
 
       <div
         style={{
-          background: "#FFF8EC",
-          border: "1px solid #ffc151",
-          borderRadius: 16,
-          padding: "18px 20px",
-          marginBottom: 20,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-          <span
-            style={{
-              width: 32, height: 32, borderRadius: 10, flexShrink: 0,
-              background: "#ffa300", color: "#122359",
-              display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 14,
-            }}
-          >
-            <i className="fi fi-rr-gift" />
-          </span>
-          <p style={{ fontSize: "var(--font-sm)", fontWeight: 700, color: "#8a5a00", margin: 0, letterSpacing: 0.2 }}>
-            Trial Terms
-          </p>
-        </div>
-        <ReviewRow label="Trial period" val="14 days" />
-        <ReviewRow label="Free credits" val="5 × Band A" />
-        <ReviewRow label="CV downloads" val="Disabled during trial" />
-        <ReviewRow label="Account status" val="Trial — pending admin verification" />
-      </div>
-
-      <div
-        style={{
           display: "flex",
           alignItems: "flex-start",
           gap: 10,
@@ -3549,7 +3520,7 @@ const isStep4Valid =
         style={{ width: "100%", padding: "13px 0", fontSize: "var(--font-md)", marginTop: 6 }}
         onClick={handleEmployerSubmit}
       >
-        Create Account & Start Trial
+        Create Account 
       </Btn>
       <div
         style={{ display: "flex", justifyContent: "flex-start", marginTop: 12 }}

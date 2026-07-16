@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useToast } from "@/components/Toast";
 import { useEffect, useState, useRef } from "react";
+import { useSelector } from "react-redux";
 import styles from "./joblist.module.css";
 import JobPreviewModal from "@/components/JobPreviewModal";
 import { mapResumeToForm } from "@/utils/jobFormMapper";
@@ -80,6 +81,12 @@ const handleDelete = async (jobId, jobTitle) => {
 };
 const EmployerJobListPage = () => {
   const showToast = useToast();
+  const user = useSelector((state) => state.auth.user);
+  const isSubUser = user?.isSubUser === true;
+  // Job management (edit/pause/resume/close/delete) mirrors the
+  // backend's CanPostJobs check; the account owner always has both.
+  const canManageJobs = !isSubUser || user?.canPostJobs !== false;
+  const canViewApplicants = !isSubUser || user?.canManageApplications !== false;
   const [activeStatus, setActiveStatus] = useState("Active");
   const [activeType, setActiveType] = useState("All Types");
   const [openMenu, setOpenMenu] = useState(null);
@@ -373,19 +380,21 @@ await loadCompanyLogos(jobsList);
                   Track active, paused, and premium-priority job listings
                 </span>
               </div>
-              <Link
-                className="btn btn-default"
-                href="/dashboard/post-job"
-                style={{
-                  borderRadius: 12,
-                  fontWeight: 700,
-                  boxShadow: "0 8px 20px rgba(255,163,0,0.18)",
-                }}
-                onClick={() => showToast("Opening post a job form...", "info")}
-              >
-                <i className="fi-rr-plus" style={{ marginRight: 7 }} />
-                Post a Job
-              </Link>
+              {canManageJobs && (
+                <Link
+                  className="btn btn-default"
+                  href="/dashboard/post-job"
+                  style={{
+                    borderRadius: 12,
+                    fontWeight: 700,
+                    boxShadow: "0 8px 20px rgba(255,163,0,0.18)",
+                  }}
+                  onClick={() => showToast("Opening post a job form...", "info")}
+                >
+                  <i className="fi-rr-plus" style={{ marginRight: 7 }} />
+                  Post a Job
+                </Link>
+              )}
             </div>
 
             {/* ── Status filter tabs (matches applicants page style) ── */}
@@ -1105,23 +1114,27 @@ await loadCompanyLogos(jobsList);
                           <span>Preview</span>
                         </button> */}
 
-                        <Link
-                          href={`/dashboard/post-job?jobId=${job.jobId}`}
-                          className={styles.dropdownItem}
-                        >
-                          <i className={job.jobStatus === "Draft" ? "fi-rr-arrow-right" : "fi-rr-edit"} />
-                          <span>{job.jobStatus === "Draft" ? "Continue Draft" : "Edit Job"}</span>
-                        </Link>
+                        {canManageJobs && (
+                          <Link
+                            href={`/dashboard/post-job?jobId=${job.jobId}`}
+                            className={styles.dropdownItem}
+                          >
+                            <i className={job.jobStatus === "Draft" ? "fi-rr-arrow-right" : "fi-rr-edit"} />
+                            <span>{job.jobStatus === "Draft" ? "Continue Draft" : "Edit Job"}</span>
+                          </Link>
+                        )}
 
-                        <Link
-                          href={`/employeer/applicants?jobId=${job.jobId}&jobTitle=${encodeURIComponent(job.jobTitle || "")}`}
-                          className={styles.dropdownItem}
-                        >
-                          <i className="fi-rr-user" />
-                          <span>Applicants</span>
-                        </Link>
+                        {canViewApplicants && (
+                          <Link
+                            href={`/employeer/applicants?jobId=${job.jobId}&jobTitle=${encodeURIComponent(job.jobTitle || "")}`}
+                            className={styles.dropdownItem}
+                          >
+                            <i className="fi-rr-user" />
+                            <span>Applicants</span>
+                          </Link>
+                        )}
 
-                        {job.jobStatus === "Active" && (
+                        {canManageJobs && job.jobStatus === "Active" && (
                           <>
                             <button
                               className={styles.dropdownItem}
@@ -1141,14 +1154,26 @@ await loadCompanyLogos(jobsList);
                           </>
                         )}
 
-                        <button
-                          className={styles.dropdownItem}
-                          onClick={() => handleDelete(job.jobId, job.jobTitle)}
-                          style={{ color: "#dc2626" }}
-                        >
-                          <i className="fi-rr-trash" />
-                          <span>Delete Job</span>
-                        </button>
+                        {canManageJobs && (
+                          <button
+                            className={styles.dropdownItem}
+                            onClick={() => handleDelete(job.jobId, job.jobTitle)}
+                            style={{ color: "#dc2626" }}
+                          >
+                            <i className="fi-rr-trash" />
+                            <span>Delete Job</span>
+                          </button>
+                        )}
+
+                        {!canManageJobs && !canViewApplicants && (
+                          <div
+                            className={styles.dropdownItem}
+                            style={{ color: "#94a3b8", cursor: "default" }}
+                          >
+                            <i className="fi-rr-lock" />
+                            <span>View only — no permission</span>
+                          </div>
+                        )}
 
                       </div>
 

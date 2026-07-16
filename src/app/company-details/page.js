@@ -21,6 +21,74 @@ const iconMap = {
   location: "/assets/imgs/page/job-single/location.svg",
 };
 
+function SocialIconLink({ href, label, iconClass }) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={`Company ${label}`}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        position: "relative",
+        width: "38px",
+        height: "38px",
+        borderRadius: "10px",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "15px",
+        border: `1px solid ${hovered ? "#ff9900" : "#ffc151"}`,
+        background: hovered ? "#ff9900" : "#ffffff",
+        transition: "background-color 0.2s ease, border-color 0.2s ease",
+      }}
+    >
+      <i
+        className={iconClass}
+        style={{ color: hovered ? "#ffffff" : "#122359" }}
+      ></i>
+
+      <span
+        style={{
+          position: "absolute",
+          top: "calc(100% + 8px)",
+          left: "50%",
+          transform: "translateX(-50%)",
+          background: "#122359",
+          color: "#ffffff",
+          fontSize: "11px",
+          fontWeight: 600,
+          lineHeight: 1,
+          whiteSpace: "nowrap",
+          padding: "6px 10px",
+          borderRadius: "6px",
+          opacity: hovered ? 1 : 0,
+          visibility: hovered ? "visible" : "hidden",
+          pointerEvents: "none",
+          transition: "opacity 0.2s ease, visibility 0.2s ease",
+          zIndex: 2,
+        }}
+      >
+        {label}
+        <span
+          style={{
+            position: "absolute",
+            bottom: "100%",
+            left: "50%",
+            transform: "translateX(-50%)",
+            borderLeft: "5px solid transparent",
+            borderRight: "5px solid transparent",
+            borderBottom: "5px solid #122359",
+          }}
+        />
+      </span>
+    </a>
+  );
+}
+
 function CompanyDetailsContent() {
   const searchParams = useSearchParams();
   const employerId = searchParams.get("employerId");
@@ -196,6 +264,53 @@ function CompanyDetailsContent() {
                     {companyInfo.companyDescription}
                   </p>
                 )} */}
+
+                {(companyInfo.linkedInUrl ||
+                  companyInfo.instagramUrl ||
+                  companyInfo.facebookUrl ||
+                  companyInfo.websiteUrl) && (
+                  <div
+                    className="company-social-links"
+                    style={{
+                      display: "flex",
+                      gap: "10px",
+                      marginTop: "16px",
+                    }}
+                  >
+                    {companyInfo.websiteUrl && (
+                      <SocialIconLink
+                        href={
+                          companyInfo.websiteUrl.startsWith("http")
+                            ? companyInfo.websiteUrl
+                            : `https://${companyInfo.websiteUrl}`
+                        }
+                        label="Website"
+                        iconClass="fa-solid fa-globe"
+                      />
+                    )}
+                    {companyInfo.linkedInUrl && (
+                      <SocialIconLink
+                        href={companyInfo.linkedInUrl}
+                        label="LinkedIn"
+                        iconClass="fa-brands fa-linkedin-in"
+                      />
+                    )}
+                    {companyInfo.instagramUrl && (
+                      <SocialIconLink
+                        href={companyInfo.instagramUrl}
+                        label="Instagram"
+                        iconClass="fa-brands fa-instagram"
+                      />
+                    )}
+                    {companyInfo.facebookUrl && (
+                      <SocialIconLink
+                        href={companyInfo.facebookUrl}
+                        label="Facebook"
+                        iconClass="fa-brands fa-facebook-f"
+                      />
+                    )}
+                  </div>
+                )}
               </div>
               <div className="col-lg-4 col-md-12 text-lg-end">
                 <Link

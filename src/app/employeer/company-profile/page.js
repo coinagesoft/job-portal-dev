@@ -2111,7 +2111,7 @@ export default function EmployerCompanyProfilePage() {
                 </div>
                 <div className="sidebar-list-job">
                   <ul className="ul-disc">
-                    <li>{company.addressLine1}</li>
+                    <li>{buildRegisteredAddress() || "—"}</li>
                     <li>Phone: {company.phone}</li>
                     <li>Email: {company.email}</li>
                   </ul>

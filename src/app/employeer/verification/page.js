@@ -30,7 +30,7 @@ const isPositive = (status) => POSITIVE_STATUSES.includes(status);
 const badgeColors = (status) => {
   if (status === "Approved")
     return { bg: "#ecfdf3", color: "#0BAB7C" };
-  if (status === "Pending")
+  if (status === "Pending" || status === "Not Approved")
     return { bg: "#fff7ea", color: "#ff9900" };
   return { bg: "#f4f5f7", color: "#66789c" };
 };
@@ -471,24 +471,42 @@ const EmployerVerificationPage = () => {
                 >
                   Document type
                 </label>
-                <select
-                  value={uploadType}
-                  onChange={(e) => setUploadType(e.target.value)}
-                  className="form-control"
-                  style={{
-                    borderRadius: "12px",
-                    border: "1px solid rgba(18,35,89,0.15)",
-                    padding: "10px 14px",
-                    fontWeight: 600,
-                    color: "#122359",
-                  }}
-                >
-                  {UPLOADABLE_TYPES.map((t) => (
-                    <option key={t.value} value={t.value}>
-                      {t.label}
-                    </option>
-                  ))}
-                </select>
+                <div style={{ position: "relative" }}>
+                  <select
+                    value={uploadType}
+                    onChange={(e) => setUploadType(e.target.value)}
+                    className="form-control"
+                    style={{
+                      borderRadius: "12px",
+                      border: "1px solid rgba(18,35,89,0.15)",
+                      padding: "10px 40px 10px 14px",
+                      fontWeight: 600,
+                      color: "#122359",
+                      width: "100%",
+                      appearance: "none",
+                      WebkitAppearance: "none",
+                      MozAppearance: "none",
+                    }}
+                  >
+                    {UPLOADABLE_TYPES.map((t) => (
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </select>
+                  <i
+                    className="fi-rr-angle-small-down"
+                    style={{
+                      position: "absolute",
+                      right: "14px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      color: "#122359",
+                      fontSize: "16px",
+                      pointerEvents: "none",
+                    }}
+                  />
+                </div>
               </div>
 
               {/* Hidden file input */}

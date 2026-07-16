@@ -130,16 +130,16 @@ const EmployerSubUserPage = () => {
       countryCode: "+91",
       role: "Recruiter",
     });
-    setPermissions({
-      canSearchCandidates: false,
-      canUnlockProfiles: false,
-      canPostJobs: false,
-      canManageApplications: false,
-    });
+    applyRolePermissions("Recruiter");
   };
 
   useEffect(() => {
     loadSubUsers();
+    // Show what the pre-selected role ("Recruiter") actually grants right
+    // away, instead of leaving every permission tag blank until the user
+    // happens to touch the Role dropdown.
+    applyRolePermissions(inviteForm.role);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (
     <main className="main">
@@ -414,6 +414,7 @@ const EmployerSubUserPage = () => {
                         ].map((item) => (
                           <span
                             key={item.label}
+                            title="Read-only — use Edit to change permissions"
                             style={{
                               display: "inline-flex",
                               alignItems: "center",
@@ -423,6 +424,8 @@ const EmployerSubUserPage = () => {
                               color: item.value ? "#0BAB7C" : "#66789c",
                               fontSize: "11px",
                               fontWeight: 700,
+                              cursor: "default",
+                              pointerEvents: "none",
                             }}
                           >
                             {item.label}: {item.value ? "Yes" : "No"}
@@ -575,6 +578,16 @@ const EmployerSubUserPage = () => {
                       type="text"
                       placeholder="Full name"
                       value={inviteForm.subUserName || ""}
+                      disabled={!!editingUser}
+                      style={
+                        editingUser
+                          ? {
+                              background: "#f4f5f7",
+                              color: "#66789c",
+                              cursor: "not-allowed",
+                            }
+                          : undefined
+                      }
                       onChange={(e) =>
                         setInviteForm({
                           ...inviteForm,
@@ -591,6 +604,16 @@ const EmployerSubUserPage = () => {
                       type="email"
                       placeholder="Corporate email"
                       value={inviteForm.subUserEmail || ""}
+                      disabled={!!editingUser}
+                      style={
+                        editingUser
+                          ? {
+                              background: "#f4f5f7",
+                              color: "#66789c",
+                              cursor: "not-allowed",
+                            }
+                          : undefined
+                      }
                       onChange={(e) =>
                         setInviteForm({
                           ...inviteForm,
@@ -607,6 +630,16 @@ const EmployerSubUserPage = () => {
                       type="text"
                       placeholder="+91 XXXXX XXXXX"
                       value={inviteForm.subUserMobile || ""}
+                      disabled={!!editingUser}
+                      style={
+                        editingUser
+                          ? {
+                              background: "#f4f5f7",
+                              color: "#66789c",
+                              cursor: "not-allowed",
+                            }
+                          : undefined
+                      }
                       onChange={(e) =>
                         setInviteForm({
                           ...inviteForm,
@@ -617,11 +650,28 @@ const EmployerSubUserPage = () => {
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">Role</label>
+                    <label className="form-label">
+                      Role
+                      {editingUser && (
+                        <span style={{ fontWeight: 400, color: "#94a3b8", marginLeft: 6 }}>
+                          (fixed at invite — adjust access below)
+                        </span>
+                      )}
+                    </label>
 
                     <select
                       className="form-control form-select"
                       value={inviteForm.role || "Recruiter"}
+                      disabled={!!editingUser}
+                      style={
+                        editingUser
+                          ? {
+                              background: "#f4f5f7",
+                              color: "#66789c",
+                              cursor: "not-allowed",
+                            }
+                          : undefined
+                      }
                       onChange={(e) => {
                         const role = e.target.value;
                         setInviteForm({
