@@ -293,22 +293,34 @@ function Field({ label, hint, required, error, children }) {
   );
 }
 
-function Input({ className = "", style = {}, error, ...props }) {
+function Input({ className = "", style = {}, error, onFocus, onBlur, ...props }) {
   return (
     <input
       {...props}
       className={`form-control ${className}`.trim()}
       style={{
         height: 53,
-        borderColor: error ? "#E24B4A" : undefined,
+        border: error
+          ? "1px solid #E24B4A"
+          : "1px solid var(--color-border-secondary, #C7D2E0)",
         backgroundColor: error ? "#FFF5F5" : undefined,
+        outline: "none",
+        boxSizing: "border-box",
         ...style,
+      }}
+      onFocus={(e) => {
+        if (!error) e.currentTarget.style.border = "1px solid #ff9900";
+        onFocus?.(e);
+      }}
+      onBlur={(e) => {
+        if (!error) e.currentTarget.style.border = "1px solid var(--color-border-secondary, #C7D2E0)";
+        onBlur?.(e);
       }}
     />
   );
 }
 
-function Select({ children, className = "", style = {}, error, ...props }) {
+function Select({ children, className = "", style = {}, error, onFocus, onBlur, ...props }) {
   return (
     <select
       {...props}
@@ -322,9 +334,21 @@ function Select({ children, className = "", style = {}, error, ...props }) {
         appearance: "none",
         WebkitAppearance: "none",
         MozAppearance: "none",
-        borderColor: error ? "#E24B4A" : undefined,
+        border: error
+          ? "1px solid #E24B4A"
+          : "1px solid var(--color-border-secondary, #C7D2E0)",
         backgroundColor: error ? "#FFF5F5" : undefined,
+        outline: "none",
+        boxSizing: "border-box",
         ...style,
+      }}
+      onFocus={(e) => {
+        if (!error) e.currentTarget.style.border = "1px solid #ff9900";
+        onFocus?.(e);
+      }}
+      onBlur={(e) => {
+        if (!error) e.currentTarget.style.border = "1px solid var(--color-border-secondary, #C7D2E0)";
+        onBlur?.(e);
       }}
     >
       {children}
@@ -558,7 +582,7 @@ function Alert({ type = "info", children }) {
 }
 
 // ── Country code selector backed by react-international-phone's full list ──
-function CountryCodeSelect({ value, onChange, disabled }) {
+function CountryCodeSelect({ value, onChange, disabled, verified }) {
   const meta = getCountryMeta(value);
 
   return (
@@ -568,8 +592,8 @@ function CountryCodeSelect({ value, onChange, disabled }) {
         alignItems: "center",
         height: 53,
         borderRadius: 8,
-        border: "0.5px solid var(--color-border-secondary)",
-        background: disabled ? "var(--color-background-secondary)" : "#fff",
+        border: verified ? "1px solid #3B6D11" : "0.5px solid var(--color-border-secondary)",
+        background: verified ? "#f4f9f1" : disabled ? "var(--color-background-secondary)" : "#fff",
         paddingLeft: 2,
         paddingRight: 10,
         gap: 2,
@@ -706,6 +730,7 @@ function MobileOtpField({
         <CountryCodeSelect
           value={countryCode}
           disabled={verified}
+          verified={verified}
           onChange={(v) => {
             onCountryCodeChange(v);
             // re-trim number to new country's max length
@@ -726,7 +751,13 @@ function MobileOtpField({
                 e.target.value.replace(/\D/g, "").slice(0, meta.maxLen)
               )
             }
-            style={{ paddingRight: verified ? 40 : undefined }}
+            style={{
+              paddingRight: verified ? 40 : undefined,
+              borderColor: verified ? "#3B6D11" : undefined,
+              backgroundColor: verified ? "#f4f9f1" : undefined,
+              color: verified ? "#2b4e0c" : undefined,
+              border: verified ? "1px solid #3B6D11" : undefined,
+            }}
           />
           {verified && (
             <span
@@ -1366,35 +1397,50 @@ const handleLinkedInRegister = () => {
         />
       </Field>
 
-      <Field label="Email" hint="Optional — verify to improve account security">
-        <Input
-          type="email"
-          placeholder="john@example.com"
-          value={form.email}
-            disabled={isSocialVerified}
-          onChange={(e) => set("email", e.target.value)}
-        />
-        {form.email && (
-          <div style={{ marginTop: 8 }}>
-            <OtpBlock
-              target="email"
-              sent={emailOtp.sent}
-              verified={emailOtp.verified}
-              disabled={!form.email}
-              onSend={sendEmail}
-              onResend={sendEmail}
-              onVerify={verifyEmail}
-              otpVal={emailOtp.userVal}
-              setOtpVal={(v) =>
-                setEmailOtp((p) => ({
-                  ...p,
-                  userVal: v,
-                }))
-              }
-            />
-          </div>
-        )}
-      </Field>
+      <Field
+  label="Email"
+  hint={!form.email || isValidEmail(form.email) ? "Optional — verify to improve account security" : null}
+  error={form.email && !isValidEmail(form.email) ? "Enter a complete, valid email address" : null}
+>
+  <Input
+    type="email"
+    placeholder="john@example.com"
+    value={form.email}
+    error={form.email && !isValidEmail(form.email)}
+    disabled={isSocialVerified || emailOtp.verified}
+    onChange={(e) => {
+      const val = e.target.value;
+      if (val && /^\d+$/.test(val)) return;
+      set("email", val);
+    }}
+    style={{
+      borderColor: emailOtp.verified ? "#3B6D11" : undefined,
+      backgroundColor: emailOtp.verified ? "#f4f9f1" : undefined,
+      color: emailOtp.verified ? "#2b4e0c" : undefined,
+      border: emailOtp.verified ? "1px solid #3B6D11" : undefined,
+    }}
+  />
+  {form.email && isValidEmail(form.email) && (
+    <div style={{ marginTop: 8 }}>
+      <OtpBlock
+        target="email"
+        sent={emailOtp.sent}
+        verified={emailOtp.verified}
+        disabled={!isValidEmail(form.email)}
+        onSend={sendEmail}
+        onResend={sendEmail}
+        onVerify={verifyEmail}
+        otpVal={emailOtp.userVal}
+        setOtpVal={(v) =>
+          setEmailOtp((p) => ({
+            ...p,
+            userVal: v,
+          }))
+        }
+      />
+    </div>
+  )}
+</Field>
 
       {canShowPayment && (
         <Field label="Registration Fee">
@@ -2602,7 +2648,11 @@ const isStep4Valid =
             type="email"
             value={data.contactPersonEmail}
             error={contactEmailTouched && !contactEmailValid}
-            onChange={(e) => set("contactPersonEmail", e.target.value.trim())}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val && /^\d+$/.test(val.trim())) return;
+              set("contactPersonEmail", val.trim());
+            }}
             placeholder="contact@personal.com"
           />
         </Field>
@@ -2622,8 +2672,18 @@ const isStep4Valid =
           value={data.corpEmail}
           error={corpEmailTouched && !corpEmailValid && !data.corpEmailOtp.verified}
           disabled={data.corpEmailOtp.verified}
-          onChange={(e) => set("corpEmail", e.target.value.trim())}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val && /^\d+$/.test(val.trim())) return;
+            set("corpEmail", val.trim());
+          }}
           placeholder="you@yourcompany.com"
+          style={{
+            borderColor: data.corpEmailOtp.verified ? "#3B6D11" : undefined,
+            backgroundColor: data.corpEmailOtp.verified ? "#f4f9f1" : undefined,
+            color: data.corpEmailOtp.verified ? "#2b4e0c" : undefined,
+            border: data.corpEmailOtp.verified ? "1px solid #3B6D11" : undefined,
+          }}
         />
 
         {data.corpEmail && corpEmailValid && (

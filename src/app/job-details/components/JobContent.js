@@ -113,7 +113,7 @@ const renderJobDescription = (text) => {
   return blocks;
 };
 
-const JobContent = ({ job = {}, isApplied = false, onApplied }) => {
+const JobContent = ({ job = {}, isApplied = false, isSaved = false, onSavedToggle }) => {
   const [showModal, setShowModal] = useState(false);
   const [companyDetails, setCompanyDetails] = useState(null);
   const toggleModal = () => setShowModal(!showModal);
@@ -123,51 +123,26 @@ const JobContent = ({ job = {}, isApplied = false, onApplied }) => {
 
   const handleSaveJob = async () => {
     try {
-      const jobId = job.jobId;
-
-      if (!jobId) {
-        showToast(
-          "Job id is missing. Please open this job from the jobs list.",
-          "error"
-        );
+      if (!job.jobId) {
+        showToast("Job id is missing. Please open this job from the jobs list.", "error");
         return;
       }
-
       if (!candidateId) {
-        showToast(
-          "Please log in as a candidate to save jobs.",
-          "error"
-        );
+        showToast("Please log in as a candidate to save jobs.", "error");
         return;
       }
 
-      const response = await saveJob(
-        jobId,
-        candidateId
-      );
+      const response = await saveJob(job.jobId, candidateId);
 
       if (response?.data?.success) {
-        showToast(
-          response.data.message || "Job saved successfully!",
-          "success"
-        );
+        showToast(response.data.message || "Updated saved jobs", "success");
+        onSavedToggle?.(); // re-fetches the saved list, updates isSaved in the parent
         return;
       }
 
-      showToast(
-        response?.data?.message || "Unable to save job",
-        "error"
-      );
+      showToast(response?.data?.message || "Unable to save job", "error");
     } catch (error) {
-      console.log("ERROR RESPONSE:", error.response);
-      console.log("ERROR DATA:", error.response?.data);
-
-      showToast(
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to save job",
-        "error"
-      );
+      showToast(error.response?.data?.message || error.message || "Failed to save job", "error");
     }
   };
 
@@ -429,14 +404,10 @@ const JobContent = ({ job = {}, isApplied = false, onApplied }) => {
               }}>Apply now</a>
             )}
 
-            <button
-              type="button"
-              className="btn btn-border"
-              onClick={handleSaveJob}
-            >
-              Save job
-            </button>
-          </div>
+  <button type="button" className="btn btn-border" onClick={handleSaveJob}>
+  {isSaved ? "Unsave" : "Save job"}
+</button>
+          </div>    
           <div className="col-md-7 text-lg-end social-share">
             <h6 className="color-text-paragraph-2 d-inline-block d-baseline mr-10">
               Follow us

@@ -123,10 +123,12 @@ const JobDetailsContent = () => {
               <JobRequirements job={job} />
 
               <JobContent
-                job={job}
-                isApplied={isApplied}
-                onApplied={checkApplied}
-              />
+  job={job}
+  isApplied={isApplied}
+  onApplied={checkApplied}
+  isSaved={isSaved}
+  onSavedToggle={checkSaved}
+/>
             </div>
             <div className="col-lg-4 col-md-12 col-sm-12 col-12 pl-40 pl-lg-15 mt-lg-30">
               <CompanySidebar job={job} />

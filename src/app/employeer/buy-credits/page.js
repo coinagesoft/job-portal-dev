@@ -40,7 +40,7 @@ const EmployerBuyCreditsPage = () => {
         console.error(err);
         setPlansError(
           err?.response?.data?.message ||
-            "Failed to load credit plans. Please try again.",
+          "Failed to load credit plans. Please try again.",
         );
       })
       .finally(() => setPlansLoading(false));
@@ -102,107 +102,107 @@ const EmployerBuyCreditsPage = () => {
       </main>
     );
   }
-const handlePayment = async () => {
-  if (typeof window === "undefined" || !window.Razorpay) {
-    alert("Payment gateway is loading. Please try again.");
-    return;
-  }
-
-  if (!selected) {
-    alert("Please select a plan.");
-    return;
-  }
-
-  setPaying(true);
-
-  try {
-    // Create Razorpay order from backend
-    const order = await createCreditPlanOrder(selected.planId);
-
-    if (!order.success) {
-      alert(order.message || "Unable to create payment order.");
-      setPaying(false);
+  const handlePayment = async () => {
+    if (typeof window === "undefined" || !window.Razorpay) {
+      alert("Payment gateway is loading. Please try again.");
       return;
     }
 
-    const options = {
-      key: order.razorpayKeyId,
-      amount: order.amountPaise,
-      currency: order.currency,
-      order_id: order.razorpayOrderId,
+    if (!selected) {
+      alert("Please select a plan.");
+      return;
+    }
 
-      name: "Job Portal",
-      description: `${selected.planName} - ${selected.credits} Credits`,
+    setPaying(true);
 
-      handler: async function (response) {
-        try {
-          const verify = await verifyCreditPlanPayment({
-            transactionId: order.transactionId,
-            razorpayOrderId: response.razorpay_order_id,
-            razorpayPaymentId: response.razorpay_payment_id,
-            razorpaySignature: response.razorpay_signature,
-          });
+    try {
+      // Create Razorpay order from backend
+      const order = await createCreditPlanOrder(selected.planId);
 
-          if (verify.success) {
-            setPaidPack(selected);
-            setPaid(true);
+      if (!order.success) {
+        alert(order.message || "Unable to create payment order.");
+        setPaying(false);
+        return;
+      }
 
-            const wallet = await getWallet();
-            setWallet(wallet);
-          } else {
-            alert(verify.message || "Payment verification failed.");
+      const options = {
+        key: order.razorpayKeyId,
+        amount: order.amountPaise,
+        currency: order.currency,
+        order_id: order.razorpayOrderId,
+
+        name: "Job Portal",
+        description: `${selected.planName} - ${selected.credits} Credits`,
+
+        handler: async function (response) {
+          try {
+            const verify = await verifyCreditPlanPayment({
+              transactionId: order.transactionId,
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+            });
+
+            if (verify.success) {
+              setPaidPack(selected);
+              setPaid(true);
+
+              const wallet = await getWallet();
+              setWallet(wallet);
+            } else {
+              alert(verify.message || "Payment verification failed.");
+            }
+          } catch (err) {
+            console.error(err);
+            alert("Payment verification failed.");
+          } finally {
+            setPaying(false);
           }
-        } catch (err) {
-          console.error(err);
-          alert("Payment verification failed.");
-        } finally {
-          setPaying(false);
-        }
-      },
-
-      prefill: {
-        name: "Recruiter",
-        email: "",
-        contact: "",
-      },
-
-      notes: {
-        planId: selected.planId,
-        planName: selected.planName,
-        credits: selected.credits,
-      },
-
-      theme: {
-        color: "#ff9900",
-      },
-
-      modal: {
-        ondismiss() {
-          setPaying(false);
         },
-      },
-    };
 
-    const rzp = new window.Razorpay(options);
+        prefill: {
+          name: "Recruiter",
+          email: "",
+          contact: "",
+        },
 
-    rzp.on("payment.failed", function (response) {
-      console.error(response.error);
+        notes: {
+          planId: selected.planId,
+          planName: selected.planName,
+          credits: selected.credits,
+        },
 
-      alert(
-        response.error.description ||
+        theme: {
+          color: "#ff9900",
+        },
+
+        modal: {
+          ondismiss() {
+            setPaying(false);
+          },
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+
+      rzp.on("payment.failed", function (response) {
+        console.error(response.error);
+
+        alert(
+          response.error.description ||
           "Payment failed. Please try again."
-      );
+        );
 
+        setPaying(false);
+      });
+
+      rzp.open();
+    } catch (err) {
+      console.error(err);
+      alert("Unable to create payment order.");
       setPaying(false);
-    });
-
-    rzp.open();
-  } catch (err) {
-    console.error(err);
-    alert("Unable to create payment order.");
-    setPaying(false);
-  }
-};
+    }
+  };
 
   if (paid && paidPack) {
     return (
@@ -240,7 +240,7 @@ const handlePayment = async () => {
                           className="font-sm mb-0"
                           style={{ color: "#166534" }}
                         >
-                          ✅ Your GST-compliant invoice and payment receipt have
+                          Your GST-compliant invoice and payment receipt have
                           been sent to your registered email. Check your inbox.
                         </p>
                       </div>
@@ -267,13 +267,17 @@ const handlePayment = async () => {
                           )}
                         </strong>
                       </div>
-                      <div className="d-flex gap-10 justify-content-center">
+                      <div
+                        className="d-flex justify-content-center"
+                        style={{ gap: "10px" }}
+                      >
                         <Link
                           className="btn btn-default hover-up"
                           href="/employeer/credit-wallet"
                         >
                           View Wallet
                         </Link>
+
                         <button
                           className="btn btn-border hover-up"
                           type="button"

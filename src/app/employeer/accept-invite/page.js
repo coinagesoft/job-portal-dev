@@ -70,7 +70,7 @@ export default function AcceptInvite() {
 
       setTimeout(() => {
         router.push(
-          `/login`
+          `/Login?email=${encodeURIComponent(invite.email)}`
         );
       }, 2000);
 
@@ -183,7 +183,7 @@ export default function AcceptInvite() {
                 className="btn btn-success"
                 onClick={() =>
                   router.push(
-                    `/login?email=${encodeURIComponent(
+                    `/Login?email=${encodeURIComponent(
                       invite.email
                     )}`
                   )

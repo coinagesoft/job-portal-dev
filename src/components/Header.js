@@ -24,8 +24,10 @@ import { logout } from "@/store/authSlice";
 import {
   CANDIDATE_HEADER_SECTIONS,
   EMPLOYER_HEADER_TABS,
+  PUBLIC_ROUTE_EXCEPTIONS,
   ROLE_DEFAULT_ROUTE,
 } from "@/constants/panelConfig";
+
 
 import styles from "./Header.module.css";
 
@@ -73,6 +75,17 @@ const isExactPathActive = (
   );
 };
 
+// Pages meant to stand completely on their own — e.g. an invite link opened
+// by someone who isn't (or shouldn't appear as) the account currently logged
+// in on this browser. The global site header/nav is skipped entirely here.
+// Shared with AuthRouteGuard so the two never drift out of sync.
+const isStandaloneRoute = (pathname) => {
+  const current = normalizePath(pathname);
+  return PUBLIC_ROUTE_EXCEPTIONS.some(
+    (route) => current === route || current.startsWith(`${route}/`)
+  );
+};
+
 const Header = () => {
   const pathname = usePathname();
 
@@ -90,6 +103,66 @@ const Header = () => {
     useState(false);
 
   const registerRef = useRef(null);
+
+  const [profileName, setProfileName] = useState("");
+  const [profileImage, setProfileImage] = useState("");
+
+  const fetchProfile = async () => {
+    if (!role) return;
+    try {
+      if (role === "candidate") {
+        const { getPersonalInfo } = await import("@/services/candidate/profileService");
+        const res = await getPersonalInfo();
+        if (res?.data?.success && res?.data?.data) {
+          setProfileName(res.data.data.fullName || "");
+          const baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
+          const photoUrl = res.data.data.profilePhotoUrl || "";
+          if (photoUrl) {
+            const absoluteUrl = photoUrl.startsWith("http") ? photoUrl : `${baseUrl}${photoUrl}`;
+            const separator = absoluteUrl.includes("?") ? "&" : "?";
+            setProfileImage(`${absoluteUrl}${separator}t=${Date.now()}`);
+          } else {
+            setProfileImage("");
+          }
+        }
+      } else if (role === "employer") {
+        const { default: companyProfileService } = await import("@/services/recruiter/companyProfileService");
+        const data = await companyProfileService.getCompanyProfile();
+        if (data) {
+          setProfileName(data.legalName || data.companyDisplayName || data.tradeName || "");
+          const baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
+          const logoUrl = data.companyLogoUrl || "";
+          if (logoUrl) {
+            const absoluteUrl = logoUrl.startsWith("http") ? logoUrl : `${baseUrl}${logoUrl}`;
+            const separator = absoluteUrl.includes("?") ? "&" : "?";
+            setProfileImage(`${absoluteUrl}${separator}t=${Date.now()}`);
+          } else {
+            setProfileImage("");
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch profile in Header:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (!role) {
+      setProfileName("");
+      setProfileImage("");
+      return;
+    }
+    fetchProfile();
+
+    const handleProfileUpdate = () => {
+      fetchProfile();
+    };
+
+    window.addEventListener("profileUpdate", handleProfileUpdate);
+    return () => {
+      window.removeEventListener("profileUpdate", handleProfileUpdate);
+    };
+  }, [role]);
 
   useEffect(() => {
     const handleClickOutside = (
@@ -140,13 +213,13 @@ const Header = () => {
       );
     }, [pathname]);
 
- const handleLogout = () => {
-  localStorage.removeItem("token");
+  const handleLogout = () => {
+    localStorage.removeItem("token");
 
-  dispatch(logout());
+    dispatch(logout());
 
-  router.replace("/Login");
-};
+    router.replace("/Login");
+  };
 
   const renderProfileActions = ({
     profileLinks,
@@ -294,17 +367,18 @@ const Header = () => {
         >
           <img
             alt="Profile"
-            src="/assets2/imgs/page/dashboard/profile.png"
+            src={profileImage || (role === "employer" ? "/assets/imgs/page/company/company.png" : "/assets2/imgs/page/dashboard/profile.png")}
+            style={{ objectFit: 'cover' }}
           />
 
           <div className="info-member">
-            <strong className="color-brand-1 " style={{fontSize:"12px"}}>
-              Account Owner
+            <strong className="color-brand-1 " style={{ fontSize: "12px" }}>
+              {profileName || "Account Owner"}
             </strong>
 
-            <span className="font-xs color-text-paragraph-2 icon-down">
+            {/* <span className="font-xs color-text-paragraph-2 icon-down">
               {roleLabel}
-            </span>
+            </span> */}
           </div>
         </button>
 
@@ -313,22 +387,21 @@ const Header = () => {
           aria-labelledby="dropdownProfile"
         >
           {profileLinks.map((link) => (
-  <li key={link.href + link.label}>
-    <button
-      className={`dropdown-item ${
-        isExactPathActive(pathname, link.href)
-          ? "active"
-          : ""
-      }`}
-      onClick={() => {
-        console.log("GOING TO:", link.href);
-        router.push(link.href);
-      }}
-    >
-      {link.label}
-    </button>
-  </li>
-))}
+            <li key={link.href + link.label}>
+              <button
+                className={`dropdown-item ${isExactPathActive(pathname, link.href)
+                    ? "active"
+                    : ""
+                  }`}
+                onClick={() => {
+                  console.log("GOING TO:", link.href);
+                  router.push(link.href);
+                }}
+              >
+                {link.label}
+              </button>
+            </li>
+          ))}
 
           <li>
             <button
@@ -373,14 +446,12 @@ const Header = () => {
       (tab) => (
         <li key={tab.key}>
           <Link
-            className={`${
-              activeEmployerTabKey ===
-              tab.key
+            className={`${activeEmployerTabKey ===
+                tab.key
                 ? "active"
                 : ""
-            } ${
-              styles.employerTabLink
-            }`}
+              } ${styles.employerTabLink
+              }`}
             href={
               tab.links[0].href
             }
@@ -427,6 +498,10 @@ const Header = () => {
     </>
   );
 
+  if (isStandaloneRoute(pathname)) {
+    return null;
+  }
+
   return (
     <header className="header sticky-bar">
       <div className="container">
@@ -438,8 +513,8 @@ const Header = () => {
                 href={
                   role
                     ? ROLE_DEFAULT_ROUTE[
-                        role
-                      ]
+                    role
+                    ]
                     : "/homepage-new"
                 }
               >
@@ -501,7 +576,7 @@ const Header = () => {
                       )
                     }
                     type="button"
-                    style={{textDecoration:"none"}}
+                    style={{ textDecoration: "none" }}
                   >
                     Register
                   </button>

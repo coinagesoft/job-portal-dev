@@ -52,6 +52,16 @@ const companyProfileService = {
 
     return data;
   },
+
+  getPublicCompanyDetails: async (employerId) => {
+  const { data } = await api.get(
+    `/api/candidate/public/GetCompany/details/${employerId}`
+  );
+
+  return data;
+},
 };
+
+
 
 export default companyProfileService;

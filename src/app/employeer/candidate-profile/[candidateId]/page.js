@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import candidateProfileService from "@/services/recruiter/Candidateprofileservice.js";
+import { useToast } from "@/components/Toast";
 
 /* Format a DateOnly ("2015-06-01") or ISO date to "Jun 2015" */
 const fmtMonthYear = (d) => {
@@ -21,8 +22,29 @@ const fmtDate = (d) => {
 const fmtSalary = (n) =>
   n == null ? null : `₹${Number(n).toLocaleString("en-IN")}`;
 
+// A "low credits" failure can come back a few different ways depending on
+// the endpoint (message text, an explicit code, or a 402). Treat any of
+// those as the same "credit issue" toast rather than a generic error.
+const isCreditIssue = (err, result) => {
+  const code = err?.response?.data?.code || result?.code;
+  const status = err?.response?.status;
+  const text = (
+    err?.response?.data?.message ||
+    err?.response?.data?.Message ||
+    result?.message ||
+    ""
+  ).toLowerCase();
+
+  return (
+    code === "INSUFFICIENT_CREDITS" ||
+    status === 402 ||
+    text.includes("credit")
+  );
+};
+
 const EmployerCandidateProfilePage = () => {
   const { candidateId } = useParams();
+  const showToast = useToast();
 
   const [profile, setProfile] = useState(null);
   const [wallet, setWallet] = useState(null);
@@ -62,9 +84,9 @@ const EmployerCandidateProfilePage = () => {
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          err.response?.data?.Message ||
-          err.message ||
-          "Failed to load candidate profile.",
+        err.response?.data?.Message ||
+        err.message ||
+        "Failed to load candidate profile.",
       );
     } finally {
       setLoading(false);
@@ -84,27 +106,38 @@ const EmployerCandidateProfilePage = () => {
     try {
       const result = await candidateProfileService.unlockCandidate(candidateId);
       if (result?.success) {
-        setActionMessage({
-          type: "success",
-          text:
-            result.message ||
-            `Profile unlocked. ${result.creditsDeducted ?? 0} credit(s) used.`,
-        });
+        const successText =
+          result.message ||
+          `Profile unlocked. ${result.creditsDeducted ?? 0} credit(s) used.`;
+        setActionMessage({ type: "success", text: successText });
+        showToast(successText, "success");
         await loadData();
+      } else if (isCreditIssue(null, result)) {
+        const text =
+          result?.message ||
+          "Not enough credits to unlock this profile. Please top up your wallet.";
+        setActionMessage({ type: "error", text });
+        showToast(text, "error");
       } else {
-        setActionMessage({
-          type: "error",
-          text: result?.message || "Unlock failed.",
-        });
+        const text = result?.message || "Unlock failed.";
+        setActionMessage({ type: "error", text });
+        showToast(text, "error");
       }
     } catch (err) {
-      setActionMessage({
-        type: "error",
-        text:
+      if (isCreditIssue(err, null)) {
+        const text =
+          err.response?.data?.message ||
+          "Not enough credits to unlock this profile. Please top up your wallet.";
+        setActionMessage({ type: "error", text });
+        showToast(text, "error");
+      } else {
+        const text =
           err.response?.data?.message ||
           err.response?.data?.Message ||
-          "Unlock failed.",
-      });
+          "Unlock failed.";
+        setActionMessage({ type: "error", text });
+        showToast(text, "error");
+      }
     } finally {
       setUnlocking(false);
     }
@@ -120,10 +153,12 @@ const EmployerCandidateProfilePage = () => {
       const result = await candidateProfileService.downloadCv(candidateId);
 
       if (!result?.success) {
-        setActionMessage({
-          type: "error",
-          text: result?.message || "Unable to download CV.",
-        });
+        const text = isCreditIssue(null, result)
+          ? result?.message ||
+          "Not enough credits to download this CV. Please top up your wallet."
+          : result?.message || "Unable to download CV.";
+        setActionMessage({ type: "error", text });
+        showToast(text, "error");
         return;
       }
 
@@ -136,30 +171,32 @@ const EmployerCandidateProfilePage = () => {
       );
 
       if (!dl?.success) {
-        setActionMessage({
-          type: "error",
-          text: dl?.message || "Unable to download the watermarked CV.",
-        });
+        const text = isCreditIssue(null, dl)
+          ? dl?.message ||
+          "Not enough credits to download this CV. Please top up your wallet."
+          : dl?.message || "Unable to download the watermarked CV.";
+        setActionMessage({ type: "error", text });
+        showToast(text, "error");
         return;
       }
 
-      setActionMessage({
-        type: "success",
-        text:
-          result.message ||
-          `CV downloaded. ${result.creditsDeducted ?? 0} credit(s) used.`,
-      });
+      const successText =
+        result.message ||
+        `CV downloaded. ${result.creditsDeducted ?? 0} credit(s) used.`;
+      setActionMessage({ type: "success", text: successText });
+      showToast(successText, "success");
 
       await loadData();
     } catch (err) {
-      setActionMessage({
-        type: "error",
-        text:
-          err.response?.data?.message ||
-          err.response?.data?.Message ||
-          err.message ||
-          "Unable to download CV.",
-      });
+      const text = isCreditIssue(err, null)
+        ? err.response?.data?.message ||
+        "Not enough credits to download this CV. Please top up your wallet."
+        : err.response?.data?.message ||
+        err.response?.data?.Message ||
+        err.message ||
+        "Unable to download CV.";
+      setActionMessage({ type: "error", text });
+      showToast(text, "error");
     } finally {
       setDownloading(false);
     }
@@ -204,7 +241,7 @@ const EmployerCandidateProfilePage = () => {
   const unlockStatus = profile.unlockStatus || {};
 
   const isUnlocked = unlockStatus.isUnlocked ?? overview.isUnlocked ?? false;
-  const cvAvailable = !!cv?.cvAvailable;
+  const cvAvailable = !!(cv?.cvAvailable || cv?.canDownloadCv || cv?.cvUrl || cv?.resumeUrl || cv?.fileName || cv?.documentUrl);
 
   return (
     <main className="main">
@@ -224,9 +261,18 @@ const EmployerCandidateProfilePage = () => {
                   overview.profilePhotoUrl ||
                   "/assets/imgs/page/candidates/candidate-profile.png"
                 }
-                style={{width:'85px',height:'85px'}}
-                className="mt-3"
-                alt="candidate profile"
+                alt="Candidate Profile"
+                style={{
+                  width: "85px",
+                  height: "85px",
+                  borderRadius: "25%",
+                  objectFit: "cover",
+                  border: "2px solid #dadfe6",
+                }}
+                onError={(e) => {
+                  e.currentTarget.src =
+                    "/assets/imgs/page/candidates/candidate-profile.png";
+                }}
               />
             </div>
 
@@ -298,7 +344,7 @@ const EmployerCandidateProfilePage = () => {
                   <button
                     className="btn btn-outline-custom btn-lg"
                     type="button"
-                    disabled={!isUnlocked || !cvAvailable || downloading}
+                    disabled={!cvAvailable || downloading}
                     onClick={handleDownloadCv}
                   >
                     {downloading ? "Downloading…" : "Download CV"}
@@ -307,11 +353,10 @@ const EmployerCandidateProfilePage = () => {
 
                 {actionMessage && (
                   <p
-                    className={`mt-10 font-sm ${
-                      actionMessage.type === "success"
-                        ? "text-success"
-                        : "text-danger"
-                    }`}
+                    className={`mt-10 font-sm ${actionMessage.type === "success"
+                      ? "text-success"
+                      : "text-danger"
+                      }`}
                   >
                     {actionMessage.text}
                   </p>
@@ -492,9 +537,8 @@ const EmployerCandidateProfilePage = () => {
                       {/* LOCKED / UNLOCKED ACCESS CARD */}
                       <div className="col-lg-6 mb-25">
                         <div
-                          className={`candidate-visibility-card ${
-                            isUnlocked ? "visible-card" : "locked-card"
-                          }`}
+                          className={`candidate-visibility-card ${isUnlocked ? "visible-card" : "locked-card"
+                            }`}
                         >
                           <div className="visibility-card-header">
                             <div>
@@ -506,9 +550,8 @@ const EmployerCandidateProfilePage = () => {
                               </p>
                             </div>
                             <span
-                              className={`visibility-badge ${
-                                isUnlocked ? "success" : "warning"
-                              }`}
+                              className={`visibility-badge ${isUnlocked ? "success" : "warning"
+                                }`}
                             >
                               {isUnlocked ? "Visible" : "Locked"}
                             </span>
@@ -524,7 +567,7 @@ const EmployerCandidateProfilePage = () => {
                                 <h6 className="visibility-value">
                                   {isUnlocked
                                     ? fmtSalary(summary.preferredSalary) ||
-                                      "Not specified"
+                                    "Not specified"
                                     : "Hidden"}
                                 </h6>
                               </div>
@@ -1074,67 +1117,97 @@ const EmployerCandidateProfilePage = () => {
                   {workHistories.length === 0 && (
                     <p className="color-text-paragraph-2">No work history listed.</p>
                   )}
-                  {workHistories.map((item) => (
-                    <div className="col-xl-12 col-12" key={`work-card-${item.workId}`}>
-                      <div className="card-grid-2 hover-up">
-                        <div className="row">
-                          <div className="col-lg-6 col-md-6 col-sm-12">
-                            <div className="card-grid-2-image-left">
-                              <div className="image-box">
-                                <img
-                                  src="/assets/imgs/brands/brand-6.png"
-                                  alt="company logo"
-                                />
-                              </div>
-                              <div className="right-info">
-                                <a className="name-job" href="#">
-                                  {item.companyName}
-                                </a>
-                                <span className="location-small">
-                                  {item.workLocation}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="col-lg-6 text-start text-md-end pr-60 col-md-6 col-sm-12">
-                            <div className="pl-15 mb-15 mt-30">
-                              <span className="btn btn-grey-small mr-5">
-                                {item.isCurrent ? "Current" : "Past"}
-                              </span>
-                              <span className="btn btn-grey-small mr-5">
-                                {fmtMonthYear(item.startDate)} -{" "}
-                                {item.isCurrent ? "Present" : fmtMonthYear(item.endDate)}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="card-block-info">
-                          <h4>
-                            <a href="#">{item.jobTitle}</a>
-                          </h4>
-                          {item.jobDescription && (
-                            <p className="font-sm color-text-paragraph mt-10">
-                              {item.jobDescription}
-                            </p>
-                          )}
-                          <div className="card-2-bottom mt-20">
-                            <div className="row">
-                              <div className="col-lg-7 col-7">
-                                <span className="card-text-price">
-                                  Status:
-                                  <span className="text-success">
-                                    {" "}
-                                    {item.isOffshore ? "Offshore" : "Onshore"}
-                                  </span>
-                                </span>
-                              </div>
-                              <div className="col-lg-5 col-5 text-end"></div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                 {workHistories.map((item) => (
+  <div className="col-xl-12 col-12" key={`work-card-${item.workId}`}>
+    <div className="card-grid-2 hover-up">
+      <div className="row">
+        <div className="col-lg-6 col-md-6 col-sm-12">
+          <div className="card-grid-2-image-left" style={{ display: "flex", alignItems: "center", gap: 14 }}>
+  <div
+    style={{
+      width: 54,
+      height: 54,
+      borderRadius: 16,
+      flexShrink: 0,
+      background: "linear-gradient(135deg,#122359,#1e3a8a)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      color: "#ffa300",
+      fontSize: 22,
+    }}
+  >
+    <i className="fi-rr-briefcase" />
+  </div>
+
+  <div className="right-info">
+    <h5
+      style={{
+        margin: 0,
+        color: "#122359",
+        fontWeight: 700,
+        fontSize: 18,
+      }}
+    >
+      {item.companyName}
+    </h5>
+
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        marginTop: 6,
+        color: "#66789c",
+        fontSize: 13,
+      }}
+    >
+      <i className="fi-rr-marker" style={{ color: "#FFA300" }} />
+      {item.workLocation || "Location not specified"}
+    </div>
+  </div>
+</div>
+        </div>
+
+        <div className="col-lg-6 text-start text-md-end pr-60 col-md-6 col-sm-12">
+          <div className="pl-15 mb-15 mt-30">
+            <span className="btn btn-grey-small mr-5">
+              {item.isCurrent ? "Current" : "Past"}
+            </span>
+            <span className="btn btn-grey-small mr-5">
+              {fmtMonthYear(item.startDate)} -{" "}
+              {item.isCurrent ? "Present" : fmtMonthYear(item.endDate)}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="card-block-info">
+        <h4>
+          <a href="#">{item.jobTitle}</a>
+        </h4>
+
+        {item.jobDescription && (
+          <p className="font-sm color-text-paragraph mt-10">
+            {item.jobDescription}
+          </p>
+        )}
+
+        <div className="card-2-bottom mt-20">
+          <div className="row">
+            <div className="col-lg-7 col-7">
+              <span className="card-text-price">
+                Status:
+                <span className="text-success"> {item.isOffshore ? "Offshore" : "Onshore"}</span>
+              </span>
+            </div>
+            <div className="col-lg-5 col-5 text-end"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+))}
                 </div>
               </div>
             </div>
@@ -1200,7 +1273,7 @@ const EmployerCandidateProfilePage = () => {
                       Mobile:{" "}
                       {isUnlocked && candidateDetails
                         ? `${candidateDetails.countryCode || ""} ${candidateDetails.mobileNumber || ""}`.trim() ||
-                          "Not provided"
+                        "Not provided"
                         : "+91 XXXXXXXXXX"}
                     </li>
                     <li>
@@ -1231,7 +1304,7 @@ const EmployerCandidateProfilePage = () => {
         </div>
       </section>
 
-      <section className="section-box mt-50 mb-20">
+      {/* <section className="section-box mt-50 mb-20">
         <div className="container">
           <div className="box-newsletter orange-newsletter">
             <div className="row">
@@ -1271,7 +1344,7 @@ const EmployerCandidateProfilePage = () => {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
     </main>
   );
 };

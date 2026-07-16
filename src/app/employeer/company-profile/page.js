@@ -783,6 +783,10 @@ export default function EmployerCompanyProfilePage() {
         [field]: payloadValue,
       }));
 
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("profileUpdate"));
+      }
+
     } catch (error) {
       console.log("FAILED FIELD:", field);
       console.log("API FIELD:", apiField);
@@ -826,6 +830,10 @@ export default function EmployerCompanyProfilePage() {
       await loadCompanyProfile();
 
       showToast("Image updated successfully", "success");
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("profileUpdate"));
+      }
     } catch (error) {
       console.error(error);
       showToast(

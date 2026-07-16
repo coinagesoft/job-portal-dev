@@ -4,7 +4,8 @@ import api from "../api";
 import { getCandidateId } from "@/utils/authHelper";
 
 export const getPersonalInfo = () => {
-  return api.get("/api/candidate/profile/personal-info");
+  const candidateId = getCandidateId();
+  return api.get(`/api/candidate/profile/personal-info?candidateId=${candidateId}`);
 };
 
 export const createPersonalInfo = (payload) => {

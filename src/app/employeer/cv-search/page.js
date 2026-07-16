@@ -30,7 +30,7 @@ const isChecked = (value) => {
   );
 };
 
-const normalizeText = (value) =>
+const normalizeText = (value) =>  
   String(value || "")
     .toLowerCase()
     .trim();
@@ -43,6 +43,26 @@ const tokenizeSearch = (value) =>
 
 const formatLocation = (candidate) =>
   `${candidate.currentCity}, ${candidate.currentState}`;
+
+// Dedupes locations case-insensitively, keeping the first-seen casing as the
+// display label — so "Pune" and "pune" collapse into a single option instead
+// of showing up as two separate entries.
+const getUniqueLocations = (optionsFromApi, candidates) => {
+  const raw =
+    optionsFromApi ??
+    candidates.map((c) => c.currentCity).filter(Boolean);
+
+  const seen = new Map(); // lowercased key -> display label
+
+  raw.forEach((loc) => {
+    const key = loc.trim().toLowerCase();
+    if (key && !seen.has(key)) {
+      seen.set(key, loc.trim());
+    }
+  });
+
+  return Array.from(seen.values()).sort((a, b) => a.localeCompare(b));
+};
 
 const formatExperience = (candidate) => `${candidate.experienceYears} yrs exp`;
 
@@ -95,7 +115,20 @@ const CANDIDATE_ACTION_BUTTON_STYLE = {
   alignItems: "center",
   justifyContent: "center",
   whiteSpace: "nowrap",
+  borderRadius:"8px"
 };
+
+const EXPERIENCE_RANGES = [
+  { label: "0 - 1 years", min: 0, max: 1 },
+  { label: "1 - 2 years", min: 1, max: 2 },
+  { label: "2 - 3 years", min: 2, max: 3 },
+  { label: "3 - 5 years", min: 3, max: 5 },
+  { label: "5 - 7 years", min: 5, max: 7 },
+  { label: "7 - 10 years", min: 7, max: 10 },
+  { label: "10 - 15 years", min: 10, max: 15 },
+  { label: "15 - 20 years", min: 15, max: 20 },
+  { label: "20+ years", min: 20, max: "" },
+];
 
 const createProfileHighlightTags = (candidate) => {
   const tags = [];
@@ -191,6 +224,7 @@ const EmployerCvSearchPage = () => {
     tradeCategory: "",
     minExperience: "",
     maxExperience: "",
+    experienceRange: "",
     location: "",
     availabilityStatus: "",
     itiCertifiedOnly: false,
@@ -255,8 +289,8 @@ const EmployerCvSearchPage = () => {
       console.error(error);
       alert(
         error?.response?.data?.message ||
-          error?.response?.data?.Message ||
-          "Unable to download CV",
+        error?.response?.data?.Message ||
+        "Unable to download CV",
       );
     }
   };
@@ -359,6 +393,34 @@ const EmployerCvSearchPage = () => {
     }
   }, [filters.minExperience, filters.maxExperience]);
 
+  const updateFilterAndSearch = (partial) => {
+    const next = { ...filters, ...partial, pageNumber: 1 };
+    setFilters(next);
+    loadCandidates(next);
+  };
+
+  // const handleReset = () => {
+  //   const defaultFilters = {
+  //     keyword: "",
+  //     tradeCategory: "",
+  //     minExperience: "",
+  //     maxExperience: "",
+  //     location: "",
+  //     availabilityStatus: "",
+  //     itiCertifiedOnly: false,
+  //     passportValidOnly: false,
+  //     offshoreOnly: false,
+  //     unlockedProfilesOnly: false,
+  //     sortBy: "KeywordMatch",
+  //     pageNumber: 1,
+  //     pageSize: 10,
+  //     jobId: "",
+  //   };
+
+  //   setFilters(defaultFilters);
+  //   loadCandidates(defaultFilters);
+  // };
+
   return (
     <main className="main">
       <section className="section-box-2">
@@ -374,95 +436,157 @@ const EmployerCvSearchPage = () => {
                 tags.
               </div>
 
-              <div className="form-find text-start mt-40">
-                <form>
-                  <div className="box-industry">
-                    <select
-                      className="form-input mr-10 select-active input-industry"
-                      value={filters.tradeCategory}
-                      onChange={(e) =>
-                        setFilters({
-                          ...filters,
-                          tradeCategory: e.target.value,
-                        })
-                      }
-                    >
-                      <option value="">Any trade</option>
+<div className="form-find text-start mt-40" style={{ width: "100%" }}>
+  <form
+    onSubmit={(e) => {
+      e.preventDefault();
+      handleSearch();
+    }}
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: "16px",
+      width: "100%",
+      flexWrap: "nowrap", 
+    }}
+  >
+    {/* Trade */}
+    <div style={{ flex: "1 1 100px", minWidth: "100px" }}>
+      <select
+        className="form-input select-active input-industry dashboard-select-arrow"
+        value={filters.tradeCategory}
+        onChange={(e) =>
+          updateFilterAndSearch({ tradeCategory: e.target.value })
+        }
+        style={{
+          width: "100%",
+          height: "50px",
+          borderRadius: "8px",
+        }}
+      >
+        <option value="">Any Trade</option>
+        {(filterOptions?.tradeCategories ?? []).map((tradeOption) => (
+          <option key={tradeOption} value={tradeOption}>
+            {tradeOption}
+          </option>
+        ))}
+      </select>
+    </div>
 
-                      {(filterOptions?.tradeCategories ?? []).map(
-                        (tradeOption) => (
-                          <option key={tradeOption} value={tradeOption}>
-                            {tradeOption}
-                          </option>
-                        ),
-                      )}
-                    </select>
-                  </div>
+    {/* AI Match */}
+    <div style={{ flex: "1.2 1 120px", minWidth: "120px" }}>
+      <select
+        className="form-input select-active input-industry dashboard-select-arrow"
+        value={filters.jobId}
+        onChange={(e) => handleJobChange(e.target.value)}
+        style={{
+          width: "100%",
+          height: "50px",
+          borderRadius: "8px",
+        }}
+      >
+        <option value="">AI Match: Select Job</option>
+        {jobs.map((job) => (
+          <option key={job.jobId} value={job.jobId}>
+            {job.jobTitle}
+          </option>
+        ))}
+      </select>
+    </div>
 
-                  <div className="box-industry">
-                    <select
-                      className="form-input mr-10 select-active input-industry"
-                      value={filters.jobId}
-                      onChange={(e) => handleJobChange(e.target.value)}
-                      title="Rank candidates by AI match against one of your jobs"
-                    >
-                      <option value="">AI match: select a job…</option>
-                      {jobs.map((job) => (
-                        <option key={job.jobId} value={job.jobId}>
-                          {job.jobTitle}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+    {/* Keyword */}
+    <div style={{ flex: "2 1 120px", minWidth: "120px" }}>
+     <input
+  className="form-input input-keysearch dashboard-search-text"
+  type="text"
+  value={filters.keyword}
+  onChange={(e) =>
+    setFilters({
+      ...filters,
+      keyword: e.target.value,
+    })
+  }
+  placeholder="Trade, Skill, Name, Location"
+  list="cv-keyword-suggestions"
+  style={{
+    width: "100%",
+    height: "50px",
+    borderRadius: "8px",
+    paddingLeft: "45px", // Increase this
+  }}
+/>
 
-                  <input
-                    className="form-input input-keysearch mr-10"
-                    type="text"
-                    value={filters.keyword}
-                    onChange={(e) =>
-                      setFilters({
-                        ...filters,
-                        keyword: e.target.value,
-                      })
-                    }
-                    placeholder="Trade, skill, name, location"
-                    list="cv-keyword-suggestions"
-                  />
+      <datalist id="cv-keyword-suggestions">
+        <option value="welder" />
+        <option value="electrician" />
+        <option value="driver" />
+        <option value="iti certified" />
+        <option value="passport valid" />
+        <option value="mumbai" />
+        <option value="pipeline" />
+      </datalist>
+    </div>
 
-                  <datalist id="cv-keyword-suggestions">
-                    <option value="welder" />
-                    <option value="electrician" />
-                    <option value="driver" />
-                    <option value="iti certified" />
-                    <option value="passport valid" />
-                    <option value="mumbai" />
-                    <option value="pipeline" />
-                  </datalist>
+    {/* Availability */}
+    <div style={{ flex: "1 1 120px", minWidth: "120px" }}>
+      <select
+        className="form-input select-active dashboard-select-arrow"
+        value={filters.availabilityStatus}
+        onChange={(e) =>
+          updateFilterAndSearch({
+            availabilityStatus: e.target.value,
+          })
+        }
+        style={{
+          width: "100%",
+          height: "50px",
+          borderRadius: "8px",
+        }}
+      >
+        <option value="">Any Availability</option>
+        <option value="Available">Available Now</option>
+        <option value="Unavailable">Not Available</option>
+      </select>
+    </div>
 
-                  <select
-                    className="form-input mr-10 select-active"
-                    value={filters.availabilityStatus}
-                    onChange={(e) =>
-                      setFilters({
-                        ...filters,
-                        availabilityStatus: e.target.value,
-                      })
-                    }
-                  >
-                    <option value="">Any availability</option>
-                    <option value="Available">Available now</option>
-                    <option value="Unavailable">Not available</option>
-                  </select>
+    {/* Search */}
+    <button
+      className="btn btn-default btn-find font-sm"
+      type="submit"
+      style={{
+        height: "50px",
+        minWidth: "120px",
+        padding: "0 24px",
+        borderRadius: "8px",
+        whiteSpace: "nowrap",
+        flexShrink: 0,
+      }}
+    >
+      Search
+    </button>
 
-                  <button
-                    className="btn btn-default btn-find font-sm"
-                    type="button"
-                    onClick={handleSearch}
-                  >
-                    Search
-                  </button>
-                </form>
-              </div>
+    {/* Reset */}
+    <button
+      type="button"
+      onClick={resetFilters}
+      className="btn"
+      style={{
+        height: "50px",
+        minWidth: "90px",
+        padding: "0 20px",
+        borderRadius: "8px",
+        // border: "1px solid #d9d9d9",
+        background: "#fff",
+        color: "#6b7280",
+        cursor: "pointer",
+        whiteSpace: "nowrap",
+        flexShrink: 0,
+      }}
+    >
+      Reset
+    </button>
+  </form>
+</div>
             </div>
           </div>
         </div>
@@ -484,7 +608,7 @@ const EmployerCvSearchPage = () => {
                         job using skills, trade, experience, and location.
                       </p>
                     </div>
-                    <div className="col-xl-5 col-lg-5 text-lg-end mt-sm-15">
+                    {/* <div className="col-xl-5 col-lg-5 text-lg-end mt-sm-15">
                       <div className="display-flex2">
                         <div className="box-border mr-10">
                           <span className="text-sortby">Credits:</span>
@@ -496,7 +620,7 @@ const EmployerCvSearchPage = () => {
                         <span className="btn btn-grey-small mr-5">B = 2cr</span>
                         <span className="btn btn-grey-small">C = 3cr</span>
                       </div>
-                    </div>
+                    </div> */}
                   </div>
 
                   {/* {activeFilterTags.length > 0 ? (
@@ -540,9 +664,8 @@ const EmployerCvSearchPage = () => {
                         key={candidate.candidateId}
                       >
                         <div
-                          className={`card-grid-2 hover-up cv-search-candidate-card ${
-                            candidate.isUnlocked ? "is-unlocked" : ""
-                          }`}
+                          className={`card-grid-2 hover-up cv-search-candidate-card ${candidate.isUnlocked ? "is-unlocked" : ""
+                            }`}
                         >
                           <div className="row">
                             <div className="col-lg-7 col-md-7 col-sm-12">
@@ -552,8 +675,8 @@ const EmployerCvSearchPage = () => {
                                     src={
                                       candidate.profilePhotoUrl ||
                                       "/assets/imgs/page/candidates/candidate-profile.png"
-                                    } 
-                                    style={{width:'85px',height:'85px'}}
+                                    }
+                                    style={{ width: '85px', height: '85px', borderRadius: "8px" }}
                                     alt={candidate.fullName}
                                     onError={(e) => {
                                       e.currentTarget.onerror = null;
@@ -571,17 +694,31 @@ const EmployerCvSearchPage = () => {
                                     {candidate.fullName}
                                   </Link>
 
-                                  <span className="location-small d-block">
-                                    {formatExperience(candidate)} -{" "}
-                                    {formatLocation(candidate)}
-                                  </span>
+                                  <div>
+                                    {formatExperience(candidate) &&
+                                      formatExperience(candidate) !== "null" &&
+                                      formatExperience(candidate) !== "undefined" && (
+                                        <span className="card-briefcase">
+                                          {formatExperience(candidate)}
+                                        </span>
+                                      )}
+
+                                    {formatLocation(candidate) &&
+                                      formatLocation(candidate) !== "null, null" &&
+                                      formatLocation(candidate) !== "null," &&
+                                      formatLocation(candidate) !== "undefined" && (
+                                        <span className="card-location">
+                                          <span>{formatLocation(candidate)}</span>
+                                        </span>
+                                      )}
+                                  </div>
 
                                   {candidate.availabilityStatus?.toLowerCase() ===
                                     "available" && (
-                                    <span className="available-now-text">
-                                      Available now
-                                    </span>
-                                  )}
+                                      <span className="available-now-text">
+                                        Available now
+                                      </span>
+                                    )}
                                 </div>
                               </div>
                             </div>
@@ -609,7 +746,7 @@ const EmployerCvSearchPage = () => {
                               </Link>
                             </h4>
 
-                            <div className="mt-5">
+                            {/* <div className="mt-5">
                               <span className="card-briefcase">
                                 {formatExperience(candidate)}
                               </span>
@@ -617,7 +754,7 @@ const EmployerCvSearchPage = () => {
                               <span className="card-time">
                                 <span>{formatLocation(candidate)}</span>
                               </span>
-                            </div>
+                            </div> */}
 
                             <div className="cv-search-skill-tags mt-10 mb-10">
                               {candidate.skills?.map((skill) => (
@@ -645,11 +782,11 @@ const EmployerCvSearchPage = () => {
                                       "Select a job for AI match"
                                     )}
                                   </span>
-
+                                  {/* 
                                   <span className="font-xs color-text-mutted ml-10">
                                     Band {candidate.band} -{" "}
                                     {candidate.unlockCredits} cr
-                                  </span>
+                                  </span> */}
                                 </div>
 
                                 <div className="col-lg-5 col-5 text-end">
@@ -692,7 +829,7 @@ const EmployerCvSearchPage = () => {
                                         href={`/employeer/candidate-profile/${candidate.candidateId}`}
                                         style={CANDIDATE_ACTION_BUTTON_STYLE}
                                       >
-                                        Unlock ({candidate.unlockCredits} cr)
+                                        Unlock ({candidate.unlockCredits} Credits)
                                       </Link>
                                     )}
                                   </div>
@@ -757,11 +894,10 @@ const EmployerCvSearchPage = () => {
                           <button
                             key={page}
                             type="button"
-                            className={`btn btn-sm ${
-                              page === filters.pageNumber
-                                ? "btn-default"
-                                : "btn-border"
-                            }`}
+                            className={`btn btn-sm ${page === filters.pageNumber
+                              ? "btn-default"
+                              : "btn-border"
+                              }`}
                             disabled={loading}
                             onClick={() => goToPage(page)}
                             style={{ minWidth: 40 }}
@@ -793,7 +929,7 @@ const EmployerCvSearchPage = () => {
                         Search Filters{" "}
                         <button
                           type="button"
-                          className="btn btn-default  mb-10"
+                          className="btn   mb-8"
                           onClick={resetFilters}
                         >
                           Reset
@@ -829,82 +965,60 @@ const EmployerCvSearchPage = () => {
                       <div className="form-group">
                         <label className="mb-5">Trade category</label>
                         <select
-                          className="form-input mr-10 select-active input-industry"
+                          className="form-control form-icons select-active"
                           value={filters.tradeCategory}
-                          onChange={(e) =>
-                            setFilters({
-                              ...filters,
-                              tradeCategory: e.target.value,
-                            })
-                          }
+                          onChange={(e) => updateFilterAndSearch({ tradeCategory: e.target.value })}
                         >
                           <option value="">Any trade</option>
-                          {filterOptions?.tradeCategories ??
-                            [].map((tradeOption) => (
-                              <option key={tradeOption} value={tradeOption}>
-                                {tradeOption}
-                              </option>
-                            ))}
+                          {(filterOptions?.tradeCategories ?? []).map((tradeOption) => (
+                            <option key={tradeOption} value={tradeOption}>
+                              {tradeOption}
+                            </option>
+                          ))}
                         </select>
                       </div>
                     </div>
 
                     <div className="filter-block mb-20">
-                      <label className="mb-5">Experience (years)</label>
-                      <div className="row">
-                        <div className="col-6 pr-5">
-                          <input
-                            className="form-control"
-                            type="number"
-                            name="minExp"
-                            min="0"
-                            max="40"
-                            value={filters.minExperience}
-                            onChange={(e) =>
-                              setFilters({
-                                ...filters,
-                                minExperience: e.target.value,
-                              })
-                            }
-                            placeholder="Min"
-                          />
-                        </div>
-                        <div className="col-6 pl-5">
-                          <input
-                            className="form-control"
-                            type="number"
-                            name="maxExp"
-                            min="0"
-                            max="40"
-                            value={filters.maxExperience}
-                            onChange={(e) =>
-                              setFilters({
-                                ...filters,
-                                maxExperience: e.target.value,
-                              })
-                            }
-                            placeholder="Max"
-                          />
-                        </div>
+                      <div className="form-group">
+                        <label className="mb-5">Experience</label>
+                        <select
+                          className="form-control"
+                          value={filters.experienceRange}
+                          onChange={(e) => {
+                            const selected = EXPERIENCE_RANGES.find((r) => r.label === e.target.value);
+                            updateFilterAndSearch({
+                              experienceRange: e.target.value,
+                              minExperience: selected ? selected.min : "",
+                              maxExperience: selected ? selected.max : "",
+                            });
+                          }}
+                        >
+                          <option value="">Any experience</option>
+                          {EXPERIENCE_RANGES.map((r) => (
+                            <option key={r.label} value={r.label}>
+                              {r.label}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     </div>
 
                     <div className="filter-block mb-20">
                       <div className="form-group">
                         <label className="mb-5">Location</label>
-                        <input
-                          className="form-control form-icons"
-                          type="text"
-                          name="location"
-                          value={filters.location}
-                          onChange={(e) =>
-                            setFilters({
-                              ...filters,
-                              location: e.target.value,
-                            })
-                          }
-                          placeholder="City or state"
-                        />
+                        <select
+  className="form-control form-icons select-active"
+  value={filters.location}
+  onChange={(e) => updateFilterAndSearch({ location: e.target.value })}
+>
+  <option value="">Any location</option>
+  {getUniqueLocations(filterOptions?.locations, cvCandidates).map((loc) => (
+    <option key={loc} value={loc}>
+      {loc}
+    </option>
+  ))}
+</select>
                       </div>
                     </div>
 
@@ -913,14 +1027,8 @@ const EmployerCvSearchPage = () => {
                         <label className="mb-5">Availability</label>
                         <select
                           className="form-control form-icons select-active"
-                          name="availability"
                           value={filters.availabilityStatus}
-                          onChange={(e) =>
-                            setFilters({
-                              ...filters,
-                              availabilityStatus: e.target.value,
-                            })
-                          }
+                          onChange={(e) => updateFilterAndSearch({ availabilityStatus: e.target.value })}
                         >
                           <option value="">Any</option>
                           <option value="Available">Available now</option>
@@ -928,27 +1036,19 @@ const EmployerCvSearchPage = () => {
                         </select>
                       </div>
                     </div>
-
                     <div className="filter-block mb-20">
                       <div className="form-group">
+                        <label className="mb-5">Certifications & Status</label>
                         <ul className="list-checkbox">
                           <li>
                             <label className="cb-container">
                               <input
                                 type="checkbox"
                                 name="iti"
-                                value="1"
                                 checked={filters.itiCertifiedOnly}
-                                onChange={(e) =>
-                                  setFilters({
-                                    ...filters,
-                                    itiCertifiedOnly: e.target.checked,
-                                  })
-                                }
+                                onChange={(e) => updateFilterAndSearch({ itiCertifiedOnly: e.target.checked })}
                               />
-                              <span className="text-small">
-                                ITI certified only
-                              </span>
+                              <span className="text-small">ITI certified only</span>
                               <span className="checkmark"></span>
                             </label>
                           </li>
@@ -957,14 +1057,8 @@ const EmployerCvSearchPage = () => {
                               <input
                                 type="checkbox"
                                 name="passport"
-                                value="1"
                                 checked={filters.passportValidOnly}
-                                onChange={(e) =>
-                                  setFilters({
-                                    ...filters,
-                                    passportValidOnly: e.target.checked,
-                                  })
-                                }
+                                onChange={(e) => updateFilterAndSearch({ passportValidOnly: e.target.checked })}
                               />
                               <span className="text-small">Valid passport</span>
                               <span className="checkmark"></span>
@@ -975,18 +1069,10 @@ const EmployerCvSearchPage = () => {
                               <input
                                 type="checkbox"
                                 name="offshore"
-                                value="1"
                                 checked={filters.offshoreOnly}
-                                onChange={(e) =>
-                                  setFilters({
-                                    ...filters,
-                                    offshoreOnly: e.target.checked,
-                                  })
-                                }
+                                onChange={(e) => updateFilterAndSearch({ offshoreOnly: e.target.checked })}
                               />
-                              <span className="text-small">
-                                Offshore experience
-                              </span>
+                              <span className="text-small">Offshore experience</span>
                               <span className="checkmark"></span>
                             </label>
                           </li>
@@ -995,18 +1081,10 @@ const EmployerCvSearchPage = () => {
                               <input
                                 type="checkbox"
                                 name="unlocked"
-                                value="1"
                                 checked={filters.unlockedProfilesOnly}
-                                onChange={(e) =>
-                                  setFilters({
-                                    ...filters,
-                                    unlockedProfilesOnly: e.target.checked,
-                                  })
-                                }
+                                onChange={(e) => updateFilterAndSearch({ unlockedProfilesOnly: e.target.checked })}
                               />
-                              <span className="text-small">
-                                Unlocked profiles only
-                              </span>
+                              <span className="text-small">Unlocked profiles only</span>
                               <span className="checkmark"></span>
                             </label>
                           </li>
@@ -1064,8 +1142,40 @@ const EmployerCvSearchPage = () => {
           </div>
         </div>
       </section>
+
+      <style jsx global>{`
+        .sidebar-filters .form-control,
+        .sidebar-filters .form-input,
+        .sidebar-filters select,
+        .sidebar-filters input,
+        .form-find .form-input,
+        .form-find select,
+        .form-find input {
+          transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .sidebar-filters .form-control:focus,
+        .sidebar-filters .form-input:focus,
+        .sidebar-filters select:focus,
+        .sidebar-filters input:focus,
+        .form-find .form-input:focus,
+        .form-find select:focus,
+        .form-find input:focus {
+          border-color: #ffa300 !important;
+          box-shadow: 0 0 0 3px rgba(255, 163, 0, 0.15) !important;
+          outline: none !important;
+        }
+
+        .sidebar-filters .cb-container input:checked ~ .checkmark {
+          background-color: #ffa300 !important;
+          border-color: #ffa300 !important;
+        }
+      `}</style>
     </main>
+
+    
   );
+  
 };
 
 export default EmployerCvSearchPage;

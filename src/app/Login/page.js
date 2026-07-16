@@ -190,6 +190,11 @@ export default function LoginPage() {
            role: response.data.userType === "Recruiter"
                 ? "employer"
                : "candidate",
+            isSubUser: response.data.isSubUser ?? false,
+            canSearchCandidates: response.data.canSearchCandidates ?? true,
+            canUnlockProfiles: response.data.canUnlockProfiles ?? true,
+            canPostJobs: response.data.canPostJobs ?? true,
+            canManageApplications: response.data.canManageApplications ?? true,
           },
 
           token: response.data.token,

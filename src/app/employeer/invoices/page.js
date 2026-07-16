@@ -5,14 +5,17 @@ import { useEffect, useState } from "react";
 
 import {
   getInvoices,
-  getInvoiceDetails,
+  downloadInvoicePdf,
 } from "@/services/recruiter/recruiterInvoiceService";
+import { useToast } from "@/components/Toast";
 
 
 
 const EmployerInvoicesPage = () => {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [downloadingId, setDownloadingId] = useState(null);
+  const showToast = useToast();
 
   const [fromDate, setFromDate] = useState("2026-01-01");
 
@@ -29,6 +32,21 @@ const EmployerInvoicesPage = () => {
       console.error(error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDownload = async (invoice) => {
+    setDownloadingId(invoice.invoiceId);
+    try {
+      const result = await downloadInvoicePdf(
+        invoice.invoiceId,
+        invoice.invoiceNumber,
+      );
+      if (!result?.success) {
+        showToast(result?.message || "Unable to download invoice.", "error");
+      }
+    } finally {
+      setDownloadingId(null);
     }
   };
 
@@ -149,15 +167,12 @@ const EmployerInvoicesPage = () => {
                               {invoice.invoiceUrl ? (
                                 <button
                                   className="btn btn-border btn-sm"
-                                  onClick={async () => {
-                                    const invoice = await getInvoiceDetails(
-                                      invoice.invoiceId,
-                                    );
-
-                                    window.open(invoice.invoiceUrl, "_blank");
-                                  }}
+                                  disabled={downloadingId === invoice.invoiceId}
+                                  onClick={() => handleDownload(invoice)}
                                 >
-                                  Download PDF
+                                  {downloadingId === invoice.invoiceId
+                                    ? "Downloading…"
+                                    : "Download PDF"}
                                 </button>
                               ) : (
                                 "-"
