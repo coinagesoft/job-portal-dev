@@ -158,18 +158,22 @@ export default function HeroSection() {
   const [location, setLocation] = React.useState("");
   const [industries, setIndustries] = React.useState("");
 
+  const [popularSearches, setPopularSearches] = React.useState([]);
+
   // Real Trade Category + City lists, sourced from the same endpoint the sidebar uses.
   const [tradeCategoryOptions, setTradeCategoryOptions] = React.useState([]);
   const [cityOptions, setCityOptions] = React.useState([]);
   const [optionsLoading, setOptionsLoading] = React.useState(true);
 
-  React.useEffect(() => {
+ React.useEffect(() => {
     const loadOptions = async () => {
       try {
         const response = await getJobFilterOptions();
         if (response.data.success) {
-          setTradeCategoryOptions(response.data.tradeCategories || []);
+          const trades = response.data.tradeCategories || [];
+          setTradeCategoryOptions(trades);
           setCityOptions(response.data.states || []);
+          setPopularSearches(trades.slice(0, 7));
         }
       } catch (error) {
         console.error("Error loading Hero Search filter options:", error);
@@ -219,6 +223,7 @@ export default function HeroSection() {
     router.push("/jobs-list");
   };
 
+  
   return (
     <div>
       <section className="section-box">
@@ -297,19 +302,32 @@ export default function HeroSection() {
                 </form>
               </div>
 
-              <div
-                className="list-tags-banner mt-20 wow animate__animated animate__fadeInUp"
-                data-wow-delay=".3s"
-              >
-                <strong>Popular Searches:</strong>
-                <Link href="/jobs-list?q=Welder" className="color-white mr-5" style={{ textDecoration: "underline" }}>Welder</Link>,{" "}
-                <Link href="/jobs-list?q=HVAC" className="color-white mr-5" style={{ textDecoration: "underline" }}>HVAC</Link>,{" "}
-                <Link href="/jobs-list?q=Driver" className="color-white mr-5" style={{ textDecoration: "underline" }}>Driver</Link>,{" "}
-                <Link href="/jobs-list?q=Electrician" className="color-white mr-5" style={{ textDecoration: "underline" }}>Electrician</Link>,{" "}
-                <Link href="/jobs-list?q=Pipe%20Fitter" className="color-white mr-5" style={{ textDecoration: "underline" }}>Pipe Fitter</Link>,{" "}
-                <Link href="/jobs-list?q=Construction" className="color-white mr-5" style={{ textDecoration: "underline" }}>Construction</Link>,{" "}
-                <Link href="/jobs-list?q=Marine" className="color-white mr-5" style={{ textDecoration: "underline" }}>Marine</Link>
-              </div>
+            {popularSearches.length > 0 && (
+                <div
+                  className="list-tags-banner mt-20 wow animate__animated animate__fadeInUp"
+                  data-wow-delay=".3s"
+                  style={{
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    maxWidth: "100%",
+                  }}
+                >
+                  <strong>Popular Searches:</strong>{" "}
+                  {popularSearches.slice(0, 4).map((term, index, arr) => (
+                    <React.Fragment key={term}>
+                      <Link
+                        href={`/jobs-list?q=${encodeURIComponent(term)}`}
+                        className="color-white mr-5"
+                        style={{ textDecoration: "underline" }}
+                      >
+                        {term}
+                      </Link>
+                      {index < arr.length - 1 && ", "}
+                    </React.Fragment>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="mt-60">
