@@ -205,8 +205,8 @@ const Combobox = ({ value, onChange, options, placeholder }) => {
               }}
               onMouseEnter={(e) => (e.currentTarget.style.background = "#FFF4E0")}
               onMouseLeave={(e) =>
-                (e.currentTarget.style.background =
-                  opt === query ? "#FFF4E0" : "transparent")
+              (e.currentTarget.style.background =
+                opt === query ? "#FFF4E0" : "transparent")
               }
             >
               {opt}
@@ -1053,8 +1053,18 @@ export default function EmployerCompanyProfilePage() {
             </label>
           </div>
 
-          <div className="box-company-profile">
-            <div className="image-compay" style={{ position: "relative" }}>
+          <div className="box-company-profile" style={{
+            position: "relative",
+            zIndex: 5,
+          }}>
+            <div
+              className="image-compay"
+              style={{
+                position: "relative",
+                zIndex: 10,
+                width: "110px",
+              }}
+            >
               <img
                 src={
                   company?.companyLogoUrl ||
@@ -1685,248 +1695,248 @@ export default function EmployerCompanyProfilePage() {
                       create one.
                     </p>
                   ) : (
-                  <div className="box-list-jobs display-list">
-                    {jobs.map((job) => (
-                      <div className="col-xl-12 col-12" key={job.id}>
-                        <div
-                          className="card-grid-2 hover-up cv-search-candidate-card"
-                          style={{
-                            marginBottom: "20px",
-                          }}
-                        >
+                    <div className="box-list-jobs display-list">
+                      {jobs.map((job) => (
+                        <div className="col-xl-12 col-12" key={job.id}>
                           <div
-                            className="card-block-info"
+                            className="card-grid-2 hover-up cv-search-candidate-card"
                             style={{
-                              padding: "26px",
+                              marginBottom: "20px",
                             }}
                           >
                             <div
+                              className="card-block-info"
                               style={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                                alignItems: "flex-start",
-                                flexWrap: "wrap",
-                                gap: "14px",
-                              }}
-                            >
-                              <div>
-                                <h4
-                                  style={{
-                                    margin: "0 0 8px",
-                                    fontSize: "22px",
-                                    fontWeight: 700,
-                                    color: "#122359",
-                                    transition: "all .25s ease",
-                                  }}
-                                >
-                                  <Link
-                                    href={`/employeer/applicants?jobId=${job.jobId}&jobTitle=${encodeURIComponent(job.title || "")}`}
-                                  >
-                                    {job.title}
-                                  </Link>
-                                </h4>
-
-                                <div
-                                  className="mt-5"
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "10px",
-                                    flexWrap: "wrap",
-                                  }}
-                                >
-                                  <span className="card-briefcase">
-                                    {job.type}
-                                  </span>
-
-                                  <span className="card-time">
-                                    {job.posted}
-                                  </span>
-
-                                  <span
-                                    className="card-location"
-                                    style={{
-                                      display: "inline-flex",
-                                      alignItems: "center",
-                                      gap: "5px",
-                                      marginLeft: 0,
-                                    }}
-                                  >
-                                    <i
-                                      className="fi fi-rr-marker"
-                                      style={{
-                                        fontSize: "12px",
-                                        color: "#66789c",
-                                        lineHeight: 1,
-                                      }}
-                                    />
-                                    {job.location}
-                                  </span>
-                                </div>
-                              </div>
-
-                              <div
-                                style={{
-                                  textAlign: "right",
-                                  minWidth: "150px",
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    fontWeight: 800,
-                                    color: "#122359",
-                                    fontSize: "20px",
-                                    marginBottom: "5px",
-                                  }}
-                                >
-                                  {job.salary}
-                                </div>
-
-                                <div
-                                  style={{
-                                    fontSize: "13px",
-                                    color: "#66789c",
-                                    fontWeight: 600,
-                                  }}
-                                >
-                                  {job.applicants} applicants
-                                </div>
-                              </div>
-                            </div>
-
-                            <div
-                              style={{
-                                marginTop: "16px",
-                                display: "flex",
-                                gap: "8px",
-                                flexWrap: "wrap",
-                              }}
-                            >
-                              {job.tags.map((tag) => (
-                                <span
-                                  key={tag}
-                                  style={{
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    padding: "7px 14px",
-                                    borderRadius: "999px",
-                                    background: "#fff7ea",
-                                    border: "1px solid rgba(255,163,0,0.18)",
-                                    color: "#ff9900",
-                                    fontSize: "12px",
-                                    fontWeight: 700,
-                                    lineHeight: 1,
-                                    transition: "all .25s ease",
-                                    boxShadow:
-                                      "0 4px 10px rgba(255,163,0,0.08)",
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform =
-                                      "translateY(-2px)";
-                                    e.currentTarget.style.background =
-                                      "#ffa300";
-                                    e.currentTarget.style.color = "#ffffff";
-                                    e.currentTarget.style.boxShadow =
-                                      "0 10px 18px rgba(255,163,0,0.22)";
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.transform =
-                                      "translateY(0px)";
-                                    e.currentTarget.style.background =
-                                      "#fff7ea";
-                                    e.currentTarget.style.color = "#ff9900";
-                                    e.currentTarget.style.boxShadow =
-                                      "0 4px 10px rgba(255,163,0,0.08)";
-                                  }}
-                                >
-                                  {tag}
-                                </span>
-                              ))}
-                            </div>
-
-                            <div
-                              className="card-2-bottom mt-20"
-                              style={{
-                                paddingTop: "20px",
-                                borderTop: "1px solid rgba(18,35,89,0.06)",
+                                padding: "26px",
                               }}
                             >
                               <div
                                 style={{
                                   display: "flex",
-                                  gap: "10px",
+                                  justifyContent: "space-between",
+                                  alignItems: "flex-start",
+                                  flexWrap: "wrap",
+                                  gap: "14px",
+                                }}
+                              >
+                                <div>
+                                  <h4
+                                    style={{
+                                      margin: "0 0 8px",
+                                      fontSize: "22px",
+                                      fontWeight: 700,
+                                      color: "#122359",
+                                      transition: "all .25s ease",
+                                    }}
+                                  >
+                                    <Link
+                                      href={`/employeer/applicants?jobId=${job.jobId}&jobTitle=${encodeURIComponent(job.title || "")}`}
+                                    >
+                                      {job.title}
+                                    </Link>
+                                  </h4>
+
+                                  <div
+                                    className="mt-5"
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "10px",
+                                      flexWrap: "wrap",
+                                    }}
+                                  >
+                                    <span className="card-briefcase">
+                                      {job.type}
+                                    </span>
+
+                                    <span className="card-time">
+                                      {job.posted}
+                                    </span>
+
+                                    <span
+                                      className="card-location"
+                                      style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: "5px",
+                                        marginLeft: 0,
+                                      }}
+                                    >
+                                      <i
+                                        className="fi fi-rr-marker"
+                                        style={{
+                                          fontSize: "12px",
+                                          color: "#66789c",
+                                          lineHeight: 1,
+                                        }}
+                                      />
+                                      {job.location}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div
+                                  style={{
+                                    textAlign: "right",
+                                    minWidth: "150px",
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      fontWeight: 800,
+                                      color: "#122359",
+                                      fontSize: "20px",
+                                      marginBottom: "5px",
+                                    }}
+                                  >
+                                    {job.salary}
+                                  </div>
+
+                                  <div
+                                    style={{
+                                      fontSize: "13px",
+                                      color: "#66789c",
+                                      fontWeight: 600,
+                                    }}
+                                  >
+                                    {job.applicants} applicants
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div
+                                style={{
+                                  marginTop: "16px",
+                                  display: "flex",
+                                  gap: "8px",
                                   flexWrap: "wrap",
                                 }}
                               >
-                                <Link
-                                  href={`/employeer/applicants?jobId=${job.jobId}&jobTitle=${encodeURIComponent(job.title || "")}`}
-                                  className="btn btn-default"
-                                  style={{
-                                    background: "#ffa300",
-                                    borderColor: "#ffa300",
-                                    color: "#ffffff",
-                                    borderRadius: "12px",
-                                    padding: "10px 18px",
-                                    fontWeight: 700,
-                                    fontSize: "13px",
-                                    transition: "all .25s ease",
-                                    boxShadow:
-                                      "0 8px 20px rgba(255,163,0,0.22)",
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    gap: "6px",
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform =
-                                      "translateY(-2px)";
-                                    e.currentTarget.style.boxShadow =
-                                      "0 14px 28px rgba(255,163,0,0.32)";
-                                    e.currentTarget.style.background =
-                                      "#ff9900";
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.transform =
-                                      "translateY(0px)";
-                                    e.currentTarget.style.boxShadow =
-                                      "0 8px 20px rgba(255,163,0,0.22)";
-                                    e.currentTarget.style.background =
-                                      "#ffa300";
-                                  }}
-                                >
-                                  <i className="fi fi-rr-users" />
-                                  View Applicants
-                                </Link>
+                                {job.tags.map((tag) => (
+                                  <span
+                                    key={tag}
+                                    style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      padding: "7px 14px",
+                                      borderRadius: "999px",
+                                      background: "#fff7ea",
+                                      border: "1px solid rgba(255,163,0,0.18)",
+                                      color: "#ff9900",
+                                      fontSize: "12px",
+                                      fontWeight: 700,
+                                      lineHeight: 1,
+                                      transition: "all .25s ease",
+                                      boxShadow:
+                                        "0 4px 10px rgba(255,163,0,0.08)",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.transform =
+                                        "translateY(-2px)";
+                                      e.currentTarget.style.background =
+                                        "#ffa300";
+                                      e.currentTarget.style.color = "#ffffff";
+                                      e.currentTarget.style.boxShadow =
+                                        "0 10px 18px rgba(255,163,0,0.22)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.transform =
+                                        "translateY(0px)";
+                                      e.currentTarget.style.background =
+                                        "#fff7ea";
+                                      e.currentTarget.style.color = "#ff9900";
+                                      e.currentTarget.style.boxShadow =
+                                        "0 4px 10px rgba(255,163,0,0.08)";
+                                    }}
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
 
-                                <Link
-                                  href={`/dashboard/post-job?jobId=${job.jobId}`}
-                                  className="btn btn-border btn-sm"
+                              <div
+                                className="card-2-bottom mt-20"
+                                style={{
+                                  paddingTop: "20px",
+                                  borderTop: "1px solid rgba(18,35,89,0.06)",
+                                }}
+                              >
+                                <div
                                   style={{
-                                    borderRadius: "12px",
-                                    fontWeight: 700,
-                                    padding: "10px 16px",
+                                    display: "flex",
+                                    gap: "10px",
+                                    flexWrap: "wrap",
                                   }}
                                 >
-                                  Edit Job
-                                </Link>
+                                  <Link
+                                    href={`/employeer/applicants?jobId=${job.jobId}&jobTitle=${encodeURIComponent(job.title || "")}`}
+                                    className="btn btn-default"
+                                    style={{
+                                      background: "#ffa300",
+                                      borderColor: "#ffa300",
+                                      color: "#ffffff",
+                                      borderRadius: "12px",
+                                      padding: "10px 18px",
+                                      fontWeight: 700,
+                                      fontSize: "13px",
+                                      transition: "all .25s ease",
+                                      boxShadow:
+                                        "0 8px 20px rgba(255,163,0,0.22)",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      gap: "6px",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.transform =
+                                        "translateY(-2px)";
+                                      e.currentTarget.style.boxShadow =
+                                        "0 14px 28px rgba(255,163,0,0.32)";
+                                      e.currentTarget.style.background =
+                                        "#ff9900";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.transform =
+                                        "translateY(0px)";
+                                      e.currentTarget.style.boxShadow =
+                                        "0 8px 20px rgba(255,163,0,0.22)";
+                                      e.currentTarget.style.background =
+                                        "#ffa300";
+                                    }}
+                                  >
+                                    <i className="fi fi-rr-users" />
+                                    View Applicants
+                                  </Link>
 
-                                <button
-                                  className="btn btn-grey-small"
-                                  style={{
-                                    borderRadius: "12px",
-                                    fontWeight: 700,
-                                    padding: "10px 16px",
-                                  }}
-                                  onClick={() => handleTogglePause(job)}
-                                >
-                                  {job.status === "Paused" ? "Resume" : "Pause"}
-                                </button>
+                                  <Link
+                                    href={`/dashboard/post-job?jobId=${job.jobId}`}
+                                    className="btn btn-border btn-sm"
+                                    style={{
+                                      borderRadius: "12px",
+                                      fontWeight: 700,
+                                      padding: "10px 16px",
+                                    }}
+                                  >
+                                    Edit Job
+                                  </Link>
+
+                                  <button
+                                    className="btn btn-grey-small"
+                                    style={{
+                                      borderRadius: "12px",
+                                      fontWeight: 700,
+                                      padding: "10px 16px",
+                                    }}
+                                    onClick={() => handleTogglePause(job)}
+                                  >
+                                    {job.status === "Paused" ? "Resume" : "Pause"}
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
                   )}
                 </div>
               )}
@@ -1957,72 +1967,72 @@ export default function EmployerCompanyProfilePage() {
                       No team members yet. Click “Invite Member” to add one.
                     </p>
                   ) : (
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "14px",
-                    }}
-                  >
-                    {people.map((p) => (
-                      <div
-                        key={p.subUserId}
-                        className="employer-cv-surface-card"
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "16px",
-                          padding: "16px 20px",
-                          borderRadius: "16px",
-                        }}
-                      >
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "14px",
+                      }}
+                    >
+                      {people.map((p) => (
                         <div
+                          key={p.subUserId}
+                          className="employer-cv-surface-card"
                           style={{
-                            width: "46px",
-                            height: "46px",
-                            borderRadius: "50%",
-                            background: "#ffa300",
-                            color: "#fff",
                             display: "flex",
                             alignItems: "center",
-                            justifyContent: "center",
-                            fontWeight: "700",
-                            fontSize: "15px",
-                            flexShrink: 0,
+                            gap: "16px",
+                            padding: "16px 20px",
+                            borderRadius: "16px",
                           }}
                         >
-                          {p.initials}
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: "600", color: "#122359" }}>
-                            {p.name}
-                          </div>
-                          <div style={{ fontSize: "12px", color: "#6b7280" }}>
-                            {p.role} · {p.email}
-                            {p.status ? ` · ${p.status}` : ""}
-                          </div>
-                        </div>
-                        <div style={{ display: "flex", gap: "8px" }}>
-                          <Link
-                            href="/employeer/sub-user"
-                            className="btn btn-border btn-sm"
+                          <div
+                            style={{
+                              width: "46px",
+                              height: "46px",
+                              borderRadius: "50%",
+                              background: "#ffa300",
+                              color: "#fff",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontWeight: "700",
+                              fontSize: "15px",
+                              flexShrink: 0,
+                            }}
                           >
-                            Edit
-                          </Link>
-                          <button
-                            className="btn btn-grey-small"
-                            onClick={() => handleRevokeAccess(p)}
-                          >
-                            {p.status === "Deactivated"
-                              ? "Reactivate"
-                              : p.status === "Pending"
-                                ? "Resend Invite"
-                                : "Revoke"}
-                          </button>
+                            {p.initials}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: "600", color: "#122359" }}>
+                              {p.name}
+                            </div>
+                            <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                              {p.role} · {p.email}
+                              {p.status ? ` · ${p.status}` : ""}
+                            </div>
+                          </div>
+                          <div style={{ display: "flex", gap: "8px" }}>
+                            <Link
+                              href="/employeer/sub-user"
+                              className="btn btn-border btn-sm"
+                            >
+                              Edit
+                            </Link>
+                            <button
+                              className="btn btn-grey-small"
+                              onClick={() => handleRevokeAccess(p)}
+                            >
+                              {p.status === "Deactivated"
+                                ? "Reactivate"
+                                : p.status === "Pending"
+                                  ? "Resend Invite"
+                                  : "Revoke"}
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
                   )}
                 </div>
               )}

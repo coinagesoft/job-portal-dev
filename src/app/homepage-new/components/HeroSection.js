@@ -220,7 +220,7 @@ export default function HeroSection() {
     setKeyword("");
     setLocation("");
     setIndustries("");
-    router.push("/jobs-list");
+    // router.push("/jobs-list");
   };
 
   
