@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import ApplyJobModal from '@/app/Homepage/components/ApplyJobModal';
+import { useRouter } from 'next/navigation';
 
 import { saveJob } from "@/services/candidate/savedJobsService";
 import { useToast } from "@/components/Toast";
@@ -116,10 +117,19 @@ const renderJobDescription = (text) => {
 const JobContent = ({ job = {}, isApplied = false, isSaved = false, onSavedToggle }) => {
   const [showModal, setShowModal] = useState(false);
   const [companyDetails, setCompanyDetails] = useState(null);
+  const router = useRouter();
   const toggleModal = () => setShowModal(!showModal);
 
   const showToast = useToast();
   const candidateId = useSelector((state) => state.auth.user?.userId);
+
+  const handleApplyClick = () => {
+    if (!candidateId) {
+      router.push(`/Login?redirectTo=/job-details?jobId=${job.jobId}`);
+      return;
+    }
+    toggleModal();
+  };
 
   const handleSaveJob = async () => {
     try {
@@ -400,7 +410,7 @@ const JobContent = ({ job = {}, isApplied = false, isSaved = false, onSavedToggl
             ) : (
               <a className="btn btn-default mr-15" href="#" onClick={(event) => {
                 event.preventDefault();
-                toggleModal();
+                handleApplyClick();
               }}>Apply now</a>
             )}
 

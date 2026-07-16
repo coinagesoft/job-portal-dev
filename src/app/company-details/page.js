@@ -1,11 +1,12 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { getCompanyDetails } from "@/services/candidate/companyService";
 import { getJobDetails } from "@/services/candidate/jobDetailsService";
 import JobCardList from "@/app/jobs-list/components/JobCardList";
 import ApplyJobModal from "@/app/Homepage/components/ApplyJobModal";
+import { getCandidateId } from "@/utils/authHelper";
 
 const humanize = (value) => {
   if (value === null || value === undefined) return value;
@@ -23,6 +24,7 @@ const iconMap = {
 
 function CompanyDetailsContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const employerId = searchParams.get("employerId");
 
   const [companyInfo, setCompanyInfo] = useState(null);
@@ -65,6 +67,11 @@ function CompanyDetailsContent() {
   }, [employerId]);
 
   const openApplyModal = async (job) => {
+    const candidateId = getCandidateId();
+    if (!candidateId) {
+      router.push(`/Login?redirectTo=/company-details?employerId=${employerId}`);
+      return;
+    }
     try {
       const response = await getJobDetails(job.jobId);
       setActiveJob(response.data);

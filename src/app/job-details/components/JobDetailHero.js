@@ -4,6 +4,7 @@ import ApplyJobModal from '@/app/Homepage/components/ApplyJobModal';
 import { useSelector } from "react-redux";
 import { saveJob } from "@/services/candidate/savedJobsService";
 import { useToast } from "@/components/Toast";
+import { useRouter } from 'next/navigation';
 
 const JobDetailHero = ({
   job = {},
@@ -13,10 +14,19 @@ const JobDetailHero = ({
   onSavedToggle,
 }) => {
   const [showModal, setShowModal] = useState(false);
+  const router = useRouter();
 
   const toggleModal = () => setShowModal(!showModal);
   const showToast = useToast();
   const candidateId = useSelector((state) => state.auth.user?.userId);
+
+  const handleApplyClick = () => {
+    if (!candidateId) {
+      router.push(`/Login?redirectTo=/job-details?jobId=${job.jobId}`);
+      return;
+    }
+    toggleModal();
+  };
 
   const getTimeAgo = (dateString) => {
     const now = new Date();
@@ -151,7 +161,7 @@ const JobDetailHero = ({
             ) : (
               <div
                 className="btn btn-apply-icon btn-apply btn-apply-big hover-up"
-                onClick={toggleModal}
+                onClick={handleApplyClick}
               >
                 Apply now
               </div>

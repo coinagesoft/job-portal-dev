@@ -7,6 +7,7 @@ import ApplyJobModal from '@/app/Homepage/components/ApplyJobModal';
 import Pagination from './Pagination';
 import { getJobDetails } from "@/services/candidate/jobDetailsService";
 import { getMyApplications } from "@/services/candidate/myApplicationsService";
+import { useRouter } from 'next/navigation';
 
 const normalizeString = (str) => {
   if (!str) return "";
@@ -14,6 +15,7 @@ const normalizeString = (str) => {
 };
 
 const JobList = ({ filters = {} }) => {
+  const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
   const [allJobs, setAllJobs] = useState([]);       // full unfiltered dataset, fetched once
   const [loading, setLoading] = useState(true);
@@ -75,6 +77,11 @@ const JobList = ({ filters = {} }) => {
   }, []);
 
   const openApplyModal = async (job) => {
+    const candidateId = getCandidateId();
+    if (!candidateId) {
+      router.push(`/Login?redirectTo=/jobs-list`);
+      return;
+    }
     try {
       const response = await getJobDetails(job.jobId);
       setActiveJob(response.data);
