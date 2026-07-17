@@ -9,3 +9,8 @@ export const getCompanyDetails = async (employerId) => {
 
   return response.data;
 };
+
+
+export const getPublicCompanies = (params = {}) => {
+  return api.get("/api/candidate/public/GetCompanies", { params });
+};

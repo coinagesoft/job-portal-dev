@@ -5,7 +5,7 @@ import BrowseByCategory from "./components/BrowseByCategory";
 import HowItWorks from "./components/HowItWorks";
 import JobsByLocation from "./components/JobsByLocation";
 import JobsByRole from "./components/JobsByRole";
-import LatestJobsNew from "./components/LatestJobsNew";
+import PopularCompanies from "./components/PopularCompanies";
 import StatsSectionNew from "./components/StatsSectionNew";
 import HeroSection from "./components/HeroSection";
 import JobsOfTheDay from "./components/JobsOfTheDay";
@@ -26,10 +26,12 @@ export default function HomepageNewPage() {
         <BrowseByCategory />
         <StatsSectionNew />
         <HowItWorks />
-        <LatestJobsNew />
+      
         <JobsByLocation />
         <JobsOfTheDay />
         <JobsByRole />
+        <PopularCompanies />
+          {/* <LatestJobsNew /> */}
         {/* <ExploreMarketplace /> */}
       </main>
     </>

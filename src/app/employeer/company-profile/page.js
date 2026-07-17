@@ -1114,19 +1114,17 @@ export default function EmployerCompanyProfilePage() {
                 />
               </label>
             </div>
-            <div className="row mt-10">
+            <div className="row mt-2">
               <div className="col-lg-8 col-md-12">
                 <h5 className="f-18">
                   {company.displayName}
-                  <span className="card-location font-regular ml-20">
-                    {company.location}
-                  </span>
+                  
                 </h5>
-                <p className="mt-5 font-md color-text-paragraph-2 mb-15">
+                <p className=" font-md color-text-paragraph-2 mb-15">
                   {company.tagline}
                 </p>
                 {/* Stats row */}
-                <div style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
+                {/* <div style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
                   {[
                     ["Active Jobs", company.activeJobs],
                     ["Total Hired", company.totalHired],
@@ -1147,8 +1145,11 @@ export default function EmployerCompanyProfilePage() {
                       </div>
                     </div>
                   ))}
-                </div>
+                </div> */}
               </div>
+              <span className="card-location font-regular ml-20">
+                    {company.location}
+                  </span>
             </div>
           </div>
 

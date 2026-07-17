@@ -203,7 +203,7 @@ export default function JobsOfTheDay() {
                       {recentTabJobs.length === 0 ? (
                         <div className="text-center w-100 py-5">
                           <p className="font-lg color-text-paragraph-2">
-                            No jobs posted today.
+                            No jobs posted under this category today.
                           </p>
                         </div>
                       ) : (
