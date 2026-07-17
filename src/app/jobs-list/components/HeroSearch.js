@@ -3,6 +3,8 @@
 import React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getJobFilterOptions } from "@/services/candidate/jobFilterService";
+import { getAllJobs } from "@/services/candidate/allJobsService";
+import { resolveCountry } from "@/utils/locationResolver";
 
 const HeroSearch = ({ jobs = [] }) => {
   const router = useRouter();
@@ -20,10 +22,36 @@ const HeroSearch = ({ jobs = [] }) => {
   React.useEffect(() => {
     const loadOptions = async () => {
       try {
-        const response = await getJobFilterOptions();
-        if (response.data.success) {
-          setTradeCategoryOptions(response.data.tradeCategories || []);
-          setCityOptions(response.data.states || []);
+        const [filterRes, jobsRes] = await Promise.all([
+          getJobFilterOptions(),
+          getAllJobs()
+        ]);
+
+        if (filterRes.data.success) {
+          setTradeCategoryOptions(filterRes.data.tradeCategories || []);
+          
+          const states = filterRes.data.states || [];
+          const allJobsList = jobsRes.data || [];
+
+          // Extract unique active locations directly from jobs
+          const statesFromJobs = allJobsList
+            .map((job) => job.jobLocation || job.city || job.state)
+            .filter(Boolean);
+
+          const combinedStates = Array.from(
+            new Set([...states, ...statesFromJobs])
+          );
+
+          // Collapse every state/city to its country/colloquial name, then dedupe
+          const countries = Array.from(
+            new Set(
+              combinedStates
+                .map((loc) => resolveCountry(loc) || loc)
+                .filter(Boolean)
+            )
+          ).sort();
+
+          setCityOptions(countries);
         }
       } catch (error) {
         console.error("Error loading Hero Search filter options:", error);

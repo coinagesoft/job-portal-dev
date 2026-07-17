@@ -4,6 +4,8 @@ import React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { getJobFilterOptions } from "@/services/candidate/jobFilterService";
+import { getAllJobs } from "@/services/candidate/allJobsService";
+import { resolveCountry } from "@/utils/locationResolver";
 
 // Custom dropdown that always renders BELOW the field (never flips upward,
 // unlike native <select> which the browser can position based on viewport space).
@@ -160,20 +162,53 @@ export default function HeroSection() {
 
   const [popularSearches, setPopularSearches] = React.useState([]);
 
-  // Real Trade Category + City lists, sourced from the same endpoint the sidebar uses.
+  // Real Trade Category list, sourced from the same endpoint the sidebar uses.
+  // Location options are derived from that same state/city list, but
+  // collapsed down to country only (e.g. every Indian state -> "India").
   const [tradeCategoryOptions, setTradeCategoryOptions] = React.useState([]);
-  const [cityOptions, setCityOptions] = React.useState([]);
+  const [countryOptions, setCountryOptions] = React.useState([]);
   const [optionsLoading, setOptionsLoading] = React.useState(true);
 
  React.useEffect(() => {
     const loadOptions = async () => {
       try {
-        const response = await getJobFilterOptions();
-        if (response.data.success) {
-          const trades = response.data.tradeCategories || [];
+        const [filterRes, jobsRes] = await Promise.all([
+          getJobFilterOptions(),
+          getAllJobs()
+        ]);
+
+        if (filterRes.data.success) {
+          const trades = filterRes.data.tradeCategories || [];
+          const states = filterRes.data.states || [];
+          const jobs = jobsRes.data || [];
+
+          // Extract unique active locations directly from jobs in case
+          // any specific locations (like "Arabian Sea") are missing from states
+          const statesFromJobs = jobs
+            .map((job) => job.jobLocation || job.city || job.state)
+            .filter(Boolean);
+
+          const combinedStates = Array.from(
+            new Set([...states, ...statesFromJobs])
+          );
+
           setTradeCategoryOptions(trades);
-          setCityOptions(response.data.states || []);
           setPopularSearches(trades.slice(0, 7));
+
+          // Collapse every state/city returned by the API down to its
+          // country, then dedupe — so the Location dropdown mostly shows
+          // countries. If a value can't be resolved to a real country
+          // (e.g. "Arabian Sea", an offshore/regional listing that isn't
+          // an actual state/city/country), keep the raw value instead of
+          // silently dropping it from the dropdown.
+          const countries = Array.from(
+            new Set(
+              combinedStates
+                .map((loc) => resolveCountry(loc) || loc)
+                .filter(Boolean)
+            )
+          ).sort();
+          setCountryOptions(countries);
         }
       } catch (error) {
         console.error("Error loading Hero Search filter options:", error);
@@ -263,11 +298,11 @@ export default function HeroSection() {
                     />
                   </div>
 
-                  {/* LOCATION */}
+                  {/* LOCATION (country only) */}
                   <div style={{ minWidth: "200px", flex: "0 0 200px", marginRight: "10px", position: "relative" }}>
                     <CustomDropdown
                       placeholder="Location"
-                      options={cityOptions}
+                      options={countryOptions}
                       value={location}
                       onChange={setLocation}
                       loading={optionsLoading}

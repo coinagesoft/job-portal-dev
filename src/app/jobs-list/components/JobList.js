@@ -8,6 +8,7 @@ import Pagination from './Pagination';
 import { getJobDetails } from "@/services/candidate/jobDetailsService";
 import { getMyApplications } from "@/services/candidate/myApplicationsService";
 import { useRouter } from 'next/navigation';
+import { resolveCountry } from '@/utils/locationResolver';
 
 const normalizeString = (str) => {
   if (!str) return "";
@@ -106,6 +107,13 @@ const JobList = ({ filters = {} }) => {
   const matchesLocationSingle = (job) => {
     const loc = (filters.locationSingle || "").trim();
     if (!loc) return true;
+    
+    // Check if the resolved country matches the search location
+    const resolvedCountry = resolveCountry(job.jobLocation || job.city || job.state);
+    if (resolvedCountry && normalizeString(resolvedCountry) === normalizeString(loc)) {
+      return true;
+    }
+
     const jobLoc = normalizeString(job.jobLocation || job.city);
     return jobLoc.includes(normalizeString(loc));
   };
