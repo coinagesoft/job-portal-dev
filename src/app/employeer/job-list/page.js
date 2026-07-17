@@ -874,7 +874,7 @@ const EmployerJobListPage = () => {
                             position: "relative",
                           }}
                         >
-                         <Link
+                          <Link
                             href={`/employeer/applicants?jobId=${job.jobId}&jobTitle=${encodeURIComponent(job.jobTitle || "")}`}
                             onClick={(e) => e.stopPropagation()}
                             title="View applicants"
@@ -908,40 +908,43 @@ const EmployerJobListPage = () => {
                           >
                             {job.appliedCount} Applicant{job.appliedCount !== 1 ? "s" : ""}
                           </Link>
-                          {/* <button
-                            type="button"
-                            onClick={() => handlePreview(job.jobId)}
-                            title="Preview"
-                            style={{
-                              width: 44,
-                              height: 44,
-                              borderRadius: 14,
-                              border: "1px solid #E5E7EB",
-                              background: "#fff",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              cursor: "pointer",
-                              boxShadow: "0 4px 12px rgba(18,35,89,.08)",
-                              transition: ".25s",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.borderColor = "#FFA300";
-                              e.currentTarget.style.background = "#FFF8EC";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.borderColor = "#E5E7EB";
-                              e.currentTarget.style.background = "#fff";
-                            }}
-                          >
-                            <i
-                              className="fi-rr-eye"
-                              style={{
-                                fontSize: 18,
-                                color: "#122359",
-                              }}
-                            />
-                          </button> */}
+                     <button
+  type="button"
+  onClick={(e) => {
+    e.stopPropagation();
+    handlePreview(job.jobId);
+  }}
+  title="Preview"
+  style={{
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    border: "1px solid #E5E7EB",
+    background: "#fff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    boxShadow: "0 4px 12px rgba(18,35,89,.08)",
+    transition: ".25s",
+  }}
+  onMouseEnter={(e) => {
+    e.currentTarget.style.borderColor = "#FFA300";
+    e.currentTarget.style.background = "#FFF8EC";
+  }}
+  onMouseLeave={(e) => {
+    e.currentTarget.style.borderColor = "#E5E7EB";
+    e.currentTarget.style.background = "#fff";
+  }}
+>
+  <i
+    className="fi-rr-eye"
+    style={{
+      fontSize: 18,
+      color: "#122359",
+    }}
+  />
+</button>
                           <button
                             ref={(el) => (menuButtonRefs.current[job.jobId] = el)}
                             onClick={(e) => {

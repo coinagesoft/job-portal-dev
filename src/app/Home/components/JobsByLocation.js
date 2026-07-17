@@ -5,39 +5,7 @@ import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation } from "swiper/modules";
 import { getAllJobs } from "@/services/candidate/allJobsService";
-
-// Extract the state (and a display country) from a "City, State" style location string.
-const getStateCountry = (location = "") => {
-  if (!location) return null;
-  const parts = location.split(",").map((s) => s.trim()).filter(Boolean);
-  if (parts.length < 1) return null;
-
-  // Prefer the second segment as the state; if only one segment exists, use it as-is.
-  const state = parts.length > 1 ? parts[1] : parts[0];
-  if (!state) return null;
-
-  const indianStates = [
-    "maharashtra", "tamil nadu", "delhi", "karnataka", "west bengal", "uttar pradesh",
-    "telangana", "assam", "haryana", "punjab", "gujarat", "bihar", "rajasthan", "kerala",
-    "tamilnadu", "chandigarh"
-  ];
-  const lowerState = state.toLowerCase();
-
-  let country = "Global";
-  if (indianStates.includes(lowerState)) {
-    country = "India";
-  } else if (["dubai", "abu dhabi", "sharjah"].includes(lowerState)) {
-    country = "UAE";
-  } else if (["saudi arabia", "saudi", "ksa", "riyadh", "jeddah", "dammam"].includes(lowerState)) {
-    country = "Saudi Arabia";
-  } else if (lowerState === "doha" || lowerState === "qatar") {
-    country = "Qatar";
-  } else if (lowerState === "singapore") {
-    country = "Singapore";
-  }
-
-  return { state, country };
-};
+import { resolveCountry } from "@/utils/locationResolver";
 
 export default function JobsByLocation() {
   const [locations, setLocations] = useState([]);
@@ -49,32 +17,31 @@ export default function JobsByLocation() {
         const response = await getAllJobs();
         const allJobs = response.data || [];
 
-        const locationMap = {};
+        // Group by resolved country — every state/city rolls up into one
+        // card per country (e.g. all Indian jobs across every state become
+        // a single "India" card), now resolved dynamically for any country.
+        const countryMap = {};
         allJobs.forEach((job) => {
-          const parsed = getStateCountry(job.jobLocation);
-          if (!parsed) return;
-          const { state, country } = parsed;
-          const key = `${state}-${country}`;
+          const country = resolveCountry(job.jobLocation);
+          if (!country) return;
 
-          if (!locationMap[key]) {
-            locationMap[key] = {
-              state,
+          if (!countryMap[country]) {
+            countryMap[country] = {
               country,
               vacancies: 0,
               companies: new Set(),
             };
           }
 
-          locationMap[key].vacancies += 1;
+          countryMap[country].vacancies += 1;
           if (job.companyName) {
-            locationMap[key].companies.add(job.companyName);
+            countryMap[country].companies.add(job.companyName);
           }
         });
 
-        const activeLocations = Object.values(locationMap).map((loc, idx) => {
+        const activeLocations = Object.values(countryMap).map((loc, idx) => {
           const imgIndex = (idx % 6) + 1;
           return {
-            state: loc.state,
             country: loc.country,
             vacancies: loc.vacancies,
             companies: loc.companies.size,
@@ -175,7 +142,7 @@ export default function JobsByLocation() {
         <div className="text-start">
           <h2 className="section-title mb-10 wow animate__animated animate__fadeInUp">Jobs by Location</h2>
           <p className="font-lg color-text-paragraph-2 wow animate__animated animate__fadeInUp">
-            Pick a state and go directly to matching openings
+            Pick a country and go directly to matching openings
           </p>
         </div>
         <div className="box-swiper mt-50 position-relative">
@@ -209,10 +176,10 @@ export default function JobsByLocation() {
                 style={{ paddingBottom: "10px", paddingTop: "5px" }}
               >
                 {locations.map((loc) => (
-                  <SwiperSlide key={`${loc.state}-${loc.country}`} className="hover-up">
+                  <SwiperSlide key={loc.country} className="hover-up">
                     <div className="card-image-top hover-up">
                       <Link
-                        href={`/jobs-list?location=${encodeURIComponent(loc.state)}`}
+                        href={`/jobs-list?location=${encodeURIComponent(loc.country)}`}
                         className="d-block w-100 h-100"
                         style={{ textDecoration: "none", color: "inherit" }}
                       >
@@ -220,10 +187,7 @@ export default function JobsByLocation() {
                           {loc.badge ? <span className="lbl-hot">{loc.badge}</span> : null}
                         </div>
                         <div className="informations">
-                          <h5>
-                            {loc.state}
-                            <span className="font-sm color-text-paragraph-2 ml-5">, {loc.country}</span>
-                          </h5>
+                          <h5>{loc.country}</h5>
                           <div className="row">
                             <div className="col-lg-6 col-6">
                               <span className="text-14 color-text-paragraph-2">

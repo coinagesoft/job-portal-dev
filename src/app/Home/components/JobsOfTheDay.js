@@ -19,6 +19,15 @@ const iconMap = {
   "Other": "fa-solid fa-briefcase"
 };
 
+const ALL_TAB_LABEL = "All";
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const isPostedToday = (job, now) => {
+  if (!job.postedOn) return false;
+  const diffMs = now - new Date(job.postedOn);
+  return diffMs >= 0 && diffMs <= DAY_MS;
+};
+
 const getTimeAgo = (dateStr) => {
   if (!dateStr) return "";
   const posted = new Date(dateStr);
@@ -47,6 +56,7 @@ export default function JobsOfTheDay() {
       try {
         const response = await getAllJobs();
         const allJobs = response.data || [];
+        const now = new Date();
 
         // Group all jobs by industryType to collect all categories
         const grouped = {};
@@ -58,25 +68,46 @@ export default function JobsOfTheDay() {
           grouped[industry].push(job);
         });
 
-        const activeTabs = Object.keys(grouped).map((industryName) => ({
-          label: industryName,
-          icon: iconMap[industryName] || "fa-solid fa-briefcase",
-        }));
+        // Count only jobs actually posted within the last 24 hours,
+        // per category, so the tab badge reflects "posted today" counts.
+        const todaysCountByCategory = {};
+        let todaysTotalCount = 0;
+        allJobs.forEach((job) => {
+          if (!isPostedToday(job, now)) return;
+          const industry = job.industryType || "Other";
+          todaysCountByCategory[industry] = (todaysCountByCategory[industry] || 0) + 1;
+          todaysTotalCount += 1;
+        });
 
-        // Sort tabs alphabetically
+        // Only show a category tab if it actually has a job posted today.
+        // If none qualify, only the "All" tab remains.
+        const categoryTabs = Object.keys(grouped)
+          .filter((industryName) => (todaysCountByCategory[industryName] || 0) > 0)
+          .map((industryName) => ({
+            label: industryName,
+            icon: iconMap[industryName] || "fa-solid fa-briefcase",
+            count: todaysCountByCategory[industryName],
+          }));
+
         // Sort alphabetically but always keep "Other" at the end
-activeTabs.sort((a, b) => {
-  const aIsOther = a.label.trim().toLowerCase() === "other";
-  const bIsOther = b.label.trim().toLowerCase() === "other";
+        categoryTabs.sort((a, b) => {
+          const aIsOther = a.label.trim().toLowerCase() === "other";
+          const bIsOther = b.label.trim().toLowerCase() === "other";
 
-  if (aIsOther && !bIsOther) return 1;
-  if (!aIsOther && bIsOther) return -1;
+          if (aIsOther && !bIsOther) return 1;
+          if (!aIsOther && bIsOther) return -1;
 
-  return a.label.localeCompare(b.label);
-});
+          return a.label.localeCompare(b.label);
+        });
+
+        // "All" tab goes first and aggregates every job regardless of category
+        const activeTabs = [
+          { label: ALL_TAB_LABEL, icon: "fa-solid fa-layer-group", count: todaysTotalCount },
+          ...categoryTabs,
+        ];
 
         setTabs(activeTabs);
-        setJobsData(grouped);
+        setJobsData({ ...grouped, [ALL_TAB_LABEL]: allJobs });
       } catch (error) {
         console.error("Error loading Jobs of the Day:", error);
       } finally {
@@ -125,7 +156,24 @@ activeTabs.sort((a, b) => {
                       aria-selected={activeTab === index}
                     >
                       {/* <i className={tab.icon}></i> */}
-                      <span>{tab.label}</span>
+                      <span>
+                        {tab.label}
+                        <span
+                          className="tab-count"
+                          style={{
+                            display: "inline-block",
+                            marginLeft: 8,
+                            padding: "1px 8px",
+                            borderRadius: 10,
+                            fontSize: 12,
+                            fontWeight: 600,
+                            background: "rgba(18,35,89,0.08)",
+                            color: "#122359",
+                          }}
+                        >
+                          {tab.count}
+                        </span>
+                      </span>
                     </a>
                   </li>
                 ))}
@@ -140,11 +188,7 @@ activeTabs.sort((a, b) => {
               {tabs.map((tab, index) => {
                 const tabJobs = jobsData[tab.label] || [];
                 const now = new Date();
-                const recentTabJobs = tabJobs.filter((job) => {
-                  if (!job.postedOn) return false;
-                  const diffMs = now - new Date(job.postedOn);
-                  return diffMs >= 0 && diffMs <= 24 * 60 * 60 * 1000;
-                });
+                const recentTabJobs = tabJobs.filter((job) => isPostedToday(job, now));
 
                 return (
                   <div
@@ -159,7 +203,7 @@ activeTabs.sort((a, b) => {
                       {recentTabJobs.length === 0 ? (
                         <div className="text-center w-100 py-5">
                           <p className="font-lg color-text-paragraph-2">
-                            No jobs posted under this category today.
+                            No jobs posted today.
                           </p>
                         </div>
                       ) : (
@@ -276,6 +320,17 @@ activeTabs.sort((a, b) => {
         /* =========================================
            TABS
         ========================================= */
+.tab-count{
+    display:inline-block;
+    margin-left:8px;
+    padding:1px 8px;
+    border-radius:10px;
+    font-size:12px;
+    font-weight:600;
+    background:rgba(18,35,89,0.08);
+    color:#122359;
+}
+
 .company-footer{
     display:flex;
     gap:16px;

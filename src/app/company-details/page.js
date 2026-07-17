@@ -290,44 +290,44 @@ function CompanyDetailsContent() {
                   companyInfo.instagramUrl ||
                   companyInfo.facebookUrl ||
                   companyInfo.websiteUrl) && (
-                  <div
-                    className="company-social-links"
-                    style={{
-                      display: "flex",
-                      gap: "10px",
-                      marginTop: "16px",
-                    }}
-                  >
-                    {companyInfo.websiteUrl && (
-                      <SocialIconLink
-                        href={cleanUrl(companyInfo.websiteUrl)}
-                        label="Website"
-                        iconClass="fa-solid fa-globe"
-                      />
-                    )}
-                    {companyInfo.linkedInUrl && (
-                      <SocialIconLink
-                        href={cleanUrl(companyInfo.linkedInUrl)}
-                        label="LinkedIn"
-                        iconClass="fa-brands fa-linkedin-in"
-                      />
-                    )}
-                    {companyInfo.instagramUrl && (
-                      <SocialIconLink
-                        href={cleanUrl(companyInfo.instagramUrl)}
-                        label="Instagram"
-                        iconClass="fa-brands fa-instagram"
-                      />
-                    )}
-                    {companyInfo.facebookUrl && (
-                      <SocialIconLink
-                        href={cleanUrl(companyInfo.facebookUrl)}
-                        label="Facebook"
-                        iconClass="fa-brands fa-facebook-f"
-                      />
-                    )}
-                  </div>
-                )}
+                    <div
+                      className="company-social-links"
+                      style={{
+                        display: "flex",
+                        gap: "10px",
+                        marginTop: "16px",
+                      }}
+                    >
+                      {companyInfo.websiteUrl && (
+                        <SocialIconLink
+                          href={cleanUrl(companyInfo.websiteUrl)}
+                          label="Website"
+                          iconClass="fa-solid fa-globe"
+                        />
+                      )}
+                      {companyInfo.linkedInUrl && (
+                        <SocialIconLink
+                          href={cleanUrl(companyInfo.linkedInUrl)}
+                          label="LinkedIn"
+                          iconClass="fa-brands fa-linkedin-in"
+                        />
+                      )}
+                      {companyInfo.instagramUrl && (
+                        <SocialIconLink
+                          href={cleanUrl(companyInfo.instagramUrl)}
+                          label="Instagram"
+                          iconClass="fa-brands fa-instagram"
+                        />
+                      )}
+                      {companyInfo.facebookUrl && (
+                        <SocialIconLink
+                          href={cleanUrl(companyInfo.facebookUrl)}
+                          label="Facebook"
+                          iconClass="fa-brands fa-facebook-f"
+                        />
+                      )}
+                    </div>
+                  )}
               </div>
               <div className="col-lg-4 col-md-12 text-lg-end">
                 <Link
@@ -385,33 +385,61 @@ function CompanyDetailsContent() {
                       )}
 
                       <div className="row mt-3">
-                        {companyInfo.companyHighlights.map((item, index) => (
-                          <div className="col-lg-6 mb-3" key={index}>
-                            <div
+                        {(companyInfo.companyHighlights || []).length > 0 && (
+                          <div style={{ marginTop: "26px" }}>
+                            <h6
                               style={{
-                                padding: "14px 16px",
-                                borderRadius: "12px",
-                                border: "1px solid rgba(18,35,89,.08)",
-                                background: "#fff",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "10px"
+                                fontSize: "14px",
+                                fontWeight: 700,
+                                color: "#122359",
+                                marginBottom: "14px",
                               }}
                             >
-                              <img
-                                src={iconMap.industry}
-                                alt=""
-                                style={{
-                                  width: "16px",
-                                  height: "16px",
-                                  flexShrink: 0,
-                                }}
-                              />
+                              Highlights
+                            </h6>
 
-                              <span>{item}</span>
+                            <div
+                              style={{
+                                display: "grid",
+                                gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                                columnGap: "32px",
+                                rowGap: "12px",
+                              }}
+                            >
+                              {companyInfo.companyHighlights.map((item, index) => (
+                                <div
+                                  key={index}
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "flex-start",
+                                    gap: "10px",
+                                    paddingBottom: "12px",
+                                    borderBottom: "1px solid rgba(18,35,89,0.06)",
+                                  }}
+                                >
+                                  <i
+                                    className="fi-rr-check"
+                                    style={{
+                                      color: "#ff9900",
+                                      fontSize: "12px",
+                                      marginTop: "3px",
+                                      flexShrink: 0,
+                                    }}
+                                  />
+                                  <span
+                                    style={{
+                                      fontSize: "14px",
+                                      color: "#4b5a7a",
+                                      lineHeight: 1.5,
+                                    }}
+                                  >
+                                    {item}
+                                  </span>
+                                </div>
+                              ))}
                             </div>
                           </div>
-                        ))}
+                        )}
                       </div>
                       {(companyInfo.businessType ||
                         companyInfo.totalEmployees ||
@@ -653,12 +681,26 @@ function CompanyDetailsContent() {
                           <span className="text-description" style={{ whiteSpace: "nowrap" }}>
                             Company Website
                           </span>
-                          <strong className="small-heading">
+                          <strong
+                            className="small-heading"
+                            style={{
+                              display: "block",
+                              overflowWrap: "anywhere",
+                              wordBreak: "break-word",
+                            }}
+                          >
                             <a
                               href={cleanUrl(companyInfo.websiteUrl)}
                               target="_blank"
                               rel="noopener noreferrer"
-                              style={{ color: "inherit", textDecoration: "none", fontWeight: "inherit" }}
+                              style={{
+                                color: "inherit",
+                                textDecoration: "none",
+                                fontWeight: "inherit",
+                                display: "block",
+                                overflowWrap: "anywhere",
+                                wordBreak: "break-word",
+                              }}
                             >
                               {companyInfo.websiteUrl}
                             </a>
@@ -681,13 +723,23 @@ function CompanyDetailsContent() {
                           <div className="sidebar-text-info">
                             <span className="text-description">Phone</span>
 
-                            <strong className="small-heading">
+                            <strong
+                              className="small-heading"
+                              style={{
+                                display: "block",
+                                overflowWrap: "anywhere",
+                                wordBreak: "break-word",
+                              }}
+                            >
                               <a
                                 href={`tel:${companyInfo.phone}`}
                                 style={{
                                   color: "inherit",
                                   textDecoration: "none",
                                   fontWeight: "inherit",
+                                  display: "block",
+                                  overflowWrap: "anywhere",
+                                  wordBreak: "break-word",
                                 }}
                               >
                                 {companyInfo.phone}
@@ -706,13 +758,23 @@ function CompanyDetailsContent() {
                           <div className="sidebar-text-info">
                             <span className="text-description">Email</span>
 
-                            <strong className="small-heading">
+                            <strong
+                              className="small-heading"
+                              style={{
+                                display: "block",
+                                overflowWrap: "anywhere",
+                                wordBreak: "break-word",
+                              }}
+                            >
                               <a
                                 href={`mailto:${companyInfo.email}`}
                                 style={{
                                   color: "inherit",
                                   textDecoration: "none",
                                   fontWeight: "inherit",
+                                  display: "block",
+                                  overflowWrap: "anywhere",
+                                  wordBreak: "break-word",
                                 }}
                               >
                                 {companyInfo.email}
@@ -726,7 +788,7 @@ function CompanyDetailsContent() {
                 )}
               </div>
 
-             
+
             </div>
           </div>
         </div>

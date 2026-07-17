@@ -14,4 +14,4 @@ export const withdrawApplication = (applicationId) => {
   return api.delete(
     `/api/candidate/jobs/applications/${applicationId}?candidateId=${candidateId}`,
   );
-};
+};  

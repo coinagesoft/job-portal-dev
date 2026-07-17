@@ -9,9 +9,14 @@ import "./BrowseByCategory.css";
 
 const iconMap = {
   "Construction": "fa-helmet-safety",
+  "Construction & Infrastructure": "fa-city",
   "Manufacturing": "fa-industry",
   "Warehouse & Logistics": "fa-truck-fast",
   "Warehouse & Material Handling": "fa-truck-fast",
+  "Logistics & Transportation": "fa-truck-fast",
+  "Shipping": "fa-ship",
+  "IT & Technology": "fa-laptop-code",
+  "Information Technology": "fa-laptop-code",
   "Automotive Manufacturing": "fa-car",
   "Mechanical & Building Maintenance": "fa-gears",
   "Mechanical": "fa-gears",
@@ -28,8 +33,40 @@ const iconMap = {
   "Logistics": "fa-truck-fast",
   "Safety Officer": "fa-shield-halved",
   "Welder": "fa-fire-flame-curved",
-  "Other": "fa-briefcase"
+  "Other": "fa-briefcase",
 };
+
+// Normalized (lowercase, trimmed) lookup so small casing/spacing differences
+// coming from the API ("IT & technology ", " Shipping") still resolve.
+const normalizedIconMap = Object.keys(iconMap).reduce((acc, key) => {
+  acc[key.trim().toLowerCase()] = iconMap[key];
+  return acc;
+}, {});
+
+// Unmatched categories cycle through these instead of all collapsing to the
+// same briefcase icon, so new/unmapped industryTypes still look distinct.
+const fallbackIcons = [
+  "fa-briefcase",
+  "fa-layer-group",
+  "fa-people-group",
+  "fa-clipboard-list",
+  "fa-building",
+  "fa-user-tie",
+];
+
+function hashString(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
+  }
+  return hash;
+}
+
+function getCategoryIcon(name) {
+  const key = (name || "").trim().toLowerCase();
+  if (normalizedIconMap[key]) return normalizedIconMap[key];
+  return fallbackIcons[hashString(key) % fallbackIcons.length];
+}
 
 export default function BrowseByCategory() {
   const [categories, setCategories] = React.useState([]);
@@ -40,7 +77,7 @@ export default function BrowseByCategory() {
       try {
         const response = await getAllJobs();
         const jobs = response.data || [];
-        
+
         // Group and count jobs by industryType
         const counts = {};
         jobs.forEach((job) => {
@@ -49,28 +86,24 @@ export default function BrowseByCategory() {
         });
 
         // Convert counts object to array of objects
-const categoryList = Object.keys(counts).map((industry) => ({
-  name: industry,
-  count: counts[industry]
-}));
+        const categoryList = Object.keys(counts).map((industry) => ({
+          name: industry,
+          count: counts[industry],
+        }));
 
-const otherCategory = categoryList.find(
-  (cat) => cat.name.trim().toLowerCase() === "other"
-);
+        const otherCategory = categoryList.find(
+          (cat) => cat.name.trim().toLowerCase() === "other"
+        );
 
-const filteredCategories = categoryList.filter(
-  (cat) => cat.name.trim().toLowerCase() !== "other"
-);
+        const filteredCategories = categoryList.filter(
+          (cat) => cat.name.trim().toLowerCase() !== "other"
+        );
 
-if (otherCategory) {
-  filteredCategories.push(otherCategory);
-}
+        if (otherCategory) {
+          filteredCategories.push(otherCategory);
+        }
 
-console.log(filteredCategories.map((item) => item.name));
-
-setCategories(filteredCategories);
-
-
+        setCategories(filteredCategories);
       } catch (error) {
         console.error("Error loading categories:", error);
       } finally {
@@ -101,10 +134,9 @@ setCategories(filteredCategories);
     <section className="section-box mt-80">
       <div className="section-box wow animate__animated animate__fadeIn">
         <div className="container">
-
           <div className="text-center">
             <h2 className="section-title mb-10 wow animate__animated animate__fadeInUp">
-              Browse by category
+              Browse by Industry
             </h2>
 
             <p className="font-lg color-text-paragraph-2 wow animate__animated animate__fadeInUp">
@@ -146,7 +178,7 @@ setCategories(filteredCategories);
                         <Link key={cat.name} href={`/jobs-list?industry=${encodeURIComponent(cat.name)}`}>
                           <div className="item-logo">
                             <div className="image-left">
-                              <i className={`fa-solid ${iconMap[cat.name] || "fa-briefcase"}`}></i>
+                              <i className={`fa-solid ${getCategoryIcon(cat.name)}`}></i>
                             </div>
 
                             <div className="text-info-right">

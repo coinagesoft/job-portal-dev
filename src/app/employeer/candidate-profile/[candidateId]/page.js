@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import candidateProfileService from "@/services/recruiter/Candidateprofileservice.js";
 import { useToast } from "@/components/Toast";
+// import { getProfileCompletion } from "@/services/candidate/profileCompletionService";
 
 /* Format a DateOnly ("2015-06-01") or ISO date to "Jun 2015" */
 const fmtMonthYear = (d) => {
@@ -55,6 +56,7 @@ const EmployerCandidateProfilePage = () => {
   const [unlocking, setUnlocking] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [actionMessage, setActionMessage] = useState(null);
+  const [completionPct, setCompletionPct] = useState(null);
 
   // ---------------------------------------------
   // Load profile + wallet (+ contact if unlocked)
@@ -63,13 +65,19 @@ const EmployerCandidateProfilePage = () => {
     setLoading(true);
     setError(null);
     try {
-      const [profileRes, walletRes] = await Promise.all([
+      const [profileRes, walletRes, completionRes] = await Promise.all([
         candidateProfileService.getFullProfile(candidateId),
         candidateProfileService.getWallet().catch(() => null),
+        // getProfileCompletion(candidateId).catch((error) => {
+        //   console.error(`[Candidate Profile Detail] Failed to fetch profile completion for candidateId ${candidateId}:`, error.response?.status, error.message);
+        //   return null;
+        // }),
       ]);
 
       setProfile(profileRes);
       setWallet(walletRes);
+      console.log(`[Candidate Profile Detail] Resolved overallPct:`, completionRes?.data?.data?.overallPct);
+      setCompletionPct(completionRes?.data?.data?.overallPct ?? null);
 
       const unlocked =
         profileRes?.unlockStatus?.isUnlocked ?? profileRes?.overview?.isUnlocked;
@@ -304,6 +312,26 @@ const EmployerCandidateProfilePage = () => {
                       {overview.availabilityStatus}
                     </span>
                   )}
+                  {completionPct != null && (
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        padding: "6px 14px",
+                        borderRadius: "999px",
+                        background: "#fff7ea",
+                        border: "1px solid rgba(255,163,0,0.25)",
+                        color: "#ff9900",
+                        fontSize: "12px",
+                        fontWeight: 700,
+                      }}
+                    >
+                      <i className="fi-rr-stats" />
+                      {completionPct}% Profile Complete
+                    </span>
+                  )}
+
                   {overview.aiMatchScore != null && (
                     <span
                       style={{
@@ -1119,97 +1147,97 @@ const EmployerCandidateProfilePage = () => {
                   {workHistories.length === 0 && (
                     <p className="color-text-paragraph-2">No work history listed.</p>
                   )}
-                 {workHistories.map((item) => (
-  <div className="col-xl-12 col-12" key={`work-card-${item.workId}`}>
-    <div className="card-grid-2 hover-up">
-      <div className="row">
-        <div className="col-lg-6 col-md-6 col-sm-12">
-          <div className="card-grid-2-image-left" style={{ display: "flex", alignItems: "center", gap: 14 }}>
-  <div
-    style={{
-      width: 54,
-      height: 54,
-      borderRadius: 16,
-      flexShrink: 0,
-      background: "linear-gradient(135deg,#122359,#1e3a8a)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      color: "#ffa300",
-      fontSize: 22,
-    }}
-  >
-    <i className="fi-rr-briefcase" />
-  </div>
+                  {workHistories.map((item) => (
+                    <div className="col-xl-12 col-12" key={`work-card-${item.workId}`}>
+                      <div className="card-grid-2 hover-up">
+                        <div className="row">
+                          <div className="col-lg-6 col-md-6 col-sm-12">
+                            <div className="card-grid-2-image-left" style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                              <div
+                                style={{
+                                  width: 54,
+                                  height: 54,
+                                  borderRadius: 16,
+                                  flexShrink: 0,
+                                  background: "linear-gradient(135deg,#122359,#1e3a8a)",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  color: "#ffa300",
+                                  fontSize: 22,
+                                }}
+                              >
+                                <i className="fi-rr-briefcase" />
+                              </div>
 
-  <div className="right-info">
-    <h5
-      style={{
-        margin: 0,
-        color: "#122359",
-        fontWeight: 700,
-        fontSize: 18,
-      }}
-    >
-      {item.companyName}
-    </h5>
+                              <div className="right-info">
+                                <h5
+                                  style={{
+                                    margin: 0,
+                                    color: "#122359",
+                                    fontWeight: 700,
+                                    fontSize: 18,
+                                  }}
+                                >
+                                  {item.companyName}
+                                </h5>
 
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 6,
-        marginTop: 6,
-        color: "#66789c",
-        fontSize: 13,
-      }}
-    >
-      <i className="fi-rr-marker" style={{ color: "#FFA300" }} />
-      {item.workLocation || "Location not specified"}
-    </div>
-  </div>
-</div>
-        </div>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                    marginTop: 6,
+                                    color: "#66789c",
+                                    fontSize: 13,
+                                  }}
+                                >
+                                  <i className="fi-rr-marker" style={{ color: "#FFA300" }} />
+                                  {item.workLocation || "Location not specified"}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
 
-        <div className="col-lg-6 text-start text-md-end pr-60 col-md-6 col-sm-12">
-          <div className="pl-15 mb-15 mt-30">
-            <span className="btn btn-grey-small mr-5">
-              {item.isCurrent ? "Current" : "Past"}
-            </span>
-            <span className="btn btn-grey-small mr-5">
-              {fmtMonthYear(item.startDate)} -{" "}
-              {item.isCurrent ? "Present" : fmtMonthYear(item.endDate)}
-            </span>
-          </div>
-        </div>
-      </div>
+                          <div className="col-lg-6 text-start text-md-end pr-60 col-md-6 col-sm-12">
+                            <div className="pl-15 mb-15 mt-30">
+                              <span className="btn btn-grey-small mr-5">
+                                {item.isCurrent ? "Current" : "Past"}
+                              </span>
+                              <span className="btn btn-grey-small mr-5">
+                                {fmtMonthYear(item.startDate)} -{" "}
+                                {item.isCurrent ? "Present" : fmtMonthYear(item.endDate)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
 
-      <div className="card-block-info">
-        <h4>
-          <a href="#">{item.jobTitle}</a>
-        </h4>
+                        <div className="card-block-info">
+                          <h4>
+                            <a href="#">{item.jobTitle}</a>
+                          </h4>
 
-        {item.jobDescription && (
-          <p className="font-sm color-text-paragraph mt-10">
-            {item.jobDescription}
-          </p>
-        )}
+                          {item.jobDescription && (
+                            <p className="font-sm color-text-paragraph mt-10">
+                              {item.jobDescription}
+                            </p>
+                          )}
 
-        <div className="card-2-bottom mt-20">
-          <div className="row">
-            <div className="col-lg-7 col-7">
-              <span className="card-text-price">
-                Status:
-                <span className="text-success"> {item.isOffshore ? "Offshore" : "Onshore"}</span>
-              </span>
-            </div>
-            <div className="col-lg-5 col-5 text-end"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-))}
+                          <div className="card-2-bottom mt-20">
+                            <div className="row">
+                              <div className="col-lg-7 col-7">
+                                <span className="card-text-price">
+                                  Status:
+                                  <span className="text-success"> {item.isOffshore ? "Offshore" : "Onshore"}</span>
+                                </span>
+                              </div>
+                              <div className="col-lg-5 col-5 text-end"></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -1254,7 +1282,7 @@ const EmployerCandidateProfilePage = () => {
                         </strong>
                       </div>
                     </li>
-                    <li>
+                    {/* <li>
                       <div className="sidebar-icon-item">
                         <i className="fi-rr-dollar"></i>
                       </div>
@@ -1264,7 +1292,7 @@ const EmployerCandidateProfilePage = () => {
                           {wallet ? wallet.availableCredits : "—"} credits
                         </strong>
                       </div>
-                    </li>
+                    </li> */}
                   </ul>
                 </div>
 
