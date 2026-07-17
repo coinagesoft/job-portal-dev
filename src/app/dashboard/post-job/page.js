@@ -151,6 +151,7 @@ const suggestedLanguages = [
   "Local Language", 
 ]; 
 const industryOptions = [ 
+  "Recruitement Agency",
   "Construction & Infrastructure", 
   "Marine & Shipping", 
   "Oil & Gas", 
