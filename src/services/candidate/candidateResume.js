@@ -50,6 +50,41 @@ export const generateCv = async () => {
 };
 
 /**
+ * GET /api/candidate/profile/documents/generated-cv/preview
+ * Fetches the same watermarked PDF as the download endpoint, but as a blob
+ * for in-page preview only — nothing is saved to disk here. Returns a local
+ * object URL the caller must revoke (URL.revokeObjectURL) once done.
+ */
+export const previewGeneratedCv = async () => {
+  const candidateId = getCandidateId();
+
+  try {
+    const response = await api.get(
+      `/api/candidate/profile/documents/generated-cv/preview?candidateId=${candidateId}`,
+      { responseType: "blob" },
+    );
+
+    const contentType = response.headers?.["content-type"] || "";
+    if (contentType.includes("application/json")) {
+      const text = await response.data.text();
+      const parsed = JSON.parse(text);
+      return { success: false, message: parsed.message || "Unable to preview Portal CV." };
+    }
+
+    const blob = new Blob([response.data], { type: "application/pdf" });
+    const url = window.URL.createObjectURL(blob);
+    return { success: true, url };
+  } catch (error) {
+    let message = "Unable to preview Portal CV.";
+    try {
+      const text = await error?.response?.data?.text?.();
+      if (text) message = JSON.parse(text).message || message;
+    } catch (_) {}
+    return { success: false, message };
+  }
+};
+
+/**
  * GET /api/candidate/profile/documents/generated-cv/download
  * Downloads the candidate's own Portal CV, watermarked the same way an
  * employer's download is (their own name instead of a company name).

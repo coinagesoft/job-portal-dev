@@ -9,6 +9,8 @@ import {
 } from "@/services/recruiter/recruiterCvSearchService";
 import candidateProfileService from "@/services/recruiter/Candidateprofileservice";
 import { getRecruiterJobs } from "@/services/recruiter/recruiterJobListService";
+// import { getProfileCompletion } from "@/services/candidate/profileCompletionService"; 
+// ↑ adjust the path to wherever you place/export the function above
 
 const getQueryValue = (value, fallback = "") => {
   if (Array.isArray(value)) return value[0] ?? fallback;
@@ -398,6 +400,35 @@ const EmployerCvSearchPage = () => {
     setFilters(next);
     loadCandidates(next);
   };
+  const [completionMap, setCompletionMap] = useState({});
+
+// Fetch profile-completion % for every candidate currently on screen.
+useEffect(() => {
+  if (!cvCandidates.length) return;
+  let cancelled = false;
+
+  (async () => {
+    const entries = await Promise.all(
+      cvCandidates.map(async (c) => {
+        try {
+          // const res = await getProfileCompletion(c.candidateId);
+          console.log(`[CV Search] Profile completion for candidate ${c.fullName} (${c.candidateId}):`, res?.data);
+          return [c.candidateId, res?.data?.data?.overallPct ?? null];
+        } catch (error) {
+          console.error(`[CV Search] Failed to fetch profile completion for ${c.fullName} (${c.candidateId}):`, error.response?.status, error.message);
+          return [c.candidateId, null];
+        }
+      })
+    );
+    if (!cancelled) {
+      setCompletionMap((prev) => ({ ...prev, ...Object.fromEntries(entries) }));
+    }
+  })();
+
+  return () => {
+    cancelled = true;
+  };
+}, [cvCandidates]);
 
   // const handleReset = () => {
   //   const defaultFilters = {
@@ -713,12 +744,33 @@ const EmployerCvSearchPage = () => {
                                       )}
                                   </div>
 
-                                  {candidate.availabilityStatus?.toLowerCase() ===
-                                    "available" && (
-                                      <span className="available-now-text">
+                                  <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap", marginTop: "6px" }}>
+                                    {candidate.availabilityStatus?.toLowerCase() === "available" && (
+                                      <span className="available-now-text" style={{ margin: 0 }}>
                                         Available now
                                       </span>
                                     )}
+
+                                    {completionMap[candidate.candidateId] != null && (
+                                      <span
+                                        style={{
+                                          display: "inline-flex",
+                                          alignItems: "center",
+                                          gap: "6px",
+                                          padding: "3px 10px",
+                                          borderRadius: "999px",
+                                          background: "#fff7ea",
+                                          border: "1px solid rgba(255,163,0,0.25)",
+                                          color: "#ff9900",
+                                          fontSize: "11px",
+                                          fontWeight: 700,
+                                        }}
+                                      >
+                                        <i className="fi-rr-stats" style={{ fontSize: "11px" }} />
+                                        {completionMap[candidate.candidateId]}% Profile Complete
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </div>
