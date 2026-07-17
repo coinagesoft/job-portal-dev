@@ -158,7 +158,8 @@ export default function HeroSection() {
 
   const [keyword, setKeyword] = React.useState("");
   const [location, setLocation] = React.useState("");
-  const [industries, setIndustries] = React.useState("");
+  // const [industries, setIndustries] = React.useState("");
+  const [tradeCategory, setTradeCategory] = React.useState("");
 
   const [popularSearches, setPopularSearches] = React.useState([]);
 
@@ -169,7 +170,7 @@ export default function HeroSection() {
   const [countryOptions, setCountryOptions] = React.useState([]);
   const [optionsLoading, setOptionsLoading] = React.useState(true);
 
- React.useEffect(() => {
+  React.useEffect(() => {
     const loadOptions = async () => {
       try {
         const [filterRes, jobsRes] = await Promise.all([
@@ -224,7 +225,7 @@ export default function HeroSection() {
     if (searchParams) {
       setKeyword(searchParams.get("q") || "");
       setLocation(searchParams.get("location") || "");
-      setIndustries(searchParams.get("industry") || "");
+      setTradeCategory(searchParams.get("tradeCategory") || "");
     }
   }, [searchParams]);
 
@@ -241,24 +242,26 @@ export default function HeroSection() {
       params.set("location", location);
     }
 
-    if (industries) {
-      params.set("industry", industries);
+    if (tradeCategory) {
+      params.set("tradeCategory", tradeCategory);
     }
 
     const query = params.toString();
 
-    router.push(query ? `/jobs-list?${query}` : "/jobs-list");
+    router.push(
+      query ? `/jobs-list?${query}` : "/jobs-list"
+    );
   };
 
   const handleReset = (event) => {
     event.preventDefault();
+
     setKeyword("");
     setLocation("");
-    setIndustries("");
-    // router.push("/jobs-list");
+    setTradeCategory("");
   };
 
-  
+
   return (
     <div>
       <section className="section-box">
@@ -292,8 +295,8 @@ export default function HeroSection() {
                     <CustomDropdown
                       placeholder="Trade Category"
                       options={tradeCategoryOptions}
-                      value={industries}
-                      onChange={setIndustries}
+                      value={tradeCategory}
+                      onChange={setTradeCategory}
                       loading={optionsLoading}
                     />
                   </div>
@@ -337,7 +340,7 @@ export default function HeroSection() {
                 </form>
               </div>
 
-            {popularSearches.length > 0 && (
+              {popularSearches.length > 0 && (
                 <div
                   className="list-tags-banner mt-20 wow animate__animated animate__fadeInUp"
                   data-wow-delay=".3s"
