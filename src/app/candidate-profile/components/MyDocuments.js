@@ -421,7 +421,7 @@ export default function MyDocuments() {
                     <i className="fi-rr-check"></i> Generated {formatRelativeTime(generatedCv.updatedAt)}
                   </span>
                 ) : (
-                  <span style={badge(false)}>Not generated yet — complete your profile to create it</span>
+                  <span style={badge(false)}>Not generated yet — add some profile details first</span>
                 )}
               </div>
             </div>
