@@ -13,7 +13,13 @@ const humanize = (value) => {
   if (typeof value !== "string") return value;
   return value.replace(/_/g, " ");
 };
+const formatCompanySize = (value) => {
+  if (!value) return null;
 
+  return String(value)
+    .replace(/^Size_/, "")
+    .replace(/_/g, "-");
+};
 const cleanUrl = (url) => {
   if (!url || url === "#") return "#";
   let cleaned = url.trim();
@@ -122,7 +128,7 @@ function CompanyDetailsContent() {
 
     try {
       const data = await getCompanyDetails(employerId);
-
+      console.log("COMPANY SIZE FROM API:", data);
       if (!data || data.success === false) {
         setCompanyInfo(null);
         setNotFound(true);
@@ -183,7 +189,7 @@ function CompanyDetailsContent() {
       </main>
     );
   }
-
+  console.log("COMPANY SIZE FROM API:", companyInfo.companySize);
   const jobs = companyInfo.jobs || [];
 
   const hasAboutContent = Boolean(
@@ -197,6 +203,7 @@ function CompanyDetailsContent() {
     companyInfo.hasPoeLicence ||
     companyInfo.hasRpslLicence
   );
+
   const overviewGroups = [
     {
       title: "Company Overview",
@@ -221,24 +228,82 @@ function CompanyDetailsContent() {
         {
           icon: "industry",
           label: "Industry",
-          value: companyInfo.industry,
+          value: humanize(companyInfo.industry),
         },
         {
           icon: "jobType",
           label: "Open Jobs",
-          value: companyInfo.openJobsCount,
+          value:
+            companyInfo.openJobsCount != null
+              ? companyInfo.openJobsCount
+              : null,
         },
         {
           icon: "location",
           label: "Location",
-          value: `${companyInfo.city}, ${companyInfo.state}`,
+          value:
+            companyInfo.city || companyInfo.state
+              ? [companyInfo.city, companyInfo.state]
+                .filter(Boolean)
+                .join(", ")
+              : null,
+        },
+      ],
+    },
+
+    {
+      title: "Trust & Verification",
+      items: [
+        {
+          icon: "updated",
+          label: "Company Status",
+          value: companyInfo.isVerified
+            ? "Verified"
+            : "Not Verified",
+        },
+        {
+          icon: "updated",
+          label: "GST Registration",
+          value: companyInfo.gstRegistered
+            ? "Verified"
+            : "Not Verified",
+        },
+        {
+          icon: "updated",
+          label: "POE Licence",
+          value: companyInfo.hasPoeLicence
+            ? "Verified"
+            : "Not Available",
+        },
+        {
+          icon: "updated",
+          label: "RPSL Licence",
+          value: companyInfo.hasRpslLicence
+            ? "Verified"
+            : "Not Available",
+        },
+        {
+          icon: "jobLevel",
+          label: "Reviews",
+          value:
+            companyInfo.reviewCount != null
+              ? `${companyInfo.reviewCount} Reviews`
+              : null,
         },
       ],
     },
   ].map((group) => ({
     ...group,
-    items: group.items.filter((item) => item.value),
+    items: group.items.filter(
+      (item) =>
+        item.value !== null &&
+        item.value !== undefined &&
+        item.value !== ""
+    ),
   }));
+
+
+
   return (
     <main className="main">
       <section className="section-box-2">
@@ -290,50 +355,54 @@ function CompanyDetailsContent() {
                   companyInfo.instagramUrl ||
                   companyInfo.facebookUrl ||
                   companyInfo.websiteUrl) && (
-                  <div
-                    className="company-social-links"
-                    style={{
-                      display: "flex",
-                      gap: "10px",
-                      marginTop: "16px",
-                    }}
-                  >
-                    {companyInfo.websiteUrl && (
-                      <SocialIconLink
-                        href={cleanUrl(companyInfo.websiteUrl)}
-                        label="Website"
-                        iconClass="fa-solid fa-globe"
-                      />
-                    )}
-                    {companyInfo.linkedInUrl && (
-                      <SocialIconLink
-                        href={cleanUrl(companyInfo.linkedInUrl)}
-                        label="LinkedIn"
-                        iconClass="fa-brands fa-linkedin-in"
-                      />
-                    )}
-                    {companyInfo.instagramUrl && (
-                      <SocialIconLink
-                        href={cleanUrl(companyInfo.instagramUrl)}
-                        label="Instagram"
-                        iconClass="fa-brands fa-instagram"
-                      />
-                    )}
-                    {companyInfo.facebookUrl && (
-                      <SocialIconLink
-                        href={cleanUrl(companyInfo.facebookUrl)}
-                        label="Facebook"
-                        iconClass="fa-brands fa-facebook-f"
-                      />
-                    )}
-                  </div>
-                )}
+                    <div
+                      className="company-social-links"
+                      style={{
+                        display: "flex",
+                        gap: "10px",
+                        marginTop: "16px",
+                      }}
+                    >
+                      {companyInfo.websiteUrl && (
+                        <SocialIconLink
+                          href={cleanUrl(companyInfo.websiteUrl)}
+                          label="Website"
+                          iconClass="fa-solid fa-globe"
+                        />
+                      )}
+                      {companyInfo.linkedInUrl && (
+                        <SocialIconLink
+                          href={cleanUrl(companyInfo.linkedInUrl)}
+                          label="LinkedIn"
+                          iconClass="fa-brands fa-linkedin-in"
+                        />
+                      )}
+                      {companyInfo.instagramUrl && (
+                        <SocialIconLink
+                          href={cleanUrl(companyInfo.instagramUrl)}
+                          label="Instagram"
+                          iconClass="fa-brands fa-instagram"
+                        />
+                      )}
+                      {companyInfo.facebookUrl && (
+                        <SocialIconLink
+                          href={cleanUrl(companyInfo.facebookUrl)}
+                          label="Facebook"
+                          iconClass="fa-brands fa-facebook-f"
+                        />
+                      )}
+                    </div>
+                  )}
               </div>
               <div className="col-lg-4 col-md-12 text-lg-end">
                 <Link
                   className="btn btn-apply btn-apply-big"
-                  href="/jobs-list"
-                  style={{ display: "inline-flex", alignItems: "center", gap: "10px" }}
+                  href={`/jobs-list?employerId=${encodeURIComponent(employerId)}`}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "10px",
+                  }}
                 >
                   <i className="fa-solid fa-briefcase"></i>
                   View Open Jobs
@@ -384,35 +453,73 @@ function CompanyDetailsContent() {
                         </>
                       )}
 
-                      <div className="row mt-3">
-                        {companyInfo.companyHighlights.map((item, index) => (
-                          <div className="col-lg-6 mb-3" key={index}>
-                            <div
+                      {(companyInfo.companyHighlights || []).length > 0 && (
+                        <div style={{ marginTop: "30px" }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                              marginBottom: "14px",
+                            }}
+                          >
+                            <span
                               style={{
-                                padding: "14px 16px",
-                                borderRadius: "12px",
-                                border: "1px solid rgba(18,35,89,.08)",
-                                background: "#fff",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "10px"
+                                width: "4px",
+                                height: "16px",
+                                background: "#ffa300",
+                                borderRadius: "3px",
+                              }}
+                            />
+
+                            <span
+                              style={{
+                                fontSize: "13px",
+                                fontWeight: 700,
+                                color: "#122359",
+                                textTransform: "uppercase",
+                                letterSpacing: ".5px",
                               }}
                             >
-                              <img
-                                src={iconMap.industry}
-                                alt=""
-                                style={{
-                                  width: "16px",
-                                  height: "16px",
-                                  flexShrink: 0,
-                                }}
-                              />
-
-                              <span>{item}</span>
-                            </div>
+                              Why Candidates Choose Us
+                            </span>
                           </div>
-                        ))}
-                      </div>
+
+                          <div className="row">
+                            {(companyInfo.companyHighlights || []).map(
+                              (item, index) => (
+                                <div
+                                  className="col-lg-6 mb-3"
+                                  key={index}
+                                >
+                                  <div
+                                    style={{
+                                      padding: "14px 16px",
+                                      borderRadius: "12px",
+                                      border:
+                                        "1px solid rgba(18,35,89,.08)",
+                                      background: "#fff",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "10px",
+                                    }}
+                                  >
+                                    <i
+                                      className="fa-solid fa-circle-check"
+                                      style={{
+                                        color: "#ff9900",
+                                        fontSize: "16px",
+                                      }}
+                                    />
+
+                                    <span>{item}</span>
+                                  </div>
+                                </div>
+                              )
+                            )}
+                          </div>
+                        </div>
+                      )}
                       {(companyInfo.businessType ||
                         companyInfo.totalEmployees ||
                         companyInfo.reviewCount != null ||
@@ -624,7 +731,7 @@ function CompanyDetailsContent() {
                         <div className="sidebar-text-info">
                           <span className="text-description">Company Size</span>
                           <strong className="small-heading">
-                            {humanize(companyInfo.companySize)}
+                            {formatCompanySize(companyInfo.companySize)}
                           </strong>
                         </div>
                       </li>
@@ -726,7 +833,7 @@ function CompanyDetailsContent() {
                 )}
               </div>
 
-             
+
             </div>
           </div>
         </div>

@@ -9,7 +9,13 @@ import { setUser } from "@/store/authSlice";
 import { sendOtp, verifyOtp } from "@/services/recruiter/authService";
 import { useGoogleLogin } from "@react-oauth/google";
 import { googleLogin } from "@/services/recruiter/authService";
+import {
+  CountrySelector,
+  defaultCountries,
+  parseCountry,
+} from "react-international-phone";
 
+import "react-international-phone/style.css";
 // ── 6-box OTP input: auto-advances focus, supports backspace and paste ──
 function OtpDigitsInput({ value, onChange, length = 6, disabled, autoFocus }) {
   const inputsRef = useRef([]);
@@ -77,27 +83,175 @@ function OtpDigitsInput({ value, onChange, length = 6, disabled, autoFocus }) {
 
 // Proper email format check (not just "has @ and .").
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const PHONE_COUNTRIES = defaultCountries.map((c) => {
+  const parsed = parseCountry(c);
 
+  const masks =
+    typeof parsed.format === "string"
+      ? [parsed.format]
+      : parsed.format && typeof parsed.format === "object"
+        ? Object.values(parsed.format)
+        : [];
+
+  const dotCounts = masks
+    .map((m) =>
+      typeof m === "string"
+        ? (m.match(/\./g) || []).length
+        : 0
+    )
+    .filter((n) => n > 0);
+
+  return {
+    iso2: parsed.iso2,
+    name: parsed.name,
+    code: `+${parsed.dialCode}`,
+    dialCode: parsed.dialCode,
+    minLen: dotCounts.length
+      ? Math.min(...dotCounts)
+      : 6,
+    maxLen: dotCounts.length
+      ? Math.max(...dotCounts)
+      : 14,
+  };
+});
+
+const getCountryMeta = (code) =>
+  PHONE_COUNTRIES.find((c) => c.code === code) ||
+  PHONE_COUNTRIES.find((c) => c.code === "+91") ||
+  PHONE_COUNTRIES[0];
 // Resend cooldown timer for the Send/Resend OTP button.
 function useResendCooldown(seconds = 30) {
   const [remaining, setRemaining] = useState(0);
+
   useEffect(() => {
     if (remaining <= 0) return;
-    const t = setInterval(() => setRemaining((r) => Math.max(0, r - 1)), 1000);
-    return () => clearInterval(t);
-  }, [remaining]);
-  return [remaining, () => setRemaining(seconds)];
-}
 
+    const timer = setInterval(() => {
+      setRemaining((prev) => Math.max(0, prev - 1));
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [remaining]);
+
+  const start = () => {
+    setRemaining(seconds);
+  };
+
+  const reset = () => {
+    setRemaining(0);
+  };
+
+  return [remaining, start, reset];
+}
+function CountryCodeSelect({
+  value,
+  onChange,
+  disabled,
+}) {
+  const meta = getCountryMeta(value);
+
+  const handleCodeChange = (e) => {
+    let raw = e.target.value;
+
+    // Keep only + and digits
+    raw = raw.replace(/[^\d+]/g, "");
+
+    // Always ensure it starts with +
+    if (!raw.startsWith("+")) {
+      raw = `+${raw.replace(/\+/g, "")}`;
+    }
+
+    // Maximum country calling code is short,
+    // but allow enough room while typing.
+    raw = raw.slice(0, 5);
+
+    onChange(raw);
+  };
+
+  const handleCodeBlur = () => {
+    // Check whether entered code exactly matches
+    // one of the available country calling codes.
+    const matchedCountry = PHONE_COUNTRIES.find(
+      (country) => country.code === value
+    );
+
+    // If invalid, return to the currently resolved/default country.
+    if (!matchedCountry) {
+      onChange(meta.code);
+    }
+  };
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        height: 54,
+        borderRadius: 10,
+        border:
+          "1px solid var(--color-border-secondary)",
+        background: disabled
+          ? "#f7f7f7"
+          : "#ffffff",
+        flexShrink: 0,
+        overflow: "visible",
+      }}
+    >
+      {/* FLAG + DROPDOWN */}
+      <CountrySelector
+        selectedCountry={meta.iso2}
+        onSelect={(country) => {
+          onChange(`+${country.dialCode}`);
+        }}
+        disabled={disabled}
+        buttonStyle={{
+          border: "none",
+          borderRight:
+            "1px solid var(--color-border-secondary)",
+          background: "transparent",
+          height: 52,
+          padding: "0 6px",
+        }}
+      />
+
+      {/* EDITABLE COUNTRY CODE */}
+      <input
+        type="text"
+        inputMode="tel"
+        value={value}
+        onChange={handleCodeChange}
+        onBlur={handleCodeBlur}
+        disabled={disabled}
+        aria-label="Country code"
+        style={{
+          width: 62,
+          height: 52,
+          border: "none",
+          outline: "none",
+          background: "transparent",
+          fontSize: 14,
+          fontWeight: 600,
+          textAlign: "center",
+          padding: "0 4px",
+          color: "var(--color-text-primary)",
+        }}
+      />
+    </div>
+  );
+}
 export default function LoginPage() {
   const showToast = useToast();
-
+  const [countryCode, setCountryCode] = useState("+91");
   const [input, setInput] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [resendCooldown, startResendCooldown] = useResendCooldown(30);
+  const [
+  resendCooldown,
+  startResendCooldown,
+  resetResendCooldown,
+] = useResendCooldown(30);
 
   const dispatch = useDispatch();
   const router = useRouter();
@@ -113,41 +267,117 @@ export default function LoginPage() {
 
   const { isLoading: authLoading, user } = useSelector((state) => state.auth);
 
-  // Detect input type
-  const isEmail = input.includes("@");
-  const digitsOnly = input.replace(/\D/g, "");
-  const isMobile = /^\d{10}$/.test(digitsOnly);
-  const normalizedMobile = digitsOnly;
+  // ─────────────────────────────────────────────
+  // Detect and validate Email / Mobile
+  // ─────────────────────────────────────────────
 
-  // Icon shown inside the field: purely about what's typed so far (numbers
-  // vs letters), independent of full validation — so it updates the instant
-  // the user starts typing a digit or a letter.
+  const trimmedInput = input.trim();
+
+  // Email detection
+  const isEmail = trimmedInput.includes("@");
+
+  // Detect whether current input looks like a phone number
   const looksLikePhone =
-    input.trim().length > 0 && /^[\d\s+()-]+$/.test(input.trim());
+    trimmedInput.length > 0 &&
+    /^[\d\s+()-]+$/.test(trimmedInput);
 
+  // Remove formatting characters from mobile
+  const digitsOnly = input.replace(/\D/g, "");
+
+  // Get validation rules for selected country
+  const selectedCountryMeta = getCountryMeta(countryCode);
+
+  // Validate mobile according to selected country
+  const isMobileValid =
+    looksLikePhone &&
+    digitsOnly.length >= selectedCountryMeta.minLen &&
+    digitsOnly.length <= selectedCountryMeta.maxLen;
+
+  // Keep isMobile for your API logic
+  const isMobile = looksLikePhone && isMobileValid;
+
+  // Validate email
+  const isEmailValid =
+    isEmail && EMAIL_REGEX.test(trimmedInput);
+
+  // Final input validation
   const isInputValid = isEmail
-    ? EMAIL_REGEX.test(input.trim())
-    : isMobile;
+    ? isEmailValid
+    : isMobileValid;
 
-  // Keep only digits and cap at 10 while the user is clearly typing a
-  // phone number (no letters/@ typed). Email entry is left untouched.
+  // Dynamic validation message
+  const getValidationMessage = () => {
+    if (!input.trim()) {
+      return "We'll send OTP to verify";
+    }
+
+    // EMAIL
+    if (isEmail) {
+      return isEmailValid
+        ? "We'll send OTP to verify your email"
+        : "Enter a complete, valid email address";
+    }
+
+    // MOBILE
+    if (looksLikePhone) {
+      if (!isMobileValid) {
+        const requiredLength =
+          selectedCountryMeta.minLen === selectedCountryMeta.maxLen
+            ? `${selectedCountryMeta.minLen}`
+            : `${selectedCountryMeta.minLen}-${selectedCountryMeta.maxLen}`;
+
+        return `Enter a valid ${requiredLength}-digit mobile number for ${selectedCountryMeta.code}`;
+      }
+
+      return `We'll send OTP to verify ${selectedCountryMeta.code} ${digitsOnly}`;
+    }
+
+    return "Enter a valid email address or mobile number";
+  };
+
+  // Handle email or mobile input
   const handleInputChange = (e) => {
     const raw = e.target.value;
+
+    // If letters or @ are present, treat as email input.
+    // Otherwise keep only mobile digits.
     const hasLetterOrAt = /[a-zA-Z@]/.test(raw);
-    const next = hasLetterOrAt ? raw : raw.replace(/\D/g, "").slice(0, 10);
-    setInput(next);
+
+    if (hasLetterOrAt) {
+      setInput(raw);
+    } else {
+      const digits = raw.replace(/\D/g, "");
+
+      // Limit according to selected country's maximum length
+      setInput(
+        digits.slice(0, selectedCountryMeta.maxLen)
+      );
+    }
+
     setError("");
   };
+
+// ─────────────────────────────────────────────
+// CHANGE EMAIL / MOBILE
+// ─────────────────────────────────────────────
+const handleChangeIdentifier = () => {
+  setOtpSent(false);
+  setOtp("");
+  setError("");
+  resetResendCooldown();
+};
 
   // Send OTP
   const handleSendOtp = async () => {
     try {
+
+      
       setLoading(true);
       setError("");
 
       const response = await sendOtp({
         identifier: isMobile ? digitsOnly : input,
-        countryCode: isMobile ? "+91" : null,
+        countryCode: isMobile ? countryCode : null,
         userType: "Both",
       });
 
@@ -182,7 +412,7 @@ export default function LoginPage() {
     try {
       const response = await verifyOtp({
         identifier: isMobile ? digitsOnly : input,
-        countryCode: isMobile ? "+91" : null,
+        countryCode: isMobile ? countryCode : null,
         otpCode: otp,
         userType: "Both",
       });
@@ -200,9 +430,9 @@ export default function LoginPage() {
             employerId: response.data.employerId,
             userName: response.data.userName,
 
-           role: response.data.userType === "Recruiter"
-                ? "employer"
-               : "candidate",
+            role: response.data.userType === "Recruiter"
+              ? "employer"
+              : "candidate",
             isSubUser: response.data.isSubUser ?? false,
             canSearchCandidates: response.data.canSearchCandidates ?? true,
             canUnlockProfiles: response.data.canUnlockProfiles ?? true,
@@ -213,7 +443,7 @@ export default function LoginPage() {
           token: response.data.token,
         })
       );
-      console.log("response"+response)
+      console.log("response" + response)
       localStorage.setItem(
         "token",
         response.data.token
@@ -300,14 +530,14 @@ export default function LoginPage() {
         }
 
         const params = new URLSearchParams(window.location.search);
-      const redirectUrl = params.get("redirectTo");
-      if (redirectUrl) {
-        router.push(redirectUrl);
-      } else if (response.data.userType === "Recruiter") {
-        router.push("/employeer/cv-search");
-      } else {
-        router.push("/candidate-profile");
-      }
+        const redirectUrl = params.get("redirectTo");
+        if (redirectUrl) {
+          router.push(redirectUrl);
+        } else if (response.data.userType === "Recruiter") {
+          router.push("/employeer/cv-search");
+        } else {
+          router.push("/candidate-profile");
+        }
 
       } catch (err) {
         setError(
@@ -320,27 +550,27 @@ export default function LoginPage() {
 
   });
 
-const handleLinkedInLogin = () => {
-  const clientId =
-    process.env.NEXT_PUBLIC_LINKEDIN_CLIENT_ID;
+  const handleLinkedInLogin = () => {
+    const clientId =
+      process.env.NEXT_PUBLIC_LINKEDIN_CLIENT_ID;
 
-  const redirectUri =
-    encodeURIComponent(
-      "https://job-portal-dev-phi.vercel.app/linkedin/callback"
-    );
+    const redirectUri =
+      encodeURIComponent(
+        "https://job-portal-dev-phi.vercel.app/linkedin/callback"
+      );
 
-  const scope =
-    encodeURIComponent(
-      "openid profile email"
-    );
+    const scope =
+      encodeURIComponent(
+        "openid profile email"
+      );
 
-  window.location.href =
-    `https://www.linkedin.com/oauth/v2/authorization` +
-    `?response_type=code` +
-    `&client_id=${clientId}` +
-    `&redirect_uri=${redirectUri}` +
-    `&scope=${scope}`;
-};
+    window.location.href =
+      `https://www.linkedin.com/oauth/v2/authorization` +
+      `?response_type=code` +
+      `&client_id=${clientId}` +
+      `&redirect_uri=${redirectUri}` +
+      `&scope=${scope}`;
+  };
 
   return (
     <main
@@ -453,7 +683,7 @@ const handleLinkedInLogin = () => {
                 marginBottom: 10,
               }}
             >
-              <img src="assets/imgs/template/logo.svg"/>
+              <img src="assets/imgs/template/logo.svg" />
 
             </div>
 
@@ -516,57 +746,104 @@ const handleLinkedInLogin = () => {
                 <span style={{ color: "#E24B4A" }}> *</span>
               </label>
 
-              <div style={{ position: "relative" }}>
-                <i
-                  className={looksLikePhone ? "fi-rr-phone-call" : "fi-rr-envelope"}
-                  aria-hidden="true"
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                {looksLikePhone && (
+                  <CountryCodeSelect
+                    value={countryCode}
+                    onChange={(newCountryCode) => {
+                      setCountryCode(newCountryCode);
+
+                      const newMeta = getCountryMeta(newCountryCode);
+
+                      // Trim existing mobile number if the newly
+                      // selected country allows fewer digits
+                      if (looksLikePhone) {
+                        setInput((prev) =>
+                          prev
+                            .replace(/\D/g, "")
+                            .slice(0, newMeta.maxLen)
+                        );
+                      }
+
+                      setError("");
+                    }}
+                    disabled={otpSent}
+                  />
+                )}
+
+                {/* EMAIL / MOBILE INPUT */}
+                <div
                   style={{
-                    position: "absolute",
-                    left: 16,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    fontSize: 15,
-                    color: "var(--color-text-tertiary)",
-                    pointerEvents: "none",
+                    position: "relative",
+                    flex: 1,
                   }}
-                />
-                <input
-                  className="form-control"
-                  value={input}
-                  disabled={otpSent}
-                  onChange={handleInputChange}
-                  placeholder="Enter email or mobile"
-                  style={{
-                    width: "100%",
-                    height: 54,
-                    borderRadius: 10,
-                    border: `1px solid ${
-                      input
+                >
+                  <i
+                    className={
+                      looksLikePhone
+                        ? "fi-rr-phone-call"
+                        : "fi-rr-envelope"
+                    }
+                    aria-hidden="true"
+                    style={{
+                      position: "absolute",
+                      left: 16,
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      fontSize: 15,
+                      color: "var(--color-text-tertiary)",
+                      pointerEvents: "none",
+                    }}
+                  />
+
+                  <input
+                    className="form-control"
+                    value={input}
+                    disabled={otpSent}
+                    onChange={handleInputChange}
+                    placeholder={
+                      looksLikePhone
+                        ? "Enter mobile number"
+                        : "Enter email or mobile"
+                    }
+                    style={{
+                      width: "100%",
+                      height: 54,
+                      borderRadius: 10,
+                      border: `1px solid ${input
                         ? isInputValid
                           ? "#3B6D11"
                           : "var(--color-border-secondary)"
                         : "var(--color-border-secondary)"
-                    }`,
-                    fontSize: 14,
-                    padding: "0 42px 0 42px",
-                    background: otpSent ? "#f7f7f7" : "#ffffff",
-                  }}
-                />
+                        }`,
+                      fontSize: 14,
+                      padding: "0 42px",
+                      background: otpSent
+                        ? "#f7f7f7"
+                        : "#ffffff",
+                    }}
+                  />
                 </div>
+              </div>
 
               <small
                 style={{
                   display: "block",
                   marginTop: 8,
                   fontSize: 12,
-                  color: "var(--color-text-tertiary)",
+                  color:
+                    input && !isInputValid
+                      ? "#E24B4A"
+                      : "var(--color-text-tertiary)",
                 }}
               >
-                {input && !isInputValid
-                  ? isEmail
-                    ? "Enter valid email"
-                    : "Enter 10-digit mobile"
-                  : "We'll send OTP to verify"}
+                {getValidationMessage()}
               </small>
             </div>
 
@@ -654,16 +931,48 @@ const handleLinkedInLogin = () => {
                 >
                   Enter OTP
                 </label>
-                <p
-                  style={{
-                    fontSize: 12,
-                    color: "var(--color-text-tertiary)",
-                    marginTop: -2,
-                    marginBottom: 12,
-                  }}
-                >
-                  Sent to {isMobile ? `+91 ${input}` : input}
-                </p>
+                <div
+  style={{
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    marginTop: -2,
+    marginBottom: 12,
+  }}
+>
+  <p
+    style={{
+      fontSize: 12,
+      color: "var(--color-text-tertiary)",
+      margin: 0,
+    }}
+  >
+    Sent to{" "}
+    <strong>
+      {isMobile
+        ? `${countryCode} ${input}`
+        : input}
+    </strong>
+  </p>
+
+  <button
+    type="button"
+    onClick={handleChangeIdentifier}
+    style={{
+      border: "none",
+      background: "transparent",
+      padding: 0,
+      fontSize: 12,
+      fontWeight: 600,
+      color: "#ff9900",
+      cursor: "pointer",
+      whiteSpace: "nowrap",
+    }}
+  >
+    {isMobile ? "Change number" : "Change email"}
+  </button>
+</div>
 
                 <OtpDigitsInput value={otp} onChange={setOtp} autoFocus />
               </div>

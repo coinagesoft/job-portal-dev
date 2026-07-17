@@ -567,7 +567,7 @@ const StepPersonal = ({
             onChange={(e) =>
               onChange("firstName", e.target.value.replace(/^\s+/, ""))
             }
-             placeholder="Enter your first name"
+            placeholder="Enter your first name"
           />
 
           {errors.firstName && (
@@ -624,7 +624,7 @@ const StepPersonal = ({
             type="email"
             value={data.email || ""}
             onChange={(e) => onChange("email", e.target.value)}
-             placeholder="Enter your email address"
+            placeholder="Enter your email address"
             required
           />
           {errors.email && (
@@ -665,7 +665,7 @@ const StepPersonal = ({
             <option>Male</option>
             <option>Female</option>
             <option>Other</option>
-            <option>Prefer not to say</option>
+            {/* <option>Prefer not to say</option> */}
           </Sel>
           {errors.gender && (
             <p style={{ color: "red", fontSize: "12px", marginTop: "4px" }}>
@@ -885,7 +885,7 @@ const NOTICE_PERIOD_OPTIONS = [
 
 const StepWork = ({ data, onUpdate, onAdd, onRemove }) => {
   const [showForm, setShowForm] = useState(false);
-
+  const today = new Date().toISOString().split("T")[0];
   const [newEntry, setNewEntry] = useState({
     title: "",
     company: "",
@@ -899,37 +899,97 @@ const StepWork = ({ data, onUpdate, onAdd, onRemove }) => {
   });
   const showToast = useToast();
 
-  const handleSave = async () => {
-    if (!newEntry.title || !newEntry.company) {
-      showToast("Role and company name are required.", "error");
-      return;
-    }
-    if (!newEntry.startDate) {
-      showToast("Start date is required.", "error");
-      return;
-    }
-    if (!newEntry.current && !newEntry.endDate) {
+ const handleSave = async () => {
+  if (!newEntry.title.trim() || !newEntry.company.trim()) {
+    showToast(
+      "Role and company name are required.",
+      "error"
+    );
+    return;
+  }
+
+  if (!newEntry.startDate) {
+    showToast("Start date is required.", "error");
+    return;
+  }
+
+  // Start date cannot be in the future
+  if (newEntry.startDate > today) {
+    showToast(
+      "Start date cannot be a future date.",
+      "error"
+    );
+    return;
+  }
+
+  // End date required for previous employment
+  if (!newEntry.current && !newEntry.endDate) {
+    showToast(
+      "End date is required unless this is your current job.",
+      "error"
+    );
+    return;
+  }
+
+  if (!newEntry.current && newEntry.endDate) {
+    // End date cannot be in the future
+    if (newEntry.endDate > today) {
       showToast(
-        "End date is required unless this is your current job.",
-        "error",
+        "End date cannot be a future date.",
+        "error"
       );
       return;
     }
-    const saved = await onAdd(newEntry);
-    if (!saved) return;
 
-    setNewEntry({
-      title: "",
-      company: "",
-      location: "",
-      startDate: "",
-      endDate: "",
-      isOffshore: false,
-      current: false,
-      description: "",
-    });
-    setShowForm(false);
+    // End date cannot be before start date
+    if (newEntry.endDate < newEntry.startDate) {
+      showToast(
+        "End date cannot be earlier than start date.",
+        "error"
+      );
+      return;
+    }
+  }
+
+  // Notice period required for current job
+  if (
+    newEntry.current &&
+    !newEntry.noticePeriod
+  ) {
+    showToast(
+      "Please select your notice period.",
+      "error"
+    );
+    return;
+  }
+
+  const payload = {
+    ...newEntry,
+
+    // Ensure current jobs never save an old end date
+    endDate: newEntry.current
+      ? ""
+      : newEntry.endDate,
   };
+
+  const saved = await onAdd(payload);
+
+  if (!saved) return;
+
+  setNewEntry({
+    title: "",
+    company: "",
+    location: "",
+    startDate: "",
+    endDate: "",
+    current: false,
+    noticePeriod: "",
+    isOffshore: false,
+    description: "",
+  });
+
+  setShowForm(false);
+};
 
   return (
     <div>
@@ -997,10 +1057,23 @@ const StepWork = ({ data, onUpdate, onAdd, onRemove }) => {
                 <Field label="Start Date">
                   <Inp
                     type="date"
-                    value={entry.startDate}
-                    onChange={(e) =>
-                      onUpdate(entry.id, "startDate", e.target.value)
-                    }
+                    value={entry.startDate || ""}
+                    max={today}
+                    onChange={(e) => {
+                      const newStartDate = e.target.value;
+
+                      onUpdate(entry.id, "startDate", newStartDate);
+
+                      // If existing end date becomes earlier than new start date,
+                      // clear the invalid end date.
+                      if (
+                        entry.endDate &&
+                        newStartDate &&
+                        entry.endDate < newStartDate
+                      ) {
+                        onUpdate(entry.id, "endDate", "");
+                      }
+                    }}
                   />
                 </Field>
 
@@ -1009,8 +1082,13 @@ const StepWork = ({ data, onUpdate, onAdd, onRemove }) => {
                     type="date"
                     value={entry.endDate || ""}
                     min={entry.startDate || ""}
+                    max={today}
                     onChange={(e) =>
-                      onUpdate(entry.id, "endDate", e.target.value)
+                      onUpdate(
+                        entry.id,
+                        "endDate",
+                        e.target.value
+                      )
                     }
                     disabled={entry.current}
                   />
@@ -1031,9 +1109,15 @@ const StepWork = ({ data, onUpdate, onAdd, onRemove }) => {
                   <input
                     type="checkbox"
                     checked={!!entry.current}
-                    onChange={(e) =>
-                      onUpdate(entry.id, "current", e.target.checked)
-                    }
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+
+                      onUpdate(entry.id, "current", checked);
+
+                      if (checked) {
+                        onUpdate(entry.id, "endDate", "");
+                      }
+                    }}
                     style={{
                       width: 16,
                       height: 16,
@@ -1174,9 +1258,23 @@ const StepWork = ({ data, onUpdate, onAdd, onRemove }) => {
               <Inp
                 type="date"
                 value={newEntry.startDate}
-                onChange={(e) =>
-                  setNewEntry((p) => ({ ...p, startDate: e.target.value }))
-                }
+                max={today}
+                onChange={(e) => {
+                  const newStartDate = e.target.value;
+
+                  setNewEntry((prev) => ({
+                    ...prev,
+                    startDate: newStartDate,
+
+                    // Clear end date if it is now before start date
+                    endDate:
+                      prev.endDate &&
+                        newStartDate &&
+                        prev.endDate < newStartDate
+                        ? ""
+                        : prev.endDate,
+                  }));
+                }}
               />
             </Field>
             <Field label="End Date">
@@ -1184,9 +1282,10 @@ const StepWork = ({ data, onUpdate, onAdd, onRemove }) => {
                 type="date"
                 value={newEntry.endDate}
                 min={newEntry.startDate || ""}
+                max={today}
                 onChange={(e) =>
-                  setNewEntry((p) => ({
-                    ...p,
+                  setNewEntry((prev) => ({
+                    ...prev,
                     endDate: e.target.value,
                   }))
                 }
@@ -1208,9 +1307,17 @@ const StepWork = ({ data, onUpdate, onAdd, onRemove }) => {
               <input
                 type="checkbox"
                 checked={!!newEntry.current}
-                onChange={(e) =>
-                  setNewEntry((p) => ({ ...p, current: e.target.checked }))
-                }
+                onChange={(e) => {
+                  const checked = e.target.checked;
+
+                  setNewEntry((prev) => ({
+                    ...prev,
+                    current: checked,
+
+                    // Current job should not have an end date
+                    endDate: checked ? "" : prev.endDate,
+                  }));
+                }}
                 style={{ width: 16, height: 16, accentColor: T.orange }}
               />
               Currently working here
@@ -1750,17 +1857,17 @@ const StepSkills = ({ data, onToggle, onUpdateSkill }) => {
       )}
 
       <p
-  style={{
-    fontSize: 12,
-    color:
-      (data.selectedSkills || []).length >= MAX_SKILLS
-        ? "#dc3545"
-        : T.muted,
-    fontWeight: 500,
-  }}
->
-  {(data.selectedSkills || []).length}/{MAX_SKILLS} skills selected
-</p>
+        style={{
+          fontSize: 12,
+          color:
+            (data.selectedSkills || []).length >= MAX_SKILLS
+              ? "#dc3545"
+              : T.muted,
+          fontWeight: 500,
+        }}
+      >
+        {(data.selectedSkills || []).length}/{MAX_SKILLS} skills selected
+      </p>
     </div>
   );
 };
