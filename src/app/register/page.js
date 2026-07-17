@@ -68,6 +68,7 @@ const PHONE_COUNTRIES = defaultCountries.map((c) => {
 });
 
 const INDUSTRIES = [
+  "Recruitment agency",
   "Construction & Infrastructure",
   "Marine & Shipping",
   "Oil & Gas",
@@ -1185,7 +1186,7 @@ useEffect(() => {
 
         order_id: order.orderId,
 
-        name: "Job Portal",
+        name: "Job Box",
 
         description: "Candidate Registration Fee",
 
@@ -3672,7 +3673,7 @@ function RegisterPageInner() {
       />
       <div
         style={{
-          maxWidth: role === "employer" ? 680 : 460,
+          maxWidth: role === "employer" ? 820  : 460,
           margin: "0 auto",
           position: "relative",
           zIndex: 1,
@@ -3727,96 +3728,76 @@ function RegisterPageInner() {
             background: "#ffffff",
             border: "none",
             borderRadius: 24,
-            padding: "38px 34px",
+           padding: role === "employer" ? "40px 44px" : "38px 34px",
             marginBottom: 0,
             boxSizing: "border-box",
           }}
         >
           {/* Role selector — only shown when no role was locked in via URL */}
-          {!lockedRole && (
-            <div style={{ marginBottom: role ? 28 : 8 }}>
-              {!role && (
-                <p
-                  style={{
-                    fontSize: "var(--font-xs)",
-                    fontWeight: 600,
-                    color: "var(--color-text-secondary)",
-                    marginBottom: 12,
-                  }}
-                >
-                  I am registering as…
-                </p>
-              )}
-              <div style={{ display: "flex", gap: 12 }}>
-                {[
-                  {
-                    val: "candidate",
-                    icon: "👤",
-                    label: "Job Seeker / Candidate",
-                    sub: "Find jobs, build profile",
-                  },
-                  {
-                    val: "employer",
-                    icon: "🏢",
-                    label: "Employer / Company",
-                    sub: "Post jobs, hire talent",
-                  },
-                ].map((r) => (
-                  <div
-                    key={r.val}
-                    onClick={() => setRole(r.val)}
-                    style={{
-                      flex: 1,
-                      padding: role ? "10px 14px" : "18px 14px",
-                      borderRadius: 10,
-                      cursor: "pointer",
-                      border:
-                        role === r.val
-                          ? "2px solid #ff9900"
-                          : "1px solid var(--color-border-secondary, #C7D2E0)",
-                      background:
-                        role === r.val
-                          ? "#ffffff"
-                          : "var(--color-background-secondary)",
-                      transition: "all .15s",
-                      display: "flex",
-                      alignItems: role ? "center" : "flex-start",
-                      gap: 12,
-                    }}
-                  >
-                    <span style={{ fontSize: role ? 18 : 24, flexShrink: 0 }}>
-                      {r.icon}
-                    </span>
-                    <div>
-                      <div
-                        style={{
-                          fontSize: role ? 13 : 14,
-                          fontWeight: 600,
-                          color:
-                            role === r.val
-                              ? "#ff9900"
-                              : "var(--color-text-primary)",
-                        }}
-                      >
-                        {r.label}
-                      </div>
-                      {!role && (
-                        <div
-                          style={{
-                            fontSize: "var(--font-xs)",
-                            color: "var(--color-text-secondary)",
-                            marginTop: 2,
-                          }}
-                        >
-                          {r.sub}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+        {!role ? (
+  <div style={{ marginBottom: 8 }}>
+    <p style={{ fontSize: "var(--font-xs)", fontWeight: 600, color: "var(--color-text-secondary)", marginBottom: 12 }}>
+      I am registering as…
+    </p>
+    <div style={{ display: "flex", gap: 12 }}>
+      {[
+        { val: "candidate", icon: "👤", label: "Job Seeker / Candidate", sub: "Find jobs, build profile" },
+        { val: "employer", icon: "🏢", label: "Employer / Company", sub: "Post jobs, hire talent" },
+      ].map((r) => (
+        <div
+          key={r.val}
+          onClick={() => setRole(r.val)}
+          style={{
+            flex: 1,
+            padding: "18px 14px",
+            borderRadius: 10,
+            cursor: "pointer",
+            border: "1px solid var(--color-border-secondary, #C7D2E0)",
+            background: "var(--color-background-secondary)",
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 12,
+          }}
+        >
+          <span style={{ fontSize: 24, flexShrink: 0 }}>{r.icon}</span>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "var(--color-text-primary)" }}>
+              {r.label}
             </div>
-          )}
+            <div style={{ fontSize: "var(--font-xs)", color: "var(--color-text-secondary)", marginTop: 2 }}>
+              {r.sub}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+) : (
+  !lockedRole && (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      {/* <span style={{ fontSize: "var(--font-sm)", color: "var(--color-text-secondary)" }}>
+        Registering as{" "}
+        <strong style={{ color: "var(--color-text-primary)" }}>
+          {role === "candidate" ? "Job Seeker / Candidate" : "Employer / Company"}
+        </strong>
+      </span>
+      <button
+        type="button"
+        onClick={() => setRole(null)}
+        style={{
+          background: "none",
+          border: "none",
+          color: "#ff9900",
+          fontWeight: 600,
+          fontSize: "var(--font-xs)",
+          cursor: "pointer",
+        }}
+      >
+        Change
+      </button> */}
+    </div>
+  )
+)}
 
           {role === "candidate" && <CandidateForm />}
           {role === "employer" && <EmployerForm />}

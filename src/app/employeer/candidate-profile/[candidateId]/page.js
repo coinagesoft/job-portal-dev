@@ -1254,7 +1254,7 @@ const EmployerCandidateProfilePage = () => {
                         </strong>
                       </div>
                     </li>
-                    <li>
+                    {/* <li>
                       <div className="sidebar-icon-item">
                         <i className="fi-rr-dollar"></i>
                       </div>
@@ -1264,7 +1264,7 @@ const EmployerCandidateProfilePage = () => {
                           {wallet ? wallet.availableCredits : "—"} credits
                         </strong>
                       </div>
-                    </li>
+                    </li> */}
                   </ul>
                 </div>
 
