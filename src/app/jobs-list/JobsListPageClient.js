@@ -38,24 +38,43 @@ const JobsListPageClient = () => {
     fetchJobs();
   }, []);
 
-  const filtersFromQuery = useMemo(() => {
-    const queryFilters = {};
-    const keyword = (searchParams.get('q') || '').trim();
-    const location = (searchParams.get('location') || '').trim();
+const filtersFromQuery = useMemo(() => {
+  const queryFilters = {};
 
-    // Homepage category tiles (BrowseByCategory.jsx) → job.industryType
-    const industries = searchParams.getAll('industry').map((item) => item.trim()).filter(Boolean);
+  const keyword =
+    (searchParams.get("q") || "").trim();
 
-    // Hero Search dropdown + sidebar checkboxes → job.tradeCategory
-    const tradeCategories = searchParams.getAll('tradeCategory').map((item) => item.trim()).filter(Boolean);
+  const location =
+    (searchParams.get("location") || "").trim();
 
-    if (keyword) queryFilters.keyword = keyword;
-    if (location) queryFilters.locationSingle = location;
-    if (industries.length) queryFilters.industries = industries;
-    if (tradeCategories.length) queryFilters.tradeCategories = tradeCategories;
+  const industries = searchParams
+    .getAll("industry")
+    .map((item) => item.trim())
+    .filter(Boolean);
 
-    return queryFilters;
-  }, [searchParams]);
+  const tradeCategories = searchParams
+    .getAll("tradeCategory")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  if (keyword) {
+    queryFilters.keyword = keyword;
+  }
+
+  if (location) {
+    queryFilters.locationSingle = location;
+  }
+
+  if (industries.length) {
+    queryFilters.industries = industries;
+  }
+
+  if (tradeCategories.length) {
+    queryFilters.tradeCategories = tradeCategories;
+  }
+
+  return queryFilters;
+}, [searchParams]);
 
   useEffect(() => {
     setFilters((prev) => {
@@ -97,7 +116,12 @@ const JobsListPageClient = () => {
   return (
     <>
       <Preloader />
-      <HeroSearch jobs={jobs} />
+      <HeroSearch
+  jobs={jobs}
+  keyword={searchParams.get("q") || ""}
+  location={searchParams.get("location") || ""}
+  industry={searchParams.get("industry") || ""}
+/>
       <section className="section-box mt-30">
         <div className="container">
           <div className="row flex-row-reverse">

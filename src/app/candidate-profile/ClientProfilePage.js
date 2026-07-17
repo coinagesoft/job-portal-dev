@@ -567,7 +567,7 @@ const StepPersonal = ({
             onChange={(e) =>
               onChange("firstName", e.target.value.replace(/^\s+/, ""))
             }
-            placeholder="Ramesh"
+             placeholder="Enter your first name"
           />
 
           {errors.firstName && (
@@ -588,7 +588,7 @@ const StepPersonal = ({
             onChange={(e) =>
               onChange("lastName", e.target.value.replace(/^\s+/, ""))
             }
-            placeholder="Sharma"
+            placeholder="Enter your last name"
             required
           />
           {errors.lastName && (
@@ -610,7 +610,7 @@ const StepPersonal = ({
           <Inp
             value={data.mobile || ""}
             onChange={(e) => onChange("mobile", e.target.value)}
-            placeholder="+91 98765 43210"
+            placeholder="Enter your mobile number"
             required
           />
           {errors.mobile && (
@@ -624,7 +624,7 @@ const StepPersonal = ({
             type="email"
             value={data.email || ""}
             onChange={(e) => onChange("email", e.target.value)}
-            placeholder="ramesh@email.com"
+             placeholder="Enter your email address"
             required
           />
           {errors.email && (
@@ -686,7 +686,7 @@ const StepPersonal = ({
           <Inp
             value={data.city || ""}
             onChange={(e) => onChange("city", e.target.value)}
-            placeholder="Pune"
+            placeholder="Enter your city"
             required
           />
           {errors.city && (
@@ -718,7 +718,7 @@ const StepPersonal = ({
           <Inp
             value={data.pin || ""}
             onChange={(e) => onChange("pin", e.target.value)}
-            placeholder="411001"
+            placeholder="Enter your PIN code"
             maxLength={6}
             required
           />
@@ -741,7 +741,7 @@ const StepPersonal = ({
           <Inp
             value={data.nationality || ""}
             onChange={(e) => onChange("nationality", e.target.value)}
-            placeholder="Indian"
+            placeholder="Enter your nationality"
             required
           />
           {errors.nationality && (
@@ -754,7 +754,7 @@ const StepPersonal = ({
           <Inp
             value={data.trade || ""}
             onChange={(e) => onChange("trade", e.target.value)}
-            placeholder="Senior Electrician"
+            placeholder="Enter your trade or job title"
             required
           />
           {errors.trade && (
@@ -797,7 +797,7 @@ const StepPersonal = ({
             onChange={(e) =>
               onChange("salaryExpectation", Number(e.target.value))
             }
-            placeholder="45000"
+            placeholder="Enter expected monthly salary"
             required
           />
           {errors.salaryExpectation && (
@@ -813,7 +813,7 @@ const StepPersonal = ({
             onChange={(e) =>
               onChange("yearsOfExperience", Number(e.target.value))
             }
-            placeholder="8"
+            placeholder="Enter years of experience"
             min={0}
             max={50}
             required
