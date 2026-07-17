@@ -295,11 +295,11 @@ const EmployerJobListPage = () => {
 
       setDashboard(dashboardRes);
 
-     const jobsList = jobsRes.jobs || [];
+      const jobsList = jobsRes.jobs || [];
 
-setJobs(jobsList);
+      setJobs(jobsList);
 
-await loadCompanyLogos(jobsList);
+      await loadCompanyLogos(jobsList);
     } catch (error) {
       console.error(error);
     } finally {
@@ -452,19 +452,19 @@ await loadCompanyLogos(jobsList);
 
             {/* ── Job Cards ── */}
             <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-             {jobs.map((job) => (
-  <div
-    key={job.jobId}
-    className="subuser-hover-card"
-    onClick={() => handlePreview(job.jobId)}
-    style={{
-      background: "#fff",
-      borderRadius: 24,
-      position: "relative",
-      zIndex: 1,
-      cursor: "pointer",
-    }}
-  >
+              {jobs.map((job) => (
+                <div
+                  key={job.jobId}
+                  className="subuser-hover-card"
+                  onClick={() => handlePreview(job.jobId)}
+                  style={{
+                    background: "#fff",
+                    borderRadius: 24,
+                    position: "relative",
+                    zIndex: 1,
+                    cursor: "pointer",
+                  }}
+                >
                   <div
                     style={{
                       padding: "24px 28px",
@@ -488,36 +488,36 @@ await loadCompanyLogos(jobsList);
                         }}
                       >
                         {/* Job icon */}
-                       <div
-  style={{
-    width: 54,
-    height: 54,
-    borderRadius: 8,
-    flexShrink: 0,
-    overflow: "hidden",
-    border: "1px solid #E5E7EB",
-    background: "#fff",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  }}
->
-<img
-  src={
-    companyLogos[job.employerId || getEmployerId()] ||  
-    "/assets/imgs/page/company/company.png"
-  }
-  alt="Company Logo"
-  style={{
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-  }}
-  onError={(e) => {
-    e.currentTarget.src = "/assets/imgs/page/company/company.png";
-  }}
-/>
-</div>
+                        <div
+                          style={{
+                            width: 54,
+                            height: 54,
+                            borderRadius: 8,
+                            flexShrink: 0,
+                            overflow: "hidden",
+                            border: "1px solid #E5E7EB",
+                            background: "#fff",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <img
+                            src={
+                              companyLogos[job.employerId || getEmployerId()] ||
+                              "/assets/imgs/page/company/company.png"
+                            }
+                            alt="Company Logo"
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                            onError={(e) => {
+                              e.currentTarget.src = "/assets/imgs/page/company/company.png";
+                            }}
+                          />
+                        </div>
                         <div style={{ flex: 1 }}>
                           {/* Title row */}
                           <div
@@ -551,7 +551,7 @@ await loadCompanyLogos(jobsList);
                                 {job.jobTitle}
                               </h5>
 
-                              <span
+                              {/* <span
                                 style={{
                                   display: "inline-flex",
                                   alignItems: "center",
@@ -565,7 +565,7 @@ await loadCompanyLogos(jobsList);
                                 }}
                               >
                                 {job.appliedCount} Applicant{job.appliedCount !== 1 ? "s" : ""}
-                              </span>
+                              </span> */}
                             </div>
                             {/* Employment type badge (Full Time / Contract / etc.) */}
                             <span
@@ -874,6 +874,40 @@ await loadCompanyLogos(jobsList);
                             position: "relative",
                           }}
                         >
+                         <Link
+                            href={`/employeer/applicants?jobId=${job.jobId}&jobTitle=${encodeURIComponent(job.jobTitle || "")}`}
+                            onClick={(e) => e.stopPropagation()}
+                            title="View applicants"
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              height: 44,
+                              padding: "0 16px",
+                              borderRadius: 14,
+                              background: "#EAF4FF",
+                              border: "1px solid #B9DCFF",
+                              color: "#1D4ED8",
+                              fontSize: 12,
+                              fontWeight: 700,
+                              whiteSpace: "nowrap",
+                              textDecoration: "none",
+                              boxShadow: "0 4px 12px rgba(18,35,89,.08)",
+                              transition: ".25s",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = "#1D4ED8";
+                              e.currentTarget.style.color = "#fff";
+                              e.currentTarget.style.borderColor = "#1D4ED8";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = "#EAF4FF";
+                              e.currentTarget.style.color = "#1D4ED8";
+                              e.currentTarget.style.borderColor = "#B9DCFF";
+                            }}
+                          >
+                            {job.appliedCount} Applicant{job.appliedCount !== 1 ? "s" : ""}
+                          </Link>
                           {/* <button
                             type="button"
                             onClick={() => handlePreview(job.jobId)}
@@ -911,23 +945,23 @@ await loadCompanyLogos(jobsList);
                           <button
                             ref={(el) => (menuButtonRefs.current[job.jobId] = el)}
                             onClick={(e) => {
-    e.stopPropagation();
+                              e.stopPropagation();
 
-    if (openMenu === job.jobId) {
-      setOpenMenu(null);
-      return;
-    }
+                              if (openMenu === job.jobId) {
+                                setOpenMenu(null);
+                                return;
+                              }
 
-    const rect =
-      menuButtonRefs.current[job.jobId].getBoundingClientRect();
+                              const rect =
+                                menuButtonRefs.current[job.jobId].getBoundingClientRect();
 
-    setMenuPosition({
-      top: rect.bottom + 8,
-      left: rect.left - 190,
-    });
+                              setMenuPosition({
+                                top: rect.bottom + 8,
+                                left: rect.left - 190,
+                              });
 
-    setOpenMenu(job.jobId);
-  }}
+                              setOpenMenu(job.jobId);
+                            }}
                             style={{
                               width: 44,
                               height: 44,
@@ -1197,7 +1231,7 @@ await loadCompanyLogos(jobsList);
         loading={previewLoading}
       />
     </main>
-  );  
+  );
 };
 
 export default EmployerJobListPage;

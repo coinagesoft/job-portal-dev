@@ -1,16 +1,31 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { getCompanyDetails } from "@/services/candidate/companyService";
 import { getJobDetails } from "@/services/candidate/jobDetailsService";
 import JobCardList from "@/app/jobs-list/components/JobCardList";
 import ApplyJobModal from "@/app/Homepage/components/ApplyJobModal";
+import { getCandidateId } from "@/utils/authHelper";
 
 const humanize = (value) => {
   if (value === null || value === undefined) return value;
   if (typeof value !== "string") return value;
   return value.replace(/_/g, " ");
+};
+
+const cleanUrl = (url) => {
+  if (!url || url === "#") return "#";
+  let cleaned = url.trim();
+  // If there are multiple http/https occurrences, take the last one
+  if (cleaned.includes("http://") || cleaned.includes("https://")) {
+    const parts = cleaned.split(/(?=https?:\/\/)/i);
+    cleaned = parts[parts.length - 1];
+  }
+  if (!/^https?:\/\//i.test(cleaned)) {
+    cleaned = `https://${cleaned}`;
+  }
+  return cleaned;
 };
 
 const iconMap = {
@@ -91,6 +106,7 @@ function SocialIconLink({ href, label, iconClass }) {
 
 function CompanyDetailsContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const employerId = searchParams.get("employerId");
 
   const [companyInfo, setCompanyInfo] = useState(null);
@@ -133,6 +149,11 @@ function CompanyDetailsContent() {
   }, [employerId]);
 
   const openApplyModal = async (job) => {
+    const candidateId = getCandidateId();
+    if (!candidateId) {
+      router.push(`/Login?redirectTo=/company-details?employerId=${employerId}`);
+      return;
+    }
     try {
       const response = await getJobDetails(job.jobId);
       setActiveJob(response.data);
@@ -279,32 +300,28 @@ function CompanyDetailsContent() {
                   >
                     {companyInfo.websiteUrl && (
                       <SocialIconLink
-                        href={
-                          companyInfo.websiteUrl.startsWith("http")
-                            ? companyInfo.websiteUrl
-                            : `https://${companyInfo.websiteUrl}`
-                        }
+                        href={cleanUrl(companyInfo.websiteUrl)}
                         label="Website"
                         iconClass="fa-solid fa-globe"
                       />
                     )}
                     {companyInfo.linkedInUrl && (
                       <SocialIconLink
-                        href={companyInfo.linkedInUrl}
+                        href={cleanUrl(companyInfo.linkedInUrl)}
                         label="LinkedIn"
                         iconClass="fa-brands fa-linkedin-in"
                       />
                     )}
                     {companyInfo.instagramUrl && (
                       <SocialIconLink
-                        href={companyInfo.instagramUrl}
+                        href={cleanUrl(companyInfo.instagramUrl)}
                         label="Instagram"
                         iconClass="fa-brands fa-instagram"
                       />
                     )}
                     {companyInfo.facebookUrl && (
                       <SocialIconLink
-                        href={companyInfo.facebookUrl}
+                        href={cleanUrl(companyInfo.facebookUrl)}
                         label="Facebook"
                         iconClass="fa-brands fa-facebook-f"
                       />
@@ -638,11 +655,7 @@ function CompanyDetailsContent() {
                           </span>
                           <strong className="small-heading">
                             <a
-                              href={
-                                companyInfo.websiteUrl.startsWith("http")
-                                  ? companyInfo.websiteUrl
-                                  : `https://${companyInfo.websiteUrl}`
-                              }
+                              href={cleanUrl(companyInfo.websiteUrl)}
                               target="_blank"
                               rel="noopener noreferrer"
                               style={{ color: "inherit", textDecoration: "none", fontWeight: "inherit" }}

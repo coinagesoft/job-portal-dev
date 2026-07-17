@@ -991,6 +991,8 @@ function CandidateForm() {
   const router = useRouter();
   const showToast = useToast();
   const [socialAuth, setSocialAuth] = useState(null);
+
+  const [attemptSubmit, setAttemptSubmit] = useState(false);
 // shape: { provider: "google" | "linkedin", accessToken }
   const [otpToken, setOtpToken] = useState("");
   const [form, setForm] = useState({
@@ -1257,6 +1259,29 @@ useEffect(() => {
   const canSubmit = canShowPayment && terms && payStatus === "success";
 
 const handleCandidateSubmit = async () => {
+    setAttemptSubmit(true);
+
+  if (!form.name.trim()) {
+    showToast("Please enter your full name.", "error");
+    return;
+  }
+
+  if (!socialAuth) {
+    const hasVerifiedMobile = mobileOtp.verified;
+    const hasVerifiedEmail = emailOtp.verified;
+
+    if (!hasVerifiedMobile && !hasVerifiedEmail) {
+      showToast("Please verify your mobile number or email address to continue.", "error");
+      return;
+    }
+
+    // If they typed an email but never verified it, don't silently drop it —
+    // ask them to finish verifying or clear the field.
+    if (form.email.trim() && !emailOtp.verified) {
+      showToast("Please verify your email address, or remove it to continue with mobile only.", "error");
+      return;
+    }
+  }
   try {
     if (socialAuth) {
       const registerFn =
@@ -1374,11 +1399,16 @@ const handleLinkedInRegister = () => {
         strategy="lazyOnload"
       />
 
-      <Field label="Full Name" required>
+    <Field
+        label="Full Name"
+        required
+        error={attemptSubmit && !form.name.trim() ? "Full name is required" : null}
+      >
         <Input
           placeholder="Enter your full name (e.g. Arjun Mehta)"
           value={form.name}
-            disabled={isSocialVerified}
+          disabled={isSocialVerified}
+          error={attemptSubmit && !form.name.trim()}
           onChange={(e) => set("name", e.target.value)}
         />
       </Field>

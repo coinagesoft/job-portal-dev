@@ -230,11 +230,15 @@ export default function LoginPage() {
         "success"
       );
 
-    if (response.data.userType === "Recruiter") {
-  router.push("/employeer/cv-search");
-} else {
-  router.push("/candidate-profile");
-}
+      const params = new URLSearchParams(window.location.search);
+      const redirectUrl = params.get("redirectTo");
+      if (redirectUrl) {
+        router.push(redirectUrl);
+      } else if (response.data.userType === "Recruiter") {
+        router.push("/employeer/cv-search");
+      } else {
+        router.push("/candidate-profile");
+      }
     }
     catch (err) {
       setError(
@@ -295,11 +299,15 @@ export default function LoginPage() {
           localStorage.setItem("employerId", response.data.employerId);
         }
 
-       if (response.data.userType === "Recruiter") {
-  router.push("/employeer/cv-search");
-} else {
-  router.push("/candidate-profile");
-}
+        const params = new URLSearchParams(window.location.search);
+      const redirectUrl = params.get("redirectTo");
+      if (redirectUrl) {
+        router.push(redirectUrl);
+      } else if (response.data.userType === "Recruiter") {
+        router.push("/employeer/cv-search");
+      } else {
+        router.push("/candidate-profile");
+      }
 
       } catch (err) {
         setError(
