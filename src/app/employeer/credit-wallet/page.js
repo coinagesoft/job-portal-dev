@@ -239,6 +239,14 @@ const EmployerCreditWalletPage = () => {
                             {dashboard.planName} — Expires{" "}
                             {formatDate(dashboard.planExpiryDate)}
                           </p>
+                          {dashboard.totalSubUsers > 0 && (
+                            <p className="font-xs color-text-paragraph-2 mt-10 mb-0">
+                              {dashboard.allocatedToSubUsers} allocated to sub-users
+                              (still theirs to spend) ·{" "}
+                              {dashboard.availableToAllocate} available for you to
+                              allocate
+                            </p>
+                          )}
                         </div>
                         <div className="col-lg-4 col-md-12 col-sm-12 text-lg-end mt-md-15 mt-sm-15">
                           {expiryDays !== null && expiryDays <= 30 && expiryDays > 0 && (
@@ -541,7 +549,8 @@ const EmployerCreditWalletPage = () => {
                               <tr>
                                 <th>Date</th>
                                 <th>Sub-User</th>
-                                <th>Credits Allocated</th>
+                                <th>Event</th>
+                                <th>Credits</th>
                                 <th>Balance Before</th>
                                 <th className="text-end">Balance After</th>
                               </tr>
@@ -549,7 +558,7 @@ const EmployerCreditWalletPage = () => {
                             <tbody>
                               {allocationHistory.length === 0 ? (
                                 <tr>
-                                  <td colSpan={5} className="text-center color-text-paragraph-2">
+                                  <td colSpan={6} className="text-center color-text-paragraph-2">
                                     No allocation history found.
                                   </td>
                                 </tr>
@@ -558,10 +567,26 @@ const EmployerCreditWalletPage = () => {
                                   <tr key={a.historyId}>
                                     <td className="font-sm">{formatDate(a.createdAt)}</td>
                                     <td className="font-sm">
-                                      {subUserNameById[a.subUserId] || a.subUserId}
+                                      {a.subUserName ||
+                                        subUserNameById[a.subUserId] ||
+                                        "Former sub-user"}
+                                      {a.isReclaim && (
+                                        <span className="font-xs color-text-paragraph-2"> (removed)</span>
+                                      )}
                                     </td>
-                                    <td className="font-sm color-brand-1">
-                                      +{a.creditsAllocated} cr
+                                    <td className="font-sm">
+                                      {a.isReclaim ? (
+                                        <span className="btn btn-grey-small" style={{ background: "#fee2e2", color: "#991b1b" }}>
+                                          Reclaimed
+                                        </span>
+                                      ) : (
+                                        <span className="btn btn-grey-small">Allocated</span>
+                                      )}
+                                    </td>
+                                    <td className={`font-sm ${a.isReclaim ? "" : "color-brand-1"}`} style={a.isReclaim ? { color: "#991b1b" } : undefined}>
+                                      {a.isReclaim
+                                        ? `${a.creditsAllocated} cr`
+                                        : `+${a.creditsAllocated} cr`}
                                     </td>
                                     <td className="font-sm">{a.balanceBefore}</td>
                                     <td className="text-end font-sm">{a.balanceAfter}</td>
