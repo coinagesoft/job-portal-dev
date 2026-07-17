@@ -4,13 +4,13 @@ export const STATIC_ROLE_BY_MOBILE = {
 };
 
 export const ROLE_DEFAULT_ROUTE = {
-  candidate: "/candidate-profile",
+  candidate: "/",
   employer: "/employeer/cv-search",
 };
 
 // Candidate header: exactly 6 tabs (excluding profile & notification which are in profile dropdown)
 export const CANDIDATE_HEADER_SECTIONS = [
-  { label: "Home", href: "/homepage-new" },
+  { label: "Home", href: "/" },
   { label: "Find Jobs", href: "/jobs-list" },
   { label: "My Applications", href: "/candidate-profile/application-status" },
   { label: "Saved Jobs", href: "/candidate-profile/saved-jobs" },

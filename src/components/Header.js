@@ -469,12 +469,12 @@ const Header = () => {
           className={
             isExactPathActive(
               pathname,
-              "/homepage-new"
+              "/"
             )
               ? "active"
               : ""
           }
-          href="/homepage-new"
+          href="/"
         >
           Home
         </Link>
@@ -515,7 +515,7 @@ const Header = () => {
                     ? ROLE_DEFAULT_ROUTE[
                     role
                     ]
-                    : "/homepage-new"
+                    : "/"
                 }
               >
                 <img
