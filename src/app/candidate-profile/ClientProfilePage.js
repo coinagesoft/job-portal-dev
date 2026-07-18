@@ -3339,54 +3339,25 @@ const CandidateProfilePage = () => {
   const completedSteps = useMemo(() => {
     const set = new Set();
 
-    const personalComplete =
-      Boolean(profileData.firstName?.trim()) &&
-      Boolean(profileData.lastName?.trim()) &&
-      Boolean(profileData.mobile?.trim()) &&
-      /^\d{10}$/.test(String(profileData.mobile || "").replace(/\D/g, "")) &&
-      Boolean(profileData.email?.trim()) &&
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profileData.email || "") &&
-      Boolean(profileData.dob) &&
-      Boolean(profileData.gender) &&
-      Boolean(profileData.city?.trim()) &&
-      Boolean(profileData.state) &&
-      /^\d{6}$/.test(profileData.pin || "") &&
-      Boolean(profileData.nationality?.trim()) &&
-      Boolean(profileData.trade?.trim()) &&
-      Boolean(profileData.summary?.trim()) &&
-      Number(profileData.salaryExpectation) > 0 &&
-      profileData.yearsOfExperience !== "" &&
-      Number(profileData.yearsOfExperience) >= 0;
-    if (personalComplete) set.add(1);
+    if (profileCompletion && Array.isArray(profileCompletion.items)) {
+      // Check completeness of Steps 1 to 5 based on the checklist items
+      for (let stepNum = 1; stepNum <= 5; stepNum++) {
+        // Find all checklist items that map to this step
+        const stepItems = profileCompletion.items.filter(
+          (item) => COMPLETION_ITEM_TO_STEP[item.key] === stepNum
+        );
 
-    // MyDocuments.js manages resume/Aadhaar/passport entirely in its own
-    // internal state (via getDocuments()/uploadResume()) and never writes
-    // back into profileData.documents — so that field is permanently empty
-    // and can't be used to detect completion. Use the same resume-uploaded
-    // signal the backend's own completion calculation relies on instead.
-    const documentsComplete = Boolean(profileCompletion?.hasResume);
-    if (documentsComplete) set.add(2);
+        // If we have items for this step, check if they are all completed
+        if (stepItems.length > 0) {
+          const allCompleted = stepItems.every((item) => item.completed);
+          if (allCompleted) {
+            set.add(stepNum);
+          }
+        }
+      }
+    }
 
-    const workComplete =
-      profileData.workHistory.length > 0 &&
-      profileData.workHistory.every(
-        (w) =>
-          Boolean(w.title?.trim()) &&
-          Boolean(w.company?.trim()) &&
-          Boolean(w.startDate) &&
-          (w.current || Boolean(w.endDate)) &&
-          (!w.current || Boolean(String(w.noticePeriod ?? "").trim())),
-      );
-    if (workComplete) set.add(3);
-
-    const educationComplete =
-      profileData.education.length > 0 &&
-      profileData.education.every((edu) => Boolean(edu.title?.trim()));
-    if (educationComplete) set.add(4);
-
-    const skillsComplete = (profileData.selectedSkills || []).length > 0;
-    if (skillsComplete) set.add(5);
-
+    // Step 6 (Languages) is not in the checklist, so check local state
     const languagesComplete = (profileData.languages || []).length > 0;
     if (languagesComplete) set.add(6);
 
