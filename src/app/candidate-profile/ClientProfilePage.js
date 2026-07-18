@@ -3048,21 +3048,6 @@ const CandidateProfilePage = () => {
     loadAvailability();
   }, [loadPersonalInfo, loadAvailability]);
 
-  useEffect(() => {
-    const handleProfileUpdate = () => {
-      loadProfileCompletion();
-      loadPersonalInfo();
-    };
-    if (typeof window !== "undefined") {
-      window.addEventListener("profileUpdate", handleProfileUpdate);
-    }
-    return () => {
-      if (typeof window !== "undefined") {
-        window.removeEventListener("profileUpdate", handleProfileUpdate);
-      }
-    };
-  }, [loadProfileCompletion, loadPersonalInfo]);
-
   //Update profile data to API
 
   const savePersonalInfo = async () => {
@@ -3410,6 +3395,7 @@ const CandidateProfilePage = () => {
       showToast("Work experience updated", "success");
 
       await loadWorkExperience();
+      await loadProfileCompletion();
       return true;
     } catch (error) {
       console.log(
@@ -3434,6 +3420,7 @@ const CandidateProfilePage = () => {
       await createWorkExperience(payload);
 
       await loadWorkExperience();
+      await loadProfileCompletion();
 
       showToast("Work experience added", "success");
       return true;
@@ -3453,6 +3440,7 @@ const CandidateProfilePage = () => {
       await deleteWorkExperience(workId);
 
       await loadWorkExperience();
+      await loadProfileCompletion();
 
       showToast("Work experience removed", "success");
       return true;
@@ -3593,6 +3581,7 @@ const CandidateProfilePage = () => {
       showToast("Education updated", "success");
 
       await loadEducation();
+      await loadProfileCompletion();
       return true;
     } catch (error) {
       console.log(error.response?.data);
@@ -3620,6 +3609,7 @@ const CandidateProfilePage = () => {
       await createEducation(payload);
 
       await loadEducation();
+      await loadProfileCompletion();
 
       showToast("Education added", "success");
       return true;
@@ -3637,6 +3627,7 @@ const CandidateProfilePage = () => {
       await deleteEducation(educationId);
 
       await loadEducation();
+      await loadProfileCompletion();
 
       showToast("Education removed", "success");
     } catch (error) {
@@ -3687,6 +3678,7 @@ const CandidateProfilePage = () => {
       });
 
       await loadSkills();
+      await loadProfileCompletion();
 
       showToast("Skill added", "success");
 
@@ -3715,6 +3707,7 @@ const CandidateProfilePage = () => {
       await updateCandidateSkill(skill.id, payload);
 
       await loadSkills();
+      await loadProfileCompletion();
 
       showToast("Skill updated", "success");
       return true;
@@ -3735,6 +3728,7 @@ const CandidateProfilePage = () => {
       await deleteSkill(skillId);
 
       await loadSkills();
+      await loadProfileCompletion();
 
       showToast("Skill removed", "success");
       return true;
@@ -3789,6 +3783,39 @@ const CandidateProfilePage = () => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadLanguages();
   }, [loadLanguages]);
+
+  // A resume upload (or any other action that dispatches "profileUpdate")
+  // can change data across several sections at once via AI parsing — not
+  // just Personal Info. Previously this only refreshed Personal Info and
+  // the completion percentage, so newly-imported Work Experience, Education,
+  // Skills, and Languages sat correctly saved on the server but never
+  // reflected in the UI until a full page reload re-ran every load*
+  // function from scratch.
+  useEffect(() => {
+    const handleProfileUpdate = () => {
+      loadProfileCompletion();
+      loadPersonalInfo();
+      loadWorkExperience();
+      loadEducation();
+      loadSkills();
+      loadLanguages();
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("profileUpdate", handleProfileUpdate);
+    }
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("profileUpdate", handleProfileUpdate);
+      }
+    };
+  }, [
+    loadProfileCompletion,
+    loadPersonalInfo,
+    loadWorkExperience,
+    loadEducation,
+    loadSkills,
+    loadLanguages,
+  ]);
 
   // Add new language to API
   const addLanguage = async (lang) => {
