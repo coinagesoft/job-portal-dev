@@ -292,64 +292,6 @@ const JobContent = ({ job = {}, isApplied = false, isSaved = false, onSavedToggl
       </div>
     </div>
   )} */}
-  {/* Key Responsibilities */}
-  {job.keyResponsibilities?.length > 0 && (
-          <div
-            style={{
-              background: '#ffffff',
-              border: '1px solid rgba(18,35,89,0.08)',
-              borderRadius: '16px',
-              padding: '22px 24px',
-              marginBottom: '24px',
-              boxShadow: '0 4px 14px rgba(18,35,89,0.04)',
-            }}
-          >
-            <h5 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '34px',
-                  height: '34px',
-                  borderRadius: '10px',
-                  background: '#FFF3E0',
-                  color: '#ff9900',
-                  flexShrink: 0,
-                }}
-              >
-                <i className="fa-solid fa-list-check"></i>
-              </span>
-              Key Responsibilities
-            </h5>
-            <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {job.keyResponsibilities.map((item, index) => (
-                <div key={index} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                  <span
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: '20px',
-                      height: '20px',
-                      borderRadius: '50%',
-                      background: '#FFF3E0',
-                      color: '#ff9900',
-                      fontSize: '10px',
-                      flexShrink: 0,
-                      marginTop: '3px',
-                      border: '1px solid #FFD699',
-                    }}
-                  >
-                    <i className="fa-solid fa-check"></i>
-                  </span>
-                  <span style={{ lineHeight: 1.6, color: '#374151' }}>{item}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Professional Skills */}
      {job.professionalSkills?.length > 0 && (
           <div

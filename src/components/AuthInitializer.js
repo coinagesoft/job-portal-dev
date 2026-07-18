@@ -61,6 +61,7 @@ export default function AuthInitializer() {
           try {
             const permissions = await getMyPermissions();
             user.isSubUser = permissions?.isSubUser ?? false;
+            user.subUserRole = permissions?.role ?? null;
             user.canSearchCandidates = permissions?.canSearchCandidates ?? true;
             user.canUnlockProfiles = permissions?.canUnlockProfiles ?? true;
             user.canPostJobs = permissions?.canPostJobs ?? true;
@@ -72,6 +73,7 @@ export default function AuthInitializer() {
             // own dashboard over a transient network error. Downstream
             // route guards still protect the restricted pages themselves.
             user.isSubUser = false;
+            user.subUserRole = null;
             user.canSearchCandidates = true;
             user.canUnlockProfiles = true;
             user.canPostJobs = true;

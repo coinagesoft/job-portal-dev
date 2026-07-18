@@ -1024,45 +1024,25 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
         </div> 
       </div> 
  
-      {/* Key Responsibilities */} 
-      <Field 
-        label="Key Responsibilities" 
-        hint="Enter each responsibility on a new line" 
-      > 
-        <button 
-          type="button" 
-          className="btn btn-sm btn-default mb-10" 
-          onClick={handleGenerateJD} 
-        > 
-          {loadingAI ? "Generating…" : "✨ Generate with AI"} 
-        </button> 
-        <textarea 
-          className={styles.textarea} 
-          rows={4} 
-          placeholder={"• Operate welding equipment\n• Follow safety protocols"} 
-          value={jobForm.KeyResponsibilities.join("\n")} 
-          onChange={(e) => 
-            setJobForm((p) => ({ 
-              ...p, 
-              KeyResponsibilities: e.target.value.split("\n"), 
-            })) 
-          } 
-        /> 
-      </Field> 
- 
-      {/* Job Description */} 
-      <Field label="Job Description" required> 
- 
- 
-        <textarea 
-          className={styles.textarea} 
-          rows={6} 
-          value={jobForm.JobDescription} 
-          onChange={(e) => 
-            setJobForm((p) => ({ ...p, JobDescription: e.target.value })) 
-          } 
-          onKeyDown={handleJDTab} 
-        /> 
+      {/* Job Description */}
+      <Field label="Job Description" required>
+        <button
+          type="button"
+          className="btn btn-sm btn-default mb-10"
+          onClick={handleGenerateJD}
+        >
+          {loadingAI ? "Generating…" : "✨ Generate with AI"}
+        </button>
+
+        <textarea
+          className={styles.textarea}
+          rows={6}
+          value={jobForm.JobDescription}
+          onChange={(e) =>
+            setJobForm((p) => ({ ...p, JobDescription: e.target.value }))
+          }
+          onKeyDown={handleJDTab}
+        />
  
         {ghostSuggestion && ( 
           <div className={styles.inlineSuggestion}> 
@@ -2092,17 +2072,15 @@ export default function DashboardPostJobPage() {
       }); 
       setJobForm((p) => ({ 
         ...p, 
+        // The AI response now returns one consolidated description
+        // (summary + responsibilities + requirements + benefits) instead of
+        // splitting it across JobDescription and a separate Key
+        // Responsibilities field — previously both were filled from the
+        // same responsibilities list, showing identical bullets twice on
+        // this screen. KeyResponsibilities/Step3KeyResponsibilities are
+        // left as-is here for manual entry if the employer wants them. 
         JobDescription: response.generatedDescription || "", 
-        KeyResponsibilities: response.responsibilities?.length 
-          ? response.responsibilities 
-          : p.KeyResponsibilities, 
         KeySkills: response.suggestedSkills ?? p.KeySkills, 
-        // Step-3 additional JD = Requirements + What We Offer. 
-        AdditionalJobDescription: 
-          response.additionalDescription || p.AdditionalJobDescription, 
-        Step3KeyResponsibilities: response.requirements?.length 
-          ? response.requirements 
-          : p.Step3KeyResponsibilities, 
       })); 
     } catch (error) { 
       console.error("generateJD:", error); 
