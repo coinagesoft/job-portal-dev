@@ -447,11 +447,21 @@ function CompanyDetailsContent() {
                       aria-labelledby="tab-about"
                     >
                       {companyInfo.companyDescription && (
-                        <>
-                          <h4>About {companyInfo.companyName}</h4>
-                          <p>{companyInfo.companyDescription}</p>
-                        </>
-                      )}
+  <>
+ <h4>
+  About{"   "}
+  <span
+    style={{
+      fontFamily: "Arial",
+      fontWeight: 700,
+      fontSize: "26px",
+    }}
+  >
+    {companyInfo.companyName}
+  </span>
+</h4>
+  </>
+)}
 
                       {(companyInfo.companyHighlights || []).length > 0 && (
                         <div style={{ marginTop: "30px" }}>
@@ -520,63 +530,90 @@ function CompanyDetailsContent() {
                           </div>
                         </div>
                       )}
-                      <div className="row mt-3">
-                        {(companyInfo.companyHighlights || []).length > 0 && (
-                          <div style={{ marginTop: "26px" }}>
-                            <h6
-                              style={{
-                                fontSize: "14px",
-                                fontWeight: 700,
-                                color: "#122359",
-                                marginBottom: "14px",
-                              }}
-                            >
-                              Highlights
-                            </h6>
-
-                            <div
-                              style={{
-                                display: "grid",
-                                gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-                                columnGap: "32px",
-                                rowGap: "12px",
-                              }}
-                            >
-                              {companyInfo.companyHighlights.map((item, index) => (
-                                <div
-                                  key={index}
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "flex-start",
-                                    gap: "10px",
-                                    paddingBottom: "12px",
-                                    borderBottom: "1px solid rgba(18,35,89,0.06)",
-                                  }}
-                                >
-                                  <i
-                                    className="fi-rr-check"
-                                    style={{
-                                      color: "#ff9900",
-                                      fontSize: "12px",
-                                      marginTop: "3px",
-                                      flexShrink: 0,
-                                    }}
-                                  />
-                                  <span
-                                    style={{
-                                      fontSize: "14px",
-                                      color: "#4b5a7a",
-                                      lineHeight: 1.5,
-                                    }}
-                                  >
-                                    {item}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
+{/* <div className="row mt-3">
+  {(companyInfo.companyHighlights || []).length > 0 && (
+    <div style={{ marginTop: "26px" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          marginBottom: "18px",
+        }}
+      >
+        <span
+          style={{
+            width: "4px",
+            height: "16px",
+            background: "#ffa300",
+            borderRadius: "3px",
+          }}
+        />
+        <span
+          style={{
+            fontSize: "13px",
+            fontWeight: 700,
+            color: "#122359",
+            textTransform: "uppercase",
+            letterSpacing: ".5px",
+          }}
+        >
+          Highlights
+        </span>
+      </div>
+<div
+  style={{
+    display: "grid",
+    gridTemplateColumns: "repeat(2, 1fr)",
+    columnGap: "36px",
+    rowGap: "20px",
+  }}
+>
+  {companyInfo.companyHighlights.map((item, index) => (
+    <div
+      key={index}
+      style={{
+        display: "flex",
+        alignItems: "flex-start",
+        gap: "14px",
+      }}
+    >
+      <span
+        style={{
+          width: "34px",
+          height: "34px",
+          borderRadius: "50%",
+          background: "rgba(255,153,0,0.1)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+        }}
+      >
+        <i
+          className="fa-solid fa-star"
+          style={{
+            color: "#ff9900",
+            fontSize: "13px",
+          }}
+        />
+      </span>
+      <span
+        style={{
+          fontSize: "14.5px",
+          color: "#122359",
+          fontWeight: 600,
+          lineHeight: 1.5,
+        }}
+      >
+        {item}
+      </span>
+    </div>
+  ))}
+</div>
+    </div>
+  )}
+</div> */}
                       {(companyInfo.businessType ||
                         companyInfo.totalEmployees ||
                         companyInfo.reviewCount != null ||

@@ -184,6 +184,9 @@ export default function MyDocuments() {
       if (data?.success) {
         setMessage({ type: "success", text: data.message || "CV uploaded and verified." });
         await loadAll();
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("profileUpdate"));
+        }
       } else {
         setMessage({ type: "error", text: data?.message || "CV upload failed." });
       }
@@ -205,6 +208,9 @@ export default function MyDocuments() {
       await deleteResume();
       setMessage({ type: "success", text: "CV removed." });
       await loadAll();
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("profileUpdate"));
+      }
     } catch (e) {
       setMessage({ type: "error", text: e?.response?.data?.message || "Could not remove CV." });
     } finally {
@@ -224,6 +230,9 @@ export default function MyDocuments() {
           text: `${data.documentType || "Document"} uploaded and verified.`,
         });
         await loadAll();
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("profileUpdate"));
+        }
       } else {
         setMessage({ type: "error", text: data?.message || "Document was rejected." });
       }
@@ -243,6 +252,9 @@ export default function MyDocuments() {
     try {
       await deleteDocument(documentId);
       await loadAll();
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("profileUpdate"));
+      }
     } catch (e) {
       setMessage({ type: "error", text: e?.response?.data?.message || "Could not delete document." });
     }

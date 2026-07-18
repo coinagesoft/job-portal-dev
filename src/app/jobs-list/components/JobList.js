@@ -107,7 +107,7 @@ const JobList = ({ filters = {} }) => {
   const matchesLocationSingle = (job) => {
     const loc = (filters.locationSingle || "").trim();
     if (!loc) return true;
-    
+
     // Check if the resolved country matches the search location
     const resolvedCountry = resolveCountry(job.jobLocation || job.city || job.state);
     if (resolvedCountry && normalizeString(resolvedCountry) === normalizeString(loc)) {
@@ -393,8 +393,13 @@ const JobList = ({ filters = {} }) => {
         </div>
       )}
       {totalPages > 1 ? (
-        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
-      ) : null}
+  <Pagination
+    currentPage={currentPage}
+    totalPages={totalPages}
+    onPageChange={setCurrentPage}
+    loading={loading}
+  />
+) : null}
       <ApplyJobModal
         showModal={showApplyModal}
         setShowModal={(v) => { setShowApplyModal(v); if (!v) loadAppliedJobs(); }}

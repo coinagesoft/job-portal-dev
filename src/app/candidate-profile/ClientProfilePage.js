@@ -43,6 +43,7 @@ import {
   deleteResume,
   getDocuments,
 } from "@/services/candidate/candidateResume.js";
+import { getUploadedDocuments } from "@/services/candidate/documentService";
 
 import {
   uploadEducationCertificate,
@@ -2890,10 +2891,47 @@ const CandidateProfilePage = () => {
     if (!candidateId) return;
 
     try {
-      const response = await getProfileCompletion();
+      const [completionRes, uploadedDocsRes] = await Promise.all([
+        getProfileCompletion(),
+        getUploadedDocuments().catch(() => null),
+      ]);
 
-      if (response.data.success) {
-        setProfileCompletion(response.data.data);
+      if (completionRes.data.success) {
+        let completionData = completionRes.data.data;
+
+        // Check if there is any verified Aadhaar Card in the uploaded documents
+        const uploadedDocs = uploadedDocsRes?.data?.documents || [];
+        const isAadhaarVerified = uploadedDocs.some(
+          (doc) =>
+            (doc.documentType || "").toLowerCase().includes("aadhaar") &&
+            doc.verificationStatus === "Verified"
+        );
+
+        if (isAadhaarVerified && completionData && Array.isArray(completionData.items)) {
+          // Find Aadhaar item and mark it as completed
+          completionData = {
+            ...completionData,
+            items: completionData.items.map((item) => {
+              const isAadhaarItem =
+                (item.key || "").toLowerCase().includes("aadhaar") ||
+                (item.key || "").toLowerCase().includes("aadhar") ||
+                (item.label || "").toLowerCase().includes("aadhaar") ||
+                (item.label || "").toLowerCase().includes("aadhar");
+
+              if (isAadhaarItem) {
+                return { ...item, completed: true };
+              }
+              return item;
+            }),
+          };
+
+          // Re-calculate overall percentage
+          const completedCount = completionData.items.filter((item) => item.completed).length;
+          const totalCount = completionData.items.length;
+          completionData.overallPct = Math.round((completedCount / totalCount) * 100);
+        }
+
+        setProfileCompletion(completionData);
       }
     } catch (error) {
       console.error("Failed to load profile completion", error);
@@ -2904,6 +2942,8 @@ const CandidateProfilePage = () => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadProfileCompletion();
   }, [loadProfileCompletion]);
+
+
 
   //Loading profile data from API
   const loadPersonalInfo = useCallback(async () => {
@@ -2989,6 +3029,21 @@ const CandidateProfilePage = () => {
     loadPersonalInfo();
     loadAvailability();
   }, [loadPersonalInfo, loadAvailability]);
+
+  useEffect(() => {
+    const handleProfileUpdate = () => {
+      loadProfileCompletion();
+      loadPersonalInfo();
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("profileUpdate", handleProfileUpdate);
+    }
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("profileUpdate", handleProfileUpdate);
+      }
+    };
+  }, [loadProfileCompletion, loadPersonalInfo]);
 
   //Update profile data to API
 
@@ -3300,7 +3355,7 @@ const CandidateProfilePage = () => {
           Boolean(w.company?.trim()) &&
           Boolean(w.startDate) &&
           (w.current || Boolean(w.endDate)) &&
-          Boolean(String(w.noticePeriod ?? "").trim()),
+          (!w.current || Boolean(String(w.noticePeriod ?? "").trim())),
       );
     if (workComplete) set.add(3);
 
@@ -3459,8 +3514,8 @@ const CandidateProfilePage = () => {
       return false;
     }
 
-    if (!work.noticePeriod || !String(work.noticePeriod).trim()) {
-      showToast("Notice period is required.", "error");
+    if (work.current && (!work.noticePeriod || !String(work.noticePeriod).trim())) {
+      showToast("Notice period is required for your current job.", "error");
       return false;
     }
 
@@ -4002,6 +4057,9 @@ const CandidateProfilePage = () => {
       showToast(`${names[currentStep - 1]} saved!`, "success");
     }
 
+    // Refresh profile completion data when a step is successfully saved
+    loadProfileCompletion();
+
     if (currentStep < TOTAL) {
       setCurrentStep((s) => s + 1);
     } else {
@@ -4264,7 +4322,7 @@ const CandidateProfilePage = () => {
                   <StepBar
                     current={done ? TOTAL + 1 : currentStep}
                     onStepClick={done ? undefined : (n) => setCurrentStep(n)}
-                    completedSteps={done ? null : completedSteps}
+                    completedSteps={completedSteps}
                   />
                 </div>
 
