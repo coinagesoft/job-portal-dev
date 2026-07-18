@@ -9,11 +9,18 @@ import {
 } from "@/store/authSlice";
 import { getMyPermissions } from "@/services/recruiter/recruiterSubUserService";
 
+// How often to re-check the caller's current role/permissions while the
+// app is open. This is what lets a permission downgrade (e.g. the account
+// owner changing a sub-user from HR Manager to Viewer) actually take effect
+// for a session that's already open on a restricted page, instead of only
+// being caught the next time the whole app reloads.
+const PERMISSION_POLL_INTERVAL_MS = 20_000;
+
 export default function AuthInitializer() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    const init = async () => {
+    const loadAuth = async () => {
       const token = localStorage.getItem("token");
 
       if (!token) {
@@ -22,12 +29,7 @@ export default function AuthInitializer() {
       }
 
       try {
-        console.log("AUTH INITIALIZER RUNNING");
-        console.log("TOKEN", token);
-
         const decoded = jwtDecode(token);
-
-        console.log("DECODED", decoded);
 
         const roleClaim =
           decoded[
@@ -91,7 +93,30 @@ export default function AuthInitializer() {
       }
     };
 
-    init();
+    loadAuth();
+
+    // Re-check permissions periodically while the tab is open, and
+    // immediately whenever the user switches back to it — covers both the
+    // "left it open overnight" and "owner changed my role while I was on
+    // another tab" cases without waiting for a manual page refresh.
+    const intervalId = setInterval(loadAuth, PERMISSION_POLL_INTERVAL_MS);
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        loadAuth();
+      }
+    };
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", onVisibilityChange);
+    }
+
+    return () => {
+      clearInterval(intervalId);
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", onVisibilityChange);
+      }
+    };
   }, [dispatch]);
 
   return null;
