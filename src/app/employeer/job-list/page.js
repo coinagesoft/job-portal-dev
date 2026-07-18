@@ -62,23 +62,23 @@ const Tag = ({ label }) => {
   );
 };
 
-const handleDelete = async (jobId, jobTitle) => {
-  const confirmed = window.confirm(
-    `Are you sure you want to delete "${jobTitle}"? This action cannot be undone.`
-  );
+// const handleDelete = async (jobId, jobTitle) => {
+//   const confirmed = window.confirm(
+//     `Are you sure you want to delete "${jobTitle}"? This action cannot be undone.`
+//   );
 
-  if (!confirmed) return;
+//   if (!confirmed) return;
 
-  try {
-    const res = await deleteJob(jobId);
+//   try {
+//     const res = await deleteJob(jobId);
 
-    showToast(res.message || "Job deleted successfully", "success");
+//     showToast(res.message || "Job deleted successfully", "success");
 
-    await loadData();
-  } catch (err) {
-    showToast(err.response?.data?.message || "Unable to delete job", "error");
-  }
-};
+//     await loadData();
+//   } catch (err) {
+//     showToast(err.response?.data?.message || "Unable to delete job", "error");
+//   }
+// };
 const EmployerJobListPage = () => {
   const showToast = useToast();
   const user = useSelector((state) => state.auth.user);
@@ -103,6 +103,29 @@ const EmployerJobListPage = () => {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewJob, setPreviewJob] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+
+  const [deleteTarget, setDeleteTarget] = useState(null); // { jobId, jobTitle } | null
+const [deleting, setDeleting] = useState(false);
+
+const requestDelete = (jobId, jobTitle) => {
+  setOpenMenu(null);
+  setDeleteTarget({ jobId, jobTitle });
+};
+
+const confirmDelete = async () => {
+  if (!deleteTarget) return;
+  setDeleting(true);
+  try {
+    const res = await deleteJob(deleteTarget.jobId);
+    showToast(res.message || "Job deleted successfully", "success");
+    await loadData();
+  } catch (err) {
+    showToast(err.response?.data?.message || "Unable to delete job", "error");
+  } finally {
+    setDeleting(false);
+    setDeleteTarget(null);
+  }
+};
 
   const handlePreview = async (jobId) => {
     setOpenMenu(null);
@@ -1192,15 +1215,15 @@ const EmployerJobListPage = () => {
                         )}
 
                         {canManageJobs && (
-                          <button
-                            className={styles.dropdownItem}
-                            onClick={() => handleDelete(job.jobId, job.jobTitle)}
-                            style={{ color: "#dc2626" }}
-                          >
-                            <i className="fi-rr-trash" />
-                            <span>Delete Job</span>
-                          </button>
-                        )}
+  <button
+    className={styles.dropdownItem}
+    onClick={() => requestDelete(job.jobId, job.jobTitle)}
+    style={{ color: "#dc2626" }}
+  >
+    <i className="fi-rr-trash" />
+    <span>Delete Job</span>
+  </button>
+)}
 
                         {!canManageJobs && !canViewApplicants && (
                           <div
@@ -1233,6 +1256,97 @@ const EmployerJobListPage = () => {
         job={previewJob}
         loading={previewLoading}
       />
+      {deleteTarget && (
+  <div
+    style={{
+      position: "fixed",
+      inset: 0,
+      background: "rgba(18,35,89,0.45)",
+      backdropFilter: "blur(2px)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 100000,
+    }}
+    onClick={() => !deleting && setDeleteTarget(null)}
+  >
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        width: "min(400px, 90vw)",
+        background: "#fff",
+        borderRadius: 20,
+        border: "1px solid #EEF2F7",
+        boxShadow: "0 24px 50px rgba(18,35,89,.18)",
+        padding: "28px 26px",
+      }}
+    >
+      <div
+        style={{
+          width: 48,
+          height: 48,
+          borderRadius: "50%",
+          background: "#FEE2E2",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: 16,
+        }}
+      >
+        <i className="fi-rr-trash" style={{ fontSize: 20, color: "#dc2626" }} />
+      </div>
+
+      <h5 style={{ color: "#122359", fontWeight: 800, marginBottom: 8 }}>
+        Delete this job?
+      </h5>
+
+      <p style={{ fontSize: 13.5, color: "#66789c", lineHeight: 1.5, marginBottom: 24 }}>
+        {`"${deleteTarget.jobTitle}"`} will be permanently removed. This action cannot be undone.
+      </p>
+
+      <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+        <button
+          type="button"
+          onClick={() => setDeleteTarget(null)}
+          disabled={deleting}
+          style={{
+            height: 42,
+            padding: "0 18px",
+            borderRadius: 12,
+            border: "1px solid #E5E7EB",
+            background: "#fff",
+            color: "#122359",
+            fontWeight: 700,
+            fontSize: 13,
+            cursor: deleting ? "not-allowed" : "pointer",
+          }}
+        >
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          onClick={confirmDelete}
+          disabled={deleting}
+          style={{
+            height: 42,
+            padding: "0 18px",
+            borderRadius: 12,
+            border: "none",
+            background: "#dc2626",
+            color: "#fff",
+            fontWeight: 700,
+            fontSize: 13,
+            cursor: deleting ? "not-allowed" : "pointer",
+            opacity: deleting ? 0.7 : 1,
+          }}
+        >
+          {deleting ? "Deleting..." : "Delete Job"}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </main>
   );
 };
