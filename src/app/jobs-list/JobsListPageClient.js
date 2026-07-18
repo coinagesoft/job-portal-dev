@@ -38,43 +38,191 @@ const JobsListPageClient = () => {
     fetchJobs();
   }, []);
 
-const filtersFromQuery = useMemo(() => {
-  const queryFilters = {};
 
-  const keyword =
-    (searchParams.get("q") || "").trim();
 
-  const location =
-    (searchParams.get("location") || "").trim();
 
-  const industries = searchParams
-    .getAll("industry")
-    .map((item) => item.trim())
-    .filter(Boolean);
+  // const filtersFromQuery = useMemo(() => {
+  //   const queryFilters = {};
 
-  const tradeCategories = searchParams
-    .getAll("tradeCategory")
-    .map((item) => item.trim())
-    .filter(Boolean);
+  //   const keyword =
+  //     (searchParams.get("q") || "").trim();
 
-  if (keyword) {
-    queryFilters.keyword = keyword;
+  //   const location =
+  //     (searchParams.get("location") || "").trim();
+
+  //   const industries = searchParams
+  //     .getAll("industry")
+  //     .map((item) => item.trim())
+  //     .filter(Boolean);
+
+  //   const tradeCategories = searchParams
+  //     .getAll("tradeCategory")
+  //     .map((item) => item.trim())
+  //     .filter(Boolean);
+
+  //   if (keyword) {
+  //     queryFilters.keyword = keyword;
+  //   }
+
+  //   if (location) {
+  //     queryFilters.locationSingle = location;
+  //   }
+
+  //   if (industries.length) {
+  //     queryFilters.industries = industries;
+  //   }
+
+  //   if (tradeCategories.length) {
+  //     queryFilters.tradeCategories = tradeCategories;
+  //   }
+
+  //   return queryFilters;
+  // }, [searchParams]);
+
+  const filtersFromQuery = useMemo(() => {
+    const queryFilters = {};
+
+    const keyword =
+      (searchParams.get("q") || "").trim();
+
+    const location =
+      (searchParams.get("location") || "").trim();
+
+    // NEW: Company/Employer filter
+    const employerId =
+      (searchParams.get("employerId") || "").trim();
+
+    const industries = searchParams
+      .getAll("industry")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    const tradeCategories = searchParams
+      .getAll("tradeCategory")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    if (keyword) {
+      queryFilters.keyword = keyword;
+    }
+
+    if (location) {
+      queryFilters.locationSingle = location;
+    }
+
+    if (employerId) {
+      queryFilters.employerId = employerId;
+    }
+
+    if (industries.length) {
+      queryFilters.industries = industries;
+    }
+
+    if (tradeCategories.length) {
+      queryFilters.tradeCategories = tradeCategories;
+    }
+
+    return queryFilters;
+  }, [searchParams]);
+
+const queryFilteredJobs = useMemo(() => {
+  let result = [...jobs];
+
+  // 1. FILTER BY EMPLOYER ID
+  if (filters.employerId) {
+    const employerId = String(filters.employerId)
+      .trim()
+      .toLowerCase();
+
+    result = result.filter(
+      (job) =>
+        String(job.employerId || "")
+          .trim()
+          .toLowerCase() === employerId
+    );
   }
 
-  if (location) {
-    queryFilters.locationSingle = location;
+  // 2. FILTER BY KEYWORD
+  if (filters.keyword) {
+    const keyword = filters.keyword
+      .trim()
+      .toLowerCase();
+
+    result = result.filter((job) => {
+      const searchableText = [
+        job.jobTitle,
+        job.companyName,
+        job.tradeCategory,
+        job.department,
+        job.industryType,
+        job.description,
+        ...(job.skills || []),
+        ...(job.tags || []),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return searchableText.includes(keyword);
+    });
   }
 
-  if (industries.length) {
-    queryFilters.industries = industries;
+  // 3. FILTER BY LOCATION
+  if (filters.locationSingle) {
+    const location = filters.locationSingle
+      .trim()
+      .toLowerCase();
+
+    result = result.filter((job) => {
+      const searchableLocation = [
+        job.jobLocation,
+        job.companyLocation,
+        job.onshoreCity,
+        job.onshoreState,
+        job.offshoreCountry,
+        job.offshoreRegion,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return searchableLocation.includes(location);
+    });
   }
 
-  if (tradeCategories.length) {
-    queryFilters.tradeCategories = tradeCategories;
+  // 4. FILTER BY INDUSTRY
+  if (filters.industries?.length) {
+    const selectedIndustries = filters.industries.map(
+      (item) => item.trim().toLowerCase()
+    );
+
+    result = result.filter((job) =>
+      selectedIndustries.includes(
+        String(job.industryType || "")
+          .trim()
+          .toLowerCase()
+      )
+    );
   }
 
-  return queryFilters;
-}, [searchParams]);
+  // 5. FILTER BY TRADE CATEGORY
+  if (filters.tradeCategories?.length) {
+    const selectedTradeCategories =
+      filters.tradeCategories.map(
+        (item) => item.trim().toLowerCase()
+      );
+
+    result = result.filter((job) =>
+      selectedTradeCategories.includes(
+        String(job.tradeCategory || "")
+          .trim()
+          .toLowerCase()
+      )
+    );
+  }
+
+  return result;
+}, [jobs, filters]);
 
   useEffect(() => {
     setFilters((prev) => {
@@ -83,6 +231,7 @@ const filtersFromQuery = useMemo(() => {
       delete next.locationSingle;
       delete next.industries;
       delete next.tradeCategories;
+      delete next.employerId;
       return { ...next, ...filtersFromQuery };
     });
   }, [filtersFromQuery]);
@@ -96,16 +245,37 @@ const filtersFromQuery = useMemo(() => {
   const handleFiltersChange = useCallback((newFilters) => {
     setFilters((prev) => ({
       ...(newFilters || {}),
-      ...(prev.keyword ? { keyword: prev.keyword } : {}),
-      ...(prev.locationSingle ? { locationSingle: prev.locationSingle } : {})
+
+      // Preserve URL-controlled filters
+      ...(prev.keyword
+        ? { keyword: prev.keyword }
+        : {}),
+
+      ...(prev.locationSingle
+        ? { locationSingle: prev.locationSingle }
+        : {}),
+
+      ...(prev.employerId
+        ? { employerId: prev.employerId }
+        : {}),
     }));
   }, []);
 
   const handleSheetApply = useCallback((sheetFilters) => {
     setFilters((prev) => ({
       ...(sheetFilters || {}),
-      ...(prev.keyword ? { keyword: prev.keyword } : {}),
-      ...(prev.locationSingle ? { locationSingle: prev.locationSingle } : {})
+
+      ...(prev.keyword
+        ? { keyword: prev.keyword }
+        : {}),
+
+      ...(prev.locationSingle
+        ? { locationSingle: prev.locationSingle }
+        : {}),
+
+      ...(prev.employerId
+        ? { employerId: prev.employerId }
+        : {}),
     }));
   }, []);
 
@@ -113,15 +283,33 @@ const filtersFromQuery = useMemo(() => {
     setShowFilterSheet(false);
   }, []);
 
+
+useEffect(() => {
+  console.log("URL EMPLOYER ID:", searchParams.get("employerId"));
+  console.log("FILTER EMPLOYER ID:", filters.employerId);
+  console.log("ALL JOBS:", jobs);
+
+  console.log(
+    "JOB EMPLOYER IDS:",
+    jobs.map((job) => ({
+      jobId: job.jobId,
+      employerId: job.employerId,
+      companyName: job.companyName,
+    }))
+  );
+
+  console.log("COMPANY FILTERED JOBS:", queryFilteredJobs);
+}, [searchParams, filters.employerId, jobs, queryFilteredJobs]);
+
   return (
     <>
       <Preloader />
       <HeroSearch
-  jobs={jobs}
-  keyword={searchParams.get("q") || ""}
-  location={searchParams.get("location") || ""}
-  industry={searchParams.get("industry") || ""}
-/>
+        jobs={queryFilteredJobs}
+        keyword={searchParams.get("q") || ""}
+        location={searchParams.get("location") || ""}
+        industry={searchParams.get("industry") || ""}
+      />
       <section className="section-box mt-30">
         <div className="container">
           <div className="row flex-row-reverse">
@@ -132,10 +320,13 @@ const filtersFromQuery = useMemo(() => {
                   onClick={() => setShowFilterSheet(true)} 
                 /> */}
               </div>
-              <JobList filters={filters} />
+              <JobList
+                jobs={queryFilteredJobs}
+                filters={filters}
+              />
             </div>
             <div className="col-lg-3 col-md-12 col-sm-12 col-12">
-              <JobFiltersSidebar jobs={jobs} filters={filters} onFilterChange={handleFiltersChange} />
+              <JobFiltersSidebar   jobs={queryFilteredJobs} filters={filters} onFilterChange={handleFiltersChange} />
             </div>
           </div>
         </div>
@@ -143,7 +334,7 @@ const filtersFromQuery = useMemo(() => {
       <NewsSection />
       {/* <Newsletter /> */}
       {showFilterSheet && (
-        <JobFilterSheet 
+        <JobFilterSheet
           initialFilters={filters}
           onApply={handleSheetApply}
           onClose={handleSheetClose}

@@ -322,7 +322,7 @@ const EmployerBuyCreditsPage = () => {
                   <span className="font-sm color-brand-1 mr-10">
                     Current balance:{" "}
                     {wallet !== null
-                      ? `${wallet.availableCredits < 0 ? 0 : wallet.availableCredits} credits`
+                      ? `${wallet.creditBalance < 0 ? 0 : wallet.creditBalance} credits`
                       : "—"}
                   </span>
                   <Link
@@ -354,11 +354,17 @@ const EmployerBuyCreditsPage = () => {
                       </p>
                       <p className="font-sm mb-0">
                         <strong className="color-brand-1">
-                          {wallet.availableCredits < 0
+                          {wallet.creditBalance < 0
                             ? 0
-                            : wallet.availableCredits}
+                            : wallet.creditBalance}
                         </strong>{" "}
-                        / {wallet.allocatedCredits} allocated
+                        total
+                        {wallet.allocatedCredits > 0 && (
+                          <span className="color-text-paragraph-2">
+                            {" "}
+                            ({wallet.allocatedCredits} allocated to sub-users)
+                          </span>
+                        )}
                       </p>
                     </div>
                     <div className="col-md-4 col-sm-12">
