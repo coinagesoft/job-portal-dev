@@ -42,6 +42,7 @@ import {
   uploadResume,
   deleteResume,
   getDocuments,
+  generateCv,
 } from "@/services/candidate/candidateResume.js";
 
 import {
@@ -2226,10 +2227,26 @@ const StepLanguages = ({ data, onAdd, onRemove, onUpdate }) => {
   );
 };
 
+// Maps each profile-completion checklist item to the wizard step that
+// actually lets the candidate fix it (see stepContent() switch below:
+// 1=Personal, 2=Documents, 3=Work, 4=Education, 5=Skills, 6=Languages).
+const COMPLETION_ITEM_TO_STEP = {
+  photo: 1,
+  personalInfo: 1,
+  summary: 1,
+  resume: 2,
+  aadhaar: 2,
+  passport: 2,
+  workHistory: 3,
+  education: 4,
+  skills: 5,
+};
+
 // ─── Completion Summary (final step done) ────────────────────────────────────
 const CompletionSummary = ({
   completion,
   onEdit,
+  onNavigateToItem,
   router,
 }) => {
   const percent = completion?.overallPct || 0;
@@ -2458,6 +2475,7 @@ const CompletionSummary = ({
             </div>
 
             <button
+              onClick={() => onNavigateToItem?.(item.key)}
               style={{
                 border: "none",
                 background: "#FFF5E8",
@@ -2468,7 +2486,7 @@ const CompletionSummary = ({
                 fontWeight: 600,
               }}
             >
-              Complete
+              Pending
             </button>
           </div>
         ))}
@@ -3286,10 +3304,12 @@ const CandidateProfilePage = () => {
       Number(profileData.yearsOfExperience) >= 0;
     if (personalComplete) set.add(1);
 
-    const documentsComplete = Boolean(
-      profileData.documents?.nationalId?.frontFile ||
-      profileData.documents?.nationalId?.file,
-    );
+    // MyDocuments.js manages resume/Aadhaar/passport entirely in its own
+    // internal state (via getDocuments()/uploadResume()) and never writes
+    // back into profileData.documents — so that field is permanently empty
+    // and can't be used to detect completion. Use the same resume-uploaded
+    // signal the backend's own completion calculation relies on instead.
+    const documentsComplete = Boolean(profileCompletion?.hasResume);
     if (documentsComplete) set.add(2);
 
     const workComplete =
@@ -3316,7 +3336,7 @@ const CandidateProfilePage = () => {
     if (languagesComplete) set.add(6);
 
     return set;
-  }, [profileData]);
+  }, [profileData, profileCompletion]);
 
   const updateField = useCallback(
     (field, value) => setProfileData((p) => ({ ...p, [field]: value })),
@@ -3481,7 +3501,12 @@ const CandidateProfilePage = () => {
             id: item.educationId,
             title: item.qualificationDegree,
             institution: item.instituteName,
-            meta: item.yearDetails || "",
+            // Affinda-parsed entries populate passoutYear but not yearDetails
+            // (that field is really a grade/certificate note). Fall back to
+            // the year so it isn't shown as blank when it's actually known.
+            meta:
+              item.yearDetails ||
+              (item.passoutYear ? String(item.passoutYear) : ""),
             certificateNumber: item.certificateNumber || "",
             verified: item.isAiVerified,
           })),
@@ -4002,6 +4027,15 @@ const CandidateProfilePage = () => {
       showToast(`${names[currentStep - 1]} saved!`, "success");
     }
 
+    // Keep the Portal CV in sync with whatever was just saved. This is
+    // best-effort — a failure here shouldn't block the person from moving
+    // on through the profile wizard.
+    try {
+      await generateCv();
+    } catch (err) {
+      // console.log("Portal CV regeneration failed:", err);
+    }
+
     if (currentStep < TOTAL) {
       setCurrentStep((s) => s + 1);
     } else {
@@ -4278,6 +4312,11 @@ const CandidateProfilePage = () => {
                       onEdit={() => {
                         setDone(false);
                         setCurrentStep(1);
+                      }}
+                      onNavigateToItem={(key) => {
+                        const step = COMPLETION_ITEM_TO_STEP[key] || 1;
+                        setDone(false);
+                        setCurrentStep(step);
                       }}
                       completion={profileCompletion}
                       router={router}
