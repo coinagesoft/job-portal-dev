@@ -87,7 +87,7 @@ const EmployerJobListPage = () => {
   // backend's CanPostJobs check; the account owner always has both.
   const canManageJobs = !isSubUser || user?.canPostJobs !== false;
   const canViewApplicants = !isSubUser || user?.canManageApplications !== false;
-  const [activeStatus, setActiveStatus] = useState("Active");
+  const [activeStatus, setActiveStatus] = useState("All");
   const [activeType, setActiveType] = useState("All Types");
   const [openMenu, setOpenMenu] = useState(null);
   const [companyLogos, setCompanyLogos] = useState({});
@@ -118,7 +118,7 @@ const confirmDelete = async () => {
   try {
     const res = await deleteJob(deleteTarget.jobId);
     showToast(res.message || "Job deleted successfully", "success");
-    await loadData();
+    await Promise.all([loadData(), loadJobs(activeStatus, activeType)]);
   } catch (err) {
     showToast(err.response?.data?.message || "Unable to delete job", "error");
   } finally {
@@ -157,77 +157,63 @@ const confirmDelete = async () => {
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
-  const handlePause = async (jobId) => {
-    try {
-      const res = await pauseJob(jobId);
+const handleClose = async (jobId) => {
+  try {
+    const res = await closeJob(jobId);
+    showToast(res.message, "success");
+    await Promise.all([loadData(), loadJobs(activeStatus, activeType)]);
+  } catch (err) {
+    showToast(err.response?.data?.message || "Unable to close job", "error");
+  }
+};
 
-      showToast(res.message, "success");
+const handleResume = async (jobId) => {
+  try {
+    const res = await resumeJob(jobId);
+    showToast(res.message, "success");
+    await Promise.all([loadData(), loadJobs(activeStatus, activeType)]);
+  } catch (err) {
+    showToast(err.response?.data?.message || "Unable to resume job", "error");
+  }
+};
 
-      await loadData();
-    } catch (err) {
-      showToast(err.response?.data?.message || "Unable to pause job", "error");
-    }
-  };
+const handleArchive = async (jobId) => {
+  try {
+    const res = await archiveJob(jobId);
+    showToast(res.message, "success");
+    await Promise.all([loadData(), loadJobs(activeStatus, activeType)]);
+  } catch (err) {
+    showToast(err.response?.data?.message || "Unable to archive job", "error");
+  }
+};
 
-  const handleClose = async (jobId) => {
-    try {
-      const res = await closeJob(jobId);
 
-      showToast(res.message, "success");
-
-      await loadData();
-    } catch (err) {
-      showToast(err.response?.data?.message || "Unable to close job", "error");
-    }
-  };
-  const handleResume = async (jobId) => {
-    try {
-      const res = await resumeJob(jobId);
-
-      showToast(res.message, "success");
-
-      await loadData();
-    } catch (err) {
-      showToast(err.response?.data?.message || "Unable to resume job", "error");
-    }
-  };
-
-  const handleArchive = async (jobId) => {
-    try {
-      const res = await archiveJob(jobId);
-
-      showToast(res.message, "success");
-
-      await loadData();
-    } catch (err) {
-      showToast(
-        err.response?.data?.message || "Unable to archive job",
-        "error",
-      );
-    }
-  };
-  const JOB_STATUS_TABS = [
-    {
-      label: "Draft",
-      count: dashboard?.draftJobs || 0,
-    },
-    {
-      label: "Active",
-      count: dashboard?.activeJobs || 0,
-    },
-    {
-      label: "Paused",
-      count: dashboard?.pausedJobs || 0,
-    },
-    {
-      label: "Closed",
-      count: dashboard?.closedJobs || 0,
-    },
-    {
-      label: "Archived",
-      count: dashboard?.archivedJobs || 0,
-    },
-  ];
+const JOB_STATUS_TABS = [
+  {
+    label: "All",
+    count: dashboard?.totalJobs || 0,
+  },
+  {
+    label: "Draft",
+    count: dashboard?.draftJobs || 0,
+  },
+  {
+    label: "Active",
+    count: dashboard?.activeJobs || 0,
+  },
+  {
+    label: "Paused",
+    count: dashboard?.pausedJobs || 0,
+  },
+  {
+    label: "Closed",
+    count: dashboard?.closedJobs || 0,
+  },
+  {
+    label: "Archived",
+    count: dashboard?.archivedJobs || 0,
+  },
+];
 
   const POSTING_TYPE_TABS = [
     {
@@ -256,6 +242,8 @@ const confirmDelete = async () => {
   const [status, setStatus] = useState("");
 
   const [jobType, setJobType] = useState("");
+
+  const [jobsLoading, setJobsLoading] = useState(false);
   useEffect(() => {
     loadData();
   }, []);
@@ -306,29 +294,41 @@ const confirmDelete = async () => {
     };
   }, []);
 
+const loadJobs = async (statusLabel, typeLabel) => {
+  try {
+    setJobsLoading(true);
+    const response = await getRecruiterJobs({
+      status: statusLabel === "All" ? "" : statusLabel,
+      jobType: typeLabel === "All Types" ? "" : typeLabel,
+    });
+    const jobsList = response.jobs || [];
+    setJobs(jobsList);
+    await loadCompanyLogos(jobsList);
+  } catch (error) {
+    console.error(error);
+    showToast("Unable to load jobs", "error");
+  } finally {
+    setJobsLoading(false);
+  }
+};
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
+useEffect(() => {
+  loadJobs(activeStatus, activeType);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [activeStatus, activeType]);
 
-      const [dashboardRes, jobsRes] = await Promise.all([
-        getJobDashboard(),
-        getRecruiterJobs({}),
-      ]);
 
-      setDashboard(dashboardRes);
-
-      const jobsList = jobsRes.jobs || [];
-
-      setJobs(jobsList);
-
-      await loadCompanyLogos(jobsList);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+const loadData = async () => {
+  try {
+    setLoading(true);
+    const dashboardRes = await getJobDashboard();
+    setDashboard(dashboardRes);
+  } catch (error) {
+    console.error(error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const loadCompanyLogos = async (jobsList) => {
     const logos = {};
@@ -423,55 +423,33 @@ const confirmDelete = async () => {
             {/* ── Status filter tabs (matches applicants page style) ── */}
             <div className="candidate-status-filter mb-10">
               {JOB_STATUS_TABS.map((tab) => (
-                <button
-                  key={tab.label}
-                  className={`candidate-status-filter-btn${activeStatus === tab.label ? " active" : ""}`}
-                  type="button"
-                  onClick={async () => {
-                    setActiveStatus(tab.label);
-
-                    const response = await getRecruiterJobs({
-                      status: tab.label,
-                      jobType: activeType === "All Types" ? "" : activeType,
-                    });
-
-                    setJobs(response.jobs || []);
-                  }}
-                >
-                  <span>{tab.label}</span>
-                  <span className="candidate-status-filter-count">
-                    {tab.count}
-                  </span>
-                </button>
-              ))}
+  <button
+    key={tab.label}
+    className={`candidate-status-filter-btn${activeStatus === tab.label ? " active" : ""}`}
+    type="button"
+    onClick={() => setActiveStatus(tab.label)}
+  >
+    <span>{tab.label}</span>
+    <span className="candidate-status-filter-count">{tab.count}</span>
+  </button>
+))}
             </div>
 
             {/* ── Type sub-filter ── */}
-            <div className="candidate-status-filter mb-30">
-              {POSTING_TYPE_TABS.map((tab) => (
-                <button
-                  key={tab.label}
-                  className={`candidate-status-filter-btn${activeType === tab.label ? " active" : ""}`}
-                  type="button"
-                  onClick={async () => {
-                    setActiveType(tab.label);
-
-                    const response = await getRecruiterJobs({
-                      status: activeStatus,
-                      jobType: tab.label === "All Types" ? "" : tab.label,
-                    });
-
-                    setJobs(response.jobs || []);
-                  }}
-                  style={{ fontSize: 11, padding: "6px 10px" }}
-                >
-                  <span>{tab.label}</span>
-                  <span className="candidate-status-filter-count">
-                    {tab.count}
-                  </span>
-                </button>
-              ))}
-            </div>
+            {/* <div className="candidate-status-filter mb-30">
+            {POSTING_TYPE_TABS.map((tab) => (
+  <button
+    key={tab.label}
+    className={`candidate-status-filter-btn${activeType === tab.label ? " active" : ""}`}
+    type="button"
+    onClick={() => setActiveType(tab.label)}
+    style={{ fontSize: 11, padding: "6px 10px" }}
+  >
+    <span>{tab.label}</span>
+    <span className="candidate-status-filter-count">{tab.count}</span>
+  </button>
+))}
+            </div> */}
 
             {/* ── Job Cards ── */}
             <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
