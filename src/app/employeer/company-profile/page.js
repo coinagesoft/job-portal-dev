@@ -57,6 +57,24 @@ const BUSINESS_TYPES = [
   "Other",
 ];
 
+const TIME_ZONES = [
+  "Asia/Kolkata",
+  "Asia/Dubai",
+  "Asia/Singapore",
+  "Asia/Bangkok",
+  "Asia/Tokyo",
+  "Asia/Shanghai",
+  "Europe/London",
+  "Europe/Berlin",
+  "Europe/Paris",
+  "America/New_York",
+  "America/Chicago",
+  "America/Denver",
+  "America/Los_Angeles",
+  "Australia/Sydney",
+  "UTC",
+];
+
 // ── Helpers for formatting live job & team-member data ──────────
 const getTimeAgo = (dateString) => {
   if (!dateString) return "Recently";
@@ -668,7 +686,7 @@ export default function EmployerCompanyProfilePage() {
         companyDescription: data.companyDescription ?? "",
         industry: data.industryType ?? "",
         industryType: data.industryType ?? "",
-        businessType: data.businessType ?? "",
+        businessType: formatBusinessType(data.businessType),
         size: data.companySize ?? "",
         companySize: data.companySize ?? "",
         founded: data.yearEstablished ?? "",
@@ -676,7 +694,9 @@ export default function EmployerCompanyProfilePage() {
         totalEmployees: data.totalEmployees ?? "",
         companyLogoUrl: data.companyLogoUrl ?? "",
         coverImageUrl: data.coverImageUrl ?? "",
-        highlights: data.companyHighlights ?? [],
+        highlights: Array.isArray(data.companyHighlights)
+          ? data.companyHighlights.join(", ")
+          : (data.companyHighlights ?? ""),
         timeZone: data.timeZone ?? "",
 
         // Online presence
@@ -729,6 +749,13 @@ export default function EmployerCompanyProfilePage() {
       setLoading(false);
     }
   };
+  const formatBusinessType = (value) => {
+    if (!value) return "";
+
+    return value
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+  };
 
   const handleDescriptionBlur = async () => {
     try {
@@ -766,7 +793,9 @@ export default function EmployerCompanyProfilePage() {
     }
 
     const payloadValue = field === "highlights"
-      ? val
+      ? (typeof val === "string"
+          ? val.split(",").map((item) => item.trim()).filter(Boolean)
+          : val)
       : val;
 
     try {
@@ -778,9 +807,13 @@ export default function EmployerCompanyProfilePage() {
         payloadValue
       );
 
+      const stateValue = field === "highlights"
+        ? (Array.isArray(payloadValue) ? payloadValue.join(", ") : payloadValue)
+        : payloadValue;
+
       setCompany((prev) => ({
         ...prev,
-        [field]: payloadValue,
+        [field]: stateValue,
       }));
 
       if (typeof window !== "undefined") {
@@ -848,42 +881,42 @@ export default function EmployerCompanyProfilePage() {
     }
   };
 
-const updateBasicInfo = async () => {
-  if (descriptionOverLimit) {
-    showToast(
-      `Company Description is over the ${DESCRIPTION_WORD_LIMIT}-word limit (${descriptionWordCount} words). Please shorten it.`,
-      "error"
-    );
-    return;
-  }
+  const updateBasicInfo = async () => {
+    if (descriptionOverLimit) {
+      showToast(
+        `Company Description is over the ${DESCRIPTION_WORD_LIMIT}-word limit (${descriptionWordCount} words). Please shorten it.`,
+        "error"
+      );
+      return;
+    }
 
-  try {
-    await Promise.all([
-      handleSaveField("legalName", company.legalName),
-      handleSaveField("tradeName", company.tradeName),
-      handleSaveField("displayName", company.displayName),
-      handleSaveField("industry", company.industry),
-      handleSaveField("businessType", company.businessType),
-      handleSaveField("size", company.size),
-      handleSaveField("totalEmployees", company.totalEmployees),
-      handleSaveField("founded", company.founded),
-      handleSaveField("timeZone", company.timeZone),
-      handleSaveField("highlights", company.highlights || []),
-      handleSaveField("companyDescription", description),
-    ]);
+    try {
+      await Promise.all([
+        handleSaveField("legalName", company.legalName),
+        handleSaveField("tradeName", company.tradeName),
+        handleSaveField("displayName", company.displayName),
+        handleSaveField("industry", company.industry),
+        handleSaveField("businessType", company.businessType),
+        handleSaveField("size", company.size),
+        handleSaveField("totalEmployees", company.totalEmployees),
+        handleSaveField("founded", company.founded),
+        handleSaveField("timeZone", company.timeZone),
+        handleSaveField("highlights", company.highlights || ""),
+        handleSaveField("companyDescription", description),
+      ]);
 
-    showToast("Basic info updated successfully", "success");
-  } catch (error) {
-    console.log(error);
-    console.log(error.response?.data);
+      showToast("Basic info updated successfully", "success");
+    } catch (error) {
+      console.log(error);
+      console.log(error.response?.data);
 
-    showToast(
-      error?.response?.data?.message ||
-      "Failed to update basic info",
-      "error"
-    );
-  }
-};
+      showToast(
+        error?.response?.data?.message ||
+        "Failed to update basic info",
+        "error"
+      );
+    }
+  };
 
   const updateOnlinePresence = async () => {
     await Promise.all([
@@ -921,12 +954,12 @@ const updateBasicInfo = async () => {
 
     showToast("Contact updated", "success");
   };
-const countWords = (text) =>
-  (text || "").trim().split(/\s+/).filter(Boolean).length;
+  const countWords = (text) =>
+    (text || "").trim().split(/\s+/).filter(Boolean).length;
 
-const DESCRIPTION_WORD_LIMIT = 300;
-const descriptionWordCount = countWords(description);
-const descriptionOverLimit = descriptionWordCount > DESCRIPTION_WORD_LIMIT;
+  const DESCRIPTION_WORD_LIMIT = 300;
+  const descriptionWordCount = countWords(description);
+  const descriptionOverLimit = descriptionWordCount > DESCRIPTION_WORD_LIMIT;
   // const basicInfoRows = [
   //   { label: "Legal Name", key: "legalName" },
   //   { label: "Trade Name", key: "tradeName" },
@@ -1132,7 +1165,7 @@ const descriptionOverLimit = descriptionWordCount > DESCRIPTION_WORD_LIMIT;
               <div className="col-lg-8 col-md-12">
                 <h5 className="f-18">
                   {company.displayName}
-                  
+
                 </h5>
                 <p className=" font-md color-text-paragraph-2 mb-15">
                   {company.tagline}
@@ -1162,8 +1195,8 @@ const descriptionOverLimit = descriptionWordCount > DESCRIPTION_WORD_LIMIT;
                 </div> */}
               </div>
               <span className="card-location font-regular ml-20">
-                    {company.location}
-                  </span>
+                {company.location}
+              </span>
             </div>
           </div>
 
@@ -1308,7 +1341,7 @@ const descriptionOverLimit = descriptionWordCount > DESCRIPTION_WORD_LIMIT;
                             handleInputChange("size", e.target.value)
                           }
                         >
-                          <option value="">--</option>
+                          {/* <option value="">--</option> */}
                           <option value="1-10">1-10</option>
                           <option value="11-50">11-50</option>
                           <option value="51-200">51-200</option>
@@ -1350,12 +1383,11 @@ const descriptionOverLimit = descriptionWordCount > DESCRIPTION_WORD_LIMIT;
                       </Field>
 
                       <Field label="Time Zone">
-                        <Inp
-                          placeholder="e.g. Asia/Kolkata"
+                        <Combobox
                           value={company.timeZone || ""}
-                          onChange={(e) =>
-                            handleInputChange("timeZone", e.target.value)
-                          }
+                          onChange={(v) => handleInputChange("timeZone", v)}
+                          options={TIME_ZONES}
+                          placeholder="Select time zone..."
                         />
                       </Field>
                     </div>
@@ -1374,50 +1406,47 @@ const descriptionOverLimit = descriptionWordCount > DESCRIPTION_WORD_LIMIT;
 
                       <Textarea
                         rows={3}
-                        value={(company.highlights || []).join(", ")}
+                        value={company.highlights ?? ""}
                         onChange={(e) =>
-                          handleInputChange(
-                            "highlights",
-                            e.target.value.split(",").map((item) => item.trim())
-                          )
+                          handleInputChange("highlights", e.target.value)
                         }
                       />
                     </Field>
-                   <Field label="Company Description">
-  <p
-    style={{
-      fontSize: "12px",
-      color: "#66789c",
-      marginTop: "8px",
-      marginBottom: 0,
-    }}
-  >
-    Keep this summary concise and role-focused so candidates
-    quickly understand your hiring needs.
-  </p>
-  <Textarea
-    rows={10}
-    value={description ?? ""}
-    onChange={(e) => setDescription(e.target.value)}
-    style={{
-      minHeight: "240px",
-      borderColor: descriptionOverLimit ? "#dc2626" : undefined,
-    }}
-  />
-  <p
-    style={{
-      fontSize: "12px",
-      marginTop: "6px",
-      marginBottom: 0,
-      fontWeight: 600,
-      color: descriptionOverLimit ? "#dc2626" : "#94a3b8",
-      textAlign: "right",
-    }}
-  >
-    {descriptionWordCount} / {DESCRIPTION_WORD_LIMIT} words
-    {descriptionOverLimit && " — please shorten"}
-  </p>
-</Field>
+                    <Field label="Company Description">
+                      <p
+                        style={{
+                          fontSize: "12px",
+                          color: "#66789c",
+                          marginTop: "8px",
+                          marginBottom: 0,
+                        }}
+                      >
+                        Keep this summary concise and role-focused so candidates
+                        quickly understand your hiring needs.
+                      </p>
+                      <Textarea
+                        rows={10}
+                        value={description ?? ""}
+                        onChange={(e) => setDescription(e.target.value)}
+                        style={{
+                          minHeight: "240px",
+                          borderColor: descriptionOverLimit ? "#dc2626" : undefined,
+                        }}
+                      />
+                      <p
+                        style={{
+                          fontSize: "12px",
+                          marginTop: "6px",
+                          marginBottom: 0,
+                          fontWeight: 600,
+                          color: descriptionOverLimit ? "#dc2626" : "#94a3b8",
+                          textAlign: "right",
+                        }}
+                      >
+                        {descriptionWordCount} / {DESCRIPTION_WORD_LIMIT} words
+                        {descriptionOverLimit && " — please shorten"}
+                      </p>
+                    </Field>
 
                   </SectionCard>
 
