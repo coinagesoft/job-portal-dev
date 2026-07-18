@@ -69,13 +69,28 @@ export const EMPLOYER_PROTECTED_PREFIXES = ["/employeer", "/dashboard"];
 // rendering the logged-in-session nav).
 export const PUBLIC_ROUTE_EXCEPTIONS = ["/employeer/accept-invite"];
 
+// Sub-user role string that's allowed to VIEW (but never edit — see
+// SubUserViewOnlyGuard) the four "account owner" pages below. Must match
+// the value coming back from GET /api/recruiter/sub-users/my-permissions
+// — this is the backend SubUserRole enum member name ("HR_Manager", the
+// same value used as the <option value="HR_Manager"> in the invite form),
+// not the "HR Manager" display label shown to the user.
+export const HR_MANAGER_ROLE = "HR_Manager";
+
 // Pages that need a specific permission flag beyond just "logged in as
 // employer" — a sub-user lacking the flag gets redirected away instead of
-// seeing the page at all. `ownerOnly: true` means no sub-user may access it,
-// regardless of their individual flags (matches "Only the account owner can
-// buy credits or invite users" shown on the Sub-Users page itself).
+// seeing the page at all.
+//
+// `hrManagerViewOnly: true` — only a sub-user whose role is exactly
+// HR_MANAGER_ROLE may even open the page; every other sub-user role is
+// redirected away like `ownerOnly` below. An HR Manager sub-user who does
+// get through still can't edit anything there — SubUserViewOnlyGuard
+// (rendered inside the page itself) makes it read-only for any sub-user,
+// HR Manager included.
 export const ROUTE_PERMISSION_RULES = [
   { prefix: "/dashboard/post-job", permission: "canPostJobs" },
-  { prefix: "/employeer/sub-user", ownerOnly: true },
-  { prefix: "/employeer/buy-credits", ownerOnly: true },
+  { prefix: "/employeer/company-profile", hrManagerViewOnly: true },
+  { prefix: "/employeer/verification", hrManagerViewOnly: true },
+  { prefix: "/employeer/sub-user", hrManagerViewOnly: true },
+  { prefix: "/employeer/buy-credits", hrManagerViewOnly: true },
 ];
