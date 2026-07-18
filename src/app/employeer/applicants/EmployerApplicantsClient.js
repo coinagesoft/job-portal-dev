@@ -30,7 +30,7 @@ const getWordCount = (str) => {
 
 const screeningFilters = [
   { key: "minExperience3Years", label: "Experience 3+ years" },
-  { key: "relocationReady", label: "Relocation ready", unavailable: true },
+  // { key: "relocationReady", label: "Relocation ready", unavailable: true },
   { key: "noticePeriodMax30Days", label: "Notice period <= 30 days" },
   { key: "mandatoryAnswersComplete", label: "Mandatory answers complete" },
 ];
@@ -271,7 +271,7 @@ const EmployerApplicantsClient = () => {
     try {
       if      (selectedStatus === "InReview")    await moveToReview(statusPopup.applicationId, statusNote.trim());
       else if (selectedStatus === "Shortlisted") await shortlistApplicant(statusPopup.applicationId, statusNote.trim());
-      else if (selectedStatus === "Rejected")    await rejectApplicant(statusPopup.applicationId, rejectReason, statusNote.trim());
+      else if (selectedStatus === "Rejected")    await rejectApplicant(statusPopup.applicationId, rejectReason.trim(), rejectReason.trim());
       else if (selectedStatus === "Hired")       await hireApplicant(statusPopup.applicationId, statusNote.trim());
 
       // Optional note — only sent if the employer actually typed one.
@@ -1017,24 +1017,26 @@ const EmployerApplicantsClient = () => {
             </p>
           )}
 
-          <div style={{ marginBottom: "16px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-              <label style={{ fontSize: "13px", fontWeight: 600, color: "#374151", margin: 0 }}>
-                Add a note (optional):
-              </label>
-              <span style={{ fontSize: "12px", fontWeight: 600, color: getWordCount(statusNote) > 100 ? "#dc2626" : "#6b7280" }}>
-                {getWordCount(statusNote)} / 100 words
-              </span>
+          {selectedStatus !== "Rejected" && (
+            <div style={{ marginBottom: "16px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                <label style={{ fontSize: "13px", fontWeight: 600, color: "#374151", margin: 0 }}>
+                  Add a note (optional):
+                </label>
+                <span style={{ fontSize: "12px", fontWeight: 600, color: getWordCount(statusNote) > 100 ? "#dc2626" : "#6b7280" }}>
+                  {getWordCount(statusNote)} / 100 words
+                </span>
+              </div>
+              <textarea
+                className="form-control"
+                rows={3}
+                placeholder="e.g. Strong communication skills, follow up next week…"
+                value={statusNote}
+                onChange={(e) => setStatusNote(e.target.value)}
+                style={getWordCount(statusNote) > 100 ? { borderColor: "#dc2626" } : undefined}
+              />
             </div>
-            <textarea
-              className="form-control"
-              rows={3}
-              placeholder="e.g. Strong communication skills, follow up next week…"
-              value={statusNote}
-              onChange={(e) => setStatusNote(e.target.value)}
-              style={getWordCount(statusNote) > 100 ? { borderColor: "#dc2626" } : undefined}
-            />
-          </div>
+          )}
 
           <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
             <button className="btn btn-border btn-sm" onClick={() => { setStatusPopup(null); setStatusNote(""); setExistingNotes([]); }}>Cancel</button>

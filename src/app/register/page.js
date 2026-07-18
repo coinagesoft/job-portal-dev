@@ -116,10 +116,15 @@ const COMPANY_SIZES = [
 
 const COMPANY_TYPES = [
   { value: "startup", label: "Startup" },
-  { value: "mid-size", label: "Mid-size" },
+  { value: "small-business", label: "Small Business" },
+  { value: "mid-size", label: "Mid-size Company" },
   { value: "enterprise", label: "Enterprise" },
+  { value: "multinational", label: "Multinational (MNC)" },
+  { value: "product-based", label: "Product-based" },
+  { value: "service-based", label: "Service-based" },
   { value: "government", label: "Government" },
-  { value: "non-profit", label: "Non-profit" },
+  { value: "non-profit", label: "Non-profit (NGO)" },
+  { value: "other", label: "Other" },
 ];
 
 const labelFor = (list, value) =>
@@ -150,7 +155,9 @@ const STATES = [
   "West Bengal",
   "Other",
 ];
-
+const COUNTRIES = Array.from(
+  new Set(PHONE_COUNTRIES.map((c) => c.name))
+).sort((a, b) => a.localeCompare(b));
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const isValidEmail = (email) => EMAIL_REGEX.test(email.trim());
 
@@ -1755,6 +1762,7 @@ function EmployerForm() {
     designation: "",
     contactPersonEmail: "",
     corpEmail: "",
+      country: "India",
     countryCode: "+91",
     mobile: "",
     profileSummary: "",
@@ -2465,6 +2473,14 @@ const isStep4Valid =
       </p>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+        <Field label="Country">
+  <Combobox
+    value={data.country}
+    onChange={(v) => set("country", v)}
+    options={COUNTRIES}
+    placeholder="Type or select your country (e.g. India)"
+  />
+</Field>
         <Field
           label="State"
           required
@@ -2792,20 +2808,19 @@ const isStep4Valid =
         />
       </Field>
 
-      <Field
-        label="Company Profile Summary"
-        hint="Brief description of your company and hiring focus (shown on job listings)"
-      >
-        <textarea
-          className="form-control"
-          value={data.profileSummary}
-          onChange={(e) => set("profileSummary", e.target.value)}
-          placeholder="e.g. We are a leading marine services company specialising in offshore and vessel crew placement."
-          rows={4}
-          style={{ resize: "vertical" }}
-        />
-      </Field>
-
+    <Field
+  label="Company Profile Summary"
+  hint="Brief description of your company and hiring focus (shown on job listings)"
+>
+  <textarea
+    className="form-control"
+    value={data.profileSummary}
+    onChange={(e) => set("profileSummary", e.target.value)}
+    placeholder="e.g. We are a leading marine services company specialising in offshore and vessel crew placement."
+    rows={7}
+    style={{ resize: "vertical", minHeight: "100px", fontSize: "14px" }}
+  />
+</Field>
       {attempt3 && !isStep4Valid && (
         <Alert type="error">
           Please complete all required fields and verify both your mobile
