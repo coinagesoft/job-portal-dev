@@ -13,21 +13,25 @@ export default function PopularCompanies() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchCompanies = async () => {
-      try {
-        const response = await getPublicCompanies({ pageSize: 12 });
-        const raw = response.data;
-        const list = Array.isArray(raw?.companies) ? raw.companies : [];
-        const sorted = [...list].sort(
-          (a, b) => (b.openJobsCount ?? 0) - (a.openJobsCount ?? 0)
-        );
-        setCompanies(sorted);
-      } catch (error) {
-        console.error("Failed to fetch companies:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+   const fetchCompanies = async () => {
+  try {
+    const response = await getPublicCompanies({ pageSize: 12 });
+    const raw = response.data;
+    const list = Array.isArray(raw?.companies) ? raw.companies : [];
+
+    // Only show companies with more than 2 open jobs
+    const filtered = list.filter((c) => (c.openJobsCount ?? 0) > 2);
+
+    const sorted = [...filtered].sort(
+      (a, b) => (b.openJobsCount ?? 0) - (a.openJobsCount ?? 0)
+    );
+    setCompanies(sorted);
+  } catch (error) {
+    console.error("Failed to fetch companies:", error);
+  } finally {
+    setLoading(false);
+  }
+};
     fetchCompanies();
   }, []);
 
