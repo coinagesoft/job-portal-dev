@@ -1023,6 +1023,7 @@ function CandidateForm() {
   const [payStatus, setPayStatus] = useState("");
   const [loading, setLoading] = useState(false);
   const [paymentMessage, setPaymentMessage] = useState("");
+  const [registering, setRegistering] = useState(false);
    const isSocialVerified = !!socialAuth;
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 useEffect(() => {
@@ -1194,16 +1195,13 @@ useEffect(() => {
 
           console.log("RAZORPAY RESPONSE", response);
 
-          setPaymentData({
-            razorpayOrderId:
-              response.razorpay_order_id,
+          const paymentInfo = {
+            razorpayOrderId: response.razorpay_order_id,
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpaySignature: response.razorpay_signature,
+          };
 
-            razorpayPaymentId:
-              response.razorpay_payment_id,
-
-            razorpaySignature:
-              response.razorpay_signature,
-          });
+          setPaymentData(paymentInfo);
 
           setPayStatus("success");
 
@@ -1212,6 +1210,10 @@ useEffect(() => {
           );
 
           setLoading(false);
+
+          // Payment succeeded — complete registration right away instead of
+          // requiring a second click on "Create Account & Get Started".
+          handleCandidateSubmit(paymentInfo);
         },
 
         prefill: {
@@ -1259,11 +1261,19 @@ useEffect(() => {
   const canShowPayment = mobileOtp.verified || emailOtp.verified;
   const canSubmit = canShowPayment && terms && payStatus === "success";
 
-const handleCandidateSubmit = async () => {
+// paymentOverride lets the Razorpay success handler pass the just-received
+// razorpayOrderId/PaymentId/Signature straight through, since React state
+// (paymentData) hasn't re-rendered yet at that point in the callback.
+const handleCandidateSubmit = async (paymentOverride) => {
     setAttemptSubmit(true);
 
   if (!form.name.trim()) {
     showToast("Please enter your full name.", "error");
+    return;
+  }
+
+  if (!terms) {
+    showToast("Please accept the Terms of Service to continue.", "error");
     return;
   }
 
@@ -1283,7 +1293,12 @@ const handleCandidateSubmit = async () => {
       return;
     }
   }
+
+  const payInfo = paymentOverride || paymentData;
+
   try {
+    setRegistering(true);
+
     if (socialAuth) {
       const registerFn =
         socialAuth.provider === "google" ? registerWithGoogle : registerWithLinkedIn;
@@ -1294,9 +1309,9 @@ const handleCandidateSubmit = async () => {
         mobileNumber: form.mobile ? form.mobile.replace(/\D/g, "") : null,
         countryCode: form.mobile ? form.countryCode : null,
         termsAccepted: terms,
-        razorpayOrderId: paymentData.razorpayOrderId,
-        razorpayPaymentId: paymentData.razorpayPaymentId,
-        razorpaySignature: paymentData.razorpaySignature,
+        razorpayOrderId: payInfo.razorpayOrderId,
+        razorpayPaymentId: payInfo.razorpayPaymentId,
+        razorpaySignature: payInfo.razorpaySignature,
       });
 
       if (response.data.success) {
@@ -1316,9 +1331,9 @@ const handleCandidateSubmit = async () => {
       countryCode: form.countryCode,
       email: form.email,
       otpToken,
-      razorpayOrderId: paymentData.razorpayOrderId,
-      razorpayPaymentId: paymentData.razorpayPaymentId,
-      razorpaySignature: paymentData.razorpaySignature,
+      razorpayOrderId: payInfo.razorpayOrderId,
+      razorpayPaymentId: payInfo.razorpayPaymentId,
+      razorpaySignature: payInfo.razorpaySignature,
       termsAccepted: terms,
     });
 
@@ -1333,6 +1348,8 @@ const handleCandidateSubmit = async () => {
     err?.response?.data?.message || "Registration failed",
     "error"
   );
+} finally {
+  setRegistering(false);
 }
 };
 
@@ -1473,26 +1490,63 @@ const handleLinkedInRegister = () => {
   )}
 </Field>
 
+      {canShowPayment && payStatus !== "success" && (
+        <div style={{ marginBottom: 14 }}>
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              cursor: "pointer",
+              fontSize: "var(--font-sm)",
+              color: "var(--color-text-secondary)",
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={terms}
+              onChange={(e) => setTerms(e.target.checked)}
+              style={{ width: 16, height: 16 }}
+            />
+            I agree to the Terms of Service and Privacy Policy
+          </label>
+        </div>
+      )}
+
       {canShowPayment && (
         <Field label="Registration Fee">
           {payStatus === "success" ? (
             <Alert type="success">
-              Payment successful for INR 100. Your receipt will be sent to your
-              registered email.
+              {registering
+                ? "Payment successful — creating your account..."
+                : "Payment successful for INR 100. Your receipt will be sent to your registered email."}
             </Alert>
           ) : (
-            <Btn
-              variant="primary"
-              onClick={handlePay}
-              disabled={loading}
-              style={{
-                width: "100%",
-                padding: "11px 0",
-                fontSize: "var(--font-sm)",
-              }}
-            >
-              {loading ? "Processing..." : "Pay INR 100 via Razorpay"}
-            </Btn>
+            <>
+              <Btn
+                variant="primary"
+                onClick={handlePay}
+                disabled={loading || !terms}
+                style={{
+                  width: "100%",
+                  padding: "11px 0",
+                  fontSize: "var(--font-sm)",
+                }}
+              >
+                {loading ? "Processing..." : "Pay INR 100 via Razorpay"}
+              </Btn>
+              {!terms && (
+                <p
+                  style={{
+                    fontSize: "var(--font-xs)",
+                    marginTop: 8,
+                    color: "var(--color-text-tertiary)",
+                  }}
+                >
+                  Please accept the Terms of Service above to continue to payment.
+                </p>
+              )}
+            </>
           )}
           {paymentMessage && (
             <p
@@ -1646,35 +1700,20 @@ const handleLinkedInRegister = () => {
   </Alert>
 )}
       </div>
-      <div style={{ marginBottom: 20 }}>
-        <label
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            cursor: "pointer",
-            fontSize: "var(--font-sm)",
-            color: "var(--color-text-secondary)",
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={terms}
-            onChange={(e) => setTerms(e.target.checked)}
-            style={{ width: 16, height: 16 }}
-          />
-          I agree to the Terms of Service and Privacy Policy
-        </label>
-      </div>
 
-      <Btn
-        variant="primary"
-        disabled={!canSubmit}
-        style={{ width: "100%", padding: "13px 0", fontSize: "var(--font-md)" }}
-        onClick={handleCandidateSubmit}
-      >
-        Create Account & Get Started
-      </Btn>
+      {/* Registration completes automatically once payment succeeds (see the
+          Razorpay handler above). This button stays only as a manual fallback
+          in case that auto-submit ever fails. */}
+      {payStatus === "success" && (
+        <Btn
+          variant="primary"
+          disabled={!canSubmit || registering}
+          style={{ width: "100%", padding: "13px 0", fontSize: "var(--font-md)" }}
+          onClick={() => handleCandidateSubmit()}
+        >
+          {registering ? "Creating your account..." : "Create Account & Get Started"}
+        </Btn>
+      )}
     </div>
   );
 }
