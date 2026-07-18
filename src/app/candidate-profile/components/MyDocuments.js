@@ -12,6 +12,7 @@ import {
   getDocuments,
   downloadGeneratedCv,
   previewGeneratedCv,
+  generateCv,
 } from "@/services/candidate/candidateResume";
 
 const NAVY = "#122359";
@@ -142,6 +143,7 @@ export default function MyDocuments() {
     setPreviewLoading(true);
     setPreviewError(null);
     try {
+      await generateCv().catch(() => null); // best-effort refresh before showing it
       const result = await previewGeneratedCv();
       if (result?.success) {
         setPreviewUrl(result.url);
@@ -166,6 +168,7 @@ export default function MyDocuments() {
     setDownloadingPortalCv(true);
     setMessage(null);
     try {
+      await generateCv().catch(() => null); // best-effort refresh before downloading it
       const result = await downloadGeneratedCv(cv?.parsedName || "Candidate");
       if (!result?.success) {
         setMessage({ type: "error", text: result?.message || "Could not download Portal CV." });
