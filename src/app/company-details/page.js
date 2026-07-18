@@ -446,23 +446,33 @@ function CompanyDetailsContent() {
                       role="tabpanel"
                       aria-labelledby="tab-about"
                     >
-                      {companyInfo.companyDescription && (
+{companyInfo.companyDescription && (
   <>
- <h4>
-  About{"   "}
-  <span
-    style={{
-      fontFamily: "Arial",
-      fontWeight: 700,
-      fontSize: "26px",
-    }}
-  >
-    {companyInfo.companyName}
-  </span>
-</h4>
+    <h4>
+      About{"   "}
+      <span
+        style={{
+          fontFamily: "Arial",
+          fontWeight: 700,
+          fontSize: "26px",
+        }}
+      >
+        {companyInfo.companyName}
+      </span>
+    </h4>
+    <p
+      style={{
+        marginTop: "12px",
+        marginBottom: "0",
+        fontSize: "14.5px",
+        lineHeight: 1.7,
+        color: "#4b5a7a",
+      }}
+    >
+      {companyInfo.companyDescription}
+    </p>
   </>
 )}
-
                       {(companyInfo.companyHighlights || []).length > 0 && (
                         <div style={{ marginTop: "30px" }}>
                           <div
