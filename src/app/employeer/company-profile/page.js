@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useToast } from "@/components/Toast";
 import { useEffect } from "react";
 import companyProfileService from "@/services/recruiter/companyProfileService";
-import SubUserViewOnlyGuard from "@/components/SubUserViewOnlyGuard";
+import SubUserViewOnlyGuard from "@/components/Subuserviewonlyguard";
 import {
   getRecruiterJobs,
   pauseJob,
