@@ -641,7 +641,7 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
                           </div>
                         )}
 
-                        <div className="mb-15">
+                        {/* <div className="mb-15">
                           <h6 className="mb-10">Why are you a good fit? (optional)</h6>
                           <textarea
                             className="form-control"
@@ -652,7 +652,7 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
                           />
                         </div>
 
-                        {error ? <p className="font-xs mb-10" style={{ color: "#a32d2d" }}>{error}</p> : null}
+                        {error ? <p className="font-xs mb-10" style={{ color: "#a32d2d" }}>{error}</p> : null} */}
                       </div>
 
                       <div className="apply-job-footer-actions">
