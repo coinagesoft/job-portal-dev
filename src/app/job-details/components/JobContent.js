@@ -204,13 +204,10 @@ const JobContent = ({ job = {}, isApplied = false, isSaved = false, onSavedToggl
 
         {/* Job Description */}
         <div
+          className="employer-cv-surface-card"
           style={{
-            background: '#ffffff',
-            border: '1px solid rgba(18,35,89,0.08)',
-            borderRadius: '16px',
             padding: '22px 24px',
             marginBottom: '24px',
-            boxShadow: '0 4px 14px rgba(18,35,89,0.04)',
           }}
         >
           <h5 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -295,13 +292,10 @@ const JobContent = ({ job = {}, isApplied = false, isSaved = false, onSavedToggl
         {/* Professional Skills */}
      {job.professionalSkills?.length > 0 && (
           <div
+            className="employer-cv-surface-card"
             style={{
-              background: '#ffffff',
-              border: '1px solid rgba(18,35,89,0.08)',
-              borderRadius: '16px',
               padding: '22px 24px',
               marginBottom: '24px',
-              boxShadow: '0 4px 14px rgba(18,35,89,0.04)',
             }}
           >
             <h5 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -347,13 +341,10 @@ const JobContent = ({ job = {}, isApplied = false, isSaved = false, onSavedToggl
         {/* Perks & Benefits */}
         {job.perksAndBenefits?.length > 0 && (
           <div
+            className="employer-cv-surface-card"
             style={{
-              background: '#ffffff',
-              border: '1px solid rgba(18,35,89,0.08)',
-              borderRadius: '16px',
               padding: '22px 24px',
               marginBottom: '24px',
-              boxShadow: '0 4px 14px rgba(18,35,89,0.04)',
             }}
           >
             <h5 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

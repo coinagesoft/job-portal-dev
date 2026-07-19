@@ -134,12 +134,8 @@ const JobOverview = ({ job = {} }) => {
 
   return (
     <div
-      className="job-overview"
+      className="job-overview employer-cv-surface-card no-static-border"
       style={{
-        border: 'none',
-        background: '#ffffff',
-        borderRadius: '20px',
-        boxShadow: '0 4px 14px rgba(18,35,89,0.06)',
         padding: '24px 30px 30px',
         marginBottom: '50px',
       }}

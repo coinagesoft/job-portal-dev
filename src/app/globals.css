@@ -2000,3 +2000,12 @@ textarea {
     color:#fff;
     border-color:#ffa300;
 }
+
+/* Override static border of theme card to keep it transparent when not hovered */
+.employer-cv-surface-card.no-static-border {
+  border-color: transparent !important;
+}
+
+.employer-cv-surface-card.no-static-border:hover {
+  border-color: rgba(255, 153, 0, 0.32) !important;
+}
