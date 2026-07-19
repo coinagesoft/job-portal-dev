@@ -40,7 +40,7 @@ const STATUS_BADGE = {
   Applied:     { label: "Applied",     bg: "#EAF4FF", color: "#1D4ED8" },
   InReview:    { label: "In Review",   bg: "#FEF3C7", color: "#92400E" },
   Shortlisted: { label: "Shortlisted", bg: "#DCFCE7", color: "#166534" },
-  Interview:   { label: "Interview",   bg: "#EDE9FE", color: "#6D28D9" },
+  // Interview:   { label: "Interview",   bg: "#EDE9FE", color: "#6D28D9" },
   Hired:       { label: "Hired",       bg: "#CCFBF1", color: "#0F766E" },
   Rejected:    { label: "Rejected",    bg: "#FEE2E2", color: "#B91C1C" },
   Withdrawn:   { label: "Withdrawn",   bg: "#E5E7EB", color: "#374151" },
@@ -249,7 +249,7 @@ const EmployerApplicantsClient = () => {
         if (cancelled) return;
 
         const all = res.applicants || [];
-        const tally = { Applied: 0, InReview: 0, Shortlisted: 0, Interview: 0, Hired: 0, Rejected: 0 };
+        const tally = { Applied: 0, InReview: 0, Shortlisted: 0,  Hired: 0, Rejected: 0 };
         all.forEach((a) => {
           if (Object.prototype.hasOwnProperty.call(tally, a.applicationStatus)) {
             tally[a.applicationStatus] += 1;
@@ -308,7 +308,7 @@ const EmployerApplicantsClient = () => {
     { label: "Applied",     count: counts.applied ?? counts.Applied,           value: "Applied" },
     { label: "In Review",   count: counts.inReview ?? counts.InReview,         value: "InReview" },
     { label: "Shortlisted", count: counts.shortlisted ?? counts.Shortlisted,   value: "Shortlisted" },
-    { label: "Interview",   count: counts.interview ?? counts.Interview,       value: "Interview" },
+    // { label: "Interview",   count: counts.interview ?? counts.Interview,       value: "Interview" },
     { label: "Hired",       count: counts.hired ?? counts.Hired,               value: "Hired" },
     { label: "Rejected",    count: counts.rejected ?? counts.Rejected,         value: "Rejected" },
   ] : [];

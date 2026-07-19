@@ -9,7 +9,7 @@ import {
   createCreditPlanOrder,
   verifyCreditPlanPayment,
 } from "@/services/recruiter/recruiterCreditWalletService";
-import SubUserViewOnlyGuard from "@/components/SubUserViewOnlyGuard";
+import SubUserViewOnlyGuard from "@/components/SubUserViewOnlyGuard.js";
 
 const EmployerBuyCreditsPage = () => {
   // const [selected, setSelected] = useState(CREDIT_PACKS[1]);
