@@ -287,7 +287,7 @@ const ApplicationStatusCard = ({ application, isAcknowledged, onAcknowledge, onW
   const [noteExpanded, setNoteExpanded] = useState(false);
   const statusClass = STATUS_CLASS_MAP[application.status] || 'applied';
   const statusColors = STATUS_COLOR_MAP[application.status] || STATUS_COLOR_MAP.Applied;
-  const canWithdraw = onWithdraw && !['Rejected', 'Hired', 'Withdrawn'].includes(application.status);
+  const canWithdraw = onWithdraw && application.status?.toLowerCase() === 'applied';
 
   return (
     <div
