@@ -242,8 +242,8 @@ function CompanyDetailsContent() {
           icon: "location",
           label: "Location",
           value:
-            companyInfo.city || companyInfo.state
-              ? [companyInfo.city, companyInfo.state]
+            companyInfo.city || companyInfo.state || companyInfo.country
+              ? [companyInfo.city, companyInfo.state, companyInfo.country]
                 .filter(Boolean)
                 .join(", ")
               : null,
@@ -340,9 +340,9 @@ function CompanyDetailsContent() {
                     </span>
                   )} */}
                 </h5>
-                {(companyInfo.city || companyInfo.state) && (
+                {(companyInfo.city || companyInfo.state || companyInfo.country) && (
                   <span className="card-location">
-                    {[companyInfo.city, companyInfo.state].filter(Boolean).join(", ")}
+                    {[companyInfo.city, companyInfo.state, companyInfo.country].filter(Boolean).join(", ")}
                   </span>
                 )}
                 {/* {companyInfo.companyDescription && (
@@ -765,9 +765,9 @@ function CompanyDetailsContent() {
                   <div className="avatar-sidebar">
                     <div className="sidebar-info pl-0">
                       <span className="sidebar-company">{companyInfo.companyName}</span>
-                      {(companyInfo.city || companyInfo.state) && (
+                      {(companyInfo.city || companyInfo.state || companyInfo.country) && (
                         <span className="card-location">
-                          {[companyInfo.city, companyInfo.state].filter(Boolean).join(", ")}
+                          {[companyInfo.city, companyInfo.state, companyInfo.country].filter(Boolean).join(", ")}
                         </span>
                       )}
                     </div>
