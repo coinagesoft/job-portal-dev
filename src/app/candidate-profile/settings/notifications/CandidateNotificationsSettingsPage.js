@@ -215,9 +215,13 @@ console.log("GET Notifications Response:", response.data);
         </div>
 
         <div className="candidate-settings-actions mt-20">
-          <button type="button" className="btn btn-default btn-small" onClick={handleReset}>
-            Reset Notifications
-          </button>
+          <button
+  type="button"
+  className="btn btn-border btn-small"
+  onClick={handleReset}
+>
+  Reset Notifications
+</button>
           <button type="button" className="btn btn-brand-1 btn-small" onClick={handleSave}>
             Save Notifications
           </button>

@@ -79,15 +79,15 @@ const roleCategories = [
   "Other", 
 ]; 
 const jobPostTypes = [ 
-  { label: "Regular Hiring", value: "Regular_Hiring" }, 
-  { label: "Hot Vacancy", value: "Hot_Vacancy" }, 
-  { label: "Urgent Hiring", value: "Urgent_Hiring" }, 
-  { label: "Bulk Hiring", value: "Bulk_Hiring" }, 
+  { label: "Regular Hiring", value: "Regular Hiring" }, 
+  { label: "Hot Vacancy", value: "Hot Vacancy" }, 
+  { label: "Urgent Hiring", value: "Urgent Hiring" }, 
+  { label: "Bulk Hiring", value: "Bulk Hiring" }, 
   { label: "Classified", value: "Classified" }, 
 ]; 
 const employmentTypeOptions = [ 
-  { label: "Full Time", value: "Full_Time" }, 
-  { label: "Part Time", value: "Part_Time" }, 
+  { label: "Full Time", value: "Full Time" }, 
+  { label: "Part Time", value: "Part Time" }, 
   { label: "Contract", value: "Contract" }, 
   { label: "Freelance", value: "Freelance" }, 
   { label: "Internship / Trainee", value: "Internship" }, 
@@ -220,12 +220,12 @@ const salaryDisplayOptions = [
 ]; 
 const educationOptions = [ 
   { value: "No Specific Requirement", label: "No Specific Requirement" }, 
-  { value: "Below_10th", label: "Below 10th" }, 
-  { value: "10th_Pass", label: "10th Pass" }, 
-  { value: "12th_Pass", label: "12th Pass" }, 
-  { value: "ITI_Diploma", label: "ITI / Diploma" }, 
+  { value: "Below 10th", label: "Below 10th" }, 
+  { value: "10th Pass", label: "10th Pass" }, 
+  { value: "12th Pass", label: "12th Pass" }, 
+  { value: "ITI Diploma", label: "ITI / Diploma" }, 
   { value: "Graduate", label: "Graduate" }, 
-  { value: "Post_Graduate", label: "Post Graduate" }, 
+  { value: "Post Graduate", label: "Post Graduate" }, 
 ]; 
 const genderOptions = [ 
   { value: "Any", label: "Not Specified" }, 
