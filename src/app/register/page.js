@@ -1584,7 +1584,7 @@ function CandidateForm() {
 
           <span
             style={{
-              fontSize: 13,
+              fontSize: 14,
               color: "var(--color-text-tertiary)",
               fontWeight: 600,
             }}
@@ -1625,7 +1625,7 @@ function CandidateForm() {
                 justifyContent: "center",
                 gap: 12,
                 fontWeight: 600,
-                fontSize: 14,
+                fontSize: 15,
                 color: "#122359",
                 cursor: "pointer",
                 transition: "all 0.25s ease",
@@ -1668,7 +1668,7 @@ function CandidateForm() {
                 justifyContent: "center",
                 gap: 12,
                 fontWeight: 600,
-                fontSize: 14,
+                fontSize: 15,
                 color: "#122359",
                 cursor: "pointer",
                 transition: "all 0.25s ease",
@@ -3707,6 +3707,13 @@ function RegisterPageInner() {
         padding: "40px 16px 60px",
         position: "relative",
         overflow: "hidden",
+        "--font-xxs": "11px",
+        "--font-xs": "13px",
+        "--font-sm": "15px",
+        "--font-base": "15px",
+        "--font-md": "17px",
+        "--font-lg": "19px",
+        "--font-xl": "21px",
       }}
     >
       <img
