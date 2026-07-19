@@ -88,9 +88,7 @@ const JobsListPageClient = () => {
     const location =
       (searchParams.get("location") || "").trim();
 
-    // NEW: Company/Employer filter
-    const employerId =
-      (searchParams.get("employerId") || "").trim();
+
 
     const industries = searchParams
       .getAll("industry")
@@ -110,9 +108,7 @@ const JobsListPageClient = () => {
       queryFilters.locationSingle = location;
     }
 
-    if (employerId) {
-      queryFilters.employerId = employerId;
-    }
+  
 
     if (industries.length) {
       queryFilters.industries = industries;
@@ -231,7 +227,6 @@ const queryFilteredJobs = useMemo(() => {
       delete next.locationSingle;
       delete next.industries;
       delete next.tradeCategories;
-      delete next.employerId;
       return { ...next, ...filtersFromQuery };
     });
   }, [filtersFromQuery]);
@@ -299,7 +294,7 @@ useEffect(() => {
   );
 
   console.log("COMPANY FILTERED JOBS:", queryFilteredJobs);
-}, [searchParams, filters.employerId, jobs, queryFilteredJobs]);
+}, [searchParams,  jobs, queryFilteredJobs]);
 
   return (
     <>
