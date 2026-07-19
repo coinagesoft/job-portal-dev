@@ -511,6 +511,8 @@ const EmployerApplicantsClient = () => {
         jobTitle: res.jobTitle || applicant.jobTitle,
         screening: res.screening || [],
       });
+
+      console.log(res);
     } catch (err) {
       console.error(err);
       showToast("Could not load screening answers.", "error");
