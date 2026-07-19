@@ -105,27 +105,27 @@ const EmployerJobListPage = () => {
   const [previewLoading, setPreviewLoading] = useState(false);
 
   const [deleteTarget, setDeleteTarget] = useState(null); // { jobId, jobTitle } | null
-const [deleting, setDeleting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
-const requestDelete = (jobId, jobTitle) => {
-  setOpenMenu(null);
-  setDeleteTarget({ jobId, jobTitle });
-};
+  const requestDelete = (jobId, jobTitle) => {
+    setOpenMenu(null);
+    setDeleteTarget({ jobId, jobTitle });
+  };
 
-const confirmDelete = async () => {
-  if (!deleteTarget) return;
-  setDeleting(true);
-  try {
-    const res = await deleteJob(deleteTarget.jobId);
-    showToast(res.message || "Job deleted successfully", "success");
-    await Promise.all([loadData(), loadJobs(activeStatus, activeType)]);
-  } catch (err) {
-    showToast(err.response?.data?.message || "Unable to delete job", "error");
-  } finally {
-    setDeleting(false);
-    setDeleteTarget(null);
-  }
-};
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const res = await deleteJob(deleteTarget.jobId);
+      showToast(res.message || "Job deleted successfully", "success");
+      await Promise.all([loadData(), loadJobs(activeStatus, activeType)]);
+    } catch (err) {
+      showToast(err.response?.data?.message || "Unable to delete job", "error");
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
+    }
+  };
 
   const handlePreview = async (jobId) => {
     setOpenMenu(null);
@@ -136,7 +136,10 @@ const confirmDelete = async () => {
       const response = await getJobResume(jobId);
       setPreviewJob(mapResumeToForm(response));
     } catch (err) {
-      showToast(err.response?.data?.message || "Unable to load job preview", "error");
+      showToast(
+        err.response?.data?.message || "Unable to load job preview",
+        "error",
+      );
       setPreviewOpen(false);
     } finally {
       setPreviewLoading(false);
@@ -157,63 +160,65 @@ const confirmDelete = async () => {
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
-const handleClose = async (jobId) => {
-  try {
-    const res = await closeJob(jobId);
-    showToast(res.message, "success");
-    await Promise.all([loadData(), loadJobs(activeStatus, activeType)]);
-  } catch (err) {
-    showToast(err.response?.data?.message || "Unable to close job", "error");
-  }
-};
+  const handleClose = async (jobId) => {
+    try {
+      const res = await closeJob(jobId);
+      showToast(res.message, "success");
+      await Promise.all([loadData(), loadJobs(activeStatus, activeType)]);
+    } catch (err) {
+      showToast(err.response?.data?.message || "Unable to close job", "error");
+    }
+  };
 
-const handleResume = async (jobId) => {
-  try {
-    const res = await resumeJob(jobId);
-    showToast(res.message, "success");
-    await Promise.all([loadData(), loadJobs(activeStatus, activeType)]);
-  } catch (err) {
-    showToast(err.response?.data?.message || "Unable to resume job", "error");
-  }
-};
+  const handleResume = async (jobId) => {
+    try {
+      const res = await resumeJob(jobId);
+      showToast(res.message, "success");
+      await Promise.all([loadData(), loadJobs(activeStatus, activeType)]);
+    } catch (err) {
+      showToast(err.response?.data?.message || "Unable to resume job", "error");
+    }
+  };
 
-const handleArchive = async (jobId) => {
-  try {
-    const res = await archiveJob(jobId);
-    showToast(res.message, "success");
-    await Promise.all([loadData(), loadJobs(activeStatus, activeType)]);
-  } catch (err) {
-    showToast(err.response?.data?.message || "Unable to archive job", "error");
-  }
-};
+  const handleArchive = async (jobId) => {
+    try {
+      const res = await archiveJob(jobId);
+      showToast(res.message, "success");
+      await Promise.all([loadData(), loadJobs(activeStatus, activeType)]);
+    } catch (err) {
+      showToast(
+        err.response?.data?.message || "Unable to archive job",
+        "error",
+      );
+    }
+  };
 
-
-const JOB_STATUS_TABS = [
-  {
-    label: "All",
-    count: dashboard?.totalJobs || 0,
-  },
-  {
-    label: "Draft",
-    count: dashboard?.draftJobs || 0,
-  },
-  {
-    label: "Active",
-    count: dashboard?.activeJobs || 0,
-  },
-  {
-    label: "Paused",
-    count: dashboard?.pausedJobs || 0,
-  },
-  {
-    label: "Closed",
-    count: dashboard?.closedJobs || 0,
-  },
-  {
-    label: "Archived",
-    count: dashboard?.archivedJobs || 0,
-  },
-];
+  const JOB_STATUS_TABS = [
+    {
+      label: "All",
+      count: dashboard?.totalJobs || 0,
+    },
+    {
+      label: "Draft",
+      count: dashboard?.draftJobs || 0,
+    },
+    {
+      label: "Active",
+      count: dashboard?.activeJobs || 0,
+    },
+    {
+      label: "Paused",
+      count: dashboard?.pausedJobs || 0,
+    },
+    {
+      label: "Closed",
+      count: dashboard?.closedJobs || 0,
+    },
+    {
+      label: "Archived",
+      count: dashboard?.archivedJobs || 0,
+    },
+  ];
 
   const POSTING_TYPE_TABS = [
     {
@@ -253,7 +258,7 @@ const JOB_STATUS_TABS = [
       if (!openMenu) return;
 
       const clickedButton = Object.values(menuButtonRefs.current).some(
-        (btn) => btn && btn.contains(e.target)
+        (btn) => btn && btn.contains(e.target),
       );
 
       if (clickedButton) return;
@@ -294,41 +299,40 @@ const JOB_STATUS_TABS = [
     };
   }, []);
 
-const loadJobs = async (statusLabel, typeLabel) => {
-  try {
-    setJobsLoading(true);
-    const response = await getRecruiterJobs({
-      status: statusLabel === "All" ? "" : statusLabel,
-      jobType: typeLabel === "All Types" ? "" : typeLabel,
-    });
-    const jobsList = response.jobs || [];
-    setJobs(jobsList);
-    await loadCompanyLogos(jobsList);
-  } catch (error) {
-    console.error(error);
-    showToast("Unable to load jobs", "error");
-  } finally {
-    setJobsLoading(false);
-  }
-};
+  const loadJobs = async (statusLabel, typeLabel) => {
+    try {
+      setJobsLoading(true);
+      const response = await getRecruiterJobs({
+        status: statusLabel === "All" ? "" : statusLabel,
+        jobType: typeLabel === "All Types" ? "" : typeLabel,
+      });
+      const jobsList = response.jobs || [];
+      setJobs(jobsList);
+      await loadCompanyLogos(jobsList);
+    } catch (error) {
+      console.error(error);
+      showToast("Unable to load jobs", "error");
+    } finally {
+      setJobsLoading(false);
+    }
+  };
 
-useEffect(() => {
-  loadJobs(activeStatus, activeType);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [activeStatus, activeType]);
+  useEffect(() => {
+    loadJobs(activeStatus, activeType);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeStatus, activeType]);
 
-
-const loadData = async () => {
-  try {
-    setLoading(true);
-    const dashboardRes = await getJobDashboard();
-    setDashboard(dashboardRes);
-  } catch (error) {
-    console.error(error);
-  } finally {
-    setLoading(false);
-  }
-};
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const dashboardRes = await getJobDashboard();
+      setDashboard(dashboardRes);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadCompanyLogos = async (jobsList) => {
     const logos = {};
@@ -336,7 +340,8 @@ const loadData = async () => {
 
     try {
       const profile = await companyProfileService.getCompanyProfile();
-      const recruiterLogo = profile?.companyLogoUrl || profile?.companyLogo || "";
+      const recruiterLogo =
+        profile?.companyLogoUrl || profile?.companyLogo || "";
       if (fallbackEmployerId) {
         logos[fallbackEmployerId] = recruiterLogo;
       }
@@ -350,12 +355,13 @@ const loadData = async () => {
           const empId = job.employerId || fallbackEmployerId;
           if (!empId || logos[empId] !== undefined) return;
 
-          const res = await companyProfileService.getPublicCompanyDetails(empId);
+          const res =
+            await companyProfileService.getPublicCompanyDetails(empId);
           logos[empId] = (res && (res.companyLogoUrl || res.companyLogo)) || "";
         } catch (err) {
           console.error(err);
         }
-      })
+      }),
     );
 
     setCompanyLogos(logos);
@@ -412,7 +418,9 @@ const loadData = async () => {
                     fontWeight: 700,
                     boxShadow: "0 8px 20px rgba(255,163,0,0.18)",
                   }}
-                  onClick={() => showToast("Opening post a job form...", "info")}
+                  onClick={() =>
+                    showToast("Opening post a job form...", "info")
+                  }
                 >
                   <i className="fi-rr-plus" style={{ marginRight: 7 }} />
                   Post a Job
@@ -423,16 +431,18 @@ const loadData = async () => {
             {/* ── Status filter tabs (matches applicants page style) ── */}
             <div className="candidate-status-filter mb-10">
               {JOB_STATUS_TABS.map((tab) => (
-  <button
-    key={tab.label}
-    className={`candidate-status-filter-btn${activeStatus === tab.label ? " active" : ""}`}
-    type="button"
-    onClick={() => setActiveStatus(tab.label)}
-  >
-    <span>{tab.label}</span>
-    <span className="candidate-status-filter-count">{tab.count}</span>
-  </button>
-))}
+                <button
+                  key={tab.label}
+                  className={`candidate-status-filter-btn${activeStatus === tab.label ? " active" : ""}`}
+                  type="button"
+                  onClick={() => setActiveStatus(tab.label)}
+                >
+                  <span>{tab.label}</span>
+                  <span className="candidate-status-filter-count">
+                    {tab.count}
+                  </span>
+                </button>
+              ))}
             </div>
 
             {/* ── Type sub-filter ── */}
@@ -515,7 +525,8 @@ const loadData = async () => {
                               objectFit: "cover",
                             }}
                             onError={(e) => {
-                              e.currentTarget.src = "/assets/imgs/page/company/company.png";
+                              e.currentTarget.src =
+                                "/assets/imgs/page/company/company.png";
                             }}
                           />
                         </div>
@@ -582,7 +593,8 @@ const loadData = async () => {
                                 fontWeight: 700,
                               }}
                             >
-                              {humanize(job.employmentType) || humanize(job.jobType)}
+                              {humanize(job.employmentType) ||
+                                humanize(job.jobType)}
                             </span>
                             {/* Status badge */}
                             <span
@@ -710,7 +722,6 @@ const loadData = async () => {
                               {job.applicationDeadline}
                             </strong>
                           </div>
-
                         </div>
                       </div>
 
@@ -907,47 +918,50 @@ const loadData = async () => {
                               e.currentTarget.style.borderColor = "#B9DCFF";
                             }}
                           >
-                            {job.appliedCount} Applicant{job.appliedCount !== 1 ? "s" : ""}
+                            {job.appliedCount} Applicant
+                            {job.appliedCount !== 1 ? "s" : ""}
                           </Link>
-                     <button
-  type="button"
-  onClick={(e) => {
-    e.stopPropagation();
-    handlePreview(job.jobId);
-  }}
-  title="Preview"
-  style={{
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    border: "1px solid #E5E7EB",
-    background: "#fff",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    boxShadow: "0 4px 12px rgba(18,35,89,.08)",
-    transition: ".25s",
-  }}
-  onMouseEnter={(e) => {
-    e.currentTarget.style.borderColor = "#FFA300";
-    e.currentTarget.style.background = "#FFF8EC";
-  }}
-  onMouseLeave={(e) => {
-    e.currentTarget.style.borderColor = "#E5E7EB";
-    e.currentTarget.style.background = "#fff";
-  }}
->
-  <i
-    className="fi-rr-eye"
-    style={{
-      fontSize: 18,
-      color: "#122359",
-    }}
-  />
-</button>
                           <button
-                            ref={(el) => (menuButtonRefs.current[job.jobId] = el)}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handlePreview(job.jobId);
+                            }}
+                            title="Preview"
+                            style={{
+                              width: 44,
+                              height: 44,
+                              borderRadius: 14,
+                              border: "1px solid #E5E7EB",
+                              background: "#fff",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              cursor: "pointer",
+                              boxShadow: "0 4px 12px rgba(18,35,89,.08)",
+                              transition: ".25s",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.borderColor = "#FFA300";
+                              e.currentTarget.style.background = "#FFF8EC";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.borderColor = "#E5E7EB";
+                              e.currentTarget.style.background = "#fff";
+                            }}
+                          >
+                            <i
+                              className="fi-rr-eye"
+                              style={{
+                                fontSize: 18,
+                                color: "#122359",
+                              }}
+                            />
+                          </button>
+                          <button
+                            ref={(el) =>
+                              (menuButtonRefs.current[job.jobId] = el)
+                            }
                             onClick={(e) => {
                               e.stopPropagation();
 
@@ -957,7 +971,9 @@ const loadData = async () => {
                               }
 
                               const rect =
-                                menuButtonRefs.current[job.jobId].getBoundingClientRect();
+                                menuButtonRefs.current[
+                                  job.jobId
+                                ].getBoundingClientRect();
 
                               setMenuPosition({
                                 top: rect.bottom + 8,
@@ -1112,7 +1128,6 @@ const loadData = async () => {
               ))}
 
               {openMenu && (
-
                 <div
                   ref={menuRef}
                   style={{
@@ -1136,13 +1151,10 @@ const loadData = async () => {
                     zIndex: 999999,
                   }}
                 >
-
                   {jobs
-                    .filter(job => job.jobId === openMenu)
-                    .map(job => (
-
+                    .filter((job) => job.jobId === openMenu)
+                    .map((job) => (
                       <div key={job.jobId}>
-
                         {/* <button
                           type="button"
                           className={styles.dropdownItem}
@@ -1157,8 +1169,18 @@ const loadData = async () => {
                             href={`/dashboard/post-job?jobId=${job.jobId}`}
                             className={styles.dropdownItem}
                           >
-                            <i className={job.jobStatus === "Draft" ? "fi-rr-arrow-right" : "fi-rr-edit"} />
-                            <span>{job.jobStatus === "Draft" ? "Continue Draft" : "Edit Job"}</span>
+                            <i
+                              className={
+                                job.jobStatus === "Draft"
+                                  ? "fi-rr-arrow-right"
+                                  : "fi-rr-edit"
+                              }
+                            />
+                            <span>
+                              {job.jobStatus === "Draft"
+                                ? "Continue Draft"
+                                : "Edit Job"}
+                            </span>
                           </Link>
                         )}
 
@@ -1193,15 +1215,17 @@ const loadData = async () => {
                         )}
 
                         {canManageJobs && (
-  <button
-    className={styles.dropdownItem}
-    onClick={() => requestDelete(job.jobId, job.jobTitle)}
-    style={{ color: "#dc2626" }}
-  >
-    <i className="fi-rr-trash" />
-    <span>Delete Job</span>
-  </button>
-)}
+                          <button
+                            className={styles.dropdownItem}
+                            onClick={() =>
+                              requestDelete(job.jobId, job.jobTitle)
+                            }
+                            style={{ color: "#dc2626" }}
+                          >
+                            <i className="fi-rr-trash" />
+                            <span>Delete Job</span>
+                          </button>
+                        )}
 
                         {!canManageJobs && !canViewApplicants && (
                           <div
@@ -1212,13 +1236,9 @@ const loadData = async () => {
                             <span>View only — no permission</span>
                           </div>
                         )}
-
                       </div>
-
                     ))}
-
                 </div>
-
               )}
             </div>
           </div>
@@ -1235,96 +1255,109 @@ const loadData = async () => {
         loading={previewLoading}
       />
       {deleteTarget && (
-  <div
-    style={{
-      position: "fixed",
-      inset: 0,
-      background: "rgba(18,35,89,0.45)",
-      backdropFilter: "blur(2px)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 100000,
-    }}
-    onClick={() => !deleting && setDeleteTarget(null)}
-  >
-    <div
-      onClick={(e) => e.stopPropagation()}
-      style={{
-        width: "min(400px, 90vw)",
-        background: "#fff",
-        borderRadius: 20,
-        border: "1px solid #EEF2F7",
-        boxShadow: "0 24px 50px rgba(18,35,89,.18)",
-        padding: "28px 26px",
-      }}
-    >
-      <div
-        style={{
-          width: 48,
-          height: 48,
-          borderRadius: "50%",
-          background: "#FEE2E2",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          marginBottom: 16,
-        }}
-      >
-        <i className="fi-rr-trash" style={{ fontSize: 20, color: "#dc2626" }} />
-      </div>
-
-      <h5 style={{ color: "#122359", fontWeight: 800, marginBottom: 8 }}>
-        Delete this job?
-      </h5>
-
-      <p style={{ fontSize: 13.5, color: "#66789c", lineHeight: 1.5, marginBottom: 24 }}>
-        {`"${deleteTarget.jobTitle}"`} will be permanently removed. This action cannot be undone.
-      </p>
-
-      <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-        <button
-          type="button"
-          onClick={() => setDeleteTarget(null)}
-          disabled={deleting}
+        <div
           style={{
-            height: 42,
-            padding: "0 18px",
-            borderRadius: 12,
-            border: "1px solid #E5E7EB",
-            background: "#fff",
-            color: "#122359",
-            fontWeight: 700,
-            fontSize: 13,
-            cursor: deleting ? "not-allowed" : "pointer",
+            position: "fixed",
+            inset: 0,
+            background: "rgba(18,35,89,0.45)",
+            backdropFilter: "blur(2px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 100000,
           }}
+          onClick={() => !deleting && setDeleteTarget(null)}
         >
-          Cancel
-        </button>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "min(400px, 90vw)",
+              background: "#fff",
+              borderRadius: 20,
+              border: "1px solid #EEF2F7",
+              boxShadow: "0 24px 50px rgba(18,35,89,.18)",
+              padding: "28px 26px",
+            }}
+          >
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: "50%",
+                background: "#FEE2E2",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 16,
+              }}
+            >
+              <i
+                className="fi-rr-trash"
+                style={{ fontSize: 20, color: "#dc2626" }}
+              />
+            </div>
 
-        <button
-          type="button"
-          onClick={confirmDelete}
-          disabled={deleting}
-          style={{
-            height: 42,
-            padding: "0 18px",
-            borderRadius: 12,
-            border: "none",
-            background: "#dc2626",
-            color: "#fff",
-            fontWeight: 700,
-            fontSize: 13,
-            cursor: deleting ? "not-allowed" : "pointer",
-            opacity: deleting ? 0.7 : 1,
-          }}
-        >
-          {deleting ? "Deleting..." : "Delete Job"}
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+            <h5 style={{ color: "#122359", fontWeight: 800, marginBottom: 8 }}>
+              Delete this job?
+            </h5>
+
+            <p
+              style={{
+                fontSize: 13.5,
+                color: "#66789c",
+                lineHeight: 1.5,
+                marginBottom: 24,
+              }}
+            >
+              {`"${deleteTarget.jobTitle}"`} will be permanently removed. This
+              action cannot be undone.
+            </p>
+
+            <div
+              style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}
+            >
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleting}
+                style={{
+                  height: 42,
+                  padding: "0 18px",
+                  borderRadius: 12,
+                  border: "1px solid #E5E7EB",
+                  background: "#fff",
+                  color: "#122359",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  cursor: deleting ? "not-allowed" : "pointer",
+                }}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={confirmDelete}
+                disabled={deleting}
+                style={{
+                  height: 42,
+                  padding: "0 18px",
+                  borderRadius: 12,
+                  border: "none",
+                  background: "#dc2626",
+                  color: "#fff",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  cursor: deleting ? "not-allowed" : "pointer",
+                  opacity: deleting ? 0.7 : 1,
+                }}
+              >
+                {deleting ? "Deleting..." : "Delete Job"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 };

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import SubUserViewOnlyGuard from "@/components/SubUserViewOnlyGuard";
+import SubUserViewOnlyGuard from "@/components/SubUserViewOnlyGuard.js";
 import {
   getVerification,
   uploadDocument,

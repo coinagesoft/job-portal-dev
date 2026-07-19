@@ -413,7 +413,7 @@ useEffect(() => {
     const entries = await Promise.all(
       cvCandidates.map(async (c) => {
         try {
-          // const res = await getProfileCompletion(c.candidateId);
+          const res = await getProfileCompletion(c.candidateId);
           console.log(`[CV Search] Profile completion for candidate ${c.fullName} (${c.candidateId}):`, res?.data);
           return [c.candidateId, res?.data?.data?.overallPct ?? null];
         } catch (error) {
