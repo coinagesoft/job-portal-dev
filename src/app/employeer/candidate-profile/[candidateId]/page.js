@@ -257,7 +257,7 @@ const EmployerCandidateProfilePage = () => {
     <main className="main">
       <section className="section-box-2">
         <div className="container">
-          <div className="banner-hero banner-image-single">
+          <div className="banner-hero banner-image-single" style={{ height: "120px", marginTop: "0px" }}>
             {/* <img
               src="/assets/imgs/page/blue-collar/welding.jpg"
               alt="candidate banner"
@@ -354,44 +354,44 @@ const EmployerCandidateProfilePage = () => {
                 </div>
               </div>
 
-              <div className="col-lg-4 col-md-12 text-lg-end">
-                <div className="action-buttons d-flex flex-wrap gap-2 justify-content-lg-end">
-                  <button
-                    className="btn btn-primary-custom btn-lg"
-                    type="button"
-                    title="Unlock this candidate's full profile"
-                    style={{ whiteSpace: "nowrap" }}
-                    disabled={isUnlocked || unlocking}
-                    onClick={handleUnlock}
-                  >
-                    {isUnlocked
-                      ? "Profile Unlocked"
-                      : unlocking
-                        ? "Unlocking…"
-                        : "Unlock Profile"}
-                  </button>
+             <div className="col-lg-4 col-md-12 text-lg-end mt-20 mt-lg-0">
+  <div className="action-buttons d-flex flex-wrap gap-2 justify-content-lg-end">
+    <button
+      className="btn btn-default"
+      type="button"
+      title="Unlock this candidate's full profile"
+      style={{ whiteSpace: "nowrap" }}
+      disabled={isUnlocked || unlocking}
+      onClick={handleUnlock}
+    >
+      {isUnlocked
+        ? "Profile Unlocked"
+        : unlocking
+          ? "Unlocking…"
+          : "Unlock Profile"}
+    </button>
 
-                  <button
-                    className="btn btn-outline-custom btn-lg"
-                    type="button"
-                    disabled={!cvAvailable || downloading}
-                    onClick={handleDownloadCv}
-                  >
-                    {downloading ? "Downloading…" : "Download CV"}
-                  </button>
-                </div>
+    <button
+      className="btn btn-border"
+      type="button"
+      disabled={!cvAvailable || downloading}
+      onClick={handleDownloadCv}
+    >
+      {downloading ? "Downloading…" : "Download CV"}
+    </button>
+  </div>
 
-                {actionMessage && (
-                  <p
-                    className={`mt-10 font-sm ${actionMessage.type === "success"
-                      ? "text-success"
-                      : "text-danger"
-                      }`}
-                  >
-                    {actionMessage.text}
-                  </p>
-                )}
-              </div>
+  {actionMessage && (
+    <p
+      className={`mt-10 font-sm ${actionMessage.type === "success"
+        ? "text-success"
+        : "text-danger"
+        }`}
+    >
+      {actionMessage.text}
+    </p>
+  )}
+</div>
             </div>
           </div>
 

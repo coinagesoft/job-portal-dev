@@ -79,15 +79,15 @@ const roleCategories = [
   "Other", 
 ]; 
 const jobPostTypes = [ 
-  { label: "Regular Hiring", value: "Regular_Hiring" }, 
-  { label: "Hot Vacancy", value: "Hot_Vacancy" }, 
-  { label: "Urgent Hiring", value: "Urgent_Hiring" }, 
-  { label: "Bulk Hiring", value: "Bulk_Hiring" }, 
+  { label: "Regular Hiring", value: "Regular Hiring" }, 
+  { label: "Hot Vacancy", value: "Hot Vacancy" }, 
+  { label: "Urgent Hiring", value: "Urgent Hiring" }, 
+  { label: "Bulk Hiring", value: "Bulk Hiring" }, 
   { label: "Classified", value: "Classified" }, 
 ]; 
 const employmentTypeOptions = [ 
-  { label: "Full Time", value: "Full_Time" }, 
-  { label: "Part Time", value: "Part_Time" }, 
+  { label: "Full Time", value: "Full Time" }, 
+  { label: "Part Time", value: "Part Time" }, 
   { label: "Contract", value: "Contract" }, 
   { label: "Freelance", value: "Freelance" }, 
   { label: "Internship / Trainee", value: "Internship" }, 
@@ -220,12 +220,12 @@ const salaryDisplayOptions = [
 ]; 
 const educationOptions = [ 
   { value: "No Specific Requirement", label: "No Specific Requirement" }, 
-  { value: "Below_10th", label: "Below 10th" }, 
-  { value: "10th_Pass", label: "10th Pass" }, 
-  { value: "12th_Pass", label: "12th Pass" }, 
-  { value: "ITI_Diploma", label: "ITI / Diploma" }, 
+  { value: "Below 10th", label: "Below 10th" }, 
+  { value: "10th Pass", label: "10th Pass" }, 
+  { value: "12th Pass", label: "12th Pass" }, 
+  { value: "ITI Diploma", label: "ITI / Diploma" }, 
   { value: "Graduate", label: "Graduate" }, 
-  { value: "Post_Graduate", label: "Post Graduate" }, 
+  { value: "Post Graduate", label: "Post Graduate" }, 
 ]; 
 const genderOptions = [ 
   { value: "Any", label: "Not Specified" }, 
@@ -277,21 +277,65 @@ function validateAllSteps(jobForm) {
   if (!jobForm.EmploymentMode) 
     issues.push({ stepNum: 1, title: "Job Details", message: "Employment Mode is required" }); 
  
-  // Step 2 – Compensation 
-  if (!jobForm.SalaryMin) 
-    issues.push({ stepNum: 2, title: "Compensation", message: "Minimum Salary is required" }); 
-  if (!jobForm.SalaryMax) 
-    issues.push({ stepNum: 2, title: "Compensation", message: "Maximum Salary is required" }); 
+  // Step 2 – Compensation
+  if (!jobForm.SalaryMin)
+    issues.push({ stepNum: 2, title: "Compensation", message: "Minimum Salary is required" });
+  else if (Number(jobForm.SalaryMin) < 0)
+    issues.push({ stepNum: 2, title: "Compensation", message: "Minimum Salary cannot be negative" });
+  if (!jobForm.SalaryMax)
+    issues.push({ stepNum: 2, title: "Compensation", message: "Maximum Salary is required" });
+  else if (Number(jobForm.SalaryMax) < 0)
+    issues.push({ stepNum: 2, title: "Compensation", message: "Maximum Salary cannot be negative" });
   if (
   jobForm.SalaryMin &&
   jobForm.SalaryMax &&
   Number(jobForm.SalaryMin) > Number(jobForm.SalaryMax)
 )
   issues.push({ stepNum: 2, title: "Compensation", message: "Minimum Salary cannot be greater than Maximum Salary" });
- 
-  // Step 4 – Eligibility 
-  if (!jobForm.Vacancies) 
-    issues.push({ stepNum: 4, title: "Eligibility", message: "Number of Vacancies is required" }); 
+
+  // Step 1 – Experience range
+  if (
+    jobForm.ExperienceMinYears !== "" &&
+    jobForm.ExperienceMinYears != null &&
+    (Number(jobForm.ExperienceMinYears) < 0 || Number(jobForm.ExperienceMinYears) > 50)
+  )
+    issues.push({ stepNum: 1, title: "Job Details", message: "Experience Min must be between 0 and 50 years" });
+  if (
+    jobForm.ExperienceMaxYears !== "" &&
+    jobForm.ExperienceMaxYears != null &&
+    (Number(jobForm.ExperienceMaxYears) < 0 || Number(jobForm.ExperienceMaxYears) > 50)
+  )
+    issues.push({ stepNum: 1, title: "Job Details", message: "Experience Max must be between 0 and 50 years" });
+  if (
+    jobForm.ExperienceMinYears !== "" &&
+    jobForm.ExperienceMaxYears !== "" &&
+    Number(jobForm.ExperienceMinYears) > Number(jobForm.ExperienceMaxYears)
+  )
+    issues.push({ stepNum: 1, title: "Job Details", message: "Experience Min cannot be greater than Experience Max" });
+
+  // Step 4 – Eligibility
+  if (!jobForm.Vacancies)
+    issues.push({ stepNum: 4, title: "Eligibility", message: "Number of Vacancies is required" });
+
+  if (
+    jobForm.AgeMin !== "" &&
+    jobForm.AgeMin != null &&
+    (Number(jobForm.AgeMin) < 18 || Number(jobForm.AgeMin) > 99)
+  )
+    issues.push({ stepNum: 4, title: "Eligibility", message: "Minimum Age must be between 18 and 99 years" });
+  if (
+    jobForm.AgeMax !== "" &&
+    jobForm.AgeMax != null &&
+    (Number(jobForm.AgeMax) < 18 || Number(jobForm.AgeMax) > 99)
+  )
+    issues.push({ stepNum: 4, title: "Eligibility", message: "Maximum Age must be between 18 and 99 years" });
+  if (
+    jobForm.AgeMin !== "" &&
+    jobForm.AgeMax !== "" &&
+    Number(jobForm.AgeMin) > Number(jobForm.AgeMax)
+  )
+    issues.push({ stepNum: 4, title: "Eligibility", message: "Minimum Age cannot be greater than Maximum Age" });
+
  
   // Step 5 – Location 
   if (!jobForm.LocationType) 
@@ -299,12 +343,30 @@ function validateAllSteps(jobForm) {
   if (jobForm.LocationType === "Offshore" && !jobForm.OffshoreVesselName?.trim()) 
     issues.push({ stepNum: 5, title: "Location", message: "Vessel / Platform Name is required" }); 
  
-  // Step 7 – Publishing 
-  if (!jobForm.ApplicationDeadline) 
-    issues.push({ stepNum: 7, title: "Publishing", message: "Application Deadline is required" }); 
- 
-  return issues; 
-} 
+  // Step 1 – Job Details (continued)
+  if (
+    jobForm.DutyHoursPerDay !== "" &&
+    jobForm.DutyHoursPerDay != null &&
+    (Number(jobForm.DutyHoursPerDay) < 1 || Number(jobForm.DutyHoursPerDay) > 24)
+  )
+    issues.push({ stepNum: 1, title: "Job Details", message: "Duty Hours Per Day must be between 1 and 24" });
+
+  // Step 7 – Publishing
+  if (!jobForm.ApplicationDeadline)
+    issues.push({ stepNum: 7, title: "Publishing", message: "Application Deadline is required" });
+  else if (jobForm.ApplicationDeadline < todayDateString())
+    issues.push({ stepNum: 7, title: "Publishing", message: "Application Deadline cannot be in the past" });
+
+  return issues;
+}
+
+// yyyy-MM-dd for today, in the local timezone — matches the format a date
+// input's value uses, so it can be compared directly as a string.
+function todayDateString() {
+  const d = new Date();
+  const offset = d.getTimezoneOffset();
+  return new Date(d.getTime() - offset * 60000).toISOString().split("T")[0];
+}
  
 /* ─── helpers ─────────────────────────────────────────────────────────────── */ 
 function Field({ label, required, hint, children }) { 
@@ -878,31 +940,70 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
           /> 
         </Field> 
  
-        {/* Experience Min */} 
-        <Field label="Experience Min (yrs)"> 
-          <input 
-            type="number" 
-            min={0} 
-            className={styles.control} 
-            value={jobForm.ExperienceMinYears} 
-            onChange={(e) => 
-              setJobForm((p) => ({ ...p, ExperienceMinYears: e.target.value })) 
-            } 
-          /> 
-        </Field> 
- 
-        {/* Experience Max */} 
-        <Field label="Experience Max (yrs)"> 
-          <input 
-            type="number" 
-            min={0} 
-            className={styles.control} 
-            value={jobForm.ExperienceMaxYears} 
-            onChange={(e) => 
-              setJobForm((p) => ({ ...p, ExperienceMaxYears: e.target.value })) 
-            } 
-          /> 
-        </Field> 
+        {/* Experience Min */}
+        <Field label="Experience Min (yrs)">
+          <input
+            type="number"
+            min={0}
+            max={50}
+            className={styles.control}
+            value={jobForm.ExperienceMinYears}
+            onChange={(e) =>
+              setJobForm((p) => ({ ...p, ExperienceMinYears: e.target.value }))
+            }
+            onBlur={(e) => {
+              const raw = e.target.value;
+              if (raw === "") return;
+              const clamped = Math.min(50, Math.max(0, Math.trunc(Number(raw) || 0)));
+              if (String(clamped) !== raw) {
+                setJobForm((p) => ({ ...p, ExperienceMinYears: String(clamped) }));
+              }
+            }}
+          />
+        </Field>
+
+        {/* Experience Max */}
+        <Field label="Experience Max (yrs)">
+          <input
+            type="number"
+            min={0}
+            max={50}
+            className={styles.control}
+            value={jobForm.ExperienceMaxYears}
+            onChange={(e) =>
+              setJobForm((p) => ({ ...p, ExperienceMaxYears: e.target.value }))
+            }
+            onBlur={(e) => {
+              const raw = e.target.value;
+              if (raw === "") return;
+              const clamped = Math.min(50, Math.max(0, Math.trunc(Number(raw) || 0)));
+              if (String(clamped) !== raw) {
+                setJobForm((p) => ({ ...p, ExperienceMaxYears: String(clamped) }));
+              }
+            }}
+          />
+        </Field>
+
+        {jobForm.ExperienceMinYears !== "" &&
+          jobForm.ExperienceMaxYears !== "" &&
+          Number(jobForm.ExperienceMinYears) > Number(jobForm.ExperienceMaxYears) && (
+          <p
+            style={{
+              gridColumn: "1 / -1",
+              marginTop: -12,
+              marginBottom: 4,
+              fontSize: 13,
+              color: "#dc2626",
+              fontWeight: 600,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            ⚠ Experience Min cannot be greater than Experience Max
+          </p>
+        )}
+
  
         {/* Job Type */} 
         <Field label="Job Type" required> 
@@ -955,7 +1056,7 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
           }} 
         > 
           <div style={{ flex: 2 }}> 
-            <Field label="Duty Hours Per Day" hint="Max 24"> 
+            <Field label="Duty Hours Per Day" hint="1–24 hours"> 
               <input 
                 type="number" 
                 min={1} 
@@ -968,6 +1069,14 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
                     DutyHoursPerDay: e.target.value, 
                   })) 
                 } 
+                onBlur={(e) => {
+                  const raw = e.target.value;
+                  if (raw === "") return;
+                  const clamped = Math.min(24, Math.max(1, Number(raw) || 1));
+                  if (String(clamped) !== raw) {
+                    setJobForm((p) => ({ ...p, DutyHoursPerDay: String(clamped) }));
+                  }
+                }}
               /> 
             </Field> 
           </div> 
@@ -1076,6 +1185,8 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
  
 /* ─── STEP 2 – Compensation ───────────────────────────────────────────────── */ 
 function Step2({ go, jobForm, setJobForm, onSubmit }) {
+  const salaryMinNegative = jobForm.SalaryMin !== "" && Number(jobForm.SalaryMin) < 0;
+  const salaryMaxNegative = jobForm.SalaryMax !== "" && Number(jobForm.SalaryMax) < 0;
   const salaryInvalid =
     jobForm.SalaryMin !== "" &&
     jobForm.SalaryMax !== "" &&
@@ -1124,6 +1235,13 @@ function Step2({ go, jobForm, setJobForm, onSubmit }) {
                 SalaryMin: e.target.value,
               }))
             }
+            onBlur={(e) => {
+              const raw = e.target.value;
+              if (raw === "") return;
+              if (Number(raw) < 0) {
+                setJobForm((p) => ({ ...p, SalaryMin: "0" }));
+              }
+            }}
           />
         </Field>
 
@@ -1140,10 +1258,34 @@ function Step2({ go, jobForm, setJobForm, onSubmit }) {
                 SalaryMax: e.target.value,
               }))
             }
+            onBlur={(e) => {
+              const raw = e.target.value;
+              if (raw === "") return;
+              if (Number(raw) < 0) {
+                setJobForm((p) => ({ ...p, SalaryMax: "0" }));
+              }
+            }}
           />
         </Field>
 
       </div>
+
+      {(salaryMinNegative || salaryMaxNegative) && (
+        <p
+          style={{
+            marginTop: -12,
+            marginBottom: 16,
+            fontSize: 13,
+            color: "#dc2626",
+            fontWeight: 600,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          ⚠ Salary amounts cannot be negative
+        </p>
+      )}
 
       {salaryInvalid && (
         <p
@@ -1401,6 +1543,13 @@ function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, han
  
 /* ─── STEP 4 – Eligibility ────────────────────────────────────────────────── */ 
 function Step4({ go, jobForm, setJobForm, onSubmit }) { 
+  const ageMinOutOfRange = jobForm.AgeMin !== "" && (Number(jobForm.AgeMin) < 18 || Number(jobForm.AgeMin) > 99);
+  const ageMaxOutOfRange = jobForm.AgeMax !== "" && (Number(jobForm.AgeMax) < 18 || Number(jobForm.AgeMax) > 99);
+  const ageRangeInvalid =
+    jobForm.AgeMin !== "" &&
+    jobForm.AgeMax !== "" &&
+    Number(jobForm.AgeMin) > Number(jobForm.AgeMax);
+
   return ( 
     <StepCard 
       stepNum={4} 
@@ -1441,6 +1590,14 @@ function Step4({ go, jobForm, setJobForm, onSubmit }) {
             onChange={(e) => 
               setJobForm((p) => ({ ...p, AgeMin: e.target.value })) 
             } 
+            onBlur={(e) => {
+              const raw = e.target.value;
+              if (raw === "") return;
+              const clamped = Math.min(99, Math.max(18, Math.trunc(Number(raw) || 18)));
+              if (String(clamped) !== raw) {
+                setJobForm((p) => ({ ...p, AgeMin: String(clamped) }));
+              }
+            }}
           /> 
         </Field> 
  
@@ -1454,8 +1611,52 @@ function Step4({ go, jobForm, setJobForm, onSubmit }) {
             onChange={(e) => 
               setJobForm((p) => ({ ...p, AgeMax: e.target.value })) 
             } 
+            onBlur={(e) => {
+              const raw = e.target.value;
+              if (raw === "") return;
+              const clamped = Math.min(99, Math.max(18, Math.trunc(Number(raw) || 18)));
+              if (String(clamped) !== raw) {
+                setJobForm((p) => ({ ...p, AgeMax: String(clamped) }));
+              }
+            }}
           /> 
         </Field> 
+
+        {(ageMinOutOfRange || ageMaxOutOfRange) && (
+          <p
+            style={{
+              gridColumn: "1 / -1",
+              marginTop: -4,
+              marginBottom: 4,
+              fontSize: 13,
+              color: "#dc2626",
+              fontWeight: 600,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            ⚠ Age must be between 18 and 99 years
+          </p>
+        )}
+
+        {!ageMinOutOfRange && !ageMaxOutOfRange && ageRangeInvalid && (
+          <p
+            style={{
+              gridColumn: "1 / -1",
+              marginTop: -4,
+              marginBottom: 4,
+              fontSize: 13,
+              color: "#dc2626",
+              fontWeight: 600,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            ⚠ Minimum Age cannot be greater than Maximum Age
+          </p>
+        )}
  
         <Field label="Gender Preferred"> 
           <Combobox 
@@ -1847,6 +2048,7 @@ function Step7({ go, jobForm, setJobForm, onSubmit, preflightIssues = [] }) {
         <Field label="Application Deadline" required> 
           <input 
             type="date" 
+            min={todayDateString()}
             className={styles.control} 
             value={jobForm.ApplicationDeadline} 
             onChange={(e) => 

@@ -200,18 +200,24 @@ const CandidateSettingsPage = () => {
 
                   <div className="candidate-settings-actions">
                     <button
-                      type="button"
-                      className="btn btn-default btn-small"
-                      onClick={() => {
-                        setLanguage("English");
-                        setTimezone("Asia/Kolkata (IST)");
-                        setVisibility("Recruiters from applied jobs only");
-                        setComms("Email + In-app notifications");
-                      }}
-                    >
-                      Discard
-                    </button>
-                    <button type="button" className="btn btn-brand-1 btn-small" onClick={handleSave}>
+  type="button"
+  className="btn btn-small"
+  style={{
+    background: "#fff",
+    color: "#ff9900",
+    border: "1px solid #ff9900",
+    fontSize:"16px"
+  }}
+  onClick={() => {
+    setLanguage("English");
+    setTimezone("Asia/Kolkata (IST)");
+    setVisibility("Recruiters from applied jobs only");
+    setComms("Email + In-app notifications");
+  }}
+>
+  Discard
+</button>
+                    <button type="button" className="btn btn-brand-1 btn-small" onClick={handleSave} style={{fontSize:"16px"}}>
                       Save Preferences
                     </button>
                   </div>

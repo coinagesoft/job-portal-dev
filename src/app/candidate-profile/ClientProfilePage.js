@@ -237,10 +237,10 @@ const Btn = ({
 }) => {
   const variants = {
     primary: { background: T.orange, color: T.white, border: "none" },
-    outline: {
+   outline: {
       background: T.white,
       color: T.navy,
-      border: `1.5px solid ${T.border}`,
+      border: `1.5px solid ${T.navy}`,
     },
     ghost: {
       background: T.bg,
@@ -4384,16 +4384,17 @@ const CandidateProfilePage = () => {
                     }}
                   >
                     <Btn
-                      variant="outline"
-                      onClick={() => setCurrentStep((s) => Math.max(1, s - 1))}
-                      disabled={currentStep === 1}
-                    >
-                      <i
-                        className="fi-rr-arrow-small-left"
-                        aria-hidden="true"
-                      />
-                      Back
-                    </Btn>
+  variant="outline"
+  onClick={() => setCurrentStep((s) => Math.max(1, s - 1))}
+  disabled={currentStep === 1}
+  style={{ border: `1.5px solid ${T.orange}` }}
+>
+  <i
+    className="fi-rr-arrow-small-left"
+    aria-hidden="true"
+  />
+  Back
+</Btn>
                     <div
                       style={{ display: "flex", alignItems: "center", gap: 6 }}
                     >
