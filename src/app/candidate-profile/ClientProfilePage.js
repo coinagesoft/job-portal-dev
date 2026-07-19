@@ -1550,9 +1550,11 @@ const StepEducation = ({ data, onUpdate, onAdd, onRemove }) => {
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
+                gap: 6,
               }}
             >
               <i className="fi-rr-cross-small" aria-hidden="true" />
+               Remove
             </button>
           </div>
         </Card>
