@@ -652,6 +652,7 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
                           />
                         </div>
 
+
                         {error ? <p className="font-xs mb-10" style={{ color: "#a32d2d" }}>{error}</p> : null} */}
                       </div>
 

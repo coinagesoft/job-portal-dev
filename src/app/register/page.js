@@ -3,6 +3,7 @@ import { useState, useRef, Suspense, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Script from "next/script";
 import { useToast } from "@/components/Toast";
+import { Country, State, City } from "country-state-city";
 import {
   CountrySelector,
   DialCodePreview,
@@ -116,15 +117,10 @@ const COMPANY_SIZES = [
 
 const COMPANY_TYPES = [
   { value: "startup", label: "Startup" },
-  { value: "small-business", label: "Small Business" },
-  { value: "mid-size", label: "Mid-size Company" },
+  { value: "mid-size", label: "Mid-size" },
   { value: "enterprise", label: "Enterprise" },
-  { value: "multinational", label: "Multinational (MNC)" },
-  { value: "product-based", label: "Product-based" },
-  { value: "service-based", label: "Service-based" },
   { value: "government", label: "Government" },
-  { value: "non-profit", label: "Non-profit (NGO)" },
-  { value: "other", label: "Other" },
+  { value: "non-profit", label: "Non-profit" },
 ];
 
 const labelFor = (list, value) =>
@@ -133,31 +129,30 @@ const labelFor = (list, value) =>
 const GSTIN_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[A-Z0-9]{1}[Z]{1}[A-Z0-9]{1}$/;
 const PIN_REGEX = /^[0-9]{6}$/;
 
-const STATES = [
-  "Andhra Pradesh",
-  "Assam",
-  "Bihar",
-  "Delhi",
-  "Goa",
-  "Gujarat",
-  "Haryana",
-  "Jharkhand",
-  "Karnataka",
-  "Kerala",
-  "Madhya Pradesh",
-  "Maharashtra",
-  "Odisha",
-  "Punjab",
-  "Rajasthan",
-  "Tamil Nadu",
-  "Telangana",
-  "Uttar Pradesh",
-  "West Bengal",
-  "Other",
-];
-const COUNTRIES = Array.from(
-  new Set(PHONE_COUNTRIES.map((c) => c.name))
-).sort((a, b) => a.localeCompare(b));
+// Full country list for the Registered Address section — replaces the old
+// India-only STATES constant. State and City options now cascade from
+// whichever country/state the employer actually picks, instead of always
+// assuming India.
+const ALL_COUNTRIES = Country.getAllCountries();
+const COUNTRY_NAMES = ALL_COUNTRIES.map((c) => c.name);
+
+const getCountryIso = (countryName) =>
+  ALL_COUNTRIES.find((c) => c.name === countryName)?.isoCode || "";
+
+const getStateNamesForCountry = (countryIso) =>
+  countryIso ? State.getStatesOfCountry(countryIso).map((s) => s.name) : [];
+
+const getStateIso = (countryIso, stateName) =>
+  countryIso
+    ? State.getStatesOfCountry(countryIso).find((s) => s.name === stateName)
+        ?.isoCode || ""
+    : "";
+
+const getCityNamesForState = (countryIso, stateIso) =>
+  countryIso && stateIso
+    ? City.getCitiesOfState(countryIso, stateIso).map((c) => c.name)
+    : [];
+
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const isValidEmail = (email) => EMAIL_REGEX.test(email.trim());
 
@@ -1753,7 +1748,10 @@ function EmployerForm() {
     gstRegDate: "",
     cin: "",
     state: "",
+    stateIso: "",
     city: "",
+    country: "",
+    countryIso: "",
     pincode: "",
     address: "",
     officialWebsite: "",
@@ -1762,7 +1760,6 @@ function EmployerForm() {
     designation: "",
     contactPersonEmail: "",
     corpEmail: "",
-      country: "India",
     countryCode: "+91",
     mobile: "",
     profileSummary: "",
@@ -1794,7 +1791,10 @@ function EmployerForm() {
         tradeName: "Horizon Marine",
         pan: "AAPFU0939F",
         businessType: "Private Limited",
+        country: "India",
+        countryIso: "IN",
         state: "Maharashtra",
+        stateIso: getStateIso("IN", "Maharashtra"),
         city: "Mumbai",
         pincode: "400001",
         address: "Unit 4B, Trade Tower, Ballard Estate, Mumbai",
@@ -1929,6 +1929,7 @@ function EmployerForm() {
     !!data.legalName &&
     !!data.state &&
     !!data.city &&
+    !!data.country &&
     PIN_REGEX.test(data.pincode) &&
     !!data.address &&
     isGstnValid;
@@ -1984,7 +1985,13 @@ const isStep4Valid =
             cin: step2.cin || "",
 
             state: step2.state || "",
+            stateIso: getStateIso(
+              getCountryIso(step2.country || ""),
+              step2.state || "",
+            ),
             city: step2.city || "",
+            country: step2.country || "",
+            countryIso: getCountryIso(step2.country || ""),
             pincode: step2.pincode || "",
             address: step2.addressLine1 || "",
 
@@ -2269,6 +2276,7 @@ const isStep4Valid =
       formData.append("cin", data.cin);
       formData.append("state", data.state);
       formData.append("city", data.city);
+      formData.append("country", data.country || "India");
       formData.append("pincode", data.pincode);
       formData.append("addressLine1", data.address);
       formData.append("websiteUrl", data.officialWebsite);
@@ -2473,14 +2481,31 @@ const isStep4Valid =
       </p>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-        <Field label="Country">
-  <Combobox
-    value={data.country}
-    onChange={(v) => set("country", v)}
-    options={COUNTRIES}
-    placeholder="Type or select your country (e.g. India)"
-  />
-</Field>
+        <Field
+          label="Country"
+          required
+          error={attempt2 && !data.country ? "Country is required" : null}
+        >
+          <Combobox
+            value={data.country}
+            error={attempt2 && !data.country}
+            onChange={(v) => {
+              const iso = getCountryIso(v);
+              setData((p) => ({
+                ...p,
+                country: v,
+                countryIso: iso,
+                // Changing the country invalidates whatever state/city was
+                // previously picked for a different country.
+                state: "",
+                stateIso: "",
+                city: "",
+              }));
+            }}
+            options={COUNTRY_NAMES}
+            placeholder="Type or select your country (e.g. India)"
+          />
+        </Field>
         <Field
           label="State"
           required
@@ -2489,9 +2514,22 @@ const isStep4Valid =
           <Combobox
             value={data.state}
             error={attempt2 && !data.state}
-            onChange={(v) => set("state", v)}
-            options={STATES}
-            placeholder="Type or select your state (e.g. Maharashtra)"
+            disabled={!data.countryIso}
+            onChange={(v) => {
+              const iso = getStateIso(data.countryIso, v);
+              setData((p) => ({
+                ...p,
+                state: v,
+                stateIso: iso,
+                city: "",
+              }));
+            }}
+            options={getStateNamesForCountry(data.countryIso)}
+            placeholder={
+              data.countryIso
+                ? "Type or select your state (e.g. Maharashtra)"
+                : "Select a country first"
+            }
           />
         </Field>
         <Field
@@ -2499,14 +2537,17 @@ const isStep4Valid =
           required
           error={attempt2 && !data.city ? "City is required" : null}
         >
-          <Input
+          <Combobox
             value={data.city}
             error={attempt2 && !data.city}
-            onChange={(e) => set("city", e.target.value)}
-            placeholder="Enter your city (e.g. Mumbai)"
-            style={{
-              background: data.hasGst && data.city ? "#ffffff" : undefined,
-            }}
+            disabled={!data.stateIso}
+            onChange={(v) => set("city", v)}
+            options={getCityNamesForState(data.countryIso, data.stateIso)}
+            placeholder={
+              data.stateIso
+                ? "Type or select your city (e.g. Mumbai)"
+                : "Select a state first"
+            }
           />
         </Field>
         <Field
@@ -2808,19 +2849,20 @@ const isStep4Valid =
         />
       </Field>
 
-    <Field
-  label="Company Profile Summary"
-  hint="Brief description of your company and hiring focus (shown on job listings)"
->
-  <textarea
-    className="form-control"
-    value={data.profileSummary}
-    onChange={(e) => set("profileSummary", e.target.value)}
-    placeholder="e.g. We are a leading marine services company specialising in offshore and vessel crew placement."
-    rows={7}
-    style={{ resize: "vertical", minHeight: "100px", fontSize: "14px" }}
-  />
-</Field>
+      <Field
+        label="Company Profile Summary"
+        hint="Brief description of your company and hiring focus (shown on job listings)"
+      >
+        <textarea
+          className="form-control"
+          value={data.profileSummary}
+          onChange={(e) => set("profileSummary", e.target.value)}
+          placeholder="e.g. We are a leading marine services company specialising in offshore and vessel crew placement."
+          rows={4}
+          style={{ resize: "vertical" }}
+        />
+      </Field>
+
       {attempt3 && !isStep4Valid && (
         <Alert type="error">
           Please complete all required fields and verify both your mobile
@@ -3535,7 +3577,7 @@ const isStep4Valid =
           label="Address"
           val={
             data.address
-              ? `${data.address}, ${data.city}, ${data.state} – ${data.pincode}`
+              ? `${data.address}, ${data.city}, ${data.state} – ${data.pincode}, ${data.country}`
               : ""
           }
         />

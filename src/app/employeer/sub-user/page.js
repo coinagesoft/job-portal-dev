@@ -13,7 +13,7 @@ import {
 } from "@/services/recruiter/recruiterSubUserService";
 
 import { useToast } from "@/components/Toast";
-import SubUserViewOnlyGuard from "@/components/SubUserViewOnlyGuard";
+import SubUserViewOnlyGuard from "@/components/SubUserViewOnlyGuard.js";
 
 const JOB_TAG_STYLE = {
   display: "inline-flex",

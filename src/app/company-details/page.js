@@ -34,13 +34,44 @@ const cleanUrl = (url) => {
   return cleaned;
 };
 
-const iconMap = {
-  industry: "/assets/imgs/page/job-single/industry.svg",
-  jobLevel: "/assets/imgs/page/job-single/job-level.svg",
-  jobType: "/assets/imgs/page/job-single/job-type.svg",
-  updated: "/assets/imgs/page/job-single/updated.svg",
-  location: "/assets/imgs/page/job-single/location.svg",
+// Icon per overview/verification field.
+// This project's fi-rr-* icon font is a CURATED subset (Flaticon custom
+// export), not the full uicons library — only classes already used
+// elsewhere on this page are guaranteed to exist: fi-rr-briefcase,
+// fi-rr-marker, fi-rr-clock, fi-rr-time-fast, fi-rr-globe,
+// fi-rr-phone-call, fi-rr-envelope. We reuse those 3 where the field
+// matches an existing theme icon. Font Awesome (fa-solid) is the FULL
+// library already loaded on this page (see fa-globe, fa-briefcase,
+// fa-circle-check above) and is reliable for every other field —
+// using more guessed fi-rr-* names here caused blank icons.
+const fieldIconClass = {
+  businessType: "fa-solid fa-building",
+  employees: "fa-solid fa-users",
+  established: "fi-rr-clock",     // matches sidebar "Year Established"
+  industry: "fi-rr-briefcase",    // matches sidebar "Company field"
+  openJobs: "fa-solid fa-list-check",
+  location: "fi-rr-marker",       // matches sidebar "Location"
+  companyStatus: "fa-solid fa-shield-halved",
+  gst: "fa-solid fa-file-invoice",
+  poe: "fa-solid fa-certificate",
+  rpsl: "fa-solid fa-award",
 };
+
+function OverviewIcon({ iconClass }) {
+  return (
+    <span
+      style={{
+        width: "px",
+        height: "18px",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <i className={iconClass} style={{ fontSize: "16px", color: "#ffb84d" }}></i>
+    </span>
+  );
+}
 
 function SocialIconLink({ href, label, iconClass }) {
   const [hovered, setHovered] = useState(false);
@@ -128,7 +159,6 @@ function CompanyDetailsContent() {
 
     try {
       const data = await getCompanyDetails(employerId);
-      console.log("COMPANY SIZE FROM API:", data);
       if (!data || data.success === false) {
         setCompanyInfo(null);
         setNotFound(true);
@@ -189,7 +219,7 @@ function CompanyDetailsContent() {
       </main>
     );
   }
-  console.log("COMPANY SIZE FROM API:", companyInfo.companySize);
+
   const jobs = companyInfo.jobs || [];
 
   const hasAboutContent = Boolean(
@@ -209,44 +239,44 @@ function CompanyDetailsContent() {
       title: "Company Overview",
       items: [
         {
-          icon: "industry",
+          icon: fieldIconClass.businessType,
           label: "Business Type",
-          value: humanize(companyInfo.businessType),
+          value: humanize(companyInfo.businessType) || "Not specified",
         },
         {
-          icon: "jobLevel",
+          icon: fieldIconClass.employees,
           label: "Employees",
           value: companyInfo.totalEmployees
             ? `${companyInfo.totalEmployees} Employees`
-            : null,
+            : "Not specified",
         },
         {
-          icon: "updated",
+          icon: fieldIconClass.established,
           label: "Established",
-          value: companyInfo.yearEstablished,
+          value: companyInfo.yearEstablished || "Not specified",
         },
         {
-          icon: "industry",
+          icon: fieldIconClass.industry,
           label: "Industry",
-          value: humanize(companyInfo.industry),
+          value: humanize(companyInfo.industry) || "Not specified",
         },
         {
-          icon: "jobType",
+          icon: fieldIconClass.openJobs,
           label: "Open Jobs",
           value:
             companyInfo.openJobsCount != null
               ? companyInfo.openJobsCount
-              : null,
+              : 0,
         },
         {
-          icon: "location",
+          icon: fieldIconClass.location,
           label: "Location",
           value:
-            companyInfo.city || companyInfo.state
-              ? [companyInfo.city, companyInfo.state]
+            companyInfo.city || companyInfo.state || companyInfo.country
+              ? [companyInfo.city, companyInfo.state, companyInfo.country]
                 .filter(Boolean)
                 .join(", ")
-              : null,
+              : "Not specified",
         },
       ],
     },
@@ -255,52 +285,44 @@ function CompanyDetailsContent() {
       title: "Trust & Verification",
       items: [
         {
-          icon: "updated",
+          icon: fieldIconClass.companyStatus,
           label: "Company Status",
           value: companyInfo.isVerified
             ? "Verified"
             : "Not Verified",
         },
         {
-          icon: "updated",
+          icon: fieldIconClass.gst,
           label: "GST Registration",
           value: companyInfo.gstRegistered
             ? "Verified"
             : "Not Verified",
         },
         {
-          icon: "updated",
+          icon: fieldIconClass.poe,
           label: "POE Licence",
           value: companyInfo.hasPoeLicence
             ? "Verified"
             : "Not Available",
         },
         {
-          icon: "updated",
+          icon: fieldIconClass.rpsl,
           label: "RPSL Licence",
           value: companyInfo.hasRpslLicence
             ? "Verified"
             : "Not Available",
         },
-        {
-          icon: "jobLevel",
-          label: "Reviews",
-          value:
-            companyInfo.reviewCount != null
-              ? `${companyInfo.reviewCount} Reviews`
-              : null,
-        },
+        // {
+        //   icon: fieldIconClass.employees,
+        //   label: "Reviews",
+        //   value:
+        //     companyInfo.reviewCount != null
+        //       ? `${companyInfo.reviewCount} Reviews`
+        //       : null,
+        // },
       ],
     },
-  ].map((group) => ({
-    ...group,
-    items: group.items.filter(
-      (item) =>
-        item.value !== null &&
-        item.value !== undefined &&
-        item.value !== ""
-    ),
-  }));
+  ];
 
 
 
@@ -334,22 +356,12 @@ function CompanyDetailsContent() {
               <div className="col-lg-8 col-md-12">
                 <h5 className="f-18">
                   {companyInfo.companyName}
-                  {/* {companyInfo.fullLocation && (
-                    <span className="card-location font-regular ml-20">
-                      {companyInfo.fullLocation}
-                    </span>
-                  )} */}
                 </h5>
-                {(companyInfo.city || companyInfo.state) && (
+                {(companyInfo.city || companyInfo.state || companyInfo.country) && (
                   <span className="card-location">
-                    {[companyInfo.city, companyInfo.state].filter(Boolean).join(", ")}
+                    {[companyInfo.city, companyInfo.state, companyInfo.country].filter(Boolean).join(", ")}
                   </span>
                 )}
-                {/* {companyInfo.companyDescription && (
-                  <p className="mt-5 font-md color-text-paragraph-2 mb-15">
-                    {companyInfo.companyDescription}
-                  </p>
-                )} */}
 
                 {(companyInfo.linkedInUrl ||
                   companyInfo.instagramUrl ||
@@ -411,24 +423,6 @@ function CompanyDetailsContent() {
             </div>
           </div>
 
-          {/* {hasAboutContent && (
-            <div className="box-nav-tabs mt-40 mb-5">
-              <ul className="nav" role="tablist">
-                <li>
-                  <a
-                    className="btn btn-border aboutus-icon mr-15 mb-5 active"
-                    href="#tab-about"
-                    data-bs-toggle="tab"
-                    role="tab"
-                    aria-controls="tab-about"
-                    aria-selected="true"
-                  >
-                    About us
-                  </a>
-                </li>
-              </ul>
-            </div>
-          )} */}
           <div className="border-bottom pt-10 pb-10"></div>
         </div>
       </section>
@@ -540,90 +534,6 @@ function CompanyDetailsContent() {
                           </div>
                         </div>
                       )}
-                      {/* <div className="row mt-3">
-  {(companyInfo.companyHighlights || []).length > 0 && (
-    <div style={{ marginTop: "26px" }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          marginBottom: "18px",
-        }}
-      >
-        <span
-          style={{
-            width: "4px",
-            height: "16px",
-            background: "#ffa300",
-            borderRadius: "3px",
-          }}
-        />
-        <span
-          style={{
-            fontSize: "13px",
-            fontWeight: 700,
-            color: "#122359",
-            textTransform: "uppercase",
-            letterSpacing: ".5px",
-          }}
-        >
-          Highlights
-        </span>
-      </div>
-<div
-  style={{
-    display: "grid",
-    gridTemplateColumns: "repeat(2, 1fr)",
-    columnGap: "36px",
-    rowGap: "20px",
-  }}
->
-  {companyInfo.companyHighlights.map((item, index) => (
-    <div
-      key={index}
-      style={{
-        display: "flex",
-        alignItems: "flex-start",
-        gap: "14px",
-      }}
-    >
-      <span
-        style={{
-          width: "34px",
-          height: "34px",
-          borderRadius: "50%",
-          background: "rgba(255,153,0,0.1)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-        }}
-      >
-        <i
-          className="fa-solid fa-star"
-          style={{
-            color: "#ff9900",
-            fontSize: "13px",
-          }}
-        />
-      </span>
-      <span
-        style={{
-          fontSize: "14.5px",
-          color: "#122359",
-          fontWeight: 600,
-          lineHeight: 1.5,
-        }}
-      >
-        {item}
-      </span>
-    </div>
-  ))}
-</div>
-    </div>
-  )}
-</div> */}
                       {(companyInfo.businessType ||
                         companyInfo.totalEmployees ||
                         companyInfo.reviewCount != null ||
@@ -696,13 +606,7 @@ function CompanyDetailsContent() {
                                           gap: "8px",
                                         }}
                                       >
-                                        <img
-                                          src={iconMap[item.icon]}
-                                          style={{
-                                            width: "16px",
-                                            height: "16px",
-                                          }}
-                                        />
+                                        <OverviewIcon iconClass={item.icon} />
 
                                         <span
                                           style={{
@@ -765,9 +669,9 @@ function CompanyDetailsContent() {
                   <div className="avatar-sidebar">
                     <div className="sidebar-info pl-0">
                       <span className="sidebar-company">{companyInfo.companyName}</span>
-                      {(companyInfo.city || companyInfo.state) && (
+                      {(companyInfo.city || companyInfo.state || companyInfo.country) && (
                         <span className="card-location">
-                          {[companyInfo.city, companyInfo.state].filter(Boolean).join(", ")}
+                          {[companyInfo.city, companyInfo.state, companyInfo.country].filter(Boolean).join(", ")}
                         </span>
                       )}
                     </div>

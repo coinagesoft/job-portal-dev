@@ -611,7 +611,7 @@ const EmployerCandidateProfilePage = () => {
                                 <span className="visibility-label">Resume Download</span>
                                 <h6 className="visibility-value">
                                   {!cvAvailable
-                                    ? "Unlock Profile to Download CV"
+                                    ? "Not generated yet"
                                     : cv?.canDownloadCv
                                       ? "Available"
                                       : "Unlock Required"}
@@ -799,11 +799,15 @@ const EmployerCandidateProfilePage = () => {
                           marginBottom: "10px",
                         }}
                       >
-                        {skills.map((skill, idx) => (
+                        {skills.map((skill, idx) => {
+                          const hasRealRole =
+                            skill.skillRole && skill.skillRole !== "Affinda";
+
+                          return (
                           <span
                             key={`${skill.skillName}-${idx}`}
                             title={
-                              skill.skillRole
+                              hasRealRole
                                 ? `${skill.skillRole} · ${skill.yearsOfExperience ?? 0} yrs`
                                 : `${skill.yearsOfExperience ?? 0} yrs`
                             }
@@ -821,7 +825,7 @@ const EmployerCandidateProfilePage = () => {
                             }}
                           >
                             {skill.skillName}
-                            {skill.skillRole && (
+                            {hasRealRole && (
                               <span
                                 style={{
                                   color: "#122359",
@@ -843,7 +847,8 @@ const EmployerCandidateProfilePage = () => {
                               </span>
                             )}
                           </span>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
 
@@ -1314,11 +1319,11 @@ const EmployerCandidateProfilePage = () => {
                     </li>
                     <li>
                       CV:{" "}
-                      {!cvAvailable
-                        ? "Not generated"
-                        : isUnlocked
+                      {cvAvailable
+                        ? isUnlocked
                           ? "Available for download"
-                          : "Available after unlock"}
+                          : "Available after unlock"
+                        : "Not generated yet"}
                     </li>
                     <li>
                       Unlock expiry window:{" "}

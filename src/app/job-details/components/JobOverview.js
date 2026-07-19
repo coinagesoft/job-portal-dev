@@ -1,17 +1,27 @@
 'use client';
 import React from 'react';
 
-const iconMap = {
-  industry: '/assets/imgs/page/job-single/industry.svg',
-  jobLevel: '/assets/imgs/page/job-single/job-level.svg',
-  salary: '/assets/imgs/page/job-single/salary.svg',
-  experience: '/assets/imgs/page/job-single/experience.svg',
-  jobType: '/assets/imgs/page/job-single/job-type.svg',
-  deadline: '/assets/imgs/page/job-single/deadline.svg',
-  updated: '/assets/imgs/page/job-single/updated.svg',
-  location: '/assets/imgs/page/job-single/location.svg',
-  apply: '/assets/imgs/template/icons/apply.svg',
-};
+// All field icons come from Font Awesome (fa-solid) — the icon family
+// already confirmed working elsewhere in this project (fa-globe,
+// fa-briefcase, fa-circle-check on the company details page). Previously
+// this mixed <img> SVG assets with <i> Font Awesome icons across fields,
+// which looked inconsistent since the two render with different stroke
+// weights and visual styles. Using one icon family throughout keeps every
+// field visually consistent while still giving each its own distinct icon.
+function FieldIcon({ icon }) {
+  return (
+    <i
+      className={icon}
+      style={{
+        width: '16px',
+        fontSize: '16px',
+        textAlign: 'center',
+        color: '#ffb84d',
+        flexShrink: 0,
+      }}
+    ></i>
+  );
+}
 
 const JobOverview = ({ job = {} }) => {
   // Backend enum values come through as PascalCase_With_Underscores
@@ -38,22 +48,22 @@ const JobOverview = ({ job = {} }) => {
     {
       title: 'Role Overview',
       items: [
-        { icon: 'industry', label: 'Trade Category', value: humanize(job.tradeCategory) },
-        { icon: 'industry', label: 'Department', value: humanize(job.department) },
-         { icon: 'industry', label: 'Industry Type', value: humanize(job.industryType) },
-        { icon: 'jobType', label: 'Employment Type', value: humanize(job.employmentType) },
-        { icon: 'location', label: 'Employment Mode', value: humanize(job.employmentMode) },
-         { icon: 'jobType', label: 'Job Type', value: humanize(job.jobType) },
-        { icon: 'location', label: 'Location Type', value: humanize(job.locationType) },
+        { icon: 'fa-solid fa-industry', label: 'Trade Category', value: humanize(job.tradeCategory) },
+        { icon: 'fa-solid fa-sitemap', label: 'Department', value: humanize(job.department) },
+        { icon: 'fa-solid fa-layer-group', label: 'Industry Type', value: humanize(job.industryType) },
+        { icon: 'fa-solid fa-briefcase', label: 'Employment Type', value: humanize(job.employmentType) },
+        { icon: 'fa-solid fa-toggle-on', label: 'Employment Mode', value: humanize(job.employmentMode) },
+        { icon: 'fa-solid fa-clipboard-list', label: 'Job Type', value: humanize(job.jobType) },
+        { icon: 'fa-solid fa-location-dot', label: 'Location Type', value: humanize(job.locationType) },
         // { icon: 'location', label: 'Oil Field', value: humanize(job.isOilField) },
       ],
     },
     {
       title: 'Compensation & Experience',
       items: [
-        { icon: 'salary', label: 'Salary', value: job.salaryRange },
+        { icon: 'fa-solid fa-sack-dollar', label: 'Salary', value: job.salaryRange },
         {
-          icon: 'experience',
+          icon: 'fa-solid fa-user-clock',
           label: 'Experience',
           value:
             job.experienceMinYears != null && job.experienceMaxYears != null
@@ -62,9 +72,9 @@ const JobOverview = ({ job = {} }) => {
                 : `${job.experienceMinYears}+ Years`
               : null,
         },
-        { icon: 'industry', label: 'Education', value: humanize(job.educationRequired) },
+        { icon: 'fa-solid fa-graduation-cap', label: 'Education', value: humanize(job.educationRequired) },
         {
-          icon: 'experience',
+          icon: 'fa-solid fa-hourglass-half',
           label: 'Age Range',
           value:
             job.ageMin != null && job.ageMax != null
@@ -76,21 +86,21 @@ const JobOverview = ({ job = {} }) => {
     {
       title: 'Eligibility',
       items: [
-        { icon: 'jobType', label: 'Gender Preference', value: humanize(job.genderPreferred) },
+        { icon: 'fa-solid fa-venus-mars', label: 'Gender Preference', value: humanize(job.genderPreferred) },
         // { icon: 'location', label: 'Languages', value: job.languagePreferred },
         // { icon: 'industry', label: 'Certificates', value: humanize(job.requiredLicencesCertificates) },
         {
-          icon: 'jobType',
+          icon: 'fa-solid fa-wheelchair',
           label: 'Disability Friendly',
           value: job.disabilityFriendly !== undefined ? (job.disabilityFriendly ? 'Yes' : 'No') : null,
         },
         {
-          icon: 'experience',
+          icon: 'fa-solid fa-passport',
           label: 'Passport Required',
           value: job.passportRequired !== undefined ? (job.passportRequired ? 'Yes' : 'No') : null,
         },
         {
-          icon: 'experience',
+          icon: 'fa-solid fa-globe',
           label: 'International Job',
           value: job.isInternational !== undefined ? (job.isInternational ? 'Yes' : 'No') : null,
         },
@@ -99,17 +109,17 @@ const JobOverview = ({ job = {} }) => {
     {
       title: 'Hiring Logistics',
       items: [
-        { icon: 'jobLevel', label: 'Openings', value: job.openingCount },
-        { icon: 'jobLevel', label: 'Applications', value: job.applicationCount },
-        { icon: 'deadline', label: 'Application Deadline', value: job.applicationDeadline },
-        { icon: 'location', label: 'Company Location', value: job.companyLocation },
+        { icon: 'fa-solid fa-door-open', label: 'Openings', value: job.openingCount },
+        { icon: 'fa-solid fa-inbox', label: 'Applications', value: job.applicationCount },
+        { icon: 'fa-solid fa-calendar-days', label: 'Application Deadline', value: job.applicationDeadline },
+        { icon: 'fa-solid fa-building', label: 'Company Location', value: job.companyLocation },
         {
-          icon: 'location',
+          icon: 'fa-solid fa-clock',
           label: 'Duty Hours',
           value: job.dutyHoursPerDay ? `${job.dutyHoursPerDay} Hours/Day` : null,
         },
         {
-          icon: 'jobType',
+          icon: 'fa-solid fa-money-bill-wave',
           label: 'Paid Overtime',
           value: job.paidOvertime !== undefined ? (job.paidOvertime ? 'Yes' : 'No') : null,
         },
@@ -124,12 +134,8 @@ const JobOverview = ({ job = {} }) => {
 
   return (
     <div
-      className="job-overview"
+      className="job-overview employer-cv-surface-card no-static-border"
       style={{
-        border: 'none',
-        background: '#ffffff',
-        borderRadius: '20px',
-        boxShadow: '0 4px 14px rgba(18,35,89,0.06)',
         padding: '24px 30px 30px',
         marginBottom: '50px',
       }}
@@ -195,11 +201,7 @@ const JobOverview = ({ job = {} }) => {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <img
-                    src={iconMap[item.icon]}
-                    alt=""
-                    style={{ width: '16px', height: '16px', flexShrink: 0 }}
-                  />
+                  <FieldIcon icon={item.icon} />
                   <span
                     style={{
                       fontSize: '12px',
@@ -210,7 +212,7 @@ const JobOverview = ({ job = {} }) => {
                     {item.label}
                   </span>
                 </div>
-                <strong style={{ fontSize: '15px', color: '#122359', lineHeight: 1.4 }}>
+                <strong style={{ fontSize: '16px', fontWeight: 600, color: '#122359', lineHeight: 1.4 }}>
                   {item.value}
                 </strong>
               </div>
