@@ -611,7 +611,7 @@ const EmployerCandidateProfilePage = () => {
                                 <span className="visibility-label">Resume Download</span>
                                 <h6 className="visibility-value">
                                   {!cvAvailable
-                                    ? "Not generated yet"
+                                    ? "Unlock Profile to Download CV"
                                     : cv?.canDownloadCv
                                       ? "Available"
                                       : "Unlock Required"}
@@ -1314,11 +1314,11 @@ const EmployerCandidateProfilePage = () => {
                     </li>
                     <li>
                       CV:{" "}
-                      {cvAvailable
-                        ? isUnlocked
+                      {!cvAvailable
+                        ? "Not generated"
+                        : isUnlocked
                           ? "Available for download"
-                          : "Available after unlock"
-                        : "Not generated yet"}
+                          : "Available after unlock"}
                     </li>
                     <li>
                       Unlock expiry window:{" "}

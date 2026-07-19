@@ -12,6 +12,7 @@ import {
   getDocuments,
   downloadGeneratedCv,
   previewGeneratedCv,
+  generateCv,
 } from "@/services/candidate/candidateResume";
 
 const NAVY = "#122359";
@@ -142,6 +143,7 @@ export default function MyDocuments() {
     setPreviewLoading(true);
     setPreviewError(null);
     try {
+      await generateCv().catch(() => null); // best-effort refresh before showing it
       const result = await previewGeneratedCv();
       if (result?.success) {
         setPreviewUrl(result.url);
@@ -166,6 +168,7 @@ export default function MyDocuments() {
     setDownloadingPortalCv(true);
     setMessage(null);
     try {
+      await generateCv().catch(() => null); // best-effort refresh before downloading it
       const result = await downloadGeneratedCv(cv?.parsedName || "Candidate");
       if (!result?.success) {
         setMessage({ type: "error", text: result?.message || "Could not download Portal CV." });
@@ -184,6 +187,9 @@ export default function MyDocuments() {
       if (data?.success) {
         setMessage({ type: "success", text: data.message || "CV uploaded and verified." });
         await loadAll();
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("profileUpdate"));
+        }
       } else {
         setMessage({ type: "error", text: data?.message || "CV upload failed." });
       }
@@ -205,6 +211,9 @@ export default function MyDocuments() {
       await deleteResume();
       setMessage({ type: "success", text: "CV removed." });
       await loadAll();
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("profileUpdate"));
+      }
     } catch (e) {
       setMessage({ type: "error", text: e?.response?.data?.message || "Could not remove CV." });
     } finally {
@@ -224,6 +233,9 @@ export default function MyDocuments() {
           text: `${data.documentType || "Document"} uploaded and verified.`,
         });
         await loadAll();
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("profileUpdate"));
+        }
       } else {
         setMessage({ type: "error", text: data?.message || "Document was rejected." });
       }
@@ -243,6 +255,9 @@ export default function MyDocuments() {
     try {
       await deleteDocument(documentId);
       await loadAll();
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("profileUpdate"));
+      }
     } catch (e) {
       setMessage({ type: "error", text: e?.response?.data?.message || "Could not delete document." });
     }

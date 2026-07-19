@@ -10,6 +10,7 @@ import {
   PUBLIC_ROUTE_EXCEPTIONS,
   ROLE_DEFAULT_ROUTE,
   ROUTE_PERMISSION_RULES,
+  HR_MANAGER_ROLE,
 } from "@/constants/panelConfig";
 
 const isInProtectedGroup = (pathname, prefixes) =>
@@ -100,7 +101,9 @@ const AuthRouteGuard = () => {
       if (rule) {
         const isSubUser = user?.isSubUser === true;
 
-        const lacksAccess = rule.ownerOnly
+        const lacksAccess = rule.hrManagerViewOnly
+          ? isSubUser && user?.subUserRole !== HR_MANAGER_ROLE
+          : rule.ownerOnly
           ? isSubUser
           : isSubUser && user?.[rule.permission] === false;
 

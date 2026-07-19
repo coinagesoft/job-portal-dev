@@ -62,23 +62,23 @@ const Tag = ({ label }) => {
   );
 };
 
-const handleDelete = async (jobId, jobTitle) => {
-  const confirmed = window.confirm(
-    `Are you sure you want to delete "${jobTitle}"? This action cannot be undone.`
-  );
+// const handleDelete = async (jobId, jobTitle) => {
+//   const confirmed = window.confirm(
+//     `Are you sure you want to delete "${jobTitle}"? This action cannot be undone.`
+//   );
 
-  if (!confirmed) return;
+//   if (!confirmed) return;
 
-  try {
-    const res = await deleteJob(jobId);
+//   try {
+//     const res = await deleteJob(jobId);
 
-    showToast(res.message || "Job deleted successfully", "success");
+//     showToast(res.message || "Job deleted successfully", "success");
 
-    await loadData();
-  } catch (err) {
-    showToast(err.response?.data?.message || "Unable to delete job", "error");
-  }
-};
+//     await loadData();
+//   } catch (err) {
+//     showToast(err.response?.data?.message || "Unable to delete job", "error");
+//   }
+// };
 const EmployerJobListPage = () => {
   const showToast = useToast();
   const user = useSelector((state) => state.auth.user);
@@ -87,7 +87,7 @@ const EmployerJobListPage = () => {
   // backend's CanPostJobs check; the account owner always has both.
   const canManageJobs = !isSubUser || user?.canPostJobs !== false;
   const canViewApplicants = !isSubUser || user?.canManageApplications !== false;
-  const [activeStatus, setActiveStatus] = useState("Active");
+  const [activeStatus, setActiveStatus] = useState("All");
   const [activeType, setActiveType] = useState("All Types");
   const [openMenu, setOpenMenu] = useState(null);
   const [companyLogos, setCompanyLogos] = useState({});
@@ -103,6 +103,29 @@ const EmployerJobListPage = () => {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewJob, setPreviewJob] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+
+  const [deleteTarget, setDeleteTarget] = useState(null); // { jobId, jobTitle } | null
+const [deleting, setDeleting] = useState(false);
+
+const requestDelete = (jobId, jobTitle) => {
+  setOpenMenu(null);
+  setDeleteTarget({ jobId, jobTitle });
+};
+
+const confirmDelete = async () => {
+  if (!deleteTarget) return;
+  setDeleting(true);
+  try {
+    const res = await deleteJob(deleteTarget.jobId);
+    showToast(res.message || "Job deleted successfully", "success");
+    await Promise.all([loadData(), loadJobs(activeStatus, activeType)]);
+  } catch (err) {
+    showToast(err.response?.data?.message || "Unable to delete job", "error");
+  } finally {
+    setDeleting(false);
+    setDeleteTarget(null);
+  }
+};
 
   const handlePreview = async (jobId) => {
     setOpenMenu(null);
@@ -134,77 +157,63 @@ const EmployerJobListPage = () => {
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
-  const handlePause = async (jobId) => {
-    try {
-      const res = await pauseJob(jobId);
+const handleClose = async (jobId) => {
+  try {
+    const res = await closeJob(jobId);
+    showToast(res.message, "success");
+    await Promise.all([loadData(), loadJobs(activeStatus, activeType)]);
+  } catch (err) {
+    showToast(err.response?.data?.message || "Unable to close job", "error");
+  }
+};
 
-      showToast(res.message, "success");
+const handleResume = async (jobId) => {
+  try {
+    const res = await resumeJob(jobId);
+    showToast(res.message, "success");
+    await Promise.all([loadData(), loadJobs(activeStatus, activeType)]);
+  } catch (err) {
+    showToast(err.response?.data?.message || "Unable to resume job", "error");
+  }
+};
 
-      await loadData();
-    } catch (err) {
-      showToast(err.response?.data?.message || "Unable to pause job", "error");
-    }
-  };
+const handleArchive = async (jobId) => {
+  try {
+    const res = await archiveJob(jobId);
+    showToast(res.message, "success");
+    await Promise.all([loadData(), loadJobs(activeStatus, activeType)]);
+  } catch (err) {
+    showToast(err.response?.data?.message || "Unable to archive job", "error");
+  }
+};
 
-  const handleClose = async (jobId) => {
-    try {
-      const res = await closeJob(jobId);
 
-      showToast(res.message, "success");
-
-      await loadData();
-    } catch (err) {
-      showToast(err.response?.data?.message || "Unable to close job", "error");
-    }
-  };
-  const handleResume = async (jobId) => {
-    try {
-      const res = await resumeJob(jobId);
-
-      showToast(res.message, "success");
-
-      await loadData();
-    } catch (err) {
-      showToast(err.response?.data?.message || "Unable to resume job", "error");
-    }
-  };
-
-  const handleArchive = async (jobId) => {
-    try {
-      const res = await archiveJob(jobId);
-
-      showToast(res.message, "success");
-
-      await loadData();
-    } catch (err) {
-      showToast(
-        err.response?.data?.message || "Unable to archive job",
-        "error",
-      );
-    }
-  };
-  const JOB_STATUS_TABS = [
-    {
-      label: "Draft",
-      count: dashboard?.draftJobs || 0,
-    },
-    {
-      label: "Active",
-      count: dashboard?.activeJobs || 0,
-    },
-    {
-      label: "Paused",
-      count: dashboard?.pausedJobs || 0,
-    },
-    {
-      label: "Closed",
-      count: dashboard?.closedJobs || 0,
-    },
-    {
-      label: "Archived",
-      count: dashboard?.archivedJobs || 0,
-    },
-  ];
+const JOB_STATUS_TABS = [
+  {
+    label: "All",
+    count: dashboard?.totalJobs || 0,
+  },
+  {
+    label: "Draft",
+    count: dashboard?.draftJobs || 0,
+  },
+  {
+    label: "Active",
+    count: dashboard?.activeJobs || 0,
+  },
+  {
+    label: "Paused",
+    count: dashboard?.pausedJobs || 0,
+  },
+  {
+    label: "Closed",
+    count: dashboard?.closedJobs || 0,
+  },
+  {
+    label: "Archived",
+    count: dashboard?.archivedJobs || 0,
+  },
+];
 
   const POSTING_TYPE_TABS = [
     {
@@ -233,6 +242,8 @@ const EmployerJobListPage = () => {
   const [status, setStatus] = useState("");
 
   const [jobType, setJobType] = useState("");
+
+  const [jobsLoading, setJobsLoading] = useState(false);
   useEffect(() => {
     loadData();
   }, []);
@@ -283,29 +294,41 @@ const EmployerJobListPage = () => {
     };
   }, []);
 
+const loadJobs = async (statusLabel, typeLabel) => {
+  try {
+    setJobsLoading(true);
+    const response = await getRecruiterJobs({
+      status: statusLabel === "All" ? "" : statusLabel,
+      jobType: typeLabel === "All Types" ? "" : typeLabel,
+    });
+    const jobsList = response.jobs || [];
+    setJobs(jobsList);
+    await loadCompanyLogos(jobsList);
+  } catch (error) {
+    console.error(error);
+    showToast("Unable to load jobs", "error");
+  } finally {
+    setJobsLoading(false);
+  }
+};
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
+useEffect(() => {
+  loadJobs(activeStatus, activeType);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [activeStatus, activeType]);
 
-      const [dashboardRes, jobsRes] = await Promise.all([
-        getJobDashboard(),
-        getRecruiterJobs({}),
-      ]);
 
-      setDashboard(dashboardRes);
-
-      const jobsList = jobsRes.jobs || [];
-
-      setJobs(jobsList);
-
-      await loadCompanyLogos(jobsList);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+const loadData = async () => {
+  try {
+    setLoading(true);
+    const dashboardRes = await getJobDashboard();
+    setDashboard(dashboardRes);
+  } catch (error) {
+    console.error(error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const loadCompanyLogos = async (jobsList) => {
     const logos = {};
@@ -400,55 +423,33 @@ const EmployerJobListPage = () => {
             {/* ── Status filter tabs (matches applicants page style) ── */}
             <div className="candidate-status-filter mb-10">
               {JOB_STATUS_TABS.map((tab) => (
-                <button
-                  key={tab.label}
-                  className={`candidate-status-filter-btn${activeStatus === tab.label ? " active" : ""}`}
-                  type="button"
-                  onClick={async () => {
-                    setActiveStatus(tab.label);
-
-                    const response = await getRecruiterJobs({
-                      status: tab.label,
-                      jobType: activeType === "All Types" ? "" : activeType,
-                    });
-
-                    setJobs(response.jobs || []);
-                  }}
-                >
-                  <span>{tab.label}</span>
-                  <span className="candidate-status-filter-count">
-                    {tab.count}
-                  </span>
-                </button>
-              ))}
+  <button
+    key={tab.label}
+    className={`candidate-status-filter-btn${activeStatus === tab.label ? " active" : ""}`}
+    type="button"
+    onClick={() => setActiveStatus(tab.label)}
+  >
+    <span>{tab.label}</span>
+    <span className="candidate-status-filter-count">{tab.count}</span>
+  </button>
+))}
             </div>
 
             {/* ── Type sub-filter ── */}
-            <div className="candidate-status-filter mb-30">
-              {POSTING_TYPE_TABS.map((tab) => (
-                <button
-                  key={tab.label}
-                  className={`candidate-status-filter-btn${activeType === tab.label ? " active" : ""}`}
-                  type="button"
-                  onClick={async () => {
-                    setActiveType(tab.label);
-
-                    const response = await getRecruiterJobs({
-                      status: activeStatus,
-                      jobType: tab.label === "All Types" ? "" : tab.label,
-                    });
-
-                    setJobs(response.jobs || []);
-                  }}
-                  style={{ fontSize: 11, padding: "6px 10px" }}
-                >
-                  <span>{tab.label}</span>
-                  <span className="candidate-status-filter-count">
-                    {tab.count}
-                  </span>
-                </button>
-              ))}
-            </div>
+            {/* <div className="candidate-status-filter mb-30">
+            {POSTING_TYPE_TABS.map((tab) => (
+  <button
+    key={tab.label}
+    className={`candidate-status-filter-btn${activeType === tab.label ? " active" : ""}`}
+    type="button"
+    onClick={() => setActiveType(tab.label)}
+    style={{ fontSize: 11, padding: "6px 10px" }}
+  >
+    <span>{tab.label}</span>
+    <span className="candidate-status-filter-count">{tab.count}</span>
+  </button>
+))}
+            </div> */}
 
             {/* ── Job Cards ── */}
             <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
@@ -1192,15 +1193,15 @@ const EmployerJobListPage = () => {
                         )}
 
                         {canManageJobs && (
-                          <button
-                            className={styles.dropdownItem}
-                            onClick={() => handleDelete(job.jobId, job.jobTitle)}
-                            style={{ color: "#dc2626" }}
-                          >
-                            <i className="fi-rr-trash" />
-                            <span>Delete Job</span>
-                          </button>
-                        )}
+  <button
+    className={styles.dropdownItem}
+    onClick={() => requestDelete(job.jobId, job.jobTitle)}
+    style={{ color: "#dc2626" }}
+  >
+    <i className="fi-rr-trash" />
+    <span>Delete Job</span>
+  </button>
+)}
 
                         {!canManageJobs && !canViewApplicants && (
                           <div
@@ -1233,6 +1234,97 @@ const EmployerJobListPage = () => {
         job={previewJob}
         loading={previewLoading}
       />
+      {deleteTarget && (
+  <div
+    style={{
+      position: "fixed",
+      inset: 0,
+      background: "rgba(18,35,89,0.45)",
+      backdropFilter: "blur(2px)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 100000,
+    }}
+    onClick={() => !deleting && setDeleteTarget(null)}
+  >
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        width: "min(400px, 90vw)",
+        background: "#fff",
+        borderRadius: 20,
+        border: "1px solid #EEF2F7",
+        boxShadow: "0 24px 50px rgba(18,35,89,.18)",
+        padding: "28px 26px",
+      }}
+    >
+      <div
+        style={{
+          width: 48,
+          height: 48,
+          borderRadius: "50%",
+          background: "#FEE2E2",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: 16,
+        }}
+      >
+        <i className="fi-rr-trash" style={{ fontSize: 20, color: "#dc2626" }} />
+      </div>
+
+      <h5 style={{ color: "#122359", fontWeight: 800, marginBottom: 8 }}>
+        Delete this job?
+      </h5>
+
+      <p style={{ fontSize: 13.5, color: "#66789c", lineHeight: 1.5, marginBottom: 24 }}>
+        {`"${deleteTarget.jobTitle}"`} will be permanently removed. This action cannot be undone.
+      </p>
+
+      <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+        <button
+          type="button"
+          onClick={() => setDeleteTarget(null)}
+          disabled={deleting}
+          style={{
+            height: 42,
+            padding: "0 18px",
+            borderRadius: 12,
+            border: "1px solid #E5E7EB",
+            background: "#fff",
+            color: "#122359",
+            fontWeight: 700,
+            fontSize: 13,
+            cursor: deleting ? "not-allowed" : "pointer",
+          }}
+        >
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          onClick={confirmDelete}
+          disabled={deleting}
+          style={{
+            height: 42,
+            padding: "0 18px",
+            borderRadius: 12,
+            border: "none",
+            background: "#dc2626",
+            color: "#fff",
+            fontWeight: 700,
+            fontSize: 13,
+            cursor: deleting ? "not-allowed" : "pointer",
+            opacity: deleting ? 0.7 : 1,
+          }}
+        >
+          {deleting ? "Deleting..." : "Delete Job"}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </main>
   );
 };

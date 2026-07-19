@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useToast } from "@/components/Toast";
 import { useEffect } from "react";
 import companyProfileService from "@/services/recruiter/companyProfileService";
+import SubUserViewOnlyGuard from "@/components/SubUserViewOnlyGuard";
 import {
   getRecruiterJobs,
   pauseJob,
@@ -55,6 +56,24 @@ const BUSINESS_TYPES = [
   "Liaison Office",
   "Joint Venture",
   "Other",
+];
+
+const TIME_ZONES = [
+  "Asia/Kolkata",
+  "Asia/Dubai",
+  "Asia/Singapore",
+  "Asia/Bangkok",
+  "Asia/Tokyo",
+  "Asia/Shanghai",
+  "Europe/London",
+  "Europe/Berlin",
+  "Europe/Paris",
+  "America/New_York",
+  "America/Chicago",
+  "America/Denver",
+  "America/Los_Angeles",
+  "Australia/Sydney",
+  "UTC",
 ];
 
 // ── Helpers for formatting live job & team-member data ──────────
@@ -668,7 +687,7 @@ export default function EmployerCompanyProfilePage() {
         companyDescription: data.companyDescription ?? "",
         industry: data.industryType ?? "",
         industryType: data.industryType ?? "",
-        businessType: data.businessType ?? "",
+        businessType: formatBusinessType(data.businessType),
         size: data.companySize ?? "",
         companySize: data.companySize ?? "",
         founded: data.yearEstablished ?? "",
@@ -676,7 +695,9 @@ export default function EmployerCompanyProfilePage() {
         totalEmployees: data.totalEmployees ?? "",
         companyLogoUrl: data.companyLogoUrl ?? "",
         coverImageUrl: data.coverImageUrl ?? "",
-        highlights: data.companyHighlights ?? [],
+        highlights: Array.isArray(data.companyHighlights)
+          ? data.companyHighlights.join(", ")
+          : (data.companyHighlights ?? ""),
         timeZone: data.timeZone ?? "",
 
         // Online presence
@@ -729,6 +750,13 @@ export default function EmployerCompanyProfilePage() {
       setLoading(false);
     }
   };
+  const formatBusinessType = (value) => {
+    if (!value) return "";
+
+    return value
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+  };
 
   const handleDescriptionBlur = async () => {
     try {
@@ -766,7 +794,9 @@ export default function EmployerCompanyProfilePage() {
     }
 
     const payloadValue = field === "highlights"
-      ? val
+      ? (typeof val === "string"
+          ? val.split(",").map((item) => item.trim()).filter(Boolean)
+          : val)
       : val;
 
     try {
@@ -778,9 +808,13 @@ export default function EmployerCompanyProfilePage() {
         payloadValue
       );
 
+      const stateValue = field === "highlights"
+        ? (Array.isArray(payloadValue) ? payloadValue.join(", ") : payloadValue)
+        : payloadValue;
+
       setCompany((prev) => ({
         ...prev,
-        [field]: payloadValue,
+        [field]: stateValue,
       }));
 
       if (typeof window !== "undefined") {
@@ -849,6 +883,14 @@ export default function EmployerCompanyProfilePage() {
   };
 
   const updateBasicInfo = async () => {
+    if (descriptionOverLimit) {
+      showToast(
+        `Company Description is over the ${DESCRIPTION_WORD_LIMIT}-word limit (${descriptionWordCount} words). Please shorten it.`,
+        "error"
+      );
+      return;
+    }
+
     try {
       await Promise.all([
         handleSaveField("legalName", company.legalName),
@@ -860,7 +902,7 @@ export default function EmployerCompanyProfilePage() {
         handleSaveField("totalEmployees", company.totalEmployees),
         handleSaveField("founded", company.founded),
         handleSaveField("timeZone", company.timeZone),
-        handleSaveField("highlights", company.highlights || []),
+        handleSaveField("highlights", company.highlights || ""),
         handleSaveField("companyDescription", description),
       ]);
 
@@ -913,7 +955,12 @@ export default function EmployerCompanyProfilePage() {
 
     showToast("Contact updated", "success");
   };
+  const countWords = (text) =>
+    (text || "").trim().split(/\s+/).filter(Boolean).length;
 
+  const DESCRIPTION_WORD_LIMIT = 300;
+  const descriptionWordCount = countWords(description);
+  const descriptionOverLimit = descriptionWordCount > DESCRIPTION_WORD_LIMIT;
   // const basicInfoRows = [
   //   { label: "Legal Name", key: "legalName" },
   //   { label: "Trade Name", key: "tradeName" },
@@ -959,8 +1006,8 @@ export default function EmployerCompanyProfilePage() {
     { label: "CIN", key: "cin" },
     { label: "Account Status", key: "accountStatus" },
     { label: "Profile Completion", key: "profileCompletionScore" },
-    { label: "Trial Expires", key: "trialExpiresAt" },
-    { label: "Review Count", key: "reviewCount" },
+    // { label: "Trial Expires", key: "trialExpiresAt" },
+    // { label: "Review Count", key: "reviewCount" },
   ];
 
   // Maps the row `key` used in UI state to the exact field name expected by
@@ -1007,6 +1054,7 @@ export default function EmployerCompanyProfilePage() {
   }
 
   return (
+    <SubUserViewOnlyGuard>
     <main className="main">
       {/* Banner */}
       <section className="section-box-2">
@@ -1019,7 +1067,7 @@ export default function EmployerCompanyProfilePage() {
                 width: "100%",
                 borderRadius: "10px",
                 objectFit: "cover",
-                maxHeight: "220px",
+                maxHeight: "320px",
               }}
             />
             <label
@@ -1056,6 +1104,7 @@ export default function EmployerCompanyProfilePage() {
           <div className="box-company-profile" style={{
             position: "relative",
             zIndex: 5,
+            marginTop: "-40px",
           }}>
             <div
               className="image-compay"
@@ -1118,7 +1167,7 @@ export default function EmployerCompanyProfilePage() {
               <div className="col-lg-8 col-md-12">
                 <h5 className="f-18">
                   {company.displayName}
-                  
+
                 </h5>
                 <p className=" font-md color-text-paragraph-2 mb-15">
                   {company.tagline}
@@ -1148,8 +1197,8 @@ export default function EmployerCompanyProfilePage() {
                 </div> */}
               </div>
               <span className="card-location font-regular ml-20">
-                    {company.location}
-                  </span>
+                {company.location}
+              </span>
             </div>
           </div>
 
@@ -1294,7 +1343,7 @@ export default function EmployerCompanyProfilePage() {
                             handleInputChange("size", e.target.value)
                           }
                         >
-                          <option value="">--</option>
+                          {/* <option value="">--</option> */}
                           <option value="1-10">1-10</option>
                           <option value="11-50">11-50</option>
                           <option value="51-200">51-200</option>
@@ -1336,12 +1385,11 @@ export default function EmployerCompanyProfilePage() {
                       </Field>
 
                       <Field label="Time Zone">
-                        <Inp
-                          placeholder="e.g. Asia/Kolkata"
+                        <Combobox
                           value={company.timeZone || ""}
-                          onChange={(e) =>
-                            handleInputChange("timeZone", e.target.value)
-                          }
+                          onChange={(v) => handleInputChange("timeZone", v)}
+                          options={TIME_ZONES}
+                          placeholder="Select time zone..."
                         />
                       </Field>
                     </div>
@@ -1360,12 +1408,9 @@ export default function EmployerCompanyProfilePage() {
 
                       <Textarea
                         rows={3}
-                        value={(company.highlights || []).join(", ")}
+                        value={company.highlights ?? ""}
                         onChange={(e) =>
-                          handleInputChange(
-                            "highlights",
-                            e.target.value.split(",").map((item) => item.trim())
-                          )
+                          handleInputChange("highlights", e.target.value)
                         }
                       />
                     </Field>
@@ -1385,11 +1430,24 @@ export default function EmployerCompanyProfilePage() {
                         rows={10}
                         value={description ?? ""}
                         onChange={(e) => setDescription(e.target.value)}
-                        style={{ minHeight: "240px" }}
-                      // onBlur={handleDescriptionBlur}
+                        style={{
+                          minHeight: "240px",
+                          borderColor: descriptionOverLimit ? "#dc2626" : undefined,
+                        }}
                       />
-
-
+                      <p
+                        style={{
+                          fontSize: "12px",
+                          marginTop: "6px",
+                          marginBottom: 0,
+                          fontWeight: 600,
+                          color: descriptionOverLimit ? "#dc2626" : "#94a3b8",
+                          textAlign: "right",
+                        }}
+                      >
+                        {descriptionWordCount} / {DESCRIPTION_WORD_LIMIT} words
+                        {descriptionOverLimit && " — please shorten"}
+                      </p>
                     </Field>
 
                   </SectionCard>
@@ -1468,7 +1526,7 @@ export default function EmployerCompanyProfilePage() {
                         />
                       </Field>
 
-                      <Field label="Address Line 2">
+                      {/* <Field label="Address Line 2">
                         <Inp
                           value={company.addressLine2 || ""}
                           onChange={(e) =>
@@ -1476,7 +1534,7 @@ export default function EmployerCompanyProfilePage() {
                           }
                         // onBlur={() => handleBlurSave("addressLine2")}
                         />
-                      </Field>
+                      </Field> */}
 
                       <Field label="City">
                         <Inp
@@ -1763,14 +1821,14 @@ export default function EmployerCompanyProfilePage() {
                                         marginLeft: 0,
                                       }}
                                     >
-                                      <i
+                                      {/* <i
                                         className="fi fi-rr-marker"
                                         style={{
                                           fontSize: "12px",
                                           color: "#66789c",
                                           lineHeight: 1,
                                         }}
-                                      />
+                                      /> */}
                                       {job.location}
                                     </span>
                                   </div>
@@ -2152,5 +2210,6 @@ export default function EmployerCompanyProfilePage() {
         />
       )} */}
     </main>
+    </SubUserViewOnlyGuard>
   );
 }

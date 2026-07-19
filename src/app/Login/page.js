@@ -571,7 +571,7 @@ const handleChangeIdentifier = () => {
       `&redirect_uri=${redirectUri}` +
       `&scope=${scope}`;
   };
-
+  
   return (
     <main
       className="main content-page"

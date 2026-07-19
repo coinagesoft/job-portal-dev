@@ -10,14 +10,40 @@ import { useToast } from '@/components/Toast';
 import { getMyApplications } from "@/services/candidate/myApplicationsService";
 import { acknowledgeNote, withdrawApplication } from "@/services/candidate/applicationActionsService";
 
-const FILTERS = ['All', 'Applied', 'In Review', 'Shortlisted', 'Interview', 'Rejected', 'Withdrawn'];
+const FILTERS = ['All', 'Applied', 'In Review', 'Shortlisted', 'Interview', 'Hired', 'Rejected', 'Withdrawn'];
 const ACK_STORAGE_KEY = 'candidate_application_message_acknowledged';
 
+const timeAgo = (dateInput) => {
+  if (!dateInput) return "";
+  const date = new Date(dateInput);
+  if (isNaN(date.getTime())) return dateInput;
+
+  const now = new Date();
+  const seconds = Math.floor((now - date) / 1000);
+
+  if (seconds < 60) return "just now";
+
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} minute${minutes > 1 ? "s" : ""} ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
+
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days} day${days > 1 ? "s" : ""} ago`;
+
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months} month${months > 1 ? "s" : ""} ago`;
+
+  const years = Math.floor(months / 12);
+  return `${years} year${years > 1 ? "s" : ""} ago`;
+};
 const STATUS_CLASS_MAP = {
   Applied: 'applied',
   'In Review': 'in-review',
   Shortlisted: 'shortlisted',
   Interview: 'interview',
+  Hired: 'hired',
   Rejected: 'rejected',
   Withdrawn: 'withdrawn',
 };
@@ -27,10 +53,10 @@ const STATUS_COLOR_MAP = {
   'In Review': { bg: '#fff6e6', color: '#a86a00', border: '#ffe3ad' },
   Shortlisted: { bg: '#e9f7ef', color: '#1c7a45', border: '#c3ebd3' },
   Interview: { bg: '#e8f0fe', color: '#1a56c4', border: '#c7dcff' },
+  Hired: { bg: '#e6f7ec', color: '#0f7a3d', border: '#b9e6c9' },
   Rejected: { bg: '#fdecec', color: '#b23b3b', border: '#f5c9c9' },
   Withdrawn: { bg: '#f1f2f5', color: '#6b7280', border: '#e2e4e9' },
 };
-
 
 const CARD_STYLE = {
   border: '1px solid rgba(18, 35, 89, 0.08)',
@@ -641,25 +667,30 @@ const ClientApplicationStatusPage = () => {
 
         const jobs =
           response?.data?.applications || [];
+        const mappedData = jobs.map((item) => {
+          const appliedDate = item.appliedAt || item.appliedDate || item.createdAt || item.appliedTimeAgo;
+          const updatedDate = item.statusUpdatedAt || item.updatedAt || item.updatedDate || item.updatedTimeAgo || appliedDate;
+          const normalizedStatus = item.applicationStatus === 'InReview' ? 'In Review' : item.applicationStatus;
 
-        const mappedData = jobs.map((item) => ({
-          id: item.applicationId,
-          jobId: item.jobId || item.jobPostId || item.id || null,
-          company: item.companyName,
-          title: item.jobTitle,
-          location: [item.city, item.state].filter(Boolean).join(', '),
-          type: item.employmentType,
-          appliedOn: item.appliedTimeAgo,
-          updatedOn: item.updatedTimeAgo || item.appliedTimeAgo,
-          status: item.applicationStatus,
-          stage: item.applicationStage || item.applicationStatus,
-          tags: item.tags || [],
-          description: item.salaryDisplay,
-          recruiterNote: item.note || null,
-          logo:
-            item.companyLogoUrl ||
-            "/assets/imgs/brands/brand-10.png",
-        }));
+          return {
+            id: item.applicationId,
+            jobId: item.jobId || item.jobPostId || item.id || null,
+            company: item.companyName,
+            title: item.jobTitle,
+            location: [item.city, item.state].filter(Boolean).join(', '),
+            type: item.employmentType,
+            appliedOn: timeAgo(appliedDate),
+            updatedOn: timeAgo(updatedDate),
+            status: normalizedStatus,
+            stage: item.applicationStage || normalizedStatus,
+            tags: item.tags || [],
+            description: item.salaryDisplay,
+            recruiterNote: item.note || null,
+            logo:
+              item.companyLogoUrl ||
+              "/assets/imgs/brands/brand-10.png",
+          };
+        });
 
         setApplications(mappedData);
       } catch (error) {

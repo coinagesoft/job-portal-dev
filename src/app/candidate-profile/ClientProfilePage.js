@@ -42,7 +42,9 @@ import {
   uploadResume,
   deleteResume,
   getDocuments,
+  generateCv,
 } from "@/services/candidate/candidateResume.js";
+import { getUploadedDocuments } from "@/services/candidate/documentService";
 
 import {
   uploadEducationCertificate,
@@ -2226,10 +2228,26 @@ const StepLanguages = ({ data, onAdd, onRemove, onUpdate }) => {
   );
 };
 
+// Maps each profile-completion checklist item to the wizard step that
+// actually lets the candidate fix it (see stepContent() switch below:
+// 1=Personal, 2=Documents, 3=Work, 4=Education, 5=Skills, 6=Languages).
+const COMPLETION_ITEM_TO_STEP = {
+  photo: 1,
+  personalInfo: 1,
+  summary: 1,
+  resume: 2,
+  aadhaar: 2,
+  passport: 2,
+  workHistory: 3,
+  education: 4,
+  skills: 5,
+};
+
 // ─── Completion Summary (final step done) ────────────────────────────────────
 const CompletionSummary = ({
   completion,
   onEdit,
+  onNavigateToItem,
   router,
 }) => {
   const percent = completion?.overallPct || 0;
@@ -2458,6 +2476,7 @@ const CompletionSummary = ({
             </div>
 
             <button
+              onClick={() => onNavigateToItem?.(item.key)}
               style={{
                 border: "none",
                 background: "#FFF5E8",
@@ -2468,7 +2487,7 @@ const CompletionSummary = ({
                 fontWeight: 600,
               }}
             >
-              Complete
+              Pending
             </button>
           </div>
         ))}
@@ -2890,10 +2909,47 @@ const CandidateProfilePage = () => {
     if (!candidateId) return;
 
     try {
-      const response = await getProfileCompletion();
+      const [completionRes, uploadedDocsRes] = await Promise.all([
+        getProfileCompletion(),
+        getUploadedDocuments().catch(() => null),
+      ]);
 
-      if (response.data.success) {
-        setProfileCompletion(response.data.data);
+      if (completionRes.data.success) {
+        let completionData = completionRes.data.data;
+
+        // Check if there is any verified Aadhaar Card in the uploaded documents
+        const uploadedDocs = uploadedDocsRes?.data?.documents || [];
+        const isAadhaarVerified = uploadedDocs.some(
+          (doc) =>
+            (doc.documentType || "").toLowerCase().includes("aadhaar") &&
+            doc.verificationStatus === "Verified"
+        );
+
+        if (isAadhaarVerified && completionData && Array.isArray(completionData.items)) {
+          // Find Aadhaar item and mark it as completed
+          completionData = {
+            ...completionData,
+            items: completionData.items.map((item) => {
+              const isAadhaarItem =
+                (item.key || "").toLowerCase().includes("aadhaar") ||
+                (item.key || "").toLowerCase().includes("aadhar") ||
+                (item.label || "").toLowerCase().includes("aadhaar") ||
+                (item.label || "").toLowerCase().includes("aadhar");
+
+              if (isAadhaarItem) {
+                return { ...item, completed: true };
+              }
+              return item;
+            }),
+          };
+
+          // Re-calculate overall percentage
+          const completedCount = completionData.items.filter((item) => item.completed).length;
+          const totalCount = completionData.items.length;
+          completionData.overallPct = Math.round((completedCount / totalCount) * 100);
+        }
+
+        setProfileCompletion(completionData);
       }
     } catch (error) {
       console.error("Failed to load profile completion", error);
@@ -2904,6 +2960,8 @@ const CandidateProfilePage = () => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadProfileCompletion();
   }, [loadProfileCompletion]);
+
+
 
   //Loading profile data from API
   const loadPersonalInfo = useCallback(async () => {
@@ -3266,57 +3324,30 @@ const CandidateProfilePage = () => {
   const completedSteps = useMemo(() => {
     const set = new Set();
 
-    const personalComplete =
-      Boolean(profileData.firstName?.trim()) &&
-      Boolean(profileData.lastName?.trim()) &&
-      Boolean(profileData.mobile?.trim()) &&
-      /^\d{10}$/.test(String(profileData.mobile || "").replace(/\D/g, "")) &&
-      Boolean(profileData.email?.trim()) &&
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profileData.email || "") &&
-      Boolean(profileData.dob) &&
-      Boolean(profileData.gender) &&
-      Boolean(profileData.city?.trim()) &&
-      Boolean(profileData.state) &&
-      /^\d{6}$/.test(profileData.pin || "") &&
-      Boolean(profileData.nationality?.trim()) &&
-      Boolean(profileData.trade?.trim()) &&
-      Boolean(profileData.summary?.trim()) &&
-      Number(profileData.salaryExpectation) > 0 &&
-      profileData.yearsOfExperience !== "" &&
-      Number(profileData.yearsOfExperience) >= 0;
-    if (personalComplete) set.add(1);
+    if (profileCompletion && Array.isArray(profileCompletion.items)) {
+      // Check completeness of Steps 1 to 5 based on the checklist items
+      for (let stepNum = 1; stepNum <= 5; stepNum++) {
+        // Find all checklist items that map to this step
+        const stepItems = profileCompletion.items.filter(
+          (item) => COMPLETION_ITEM_TO_STEP[item.key] === stepNum
+        );
 
-    const documentsComplete = Boolean(
-      profileData.documents?.nationalId?.frontFile ||
-      profileData.documents?.nationalId?.file,
-    );
-    if (documentsComplete) set.add(2);
+        // If we have items for this step, check if they are all completed
+        if (stepItems.length > 0) {
+          const allCompleted = stepItems.every((item) => item.completed);
+          if (allCompleted) {
+            set.add(stepNum);
+          }
+        }
+      }
+    }
 
-    const workComplete =
-      profileData.workHistory.length > 0 &&
-      profileData.workHistory.every(
-        (w) =>
-          Boolean(w.title?.trim()) &&
-          Boolean(w.company?.trim()) &&
-          Boolean(w.startDate) &&
-          (w.current || Boolean(w.endDate)) &&
-          Boolean(String(w.noticePeriod ?? "").trim()),
-      );
-    if (workComplete) set.add(3);
-
-    const educationComplete =
-      profileData.education.length > 0 &&
-      profileData.education.every((edu) => Boolean(edu.title?.trim()));
-    if (educationComplete) set.add(4);
-
-    const skillsComplete = (profileData.selectedSkills || []).length > 0;
-    if (skillsComplete) set.add(5);
-
+    // Step 6 (Languages) is not in the checklist, so check local state
     const languagesComplete = (profileData.languages || []).length > 0;
     if (languagesComplete) set.add(6);
 
     return set;
-  }, [profileData]);
+  }, [profileData, profileCompletion]);
 
   const updateField = useCallback(
     (field, value) => setProfileData((p) => ({ ...p, [field]: value })),
@@ -3364,6 +3395,7 @@ const CandidateProfilePage = () => {
       showToast("Work experience updated", "success");
 
       await loadWorkExperience();
+      await loadProfileCompletion();
       return true;
     } catch (error) {
       console.log(
@@ -3388,6 +3420,7 @@ const CandidateProfilePage = () => {
       await createWorkExperience(payload);
 
       await loadWorkExperience();
+      await loadProfileCompletion();
 
       showToast("Work experience added", "success");
       return true;
@@ -3407,6 +3440,7 @@ const CandidateProfilePage = () => {
       await deleteWorkExperience(workId);
 
       await loadWorkExperience();
+      await loadProfileCompletion();
 
       showToast("Work experience removed", "success");
       return true;
@@ -3459,8 +3493,8 @@ const CandidateProfilePage = () => {
       return false;
     }
 
-    if (!work.noticePeriod || !String(work.noticePeriod).trim()) {
-      showToast("Notice period is required.", "error");
+    if (work.current && (!work.noticePeriod || !String(work.noticePeriod).trim())) {
+      showToast("Notice period is required for your current job.", "error");
       return false;
     }
 
@@ -3481,7 +3515,12 @@ const CandidateProfilePage = () => {
             id: item.educationId,
             title: item.qualificationDegree,
             institution: item.instituteName,
-            meta: item.yearDetails || "",
+            // Affinda-parsed entries populate passoutYear but not yearDetails
+            // (that field is really a grade/certificate note). Fall back to
+            // the year so it isn't shown as blank when it's actually known.
+            meta:
+              item.yearDetails ||
+              (item.passoutYear ? String(item.passoutYear) : ""),
             certificateNumber: item.certificateNumber || "",
             verified: item.isAiVerified,
           })),
@@ -3542,6 +3581,7 @@ const CandidateProfilePage = () => {
       showToast("Education updated", "success");
 
       await loadEducation();
+      await loadProfileCompletion();
       return true;
     } catch (error) {
       console.log(error.response?.data);
@@ -3569,6 +3609,7 @@ const CandidateProfilePage = () => {
       await createEducation(payload);
 
       await loadEducation();
+      await loadProfileCompletion();
 
       showToast("Education added", "success");
       return true;
@@ -3586,6 +3627,7 @@ const CandidateProfilePage = () => {
       await deleteEducation(educationId);
 
       await loadEducation();
+      await loadProfileCompletion();
 
       showToast("Education removed", "success");
     } catch (error) {
@@ -3636,6 +3678,7 @@ const CandidateProfilePage = () => {
       });
 
       await loadSkills();
+      await loadProfileCompletion();
 
       showToast("Skill added", "success");
 
@@ -3664,6 +3707,7 @@ const CandidateProfilePage = () => {
       await updateCandidateSkill(skill.id, payload);
 
       await loadSkills();
+      await loadProfileCompletion();
 
       showToast("Skill updated", "success");
       return true;
@@ -3684,6 +3728,7 @@ const CandidateProfilePage = () => {
       await deleteSkill(skillId);
 
       await loadSkills();
+      await loadProfileCompletion();
 
       showToast("Skill removed", "success");
       return true;
@@ -3738,6 +3783,39 @@ const CandidateProfilePage = () => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadLanguages();
   }, [loadLanguages]);
+
+  // A resume upload (or any other action that dispatches "profileUpdate")
+  // can change data across several sections at once via AI parsing — not
+  // just Personal Info. Previously this only refreshed Personal Info and
+  // the completion percentage, so newly-imported Work Experience, Education,
+  // Skills, and Languages sat correctly saved on the server but never
+  // reflected in the UI until a full page reload re-ran every load*
+  // function from scratch.
+  useEffect(() => {
+    const handleProfileUpdate = () => {
+      loadProfileCompletion();
+      loadPersonalInfo();
+      loadWorkExperience();
+      loadEducation();
+      loadSkills();
+      loadLanguages();
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("profileUpdate", handleProfileUpdate);
+    }
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("profileUpdate", handleProfileUpdate);
+      }
+    };
+  }, [
+    loadProfileCompletion,
+    loadPersonalInfo,
+    loadWorkExperience,
+    loadEducation,
+    loadSkills,
+    loadLanguages,
+  ]);
 
   // Add new language to API
   const addLanguage = async (lang) => {
@@ -4264,7 +4342,7 @@ const CandidateProfilePage = () => {
                   <StepBar
                     current={done ? TOTAL + 1 : currentStep}
                     onStepClick={done ? undefined : (n) => setCurrentStep(n)}
-                    completedSteps={done ? null : completedSteps}
+                    completedSteps={completedSteps}
                   />
                 </div>
 
@@ -4278,6 +4356,11 @@ const CandidateProfilePage = () => {
                       onEdit={() => {
                         setDone(false);
                         setCurrentStep(1);
+                      }}
+                      onNavigateToItem={(key) => {
+                        const step = COMPLETION_ITEM_TO_STEP[key] || 1;
+                        setDone(false);
+                        setCurrentStep(step);
                       }}
                       completion={profileCompletion}
                       router={router}

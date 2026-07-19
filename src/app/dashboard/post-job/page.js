@@ -282,6 +282,12 @@ function validateAllSteps(jobForm) {
     issues.push({ stepNum: 2, title: "Compensation", message: "Minimum Salary is required" }); 
   if (!jobForm.SalaryMax) 
     issues.push({ stepNum: 2, title: "Compensation", message: "Maximum Salary is required" }); 
+  if (
+  jobForm.SalaryMin &&
+  jobForm.SalaryMax &&
+  Number(jobForm.SalaryMin) > Number(jobForm.SalaryMax)
+)
+  issues.push({ stepNum: 2, title: "Compensation", message: "Minimum Salary cannot be greater than Maximum Salary" });
  
   // Step 4 – Eligibility 
   if (!jobForm.Vacancies) 
@@ -1018,45 +1024,25 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
         </div> 
       </div> 
  
-      {/* Key Responsibilities */} 
-      <Field 
-        label="Key Responsibilities" 
-        hint="Enter each responsibility on a new line" 
-      > 
-        <button 
-          type="button" 
-          className="btn btn-sm btn-default mb-10" 
-          onClick={handleGenerateJD} 
-        > 
-          {loadingAI ? "Generating…" : "✨ Generate with AI"} 
-        </button> 
-        <textarea 
-          className={styles.textarea} 
-          rows={4} 
-          placeholder={"• Operate welding equipment\n• Follow safety protocols"} 
-          value={jobForm.KeyResponsibilities.join("\n")} 
-          onChange={(e) => 
-            setJobForm((p) => ({ 
-              ...p, 
-              KeyResponsibilities: e.target.value.split("\n"), 
-            })) 
-          } 
-        /> 
-      </Field> 
- 
-      {/* Job Description */} 
-      <Field label="Job Description" required> 
- 
- 
-        <textarea 
-          className={styles.textarea} 
-          rows={6} 
-          value={jobForm.JobDescription} 
-          onChange={(e) => 
-            setJobForm((p) => ({ ...p, JobDescription: e.target.value })) 
-          } 
-          onKeyDown={handleJDTab} 
-        /> 
+      {/* Job Description */}
+      <Field label="Job Description" required>
+        <button
+          type="button"
+          className="btn btn-sm btn-default mb-10"
+          onClick={handleGenerateJD}
+        >
+          {loadingAI ? "Generating…" : "✨ Generate with AI"}
+        </button>
+
+        <textarea
+          className={styles.textarea}
+          rows={6}
+          value={jobForm.JobDescription}
+          onChange={(e) =>
+            setJobForm((p) => ({ ...p, JobDescription: e.target.value }))
+          }
+          onKeyDown={handleJDTab}
+        />
  
         {ghostSuggestion && ( 
           <div className={styles.inlineSuggestion}> 
@@ -1089,73 +1075,95 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
 } 
  
 /* ─── STEP 2 – Compensation ───────────────────────────────────────────────── */ 
-function Step2({ go, jobForm, setJobForm, onSubmit }) { 
-  return ( 
-    <StepCard 
-      stepNum={2} 
-      title="Compensation" 
-      subtitle="Salary information" 
-      onBack={() => go(1)} 
-      onContinue={onSubmit} 
-    > 
-      <div className={styles.grid2}> 
- 
-        {/* Currency First */} 
-        <Field label="Currency" required> 
-          <Combobox 
-            value={jobForm.SalaryCurrency} 
-            onChange={(v) => setJobForm((p) => ({ ...p, SalaryCurrency: v }))} 
-            options={currencies} 
-            placeholder="e.g. INR" 
-          /> 
-        </Field> 
- 
-        {/* Display Option Second */} 
-        <Field label="Salary Display Option" required> 
-          <Combobox 
-            value={jobForm.SalaryDisplayOption} 
-            onChange={(v) => setJobForm((p) => ({ ...p, SalaryDisplayOption: v }))} 
-            options={salaryDisplayOptions} 
-            placeholder="e.g. Show Range" 
-          /> 
-        </Field> 
- 
-        {/* Min Salary */} 
-        <Field label="Min Salary" required> 
-          <input 
-            type="number" 
-            min={0} 
-            className={styles.control} 
-            value={jobForm.SalaryMin} 
-            onChange={(e) => 
-              setJobForm((p) => ({ 
-                ...p, 
-                SalaryMin: e.target.value, 
-              })) 
-            } 
-          /> 
-        </Field> 
- 
-        {/* Max Salary */} 
-        <Field label="Max Salary" required> 
-          <input 
-            type="number" 
-            min={0} 
-            className={styles.control} 
-            value={jobForm.SalaryMax} 
-            onChange={(e) => 
-              setJobForm((p) => ({ 
-                ...p, 
-                SalaryMax: e.target.value, 
-              })) 
-            } 
-          /> 
-        </Field> 
- 
-      </div> 
-    </StepCard> 
-  ); 
-} 
+function Step2({ go, jobForm, setJobForm, onSubmit }) {
+  const salaryInvalid =
+    jobForm.SalaryMin !== "" &&
+    jobForm.SalaryMax !== "" &&
+    Number(jobForm.SalaryMin) > Number(jobForm.SalaryMax);
+
+  return (
+    <StepCard
+      stepNum={2}
+      title="Compensation"
+      subtitle="Salary information"
+      onBack={() => go(1)}
+      onContinue={onSubmit}
+    >
+      <div className={styles.grid2}>
+
+        {/* Currency First */}
+        <Field label="Currency" required>
+          <Combobox
+            value={jobForm.SalaryCurrency}
+            onChange={(v) => setJobForm((p) => ({ ...p, SalaryCurrency: v }))}
+            options={currencies}
+            placeholder="e.g. INR"
+          />
+        </Field>
+
+        {/* Display Option Second */}
+        <Field label="Salary Display Option" required>
+          <Combobox
+            value={jobForm.SalaryDisplayOption}
+            onChange={(v) => setJobForm((p) => ({ ...p, SalaryDisplayOption: v }))}
+            options={salaryDisplayOptions}
+            placeholder="e.g. Show Range"
+          />
+        </Field>
+
+        {/* Min Salary */}
+        <Field label="Min Salary" required>
+          <input
+            type="number"
+            min={0}
+            className={styles.control}
+            value={jobForm.SalaryMin}
+            onChange={(e) =>
+              setJobForm((p) => ({
+                ...p,
+                SalaryMin: e.target.value,
+              }))
+            }
+          />
+        </Field>
+
+        {/* Max Salary */}
+        <Field label="Max Salary" required>
+          <input
+            type="number"
+            min={0}
+            className={styles.control}
+            value={jobForm.SalaryMax}
+            onChange={(e) =>
+              setJobForm((p) => ({
+                ...p,
+                SalaryMax: e.target.value,
+              }))
+            }
+          />
+        </Field>
+
+      </div>
+
+      {salaryInvalid && (
+        <p
+          style={{
+            marginTop: -12,
+            marginBottom: 16,
+            fontSize: 13,
+            color: "#dc2626",
+            fontWeight: 600,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          ⚠ Minimum Salary cannot be greater than Maximum Salary
+        </p>
+      )}
+    </StepCard>
+  );
+}
  
 /* ─── STEP 3 – Skills & JD ────────────────────────────────────────────────── */ 
 function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, handleGenerateAdditionalJD, loadingAI, handleSuggestSkills, skillsLoading }) { 
@@ -2064,17 +2072,15 @@ export default function DashboardPostJobPage() {
       }); 
       setJobForm((p) => ({ 
         ...p, 
+        // The AI response now returns one consolidated description
+        // (summary + responsibilities + requirements + benefits) instead of
+        // splitting it across JobDescription and a separate Key
+        // Responsibilities field — previously both were filled from the
+        // same responsibilities list, showing identical bullets twice on
+        // this screen. KeyResponsibilities/Step3KeyResponsibilities are
+        // left as-is here for manual entry if the employer wants them. 
         JobDescription: response.generatedDescription || "", 
-        KeyResponsibilities: response.responsibilities?.length 
-          ? response.responsibilities 
-          : p.KeyResponsibilities, 
         KeySkills: response.suggestedSkills ?? p.KeySkills, 
-        // Step-3 additional JD = Requirements + What We Offer. 
-        AdditionalJobDescription: 
-          response.additionalDescription || p.AdditionalJobDescription, 
-        Step3KeyResponsibilities: response.requirements?.length 
-          ? response.requirements 
-          : p.Step3KeyResponsibilities, 
       })); 
     } catch (error) { 
       console.error("generateJD:", error); 
@@ -2234,27 +2240,30 @@ export default function DashboardPostJobPage() {
     } 
   }; 
  
-  const handleStep2 = async () => { 
-    if (!jobForm.SalaryMin) return showToast("Minimum Salary is required", "error"); 
-    if (!jobForm.SalaryMax) return showToast("Maximum Salary is required", "error"); 
- 
-    setLoading(true); 
-    try { 
-      const response = await saveCompensation(jobId, { 
-        SalaryMin: jobForm.SalaryMin, 
-        SalaryMax: jobForm.SalaryMax, 
-        SalaryCurrency: jobForm.SalaryCurrency, 
-        SalaryDisplayOption: jobForm.SalaryDisplayOption, 
-      }); 
-      updateDraft(response); 
-      go(3); 
-    } catch (error) { 
-      console.error("Step 2:", error?.response?.data ?? error); 
-      showToast("Failed to save compensation. Please try again.", "error"); 
-    } finally { 
-      setLoading(false); 
-    } 
-  }; 
+const handleStep2 = async () => {
+  if (!jobForm.SalaryMin) return showToast("Minimum Salary is required", "error");
+  if (!jobForm.SalaryMax) return showToast("Maximum Salary is required", "error");
+  if (Number(jobForm.SalaryMin) > Number(jobForm.SalaryMax)) {
+    return showToast("Minimum Salary cannot be greater than Maximum Salary", "error");
+  }
+
+  setLoading(true);
+  try {
+    const response = await saveCompensation(jobId, {
+      SalaryMin: jobForm.SalaryMin,
+      SalaryMax: jobForm.SalaryMax,
+      SalaryCurrency: jobForm.SalaryCurrency,
+      SalaryDisplayOption: jobForm.SalaryDisplayOption,
+    });
+    updateDraft(response);
+    go(3);
+  } catch (error) {
+    console.error("Step 2:", error?.response?.data ?? error);
+    showToast("Failed to save compensation. Please try again.", "error");
+  } finally {
+    setLoading(false);
+  }
+};
  
   const handleStep3 = async () => { 
     setLoading(true); 
