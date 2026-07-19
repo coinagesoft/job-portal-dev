@@ -10,8 +10,17 @@ const getEmployerId = () => {
 export const getVerification = async () => {
   const employerId = getEmployerId();
 
+  // No query param here ever changes, so without an explicit cache-buster
+  // some browsers/CDNs can serve a stale cached response for this exact
+  // URL — which is exactly what "upload succeeds but the document doesn't
+  // show up in the list" looks like from the user's side, even though the
+  // upload itself worked fine.
   const { data } = await api.get(
-    `/api/recruiter/verification/${employerId}`
+    `/api/recruiter/verification/${employerId}`,
+    {
+      params: { _: Date.now() },
+      headers: { "Cache-Control": "no-cache" },
+    }
   );
 
   return data;

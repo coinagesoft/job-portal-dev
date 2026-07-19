@@ -121,6 +121,13 @@ const COMPANY_TYPES = [
   { value: "enterprise", label: "Enterprise" },
   { value: "government", label: "Government" },
   { value: "non-profit", label: "Non-profit" },
+  { value: "product-based", label: "Product-based" },
+  { value: "service-based", label: "Service-based" },
+  { value: "consulting", label: "Consulting" },
+  { value: "manufacturing", label: "Manufacturing" },
+  { value: "trading-distribution", label: "Trading / Distribution" },
+  { value: "agency", label: "Agency" },
+  { value: "outsourcing-bpo", label: "Outsourcing / BPO" },
 ];
 
 const labelFor = (list, value) =>
