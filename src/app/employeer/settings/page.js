@@ -2,7 +2,7 @@
 
 import { useToast } from "@/components/Toast";
 import { useEffect, useState } from "react";
-
+import TimezoneSelect from "react-timezone-select";
 import {
   getAccountSettings,
   updateAccountSettings,
@@ -284,12 +284,12 @@ const EmployerSettingsPage = () => {
       setSessions(
         list.map((s) => ({
           sessionId: s.sessionId,
-          device: [s.browser, s.operatingSystem].filter(Boolean).join(" on ") ||
-            s.deviceName || "Unknown device",
+          device:
+            [s.browser, s.operatingSystem].filter(Boolean).join(" on ") ||
+            s.deviceName ||
+            "Unknown device",
           location: s.location || s.ipAddress || "",
-          time: s.lastSeenAt
-            ? new Date(s.lastSeenAt).toLocaleString()
-            : "",
+          time: s.lastSeenAt ? new Date(s.lastSeenAt).toLocaleString() : "",
           icon: /mobile|iphone|android/i.test(
             `${s.deviceName} ${s.operatingSystem}`,
           )
@@ -473,12 +473,12 @@ const EmployerSettingsPage = () => {
                       className="form-control"
                       type="email"
                       value={account.email}
-                      onChange={(e) =>
-                        setAccount({
-                          ...account,
-                          email: e.target.value,
-                        })
-                      }
+                      disabled
+                      style={{
+                        background: "#F8FAFC",
+                        cursor: "not-allowed",
+                        color: "#64748B",
+                      }}
                     />
                   </div>
                   <div className="col-lg-6 col-12 mb-15">
@@ -487,12 +487,12 @@ const EmployerSettingsPage = () => {
                     <input
                       className="form-control"
                       value={account.countryCode}
-                      onChange={(e) =>
-                        setAccount({
-                          ...account,
-                          countryCode: e.target.value,
-                        })
-                      }
+                      disabled
+                      style={{
+                        background: "#F8FAFC",
+                        cursor: "not-allowed",
+                        color: "#64748B",
+                      }}
                     />
                   </div>
                   <div className="col-lg-6 col-12 mb-15">
@@ -502,15 +502,17 @@ const EmployerSettingsPage = () => {
                       className="form-control"
                       type="tel"
                       value={account.mobileNumber}
-                      onChange={(e) =>
-                        setAccount({
-                          ...account,
-                          mobileNumber: e.target.value,
-                        })
-                      }
+                      disabled
+                      style={{
+                        background: "#F8FAFC",
+                        cursor: "not-allowed",
+                        color: "#64748B",
+                      }}
                     />
 
-                    <p>Changes require OTP verification</p>
+                    <p style={{ color: "#94A3B8" }}>
+                      Mobile number can only be changed by contacting support.
+                    </p>
                   </div>
 
                   <div className="col-lg-6 col-12 mb-15">
@@ -525,29 +527,29 @@ const EmployerSettingsPage = () => {
                     >
                       Time Zone
                     </label>
-                    <select
-                      className="form-control form-select"
-                      value={account.timeZone}
-                      onChange={(e) =>
-                        setAccount({
-                          ...account,
-                          timeZone: e.target.value,
-                        })
-                      }
-                      style={{
-                        height: 44,
-                        fontSize: 13,
-                        borderRadius: 12,
-                        border: "1px solid rgba(18,35,89,0.12)",
-                      }}
-                    >
-                      <option value="Asia/Kolkata">Asia / Kolkata (IST)</option>
-                      <option value="Asia/Dubai">Asia / Dubai (GST)</option>
-                      <option value="UTC">UTC</option>
-                      <option value="America/New_York">
-                        America / New York (EST)
-                      </option>
-                    </select>
+                   <TimezoneSelect
+  value={account.timeZone}
+  onChange={(tz) =>
+    setAccount({
+      ...account,
+      timeZone: tz.value,
+    })
+  }
+  styles={{
+    control: (base) => ({
+      ...base,
+      minHeight: "44px",
+      borderRadius: "12px",
+      borderColor: "rgba(18,35,89,0.12)",
+      boxShadow: "none",
+      fontSize: "13px",
+    }),
+    menu: (base) => ({
+      ...base,
+      zIndex: 9999,
+    }),
+  }}
+/>
                   </div>
                 </div>
                 <div

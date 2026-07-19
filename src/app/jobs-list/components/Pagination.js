@@ -44,8 +44,14 @@ const Pagination = ({ currentPage, totalPages, onPageChange, loading = false }) 
         className="btn btn-border btn-sm"
         disabled={currentPage <= 1 || loading}
         onClick={() => goToPage(currentPage - 1)}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6,
+        }}
       >
-        ‹ Prev
+        <i className="fi fi-rr-angle-small-left" style={{ fontSize: 14, lineHeight: 1 }} />
+        Prev
       </button>
 
       {pagesToShow.map((page) =>
@@ -72,8 +78,14 @@ const Pagination = ({ currentPage, totalPages, onPageChange, loading = false }) 
         className="btn btn-border btn-sm"
         disabled={currentPage >= totalPages || loading}
         onClick={() => goToPage(currentPage + 1)}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6,
+        }}
       >
-        Next ›
+        Next
+        <i className="fi fi-rr-angle-small-right" style={{ fontSize: 14, lineHeight: 1 }} />
       </button>
     </div>
   );

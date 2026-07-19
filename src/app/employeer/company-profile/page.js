@@ -870,7 +870,6 @@ export default function EmployerCompanyProfilePage() {
           >
             <div
               style={{
-                position: "relative",
                 zIndex: 10,
                 width: "130px",
                 flexShrink: 0,
@@ -929,47 +928,56 @@ export default function EmployerCompanyProfilePage() {
                 />
               </label>
             </div>
-
-            <div
-              style={{
-                flex: 1,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: "16px",
-                flexWrap: "wrap",
-                minWidth: 0,
-              }}
-            >
-              <div style={{ minWidth: 0 }}>
-                <h4
-                  className="f-18"
-                  style={{ marginTop: "-50px", lineHeight: 1.3, color: "#122359" }}
-                >
+            <div className="row mt-2">
+              <div className="col-lg-8 col-md-12">
+                <h5 className="f-18">
                   {company.displayName}
-                </h4>
-                <p className="font-md color-text-paragraph-2 mb-0 mt-5">
+
+                </h5>
+                <p className=" font-md color-text-paragraph-2 mb-15">
                   {company.tagline}
                 </p>
+                {/* Stats row */}
+                {/* <div style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
+                  {[
+                    ["Active Jobs", company.activeJobs],
+                    ["Total Hired", company.totalHired],
+                    ["Avg. Time to Hire", company.avgTime],
+                  ].map(([label, val]) => (
+                    <div key={label} style={{ textAlign: "center" }}>
+                      <div
+                        style={{
+                          fontSize: "22px",
+                          fontWeight: "700",
+                          color: "#122359",
+                        }}
+                      >
+                        {val}
+                      </div>
+                      <div style={{ fontSize: "12px", color: "#9ca3af" }}>
+                        {label}
+                      </div>
+                    </div>
+                  ))}
+                </div> */}
               </div>
-
-              <span className="card-location font-regular" style={{ marginLeft: 0, flexShrink: 0 ,marginTop: "-70px",}}>
+              <span className="card-location font-regular ml-20">
                 {company.location}
               </span>
             </div>
           </div>
 
           {/* Tab nav */}
-          <div className="box-nav-tabs mt-40 mb-5">
-            <ul className="nav" role="tablist">
+          <div className="box-nav-tabs" style={{ marginTop: 28, marginBottom: 8 }}>
+            <ul className="nav" role="tablist" style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
               {[
                 ["about", "About Us"],
                 ["recruitments", "Recruitments"],
                 ["people", "People"],
               ].map(([key, label]) => (
-                <li key={key}>
+                <li key={key} style={{ margin: 0 }}>
                   <button
-                    className={`btn btn-border mr-15 mb-5 ${activeTab === key ? "active" : ""}`}
+                    className={`btn btn-border ${activeTab === key ? "active" : ""}`}
                     onClick={() => setActiveTab(key)}
                     style={{
                       border:
@@ -983,11 +991,11 @@ export default function EmployerCompanyProfilePage() {
               ))}
             </ul>
           </div>
-          <div className="border-bottom pt-10 pb-10" />
+          <div className="border-bottom" style={{ marginTop: 8, marginBottom: 8 }} />
         </div>
       </section>
 
-      <section className="section-box mb-3">
+      <section className="section-box mt-50">
         <div className="container">
           <div className="row">
             {/* Main content */}
@@ -1451,7 +1459,7 @@ export default function EmployerCompanyProfilePage() {
 
                     <Link
                       href="/dashboard/post-job"
-                      className="btn btn-default btn-sm"
+                      className="btn btn-default btn-sm mt-3"
                       style={{
                         borderRadius: "12px",
                         fontWeight: 700,
@@ -1726,12 +1734,23 @@ export default function EmployerCompanyProfilePage() {
                     }}
                   >
                     <h4 style={{ margin: 0 }}>Team Members</h4>
-                    <Link
-                      href="/employeer/sub-user"
-                      className="btn btn-default btn-sm"
-                    >
-                      + Invite Member
-                    </Link>
+         <Link
+  href="/employeer/sub-user"
+  className="btn btn-default btn-sm mt-3"
+  style={{
+    borderRadius: "12px",
+    fontWeight: 700,
+    padding: "10px 18px",
+    boxShadow: "0 8px 18px rgba(255,163,0,0.18)",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "6px",
+  }}
+>
+  <i className="fi fi-rr-plus" />
+  Invite Member
+</Link>
                   </div>
 
                   {peopleLoading ? (
