@@ -1066,8 +1066,8 @@ export default function EmployerCompanyProfilePage() {
               style={{
                 width: "100%",
                 borderRadius: "10px",
-                objectFit: "cover",
-                maxHeight: "320px",
+                objectFit:'cover' ,
+                maxHeight: "370px",
               }}
             />
             <label
@@ -1101,16 +1101,25 @@ export default function EmployerCompanyProfilePage() {
             </label>
           </div>
 
-          <div className="box-company-profile" style={{
-            position: "relative",
-            zIndex: 5,
-            marginTop: "-40px",
-          }}>
+       <div
+            style={{
+              position: "relative",
+              zIndex: 5,
+              marginTop: "0",
+              display: "flex",
+              alignItems: "flex-end",
+              gap: "18px",
+              flexWrap: "nowrap",
+              width: "100%",
+            }}
+          >
             <div
-              className="image-compay"
               style={{
                 zIndex: 10,
-                width: "110px",
+                width: "130px",
+                flexShrink: 0,
+                marginTop: "-70px",
+                marginLeft:"40px"
               }}
             >
               <img
@@ -1120,12 +1129,14 @@ export default function EmployerCompanyProfilePage() {
                 }
                 alt={company?.displayName}
                 style={{
-                  width: "110px",
-                  height: "100px",
+                  width: "130px",
+                  height: "120px",
                   objectFit: "cover",
-                  borderRadius: "5px",
-                  border: "1px solid #eee",
-                  marginbottom: "20px",
+                  borderRadius: "10px",
+                  border: "4px solid #ffffff",
+                  boxShadow: "0 6px 18px rgba(18,35,89,0.15)",
+                  display: "block",
+                  background: "#ffffff",
                 }}
               />
               <label
@@ -1162,18 +1173,13 @@ export default function EmployerCompanyProfilePage() {
                 />
               </label>
             </div>
-            <div className="row mt-2" style={{ paddingTop: 18 }}>
+            <div className="row mt-2">
               <div className="col-lg-8 col-md-12">
-                <h5 className="f-18" style={{ margin: "0 0 6px" }}>
+                <h5 className="f-18">
                   {company.displayName}
+
                 </h5>
-                <span
-                  className="card-location font-regular"
-                  style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-                >
-                  {company.location}
-                </span>
-                <p className="font-md color-text-paragraph-2 mb-15" style={{ marginTop: 10 }}>
+                <p className=" font-md color-text-paragraph-2 mb-15">
                   {company.tagline}
                 </p>
                 {/* Stats row */}
@@ -1200,6 +1206,9 @@ export default function EmployerCompanyProfilePage() {
                   ))}
                 </div> */}
               </div>
+              <span className="card-location font-regular ml-20">
+                {company.location}
+              </span>
             </div>
           </div>
 
@@ -1231,13 +1240,13 @@ export default function EmployerCompanyProfilePage() {
         </div>
       </section>
 
-      <section className="section-box mt-40">
+      <section className="section-box mt-50">
         <div className="container">
           <div className="row">
             {/* Main content */}
             <div className="col-lg-8 col-md-12 col-sm-12">
               {activeTab === "about" && (
-                <div className="content-single">
+                <div className="content-single ">
                   <h4>Welcome to {company.displayName}</h4>
                   {/* <div className="form-group mb-20">
                     <label className="form-label">Company description</label>
@@ -1729,7 +1738,7 @@ export default function EmployerCompanyProfilePage() {
 
                     <Link
                       href="/dashboard/post-job"
-                      className="btn btn-default btn-sm"
+                      className="btn btn-default btn-sm mt-3"
                       style={{
                         borderRadius: "12px",
                         fontWeight: 700,
@@ -2012,12 +2021,23 @@ export default function EmployerCompanyProfilePage() {
                     }}
                   >
                     <h4 style={{ margin: 0 }}>Team Members</h4>
-                    <Link
-                      href="/employeer/sub-user"
-                      className="btn btn-default btn-sm"
-                    >
-                      + Invite Member
-                    </Link>
+         <Link
+  href="/employeer/sub-user"
+  className="btn btn-default btn-sm mt-3"
+  style={{
+    borderRadius: "12px",
+    fontWeight: 700,
+    padding: "10px 18px",
+    boxShadow: "0 8px 18px rgba(255,163,0,0.18)",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "6px",
+  }}
+>
+  <i className="fi fi-rr-plus" />
+  Invite Member
+</Link>
                   </div>
 
                   {peopleLoading ? (
@@ -2099,7 +2119,7 @@ export default function EmployerCompanyProfilePage() {
             </div>
 
             {/* Sidebar */}
-            <div className="col-lg-4 col-md-12 col-sm-12 col-12 pl-40 pl-lg-15 mt-lg-30">
+            <div className="col-lg-4 col-md-12 col-sm-12 col-12 pl-40 pl-lg-15 mt-lg-30 mt-4">
               <div className="sidebar-border employer-cv-surface-card">
                 <div className="sidebar-heading">
                   <div className="avatar-sidebar">
