@@ -68,14 +68,14 @@ const normalizeReply = (reply) => {
 const normalizeTicket = (ticket, audience) => {
   const initialMessage = ticket.description
     ? [
-        {
-          id: `${ticket.ticketId}-description`,
-          sender: audience,
-          senderLabel: "You",
-          createdOn: ticket.createdAt,
-          text: ticket.description,
-        },
-      ]
+      {
+        id: `${ticket.ticketId}-description`,
+        sender: audience,
+        senderLabel: "You",
+        createdOn: ticket.createdAt,
+        text: ticket.description,
+      },
+    ]
     : [];
 
   return {
@@ -283,11 +283,11 @@ const SupportTicketCenter = ({
       const response =
         audience === "employer"
           ? await ticketApi.replyTicket(ticketId, {
-              message: replyText,
-            })
+            message: replyText,
+          })
           : await ticketApi.replyTicket(ticketId, candidateId, {
-              message: replyText,
-            });
+            message: replyText,
+          });
 
       if (response?.data?.ticketId || response?.data?.success) {
         setNewReplyTextByTicket((prev) => ({ ...prev, [ticketId]: "" }));
@@ -416,11 +416,12 @@ const SupportTicketCenter = ({
             <div className="candidate-settings-actions">
               <button
                 type="button"
-                className="btn btn-default btn-small"
+                className="btn btn-border btn-small clear-btn"
                 onClick={() => {
                   setForm({ subject: "", category: "", description: "" });
                   setErrors({});
                 }}
+                style={{fontSize:"16px"}}
               >
                 Clear
               </button>
@@ -428,6 +429,7 @@ const SupportTicketCenter = ({
                 type="button"
                 className="btn btn-brand-1 btn-small"
                 onClick={handleSubmit}
+                 style={{fontSize:"16px"}}
               >
                 Submit Ticket
               </button>

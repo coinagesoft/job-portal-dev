@@ -160,7 +160,7 @@ startxref
     <main className="main">
       <section className="section-box-2">
         <div className="container">
-          <div className="banner-hero banner-image-single">
+          <div className="banner-hero banner-image-single" style={{ height: "120px", marginTop: "80px" }}>
             {/* <img
               src="/assets/imgs/page/blue-collar/welding.jpg"
               alt="candidate banner"
@@ -227,7 +227,7 @@ startxref
               <div className="col-lg-4 col-md-12 text-lg-end">
                 <div className="action-buttons d-flex flex-wrap gap-2 justify-content-lg-end">
                   <button
-                    className="btn btn-primary-custom btn-lg"
+                    className="btn btn-default"
                     type="button"
                     title="Unlock this candidate's full profile"
                     style={{ whiteSpace: "nowrap" }}
@@ -242,7 +242,7 @@ startxref
                   </button>
 
                   <button
-                    className="btn btn-outline-custom btn-lg"
+                    className="btn btn-border"
                     type="button"
                     title={isUnlocked ? "Download candidate CV" : "Unlock required before downloading CV"}
                     style={{ whiteSpace: "nowrap" }}

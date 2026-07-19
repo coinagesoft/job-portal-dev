@@ -162,6 +162,7 @@ const JobDetailHero = ({
               <div
                 className="btn btn-apply-icon btn-apply btn-apply-big hover-up"
                 onClick={handleApplyClick}
+                style={{fontSize:"14px"}}
               >
                 Apply now
               </div>

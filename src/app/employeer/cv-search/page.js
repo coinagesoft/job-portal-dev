@@ -117,7 +117,9 @@ const CANDIDATE_ACTION_BUTTON_STYLE = {
   alignItems: "center",
   justifyContent: "center",
   whiteSpace: "nowrap",
-  borderRadius:"8px"
+  borderRadius:"8px",
+  fontSize:"14px",
+  fontWeight:"600"
 };
 
 const EXPERIENCE_RANGES = [
