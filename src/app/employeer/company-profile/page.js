@@ -1066,8 +1066,8 @@ export default function EmployerCompanyProfilePage() {
               style={{
                 width: "100%",
                 borderRadius: "10px",
-                objectFit: "cover",
-                maxHeight: "320px",
+                objectFit:'cover' ,
+                maxHeight: "370px",
               }}
             />
             <label
@@ -1101,17 +1101,26 @@ export default function EmployerCompanyProfilePage() {
             </label>
           </div>
 
-          <div className="box-company-profile" style={{
-            position: "relative",
-            zIndex: 5,
-            marginTop: "-40px",
-          }}>
+       <div
+            style={{
+              position: "relative",
+              zIndex: 5,
+              marginTop: "0",
+              display: "flex",
+              alignItems: "flex-end",
+              gap: "18px",
+              flexWrap: "nowrap",
+              width: "100%",
+            }}
+          >
             <div
-              className="image-compay"
               style={{
                 position: "relative",
                 zIndex: 10,
-                width: "110px",
+                width: "130px",
+                flexShrink: 0,
+                marginTop: "-70px",
+                marginLeft:"40px"
               }}
             >
               <img
@@ -1121,12 +1130,14 @@ export default function EmployerCompanyProfilePage() {
                 }
                 alt={company?.displayName}
                 style={{
-                  width: "110px",
-                  height: "100px",
+                  width: "130px",
+                  height: "120px",
                   objectFit: "cover",
-                  borderRadius: "5px",
-                  border: "1px solid #eee",
-                  marginbottom: "20px",
+                  borderRadius: "10px",
+                  border: "4px solid #ffffff",
+                  boxShadow: "0 6px 18px rgba(18,35,89,0.15)",
+                  display: "block",
+                  background: "#ffffff",
                 }}
               />
               <label
@@ -1163,40 +1174,31 @@ export default function EmployerCompanyProfilePage() {
                 />
               </label>
             </div>
-            <div className="row mt-2">
-              <div className="col-lg-8 col-md-12">
-                <h5 className="f-18">
-                  {company.displayName}
 
-                </h5>
-                <p className=" font-md color-text-paragraph-2 mb-15">
+            <div
+              style={{
+                flex: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "16px",
+                flexWrap: "wrap",
+                minWidth: 0,
+              }}
+            >
+              <div style={{ minWidth: 0 }}>
+                <h4
+                  className="f-18"
+                  style={{ marginTop: "-50px", lineHeight: 1.3, color: "#122359" }}
+                >
+                  {company.displayName}
+                </h4>
+                <p className="font-md color-text-paragraph-2 mb-0 mt-5">
                   {company.tagline}
                 </p>
-                {/* Stats row */}
-                {/* <div style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
-                  {[
-                    ["Active Jobs", company.activeJobs],
-                    ["Total Hired", company.totalHired],
-                    ["Avg. Time to Hire", company.avgTime],
-                  ].map(([label, val]) => (
-                    <div key={label} style={{ textAlign: "center" }}>
-                      <div
-                        style={{
-                          fontSize: "22px",
-                          fontWeight: "700",
-                          color: "#122359",
-                        }}
-                      >
-                        {val}
-                      </div>
-                      <div style={{ fontSize: "12px", color: "#9ca3af" }}>
-                        {label}
-                      </div>
-                    </div>
-                  ))}
-                </div> */}
               </div>
-              <span className="card-location font-regular ml-20">
+
+              <span className="card-location font-regular" style={{ marginLeft: 0, flexShrink: 0 ,marginTop: "-70px",}}>
                 {company.location}
               </span>
             </div>

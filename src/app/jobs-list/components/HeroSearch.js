@@ -203,14 +203,14 @@ const HeroSearch = ({ jobs = [] }) => {
                 {/* LOCATION */}
                 {/* ───────────────────────────────────────────── */}
                 <select
-                  className="form-input mr-10 dashboard-select-arrow"
+                  className="form-input dashboard-select-arrow"
                   value={location}
                   onChange={(event) =>
                     setLocation(event.target.value)
                   }
                   disabled={optionsLoading}
                 >
-                  <option value="">
+                  <option value="" className="text-align-center">
                     {optionsLoading
                       ? "Loading…"
                       : "Location"}
@@ -220,6 +220,7 @@ const HeroSearch = ({ jobs = [] }) => {
                     <option
                       key={city}
                       value={city}
+                      className="text-align-center"
                     >
                       {city}
                     </option>

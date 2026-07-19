@@ -425,7 +425,12 @@ textarea.form-control {
 .dashboard-search-form .dashboard-search-text {
   color: #111111 !important;
 }
-
+.select2-results__option {
+    padding: 6px;
+    user-select: none;
+    -webkit-user-select: none;
+    text-align: center;
+}
 .dashboard-search-form .dashboard-select-arrow {
   background-image: url("/assets/imgs/template/icons/arrow-down.svg");
   background-repeat: no-repeat;
