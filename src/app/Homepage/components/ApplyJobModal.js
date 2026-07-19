@@ -650,10 +650,10 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
                             value={answers.motivation || ""}
                             onChange={(event) => handleAnswer("motivation", event.target.value)}
                           />
-                        </div>
+                        </div> */}
 
+                        {error ? <p className="font-xs mb-10" style={{ color: "#a32d2d" }}>{error}</p> : null}
 
-                        {error ? <p className="font-xs mb-10" style={{ color: "#a32d2d" }}>{error}</p> : null} */}
                       </div>
 
                       <div className="apply-job-footer-actions">
