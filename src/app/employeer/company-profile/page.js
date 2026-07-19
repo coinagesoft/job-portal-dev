@@ -1730,7 +1730,7 @@ export default function EmployerCompanyProfilePage() {
 
                     <Link
                       href="/dashboard/post-job"
-                      className="btn btn-default btn-sm"
+                      className="btn btn-default btn-sm mt-3"
                       style={{
                         borderRadius: "12px",
                         fontWeight: 700,
@@ -2013,12 +2013,23 @@ export default function EmployerCompanyProfilePage() {
                     }}
                   >
                     <h4 style={{ margin: 0 }}>Team Members</h4>
-                    <Link
-                      href="/employeer/sub-user"
-                      className="btn btn-default btn-sm"
-                    >
-                      + Invite Member
-                    </Link>
+         <Link
+  href="/employeer/sub-user"
+  className="btn btn-default btn-sm mt-3"
+  style={{
+    borderRadius: "12px",
+    fontWeight: 700,
+    padding: "10px 18px",
+    boxShadow: "0 8px 18px rgba(255,163,0,0.18)",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "6px",
+  }}
+>
+  <i className="fi fi-rr-plus" />
+  Invite Member
+</Link>
                   </div>
 
                   {peopleLoading ? (
