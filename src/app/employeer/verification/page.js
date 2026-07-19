@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import SubUserViewOnlyGuard from "@/components/SubUserViewOnlyGuard";
 import {
   getVerification,
   uploadDocument,
@@ -142,6 +143,7 @@ const EmployerVerificationPage = () => {
   };
 
   return (
+    <SubUserViewOnlyGuard>
     <main className="main">
       <section className="section-box mt-50 mb-50">
         <div className="container">
@@ -632,6 +634,7 @@ const EmployerVerificationPage = () => {
         </div>
       </section>
     </main>
+    </SubUserViewOnlyGuard>
   );
 };
 

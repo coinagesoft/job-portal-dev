@@ -13,6 +13,7 @@ import {
 } from "@/services/recruiter/recruiterSubUserService";
 
 import { useToast } from "@/components/Toast";
+import SubUserViewOnlyGuard from "@/components/SubUserViewOnlyGuard";
 
 const JOB_TAG_STYLE = {
   display: "inline-flex",
@@ -177,6 +178,7 @@ const EmployerSubUserPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (
+    <SubUserViewOnlyGuard>
     <main className="main">
       <section className="section-box mt-50 mb-50">
         <div className="container">
@@ -952,6 +954,7 @@ const EmployerSubUserPage = () => {
         </div>
       </section>
     </main>
+    </SubUserViewOnlyGuard>
   );
 };
 

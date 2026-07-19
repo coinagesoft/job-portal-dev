@@ -272,8 +272,8 @@ function CompanyDetailsContent() {
           icon: fieldIconClass.location,
           label: "Location",
           value:
-            companyInfo.city || companyInfo.state
-              ? [companyInfo.city, companyInfo.state]
+            companyInfo.city || companyInfo.state || companyInfo.country
+              ? [companyInfo.city, companyInfo.state, companyInfo.country]
                 .filter(Boolean)
                 .join(", ")
               : "Not specified",
@@ -357,9 +357,9 @@ function CompanyDetailsContent() {
                 <h5 className="f-18">
                   {companyInfo.companyName}
                 </h5>
-                {(companyInfo.city || companyInfo.state) && (
+                {(companyInfo.city || companyInfo.state || companyInfo.country) && (
                   <span className="card-location">
-                    {[companyInfo.city, companyInfo.state].filter(Boolean).join(", ")}
+                    {[companyInfo.city, companyInfo.state, companyInfo.country].filter(Boolean).join(", ")}
                   </span>
                 )}
 
@@ -669,9 +669,9 @@ function CompanyDetailsContent() {
                   <div className="avatar-sidebar">
                     <div className="sidebar-info pl-0">
                       <span className="sidebar-company">{companyInfo.companyName}</span>
-                      {(companyInfo.city || companyInfo.state) && (
+                      {(companyInfo.city || companyInfo.state || companyInfo.country) && (
                         <span className="card-location">
-                          {[companyInfo.city, companyInfo.state].filter(Boolean).join(", ")}
+                          {[companyInfo.city, companyInfo.state, companyInfo.country].filter(Boolean).join(", ")}
                         </span>
                       )}
                     </div>

@@ -9,6 +9,7 @@ import {
   createCreditPlanOrder,
   verifyCreditPlanPayment,
 } from "@/services/recruiter/recruiterCreditWalletService";
+import SubUserViewOnlyGuard from "@/components/SubUserViewOnlyGuard";
 
 const EmployerBuyCreditsPage = () => {
   // const [selected, setSelected] = useState(CREDIT_PACKS[1]);
@@ -301,6 +302,7 @@ const EmployerBuyCreditsPage = () => {
   }
 
   return (
+    <SubUserViewOnlyGuard>
     <main className="main">
       <Script
         src="https://checkout.razorpay.com/v1/checkout.js"
@@ -543,6 +545,7 @@ const EmployerBuyCreditsPage = () => {
         </div>
       </section>
     </main>
+    </SubUserViewOnlyGuard>
   );
 };
 

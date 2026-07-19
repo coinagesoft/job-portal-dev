@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useToast } from "@/components/Toast";
 import { useEffect } from "react";
 import companyProfileService from "@/services/recruiter/companyProfileService";
+import SubUserViewOnlyGuard from "@/components/SubUserViewOnlyGuard";
 import {
   getRecruiterJobs,
   pauseJob,
@@ -1053,6 +1054,7 @@ export default function EmployerCompanyProfilePage() {
   }
 
   return (
+    <SubUserViewOnlyGuard>
     <main className="main">
       {/* Banner */}
       <section className="section-box-2">
@@ -2208,5 +2210,6 @@ export default function EmployerCompanyProfilePage() {
         />
       )} */}
     </main>
+    </SubUserViewOnlyGuard>
   );
 }
