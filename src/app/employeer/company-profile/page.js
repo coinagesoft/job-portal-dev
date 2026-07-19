@@ -2100,7 +2100,7 @@ export default function EmployerCompanyProfilePage() {
             </div>
 
             {/* Sidebar */}
-            <div className="col-lg-4 col-md-12 col-sm-12 col-12 pl-40 pl-lg-15 mt-lg-30">
+            <div className="col-lg-4 col-md-12 col-sm-12 col-12 pl-40 pl-lg-15 mt-lg-30 mt-4">
               <div className="sidebar-border employer-cv-surface-card">
                 <div className="sidebar-heading">
                   <div className="avatar-sidebar">
