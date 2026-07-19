@@ -30,7 +30,7 @@ const getWordCount = (str) => {
 
 const screeningFilters = [
   { key: "minExperience3Years", label: "Experience 3+ years" },
-  // { key: "relocationReady", label: "Relocation ready", unavailable: true },
+  { key: "relocationReady", label: "Relocation ready", unavailable: true },
   { key: "noticePeriodMax30Days", label: "Notice period <= 30 days" },
   { key: "mandatoryAnswersComplete", label: "Mandatory answers complete" },
 ];
@@ -160,6 +160,14 @@ const EmployerApplicantsClient = () => {
   const jobTitleFromUrl = searchParams.get("jobTitle") || "";
 
   const [dashboard, setDashboard]       = useState(null);
+  // The /applicants/dashboard endpoint only accepts employerId — it has no
+  // per-job filtering on the backend, so it always returns counts across
+  // every job. When a specific job is selected (jobId set), we instead
+  // fetch that job's full applicant list (all statuses, unpaginated) once
+  // and tally the tab counts from it client-side — this is what keeps the
+  // "Showing applicants for X" view's tabs honest instead of showing the
+  // same global 9/3/1/... regardless of which job is selected.
+  const [jobStatusCounts, setJobStatusCounts] = useState(null);
   const [applicantList, setApplicantList] = useState([]);
   const [totalRecords, setTotalRecords]  = useState(0);
   const [credits, setCredits]            = useState(null);
@@ -222,6 +230,43 @@ const EmployerApplicantsClient = () => {
     }
   }, [jobId]);
 
+  // Separate from loadData on purpose: this only needs to re-run when the
+  // job selection itself changes, not on every status-tab click or page
+  // change, since it exists purely to tally per-status counts for the tabs.
+  useEffect(() => {
+    if (!jobId) {
+      setJobStatusCounts(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        // No `status` param here on purpose — every status is needed to
+        // tally the counts, not just whichever tab is currently active.
+        const res = await getApplicants({ jobId, pageNumber: 1, pageSize: 1000 });
+        if (cancelled) return;
+
+        const all = res.applicants || [];
+        const tally = { Applied: 0, InReview: 0, Shortlisted: 0, Interview: 0, Hired: 0, Rejected: 0 };
+        all.forEach((a) => {
+          if (Object.prototype.hasOwnProperty.call(tally, a.applicationStatus)) {
+            tally[a.applicationStatus] += 1;
+          }
+        });
+        setJobStatusCounts({ total: all.length, ...tally });
+      } catch (err) {
+        console.error("Failed to load per-job status counts", err);
+        if (!cancelled) setJobStatusCounts(null);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [jobId]);
+
   useEffect(() => {
     loadData(activeStatus, searchText, pageNumber, activeQuickFilters);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -254,14 +299,18 @@ const EmployerApplicantsClient = () => {
   }, []);
 
   /* ── Status tabs ── */
-  const statusTabs = dashboard ? [
-    { label: "All",         count: dashboard.totalApplicants, value: "" },
-    { label: "Applied",     count: dashboard.applied,         value: "Applied" },
-    { label: "In Review",   count: dashboard.inReview,        value: "InReview" },
-    { label: "Shortlisted", count: dashboard.shortlisted,     value: "Shortlisted" },
-    { label: "Interview",   count: dashboard.interview,       value: "Interview" },
-    { label: "Hired",       count: dashboard.hired,           value: "Hired" },
-    { label: "Rejected",    count: dashboard.rejected,        value: "Rejected" },
+  // When a specific job is selected, jobStatusCounts (computed above) is
+  // the source of truth — the global `dashboard` numbers would be wrong
+  // here since they're never scoped to a single job on the backend.
+  const counts = jobId ? jobStatusCounts : dashboard;
+  const statusTabs = counts ? [
+    { label: "All",         count: jobId ? counts.total : counts.totalApplicants, value: "" },
+    { label: "Applied",     count: counts.applied ?? counts.Applied,           value: "Applied" },
+    { label: "In Review",   count: counts.inReview ?? counts.InReview,         value: "InReview" },
+    { label: "Shortlisted", count: counts.shortlisted ?? counts.Shortlisted,   value: "Shortlisted" },
+    { label: "Interview",   count: counts.interview ?? counts.Interview,       value: "Interview" },
+    { label: "Hired",       count: counts.hired ?? counts.Hired,               value: "Hired" },
+    { label: "Rejected",    count: counts.rejected ?? counts.Rejected,         value: "Rejected" },
   ] : [];
 
   /* ── Change Status ── */
@@ -271,7 +320,7 @@ const EmployerApplicantsClient = () => {
     try {
       if      (selectedStatus === "InReview")    await moveToReview(statusPopup.applicationId, statusNote.trim());
       else if (selectedStatus === "Shortlisted") await shortlistApplicant(statusPopup.applicationId, statusNote.trim());
-      else if (selectedStatus === "Rejected")    await rejectApplicant(statusPopup.applicationId, rejectReason.trim(), rejectReason.trim());
+      else if (selectedStatus === "Rejected")    await rejectApplicant(statusPopup.applicationId, rejectReason, statusNote.trim());
       else if (selectedStatus === "Hired")       await hireApplicant(statusPopup.applicationId, statusNote.trim());
 
       // Optional note — only sent if the employer actually typed one.
@@ -1017,26 +1066,24 @@ const EmployerApplicantsClient = () => {
             </p>
           )}
 
-          {selectedStatus !== "Rejected" && (
-            <div style={{ marginBottom: "16px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                <label style={{ fontSize: "13px", fontWeight: 600, color: "#374151", margin: 0 }}>
-                  Add a note (optional):
-                </label>
-                <span style={{ fontSize: "12px", fontWeight: 600, color: getWordCount(statusNote) > 100 ? "#dc2626" : "#6b7280" }}>
-                  {getWordCount(statusNote)} / 100 words
-                </span>
-              </div>
-              <textarea
-                className="form-control"
-                rows={3}
-                placeholder="e.g. Strong communication skills, follow up next week…"
-                value={statusNote}
-                onChange={(e) => setStatusNote(e.target.value)}
-                style={getWordCount(statusNote) > 100 ? { borderColor: "#dc2626" } : undefined}
-              />
+          <div style={{ marginBottom: "16px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+              <label style={{ fontSize: "13px", fontWeight: 600, color: "#374151", margin: 0 }}>
+                Add a note (optional):
+              </label>
+              <span style={{ fontSize: "12px", fontWeight: 600, color: getWordCount(statusNote) > 100 ? "#dc2626" : "#6b7280" }}>
+                {getWordCount(statusNote)} / 100 words
+              </span>
             </div>
-          )}
+            <textarea
+              className="form-control"
+              rows={3}
+              placeholder="e.g. Strong communication skills, follow up next week…"
+              value={statusNote}
+              onChange={(e) => setStatusNote(e.target.value)}
+              style={getWordCount(statusNote) > 100 ? { borderColor: "#dc2626" } : undefined}
+            />
+          </div>
 
           <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
             <button className="btn btn-border btn-sm" onClick={() => { setStatusPopup(null); setStatusNote(""); setExistingNotes([]); }}>Cancel</button>
