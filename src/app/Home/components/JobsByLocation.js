@@ -39,16 +39,40 @@ export default function JobsByLocation() {
           }
         });
 
-        const activeLocations = Object.values(countryMap).map((loc, idx) => {
-          const imgIndex = (idx % 6) + 1;
+        // Countries with a dedicated, purpose-made image use that image
+        // directly. Any other country falls back to a random pick from
+        // the 6 generic stock location images (so it doesn't always
+        // land on the same one for the same position in the list).
+        //
+        // Multiple keys can point at the same image — resolveCountry()
+        // may return "UAE" or the spelled-out "United Arab Emirates"
+        // depending on the source string, and offshore jobs can resolve
+        // to either "Offshore" or "Arabian Sea", so both variants are
+        // mapped here to keep the dedicated image showing either way.
+        const COUNTRY_IMAGE_MAP = {
+          India: "/assets/imgs/page/homepage1/India.webp",
+          Qatar: "/assets/imgs/page/homepage1/Qatar.webp",
+          UAE: "/assets/imgs/page/homepage1/UAE.jpg",
+          "United Arab Emirates": "/assets/imgs/page/homepage1/UAE.jpg",
+          Offshore: "/assets/imgs/page/homepage1/Offshore.webp",
+          "Arabian Sea": "/assets/imgs/page/homepage1/Offshore.webp",
+        };
+
+        const activeLocations = Object.values(countryMap).map((loc) => {
+          const mappedImg = COUNTRY_IMAGE_MAP[loc.country];
+          const randomImgIndex = Math.floor(Math.random() * 6) + 1;
+
           return {
             country: loc.country,
             vacancies: loc.vacancies,
             companies: loc.companies.size,
             badge: loc.vacancies > 10 ? "Hot" : loc.vacancies > 5 ? "Trending" : "",
-            img: `/assets/imgs/page/homepage1/location${imgIndex}.png`,
+            img:
+              mappedImg ||
+              `/assets/imgs/page/homepage1/location${randomImgIndex}.png`,
           };
         });
+        
 
         // Sort locations by number of vacancies descending
         activeLocations.sort((a, b) => b.vacancies - a.vacancies);
