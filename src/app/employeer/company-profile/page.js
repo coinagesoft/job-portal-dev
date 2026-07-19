@@ -1109,7 +1109,6 @@ export default function EmployerCompanyProfilePage() {
             <div
               className="image-compay"
               style={{
-                position: "relative",
                 zIndex: 10,
                 width: "110px",
               }}
@@ -1163,13 +1162,18 @@ export default function EmployerCompanyProfilePage() {
                 />
               </label>
             </div>
-            <div className="row mt-2">
+            <div className="row mt-2" style={{ paddingTop: 18 }}>
               <div className="col-lg-8 col-md-12">
-                <h5 className="f-18">
+                <h5 className="f-18" style={{ margin: "0 0 6px" }}>
                   {company.displayName}
-
                 </h5>
-                <p className=" font-md color-text-paragraph-2 mb-15">
+                <span
+                  className="card-location font-regular"
+                  style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+                >
+                  {company.location}
+                </span>
+                <p className="font-md color-text-paragraph-2 mb-15" style={{ marginTop: 10 }}>
                   {company.tagline}
                 </p>
                 {/* Stats row */}
@@ -1196,23 +1200,20 @@ export default function EmployerCompanyProfilePage() {
                   ))}
                 </div> */}
               </div>
-              <span className="card-location font-regular ml-20">
-                {company.location}
-              </span>
             </div>
           </div>
 
           {/* Tab nav */}
-          <div className="box-nav-tabs mt-40 mb-5">
-            <ul className="nav" role="tablist">
+          <div className="box-nav-tabs" style={{ marginTop: 28, marginBottom: 8 }}>
+            <ul className="nav" role="tablist" style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
               {[
                 ["about", "About Us"],
                 ["recruitments", "Recruitments"],
                 ["people", "People"],
               ].map(([key, label]) => (
-                <li key={key}>
+                <li key={key} style={{ margin: 0 }}>
                   <button
-                    className={`btn btn-border mr-15 mb-5 ${activeTab === key ? "active" : ""}`}
+                    className={`btn btn-border ${activeTab === key ? "active" : ""}`}
                     onClick={() => setActiveTab(key)}
                     style={{
                       border:
@@ -1226,11 +1227,11 @@ export default function EmployerCompanyProfilePage() {
               ))}
             </ul>
           </div>
-          <div className="border-bottom pt-10 pb-10" />
+          <div className="border-bottom" style={{ marginTop: 8, marginBottom: 8 }} />
         </div>
       </section>
 
-      <section className="section-box mt-50">
+      <section className="section-box mt-40">
         <div className="container">
           <div className="row">
             {/* Main content */}
