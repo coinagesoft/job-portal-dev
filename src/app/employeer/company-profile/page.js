@@ -1232,13 +1232,13 @@ export default function EmployerCompanyProfilePage() {
         </div>
       </section>
 
-      <section className="section-box mt-50">
+      <section className="section-box mb-3">
         <div className="container">
           <div className="row">
             {/* Main content */}
             <div className="col-lg-8 col-md-12 col-sm-12">
               {activeTab === "about" && (
-                <div className="content-single">
+                <div className="content-single ">
                   <h4>Welcome to {company.displayName}</h4>
                   {/* <div className="form-group mb-20">
                     <label className="form-label">Company description</label>
