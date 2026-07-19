@@ -126,6 +126,19 @@ const EmployerVerificationPage = () => {
       setUploadMsg(null);
       await uploadDocument(uploadType, file);
       setUploadMsg({ type: "success", text: "Document uploaded successfully." });
+
+      // Reflect the upload immediately rather than waiting on the refetch
+      // below — if that GET is ever slow, or briefly returns a cached
+      // response, the user would otherwise see the success message with
+      // no visible change in the list underneath it.
+      setDocuments((prev) =>
+        prev.map((doc) =>
+          doc.documentType === uploadType
+            ? { ...doc, status: "Uploaded", uploadedAt: new Date().toISOString() }
+            : doc
+        )
+      );
+
       await loadVerification();
     } catch (err) {
       console.error("uploadDocument error:", err);

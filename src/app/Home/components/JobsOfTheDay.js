@@ -58,7 +58,6 @@ export default function JobsOfTheDay() {
         const allJobs = response.data || [];
         const now = new Date();
 
-        // Group all jobs by industryType to collect all categories
         const grouped = {};
         allJobs.forEach((job) => {
           const industry = job.industryType || "Other";
@@ -68,8 +67,6 @@ export default function JobsOfTheDay() {
           grouped[industry].push(job);
         });
 
-        // Count only jobs actually posted within the last 24 hours,
-        // per category, so the tab badge reflects "posted today" counts.
         const todaysCountByCategory = {};
         let todaysTotalCount = 0;
         allJobs.forEach((job) => {
@@ -79,8 +76,6 @@ export default function JobsOfTheDay() {
           todaysTotalCount += 1;
         });
 
-        // Only show a category tab if it actually has a job posted today.
-        // If none qualify, only the "All" tab remains.
         const categoryTabs = Object.keys(grouped)
           .filter((industryName) => (todaysCountByCategory[industryName] || 0) > 0)
           .map((industryName) => ({
@@ -89,7 +84,6 @@ export default function JobsOfTheDay() {
             count: todaysCountByCategory[industryName],
           }));
 
-        // Sort alphabetically but always keep "Other" at the end
         categoryTabs.sort((a, b) => {
           const aIsOther = a.label.trim().toLowerCase() === "other";
           const bIsOther = b.label.trim().toLowerCase() === "other";
@@ -100,7 +94,6 @@ export default function JobsOfTheDay() {
           return a.label.localeCompare(b.label);
         });
 
-        // "All" tab goes first and aggregates every job regardless of category
         const activeTabs = [
           { label: ALL_TAB_LABEL, icon: "fa-solid fa-layer-group", count: todaysTotalCount },
           ...categoryTabs,
@@ -155,7 +148,6 @@ export default function JobsOfTheDay() {
                       aria-controls={`tab-job-${index + 1}`}
                       aria-selected={activeTab === index}
                     >
-                      {/* <i className={tab.icon}></i> */}
                       <span>
                         {tab.label}
                         <span
@@ -199,7 +191,10 @@ export default function JobsOfTheDay() {
                     role="tabpanel"
                     aria-labelledby={`nav-tab-job-${index + 1}`}
                   >
-                    <div className="row">
+                    {/* d-flex + flex-wrap on .row makes every column stretch to the
+                        tallest card in that row (Bootstrap's .row is already flex,
+                        this just makes the stretch explicit and consistent) */}
+                    <div className="row d-flex flex-wrap align-items-stretch">
                       {recentTabJobs.length === 0 ? (
                         <div className="text-center w-100 py-5">
                           <p className="font-lg color-text-paragraph-2">
@@ -235,11 +230,11 @@ export default function JobsOfTheDay() {
                           return (
                             <div
                               key={job.jobId}
-                              className="col-xl-3 col-lg-4 col-md-6 col-sm-6 col-12 mb-30"
+                              className="col-xl-3 col-lg-4 col-md-6 col-sm-6 col-12 mb-30 d-flex"
                             >
-                              <div className="card-grid-2 grid-bd-16 hover-up">
+                              <div className="card-grid-2 grid-bd-16 hover-up job-card-equal">
                                 <div className="card-block-info pt-25 px-4 pb-4">
-                                  <h6>
+                                  <h6 className="job-title-clamp">
                                     <Link href={`/job-details?jobId=${job.jobId}`} className="color-brand-1">
                                       {job.jobTitle}
                                     </Link>
@@ -253,8 +248,9 @@ export default function JobsOfTheDay() {
                                     <span className="card-time">{getTimeAgo(job.postedOn)}</span>
                                   </div>
 
-                                  {/* TAGS */}
-                                  <div className="mt-20 border-bottom pb-20">
+                                  {/* TAGS - fixed height row so 1-tag and 2-tag
+                                      cards don't differ in height */}
+                                  <div className="mt-20 border-bottom pb-20 tags-row">
                                     {slicedTags.map((tag, tagIndex) => (
                                       <Link
                                         key={tagIndex}
@@ -266,7 +262,9 @@ export default function JobsOfTheDay() {
                                     ))}
                                   </div>
 
-                                  {/* FOOTER */}
+                                  {/* FOOTER - margin-top:auto pins this to the
+                                      bottom of the card regardless of how much
+                                      text is above it */}
                                   <div className="card-2-bottom company-footer">
                                     <img
                                       className="company-logo"
@@ -275,20 +273,19 @@ export default function JobsOfTheDay() {
                                     />
 
                                     <div className="company-details">
+                                      {displayCompany && (
+                                        <h6 className="company-name company-name-clamp">
+                                          {displayCompany}
+                                        </h6>
+                                      )}
 
-                                      <h6 className="company-name">
-                                        {displayCompany}
-                                      </h6>
-
-                                      <span className="company-location">
-                                        <i className="fi-rr-marker"></i>
-                                        {job.jobLocation}
+                                      <span className="company-location" style={{ marginLeft: "-2px" }}>
+                                        <i className="fi-rr-marker" style={{ fontSize: "12px" }}></i>
+                                        <span className="location-clamp">
+                                          {job.jobLocation}
+                                        </span>
                                       </span>
-
-
-
                                     </div>
-
                                   </div>
                                   <div className="salary-row mt-2">
                                     <span className="salary">
@@ -318,6 +315,59 @@ export default function JobsOfTheDay() {
 
       <style jsx>{`
         /* =========================================
+           EQUAL-HEIGHT CARDS
+        ========================================= */
+
+        /* Column becomes a flex item so the card inside can grow to 100% height */
+        .job-card-equal {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+        }
+
+        /* Inner content area also becomes a column flex container so the
+           footer/salary block can be pinned to the bottom */
+        .job-card-equal .card-block-info {
+          flex: 1 1 auto;
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+        }
+
+        /* Clamp the title to 2 lines so a long title and a short title
+           take up the same vertical space */
+        .job-title-clamp {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          min-height: 44px;
+        }
+
+        /* Reserve consistent space for the tag row whether there's 1 or 2 tags */
+        .tags-row {
+          min-height: 66px;
+        }
+
+        /* Clamp company name and location so longer names/addresses
+           don't push the card taller than others in the row */
+        .company-name-clamp {
+          display: -webkit-box;
+          -webkit-line-clamp: 1;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+
+        .location-clamp {
+          display: -webkit-box;
+          -webkit-line-clamp: 1;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        /* =========================================
            TABS
         ========================================= */
 .tab-count{
@@ -333,10 +383,9 @@ export default function JobsOfTheDay() {
 
 .company-footer{
     display:flex;
-    gap:16px;
-    align-items:flex-start;
-    margin-top:auto;
-    padding-top:20px;
+    gap:10px;
+    align-items:center;
+    margin-top:20px;
 }
 
 .company-logo{
@@ -350,8 +399,10 @@ export default function JobsOfTheDay() {
 .company-details{
     display:flex;
     flex-direction:column;
-    gap:8px;
+    align-items:flex-start;
+    gap:2px;
     flex:1;
+    min-width:0;
 }
 
 .company-name{

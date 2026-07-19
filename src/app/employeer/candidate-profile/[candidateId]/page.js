@@ -672,11 +672,8 @@ const EmployerCandidateProfilePage = () => {
                       <div
                         className="employer-cv-surface-card"
                         style={{
-                          borderRadius: "18px",
                           padding: "26px",
                           marginTop: "30px",
-                          border: "1px solid rgba(18,35,89,0.06)",
-                          boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
                         }}
                       >
                         <div>
@@ -700,11 +697,8 @@ const EmployerCandidateProfilePage = () => {
                       <div
                         className="employer-cv-surface-card"
                         style={{
-                          borderRadius: "18px",
                           padding: "26px",
                           marginTop: "20px",
-                          border: "1px solid rgba(18,35,89,0.06)",
-                          boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
                         }}
                       >
                         <h5
@@ -856,11 +850,8 @@ const EmployerCandidateProfilePage = () => {
                       <div
                         className="employer-cv-surface-card"
                         style={{
-                          borderRadius: "18px",
                           padding: "24px",
                           marginTop: "30px",
-                          border: "1px solid rgba(18,35,89,0.06)",
-                          boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
                         }}
                       >
                         <h5
@@ -923,11 +914,8 @@ const EmployerCandidateProfilePage = () => {
                       <div
                         className="employer-cv-surface-card"
                         style={{
-                          borderRadius: "18px",
                           padding: "24px",
                           marginTop: "20px",
-                          border: "1px solid rgba(18,35,89,0.06)",
-                          boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
                         }}
                       >
                         <h5
@@ -1081,10 +1069,7 @@ const EmployerCandidateProfilePage = () => {
                               className="employer-cv-surface-card"
                               style={{
                                 flex: 1,
-                                borderRadius: "16px",
                                 padding: "18px 22px",
-                                border: "1px solid rgba(18,35,89,0.06)",
-                                boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
                               }}
                             >
                               <div

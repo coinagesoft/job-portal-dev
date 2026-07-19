@@ -121,6 +121,13 @@ const COMPANY_TYPES = [
   { value: "enterprise", label: "Enterprise" },
   { value: "government", label: "Government" },
   { value: "non-profit", label: "Non-profit" },
+  { value: "product-based", label: "Product-based" },
+  { value: "service-based", label: "Service-based" },
+  { value: "consulting", label: "Consulting" },
+  { value: "manufacturing", label: "Manufacturing" },
+  { value: "trading-distribution", label: "Trading / Distribution" },
+  { value: "agency", label: "Agency" },
+  { value: "outsourcing-bpo", label: "Outsourcing / BPO" },
 ];
 
 const labelFor = (list, value) =>
@@ -145,7 +152,7 @@ const getStateNamesForCountry = (countryIso) =>
 const getStateIso = (countryIso, stateName) =>
   countryIso
     ? State.getStatesOfCountry(countryIso).find((s) => s.name === stateName)
-        ?.isoCode || ""
+      ?.isoCode || ""
     : "";
 
 const getCityNamesForState = (countryIso, stateIso) =>
@@ -484,8 +491,8 @@ function Combobox({ value, onChange, options, placeholder, error, disabled }) {
               }}
               onMouseEnter={(e) => (e.currentTarget.style.background = "#FFF4E0")}
               onMouseLeave={(e) =>
-                (e.currentTarget.style.background =
-                  opt.label === query ? "#FFF4E0" : "transparent")
+              (e.currentTarget.style.background =
+                opt.label === query ? "#FFF4E0" : "transparent")
               }
             >
               {opt.label}
@@ -996,7 +1003,7 @@ function CandidateForm() {
   const [socialAuth, setSocialAuth] = useState(null);
 
   const [attemptSubmit, setAttemptSubmit] = useState(false);
-// shape: { provider: "google" | "linkedin", accessToken }
+  // shape: { provider: "google" | "linkedin", accessToken }
   const [otpToken, setOtpToken] = useState("");
   const [form, setForm] = useState({
     name: "",
@@ -1026,18 +1033,18 @@ function CandidateForm() {
   const [loading, setLoading] = useState(false);
   const [paymentMessage, setPaymentMessage] = useState("");
   const [registering, setRegistering] = useState(false);
-   const isSocialVerified = !!socialAuth;
+  const isSocialVerified = !!socialAuth;
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
-useEffect(() => {
-  const pending = sessionStorage.getItem("linkedinVerifiedState");
-  if (pending) {
-    const { accessToken, email, fullName, mobileNumber, countryCode } = JSON.parse(pending);
-    setForm((p) => ({ ...p, name: fullName || p.name, email, mobile: mobileNumber || p.mobile, countryCode: countryCode || p.countryCode }));
-    setEmailOtp((p) => ({ ...p, sent: true, verified: true }));
-    setSocialAuth({ provider: "linkedin", accessToken });
-    sessionStorage.removeItem("linkedinVerifiedState");
-  }
-}, []);
+  useEffect(() => {
+    const pending = sessionStorage.getItem("linkedinVerifiedState");
+    if (pending) {
+      const { accessToken, email, fullName, mobileNumber, countryCode } = JSON.parse(pending);
+      setForm((p) => ({ ...p, name: fullName || p.name, email, mobile: mobileNumber || p.mobile, countryCode: countryCode || p.countryCode }));
+      setEmailOtp((p) => ({ ...p, sent: true, verified: true }));
+      setSocialAuth({ provider: "linkedin", accessToken });
+      sessionStorage.removeItem("linkedinVerifiedState");
+    }
+  }, []);
   const sendMobileOtp = async () => {
     try {
       const response = await sendOtp({
@@ -1259,155 +1266,155 @@ useEffect(() => {
     }
   };
 
-  
+
   const canShowPayment = mobileOtp.verified || emailOtp.verified;
   const canSubmit = canShowPayment && terms && payStatus === "success";
 
-// paymentOverride lets the Razorpay success handler pass the just-received
-// razorpayOrderId/PaymentId/Signature straight through, since React state
-// (paymentData) hasn't re-rendered yet at that point in the callback.
-const handleCandidateSubmit = async (paymentOverride) => {
+  // paymentOverride lets the Razorpay success handler pass the just-received
+  // razorpayOrderId/PaymentId/Signature straight through, since React state
+  // (paymentData) hasn't re-rendered yet at that point in the callback.
+  const handleCandidateSubmit = async (paymentOverride) => {
     setAttemptSubmit(true);
 
-  if (!form.name.trim()) {
-    showToast("Please enter your full name.", "error");
-    return;
-  }
-
-  if (!terms) {
-    showToast("Please accept the Terms of Service to continue.", "error");
-    return;
-  }
-
-  if (!socialAuth) {
-    const hasVerifiedMobile = mobileOtp.verified;
-    const hasVerifiedEmail = emailOtp.verified;
-
-    if (!hasVerifiedMobile && !hasVerifiedEmail) {
-      showToast("Please verify your mobile number or email address to continue.", "error");
+    if (!form.name.trim()) {
+      showToast("Please enter your full name.", "error");
       return;
     }
 
-    // If they typed an email but never verified it, don't silently drop it —
-    // ask them to finish verifying or clear the field.
-    if (form.email.trim() && !emailOtp.verified) {
-      showToast("Please verify your email address, or remove it to continue with mobile only.", "error");
-      return;
-    }
-  }
-
-  const payInfo = paymentOverride || paymentData;
-
-  try {
-    setRegistering(true);
-
-    if (socialAuth) {
-      const registerFn =
-        socialAuth.provider === "google" ? registerWithGoogle : registerWithLinkedIn;
-
-      const response = await registerFn({
-        accessToken: socialAuth.accessToken,
-        fullName: form.name,
-        mobileNumber: form.mobile ? form.mobile.replace(/\D/g, "") : null,
-        countryCode: form.mobile ? form.countryCode : null,
-        termsAccepted: terms,
-        razorpayOrderId: payInfo.razorpayOrderId,
-        razorpayPaymentId: payInfo.razorpayPaymentId,
-        razorpaySignature: payInfo.razorpaySignature,
-      });
-
-      if (response.data.success) {
-        localStorage.setItem("token", response.data.token);
-        showToast(response.data.message, "success");
-        setTimeout(() => router.push("/Login"), 1000);
-      } else {
-        showToast(response.data.message, "error");
-      }
+    if (!terms) {
+      showToast("Please accept the Terms of Service to continue.", "error");
       return;
     }
 
-    // existing OTP-based path — unchanged
-    const response = await registerCandidate({
-      fullName: form.name,
-      mobileNumber: form.mobile.replace(/\D/g, ""),
-      countryCode: form.countryCode,
-      email: form.email,
-      otpToken,
-      razorpayOrderId: payInfo.razorpayOrderId,
-      razorpayPaymentId: payInfo.razorpayPaymentId,
-      razorpaySignature: payInfo.razorpaySignature,
-      termsAccepted: terms,
-    });
+    if (!socialAuth) {
+      const hasVerifiedMobile = mobileOtp.verified;
+      const hasVerifiedEmail = emailOtp.verified;
 
-    showToast(response.data.message, "success");
-    setTimeout(() => router.push("/Login"), 1000);
-  }catch (err) {
-  console.log("REGISTER ERROR", err);
-  console.log("STATUS", err?.response?.status);
-  console.log("DATA", err?.response?.data);
-
-  showToast(
-    err?.response?.data?.message || "Registration failed",
-    "error"
-  );
-} finally {
-  setRegistering(false);
-}
-};
-
-
-const handleGoogleRegister = () => {
-  if (typeof window === "undefined" || !window.google) {
-    showToast("Google sign-in is still loading, try again", "error");
-    return;
-  }
-
-  const client = window.google.accounts.oauth2.initTokenClient({
-    client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
-    scope: "openid email profile",
-    callback: async (tokenResponse) => {
-      if (!tokenResponse?.access_token) {
-        showToast("Google sign-in failed", "error");
+      if (!hasVerifiedMobile && !hasVerifiedEmail) {
+        showToast("Please verify your mobile number or email address to continue.", "error");
         return;
       }
 
-      try {
-        const response = await verifyWithGoogle({
-          accessToken: tokenResponse.access_token,
+      // If they typed an email but never verified it, don't silently drop it —
+      // ask them to finish verifying or clear the field.
+      if (form.email.trim() && !emailOtp.verified) {
+        showToast("Please verify your email address, or remove it to continue with mobile only.", "error");
+        return;
+      }
+    }
+
+    const payInfo = paymentOverride || paymentData;
+
+    try {
+      setRegistering(true);
+
+      if (socialAuth) {
+        const registerFn =
+          socialAuth.provider === "google" ? registerWithGoogle : registerWithLinkedIn;
+
+        const response = await registerFn({
+          accessToken: socialAuth.accessToken,
+          fullName: form.name,
+          mobileNumber: form.mobile ? form.mobile.replace(/\D/g, "") : null,
+          countryCode: form.mobile ? form.countryCode : null,
+          termsAccepted: terms,
+          razorpayOrderId: payInfo.razorpayOrderId,
+          razorpayPaymentId: payInfo.razorpayPaymentId,
+          razorpaySignature: payInfo.razorpaySignature,
         });
 
         if (response.data.success) {
-          setForm((p) => ({
-            ...p,
-            name: response.data.fullName || p.name,
-            email: response.data.email,
-          }));
-          setEmailOtp((p) => ({ ...p, sent: true, verified: true }));
-          setSocialAuth({ provider: "google", accessToken: tokenResponse.access_token });
-          showToast("Google account verified. Complete payment to finish.", "success");
+          localStorage.setItem("token", response.data.token);
+          showToast(response.data.message, "success");
+          setTimeout(() => router.push("/Login"), 1000);
         } else {
           showToast(response.data.message, "error");
         }
-      } catch (err) {
-        showToast(err?.response?.data?.message || "Verification failed", "error");
+        return;
       }
-    },
-  });
 
-  client.requestAccessToken();
-};
+      // existing OTP-based path — unchanged
+      const response = await registerCandidate({
+        fullName: form.name,
+        mobileNumber: form.mobile.replace(/\D/g, ""),
+        countryCode: form.countryCode,
+        email: form.email,
+        otpToken,
+        razorpayOrderId: payInfo.razorpayOrderId,
+        razorpayPaymentId: payInfo.razorpayPaymentId,
+        razorpaySignature: payInfo.razorpaySignature,
+        termsAccepted: terms,
+      });
 
-const handleLinkedInRegister = () => {
-  const redirectUri = `${window.location.origin}/linkedin/register`;
-  const params = new URLSearchParams({
-    response_type: "code",
-    client_id: process.env.NEXT_PUBLIC_LINKEDIN_CLIENT_ID,
-    redirect_uri: redirectUri,
-    scope: "openid profile email",
-  });
+      showToast(response.data.message, "success");
+      setTimeout(() => router.push("/Login"), 1000);
+    } catch (err) {
+      console.log("REGISTER ERROR", err);
+      console.log("STATUS", err?.response?.status);
+      console.log("DATA", err?.response?.data);
 
-  window.location.href = `https://www.linkedin.com/oauth/v2/authorization?${params.toString()}`;
-};
+      showToast(
+        err?.response?.data?.message || "Registration failed",
+        "error"
+      );
+    } finally {
+      setRegistering(false);
+    }
+  };
+
+
+  const handleGoogleRegister = () => {
+    if (typeof window === "undefined" || !window.google) {
+      showToast("Google sign-in is still loading, try again", "error");
+      return;
+    }
+
+    const client = window.google.accounts.oauth2.initTokenClient({
+      client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+      scope: "openid email profile",
+      callback: async (tokenResponse) => {
+        if (!tokenResponse?.access_token) {
+          showToast("Google sign-in failed", "error");
+          return;
+        }
+
+        try {
+          const response = await verifyWithGoogle({
+            accessToken: tokenResponse.access_token,
+          });
+
+          if (response.data.success) {
+            setForm((p) => ({
+              ...p,
+              name: response.data.fullName || p.name,
+              email: response.data.email,
+            }));
+            setEmailOtp((p) => ({ ...p, sent: true, verified: true }));
+            setSocialAuth({ provider: "google", accessToken: tokenResponse.access_token });
+            showToast("Google account verified. Complete payment to finish.", "success");
+          } else {
+            showToast(response.data.message, "error");
+          }
+        } catch (err) {
+          showToast(err?.response?.data?.message || "Verification failed", "error");
+        }
+      },
+    });
+
+    client.requestAccessToken();
+  };
+
+  const handleLinkedInRegister = () => {
+    const redirectUri = `${window.location.origin}/linkedin/register`;
+    const params = new URLSearchParams({
+      response_type: "code",
+      client_id: process.env.NEXT_PUBLIC_LINKEDIN_CLIENT_ID,
+      redirect_uri: redirectUri,
+      scope: "openid profile email",
+    });
+
+    window.location.href = `https://www.linkedin.com/oauth/v2/authorization?${params.toString()}`;
+  };
   return (
     <div>
       <Alert type="info">
@@ -1419,7 +1426,7 @@ const handleLinkedInRegister = () => {
         strategy="lazyOnload"
       />
 
-    <Field
+      <Field
         label="Full Name"
         required
         error={attemptSubmit && !form.name.trim() ? "Full name is required" : null}
@@ -1448,49 +1455,49 @@ const handleLinkedInRegister = () => {
       </Field>
 
       <Field
-  label="Email"
-  hint={!form.email || isValidEmail(form.email) ? "Optional — verify to improve account security" : null}
-  error={form.email && !isValidEmail(form.email) ? "Enter a complete, valid email address" : null}
->
-  <Input
-    type="email"
-    placeholder="Enter your email address (e.g. john@example.com)"
-    value={form.email}
-    error={form.email && !isValidEmail(form.email)}
-    disabled={isSocialVerified || emailOtp.verified}
-    onChange={(e) => {
-      const val = e.target.value;
-      if (val && /^\d+$/.test(val)) return;
-      set("email", val);
-    }}
-    style={{
-      borderColor: emailOtp.verified ? "#3B6D11" : undefined,
-      backgroundColor: emailOtp.verified ? "#f4f9f1" : undefined,
-      color: emailOtp.verified ? "#2b4e0c" : undefined,
-      border: emailOtp.verified ? "1px solid #3B6D11" : undefined,
-    }}
-  />
-  {form.email && isValidEmail(form.email) && (
-    <div style={{ marginTop: 8 }}>
-      <OtpBlock
-        target="email"
-        sent={emailOtp.sent}
-        verified={emailOtp.verified}
-        disabled={!isValidEmail(form.email)}
-        onSend={sendEmail}
-        onResend={sendEmail}
-        onVerify={verifyEmail}
-        otpVal={emailOtp.userVal}
-        setOtpVal={(v) =>
-          setEmailOtp((p) => ({
-            ...p,
-            userVal: v,
-          }))
-        }
-      />
-    </div>
-  )}
-</Field>
+        label="Email"
+        hint={!form.email || isValidEmail(form.email) ? "Optional — verify to improve account security" : null}
+        error={form.email && !isValidEmail(form.email) ? "Enter a complete, valid email address" : null}
+      >
+        <Input
+          type="email"
+          placeholder="Enter your email address (e.g. john@example.com)"
+          value={form.email}
+          error={form.email && !isValidEmail(form.email)}
+          disabled={isSocialVerified || emailOtp.verified}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val && /^\d+$/.test(val)) return;
+            set("email", val);
+          }}
+          style={{
+            borderColor: emailOtp.verified ? "#3B6D11" : undefined,
+            backgroundColor: emailOtp.verified ? "#f4f9f1" : undefined,
+            color: emailOtp.verified ? "#2b4e0c" : undefined,
+            border: emailOtp.verified ? "1px solid #3B6D11" : undefined,
+          }}
+        />
+        {form.email && isValidEmail(form.email) && (
+          <div style={{ marginTop: 8 }}>
+            <OtpBlock
+              target="email"
+              sent={emailOtp.sent}
+              verified={emailOtp.verified}
+              disabled={!isValidEmail(form.email)}
+              onSend={sendEmail}
+              onResend={sendEmail}
+              onVerify={verifyEmail}
+              otpVal={emailOtp.userVal}
+              setOtpVal={(v) =>
+                setEmailOtp((p) => ({
+                  ...p,
+                  userVal: v,
+                }))
+              }
+            />
+          </div>
+        )}
+      </Field>
 
       {canShowPayment && payStatus !== "success" && (
         <div style={{ marginBottom: 14 }}>
@@ -1584,7 +1591,7 @@ const handleLinkedInRegister = () => {
 
           <span
             style={{
-              fontSize: 13,
+              fontSize: 14,
               color: "var(--color-text-tertiary)",
               fontWeight: 600,
             }}
@@ -1601,106 +1608,106 @@ const handleLinkedInRegister = () => {
           />
         </div>
 
-     {/* Social Register */}
-{!socialAuth ? (
-  <div
-    style={{
-      display: "flex",
-      flexDirection: "column",
-      gap: 14,
-    }}
-  >
-    {/* Google */}
-    <button
-      type="button"
-      onClick={handleGoogleRegister}
-      style={{
-        width: "100%",
-        height: 54,
-        borderRadius: 10,
-        border: "1px solid #ffc151",
-        background: "#ffffff",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 12,
-        fontWeight: 600,
-        fontSize: 14,
-        color: "#122359",
-        cursor: "pointer",
-        transition: "all 0.25s ease",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = "#ff9900";
-        e.currentTarget.style.color = "#ffffff";
-        e.currentTarget.style.transform = "translateY(-2px)";
-        e.currentTarget.style.boxShadow =
-          "0 8px 20px rgba(255,153,0,0.18)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = "#ffffff";
-        e.currentTarget.style.color = "#122359";
-        e.currentTarget.style.transform = "translateY(0px)";
-        e.currentTarget.style.boxShadow = "none";
-      }}
-    >
-      <img
-        src="https://www.svgrepo.com/show/475656/google-color.svg"
-        alt="google"
-        width={20}
-        height={20}
-      />
-      Register with Google
-    </button>
+        {/* Social Register */}
+        {!socialAuth ? (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 14,
+            }}
+          >
+            {/* Google */}
+            <button
+              type="button"
+              onClick={handleGoogleRegister}
+              style={{
+                width: "100%",
+                height: 54,
+                borderRadius: 10,
+                border: "1px solid #ffc151",
+                background: "#ffffff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 12,
+                fontWeight: 600,
+                fontSize: 15,
+                color: "#122359",
+                cursor: "pointer",
+                transition: "all 0.25s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#ff9900";
+                e.currentTarget.style.color = "#ffffff";
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.boxShadow =
+                  "0 8px 20px rgba(255,153,0,0.18)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "#ffffff";
+                e.currentTarget.style.color = "#122359";
+                e.currentTarget.style.transform = "translateY(0px)";
+                e.currentTarget.style.boxShadow = "none";
+              }}
+            >
+              <img
+                src="https://www.svgrepo.com/show/475656/google-color.svg"
+                alt="google"
+                width={20}
+                height={20}
+              />
+              Register with Google
+            </button>
 
-    {/* LinkedIn */}
-    <button
-      type="button"
-      onClick={handleLinkedInRegister}
-      style={{
-        width: "100%",
-        height: 54,
-        borderRadius: 10,
-        border: "1px solid #ffc151",
-        background: "#ffffff",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 12,
-        fontWeight: 600,
-        fontSize: 14,
-        color: "#122359",
-        cursor: "pointer",
-        transition: "all 0.25s ease",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = "#ff9900";
-        e.currentTarget.style.color = "#ffffff";
-        e.currentTarget.style.transform = "translateY(-2px)";
-        e.currentTarget.style.boxShadow =
-          "0 8px 20px rgba(255,153,0,0.18)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = "#ffffff";
-        e.currentTarget.style.color = "#122359";
-        e.currentTarget.style.transform = "translateY(0px)";
-        e.currentTarget.style.boxShadow = "none";
-      }}
-    >
-      <img
-        src="https://cdn-icons-png.flaticon.com/512/3536/3536505.png"
-        alt="linkedin"
-        width={18}
-        height={18}
-      />
-      Register with LinkedIn
-    </button>
-  </div>
-) : (
-  <Alert type="success">
-    ✓ Verified via {socialAuth.provider === "google" ? "Google" : "LinkedIn"} — complete payment below to finish registration.
-  </Alert>
-)}
+            {/* LinkedIn */}
+            <button
+              type="button"
+              onClick={handleLinkedInRegister}
+              style={{
+                width: "100%",
+                height: 54,
+                borderRadius: 10,
+                border: "1px solid #ffc151",
+                background: "#ffffff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 12,
+                fontWeight: 600,
+                fontSize: 15,
+                color: "#122359",
+                cursor: "pointer",
+                transition: "all 0.25s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#ff9900";
+                e.currentTarget.style.color = "#ffffff";
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.boxShadow =
+                  "0 8px 20px rgba(255,153,0,0.18)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "#ffffff";
+                e.currentTarget.style.color = "#122359";
+                e.currentTarget.style.transform = "translateY(0px)";
+                e.currentTarget.style.boxShadow = "none";
+              }}
+            >
+              <img
+                src="https://cdn-icons-png.flaticon.com/512/3536/3536505.png"
+                alt="linkedin"
+                width={18}
+                height={18}
+              />
+              Register with LinkedIn
+            </button>
+          </div>
+        ) : (
+          <Alert type="success">
+            ✓ Verified via {socialAuth.provider === "google" ? "Google" : "LinkedIn"} — complete payment below to finish registration.
+          </Alert>
+        )}
       </div>
 
       {/* Registration completes automatically once payment succeeds (see the
@@ -1933,14 +1940,14 @@ function EmployerForm() {
     PIN_REGEX.test(data.pincode) &&
     !!data.address &&
     isGstnValid;
-const isStep4Valid =
-  data.contactName &&
-  data.designation &&
-  isValidEmail(data.contactPersonEmail) &&
-  isValidEmail(data.corpEmail) &&
-  isValidMobile(data.mobile, data.countryCode) &&
-  data.mobileOtp.verified &&
-  data.corpEmailOtp.verified;
+  const isStep4Valid =
+    data.contactName &&
+    data.designation &&
+    isValidEmail(data.contactPersonEmail) &&
+    isValidEmail(data.corpEmail) &&
+    isValidMobile(data.mobile, data.countryCode) &&
+    data.mobileOtp.verified &&
+    data.corpEmailOtp.verified;
   const canGoStep2 = EMPLOYER_UI_PREVIEW_MODE || isStep2Valid;
   const canGoStep3 = EMPLOYER_UI_PREVIEW_MODE || isStep3Valid;
   const canGoStep4 = EMPLOYER_UI_PREVIEW_MODE || isStep4Valid;
@@ -2332,9 +2339,9 @@ const isStep4Valid =
               attempt2 && data.hasGst && !isGstnValid
                 ? "GSTN must be exactly 15 characters"
                 : attempt2 &&
-                    data.hasGst &&
-                    data.gstn.length === 15 &&
-                    !GSTIN_REGEX.test(data.gstn)
+                  data.hasGst &&
+                  data.gstn.length === 15 &&
+                  !GSTIN_REGEX.test(data.gstn)
                   ? "This doesn't look like a valid GSTN format — please double-check"
                   : null
             }
@@ -2718,177 +2725,179 @@ const isStep4Valid =
     }
   };
   // ── Step 3: Contact & OTP ─────────────────
- const renderStep3 = () => {
-  const contactEmailTouched = data.contactPersonEmail.length > 0;
-  const contactEmailValid = isValidEmail(data.contactPersonEmail);
-  const corpEmailTouched = data.corpEmail.length > 0;
-  const corpEmailValid = isValidEmail(data.corpEmail);
+  const renderStep3 = () => {
+    const contactEmailTouched = data.contactPersonEmail.length > 0;
+    const contactEmailValid = isValidEmail(data.contactPersonEmail);
+    const corpEmailTouched = data.corpEmail.length > 0;
+    const corpEmailValid = isValidEmail(data.corpEmail);
 
-  return (
-    <div>
-      <h3
-        style={{
-          fontSize: "var(--font-md)",
-          fontWeight: 600,
-          marginBottom: 16,
-          color: "var(--color-text-primary)",
-        }}
-      >
-        Contact details & verification
-      </h3>
+    return (
+      <div>
+        <h3
+          style={{
+            fontSize: "var(--font-md)",
+            fontWeight: 600,
+            marginBottom: 16,
+            color: "var(--color-text-primary)",
+          }}
+        >
+          Contact details & verification
+        </h3>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+          <Field
+            label="Contact Person Name"
+            required
+            error={attempt3 && !data.contactName ? "Contact person name is required" : null}
+          >
+            <Input
+              value={data.contactName}
+              error={attempt3 && !data.contactName}
+              onChange={(e) => set("contactName", e.target.value)}
+              placeholder="Enter contact person's full name (e.g. Arjun Mehta)"
+            />
+          </Field>
+          <Field
+            label="Designation"
+            required
+            error={attempt3 && !data.designation ? "Designation is required" : null}
+          >
+            <Input
+              value={data.designation}
+              error={attempt3 && !data.designation}
+              onChange={(e) => set("designation", e.target.value)}
+              placeholder="Enter their designation/role (e.g. HR Manager)"
+            />
+          </Field>
+          <Field
+            label="Contact Person Email"
+            required
+            error={
+              contactEmailTouched && !contactEmailValid
+                ? "Enter a valid email address"
+                : null
+            }
+          >
+            <Input
+              type="email"
+              value={data.contactPersonEmail}
+              error={contactEmailTouched && !contactEmailValid}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val && /^\d+$/.test(val.trim())) return;
+                set("contactPersonEmail", val.trim());
+              }}
+              placeholder="Enter contact person's email (e.g. contact@personal.com)"
+            />
+          </Field>
+        </div>
+
         <Field
-          label="Contact Person Name"
-          required
-          error={attempt3 && !data.contactName ? "Contact person name is required" : null}
-        >
-          <Input
-            value={data.contactName}
-            error={attempt3 && !data.contactName}
-            onChange={(e) => set("contactName", e.target.value)}
-            placeholder="Enter contact person's full name (e.g. Arjun Mehta)"
-          />
-        </Field>
-        <Field
-          label="Designation"
-          required
-          error={attempt3 && !data.designation ? "Designation is required" : null}
-        >
-          <Input
-            value={data.designation}
-            error={attempt3 && !data.designation}
-            onChange={(e) => set("designation", e.target.value)}
-            placeholder="Enter their designation/role (e.g. HR Manager)"
-          />
-        </Field>
-        <Field
-          label="Contact Person Email"
+          label="Company Email"
           required
           error={
-            contactEmailTouched && !contactEmailValid
-              ? "Enter a valid email address"
+            corpEmailTouched && !corpEmailValid
+              ? "Enter a valid company email address"
               : null
           }
         >
           <Input
             type="email"
-            value={data.contactPersonEmail}
-            error={contactEmailTouched && !contactEmailValid}
+            value={data.corpEmail}
+            error={corpEmailTouched && !corpEmailValid && !data.corpEmailOtp.verified}
+            disabled={data.corpEmailOtp.verified}
             onChange={(e) => {
               const val = e.target.value;
               if (val && /^\d+$/.test(val.trim())) return;
-              set("contactPersonEmail", val.trim());
+              set("corpEmail", val.trim());
             }}
-            placeholder="Enter contact person's email (e.g. contact@personal.com)"
+            placeholder="Enter your official company email (e.g. hr@yourcompany.com)"
+            style={{
+              borderColor: data.corpEmailOtp.verified ? "#3B6D11" : undefined,
+              backgroundColor: data.corpEmailOtp.verified ? "#f4f9f1" : undefined,
+              color: data.corpEmailOtp.verified ? "#2b4e0c" : undefined,
+              border: data.corpEmailOtp.verified ? "1px solid #3B6D11" : undefined,
+            }}
+          />
+
+          {data.corpEmail && corpEmailValid && (
+            <div style={{ marginTop: 8 }}>
+              <OtpBlock
+                target="corporate email"
+                sent={data.corpEmailOtp.sent}
+                verified={data.corpEmailOtp.verified}
+                disabled={!corpEmailValid}
+                onSend={sendCorpEmailOtp}
+                onResend={handleResendEmailOtp}
+                onVerify={verifyCorpEmailOtp}
+                otpVal={data.corpEmailOtp.userVal}
+                setOtpVal={(v) =>
+                  setData((p) => ({
+                    ...p,
+                    corpEmailOtp: { ...p.corpEmailOtp, userVal: v.replace(/\D/g, "") },
+                  }))
+                }
+              />
+            </div>
+          )}
+        </Field>
+
+        <Field label="Mobile Number" required>
+          <MobileOtpField
+            countryCode={data.countryCode}
+            onCountryCodeChange={(v) => set("countryCode", v)}
+            mobile={data.mobile}
+            onMobileChange={(v) => set("mobile", v)}
+            otp={data.mobileOtp}
+            onOtpStateChange={(v) => setData((p) => ({ ...p, mobileOtp: v }))}
+            sendMobileOtp={handleSendMobileOtp}
+            verifyMobileOtp={handleVerifyMobileOtp}
+            resendMobileOtp={handleResendMobileOtp}
           />
         </Field>
-      </div>
 
-      <Field
-        label="Company Email"
-        required
-        error={
-          corpEmailTouched && !corpEmailValid
-            ? "Enter a valid company email address"
-            : null
-        }
-      >
-        <Input
-          type="email"
-          value={data.corpEmail}
-          error={corpEmailTouched && !corpEmailValid && !data.corpEmailOtp.verified}
-          disabled={data.corpEmailOtp.verified}
-          onChange={(e) => {
-            const val = e.target.value;
-            if (val && /^\d+$/.test(val.trim())) return;
-            set("corpEmail", val.trim());
-          }}
-          placeholder="Enter your official company email (e.g. hr@yourcompany.com)"
-          style={{
-            borderColor: data.corpEmailOtp.verified ? "#3B6D11" : undefined,
-            backgroundColor: data.corpEmailOtp.verified ? "#f4f9f1" : undefined,
-            color: data.corpEmailOtp.verified ? "#2b4e0c" : undefined,
-            border: data.corpEmailOtp.verified ? "1px solid #3B6D11" : undefined,
-          }}
-        />
+        <Field
+          label="Company Profile Summary"
+          hint="Brief description of your company and hiring focus (shown on job listings)"
+        >
+          <textarea
+            className="form-control"
+            value={data.profileSummary}
+            onChange={(e) => set("profileSummary", e.target.value)}
+            placeholder="e.g. We are a leading marine services company specialising in offshore and vessel crew placement."
+            style={{
+              minHeight: "150px",
+              resize: "vertical",
+            }}
+          />
+        </Field>
 
-        {data.corpEmail && corpEmailValid && (
-          <div style={{ marginTop: 8 }}>
-            <OtpBlock
-              target="corporate email"
-              sent={data.corpEmailOtp.sent}
-              verified={data.corpEmailOtp.verified}
-              disabled={!corpEmailValid}
-              onSend={sendCorpEmailOtp}
-              onResend={handleResendEmailOtp}
-              onVerify={verifyCorpEmailOtp}
-              otpVal={data.corpEmailOtp.userVal}
-              setOtpVal={(v) =>
-                setData((p) => ({
-                  ...p,
-                  corpEmailOtp: { ...p.corpEmailOtp, userVal: v.replace(/\D/g, "") },
-                }))
-              }
-            />
-          </div>
+        {attempt3 && !isStep4Valid && (
+          <Alert type="error">
+            Please complete all required fields and verify both your mobile
+            number and company email before continuing.
+          </Alert>
         )}
-      </Field>
 
-      <Field label="Mobile Number" required>
-        <MobileOtpField
-          countryCode={data.countryCode}
-          onCountryCodeChange={(v) => set("countryCode", v)}
-          mobile={data.mobile}
-          onMobileChange={(v) => set("mobile", v)}
-          otp={data.mobileOtp}
-          onOtpStateChange={(v) => setData((p) => ({ ...p, mobileOtp: v }))}
-          sendMobileOtp={handleSendMobileOtp}
-          verifyMobileOtp={handleVerifyMobileOtp}
-          resendMobileOtp={handleResendMobileOtp}
-        />
-      </Field>
-
-      <Field
-        label="Company Profile Summary"
-        hint="Brief description of your company and hiring focus (shown on job listings)"
-      >
-        <textarea
-          className="form-control"
-          value={data.profileSummary}
-          onChange={(e) => set("profileSummary", e.target.value)}
-          placeholder="e.g. We are a leading marine services company specialising in offshore and vessel crew placement."
-          rows={4}
-          style={{ resize: "vertical" }}
-        />
-      </Field>
-
-      {attempt3 && !isStep4Valid && (
-        <Alert type="error">
-          Please complete all required fields and verify both your mobile
-          number and company email before continuing.
-        </Alert>
-      )}
-
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
-        <Btn variant="outline" onClick={() => setStep(2)}>
-          ← Back
-        </Btn>
-       <Btn
-  variant="primary"
-  onClick={async () => {
-    setAttempt3(true);
-    if (!isStep4Valid) return;
-    await saveStep3();
-    setStep(4);
-  }}
->
-  Continue →
-</Btn>
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
+          <Btn variant="outline" onClick={() => setStep(2)}>
+            ← Back
+          </Btn>
+          <Btn
+            variant="primary"
+            onClick={async () => {
+              setAttempt3(true);
+              if (!isStep4Valid) return;
+              await saveStep3();
+              setStep(4);
+            }}
+          >
+            Continue →
+          </Btn>
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
   const handleStep4 = async () => {
     try {
       const sessionId = localStorage.getItem("registrationSessionId");
@@ -3647,7 +3656,7 @@ const isStep4Valid =
         style={{ width: "100%", padding: "13px 0", fontSize: "var(--font-md)", marginTop: 6 }}
         onClick={handleEmployerSubmit}
       >
-        Create Account 
+        Create Account
       </Btn>
       <div
         style={{ display: "flex", justifyContent: "flex-start", marginTop: 12 }}
@@ -3705,6 +3714,13 @@ function RegisterPageInner() {
         padding: "40px 16px 60px",
         position: "relative",
         overflow: "hidden",
+        "--font-xxs": "11px",
+        "--font-xs": "13px",
+        "--font-sm": "15px",
+        "--font-base": "15px",
+        "--font-md": "17px",
+        "--font-lg": "19px",
+        "--font-xl": "21px",
       }}
     >
       <img
@@ -3769,7 +3785,7 @@ function RegisterPageInner() {
       />
       <div
         style={{
-          maxWidth: role === "employer" ? 820  : 460,
+          maxWidth: role === "employer" ? 820 : 460,
           margin: "0 auto",
           position: "relative",
           zIndex: 1,
@@ -3787,7 +3803,7 @@ function RegisterPageInner() {
               marginBottom: 8,
             }}
           >
-            <img src="assets/imgs/template/logo.svg"/>
+            <img src="assets/imgs/template/logo.svg" />
           </div>
           <h1
             style={{
@@ -3824,54 +3840,54 @@ function RegisterPageInner() {
             background: "#ffffff",
             border: "none",
             borderRadius: 24,
-           padding: role === "employer" ? "40px 44px" : "38px 34px",
+            padding: role === "employer" ? "40px 44px" : "38px 34px",
             marginBottom: 0,
             boxSizing: "border-box",
           }}
         >
           {/* Role selector — only shown when no role was locked in via URL */}
-        {!role ? (
-  <div style={{ marginBottom: 8 }}>
-    <p style={{ fontSize: "var(--font-xs)", fontWeight: 600, color: "var(--color-text-secondary)", marginBottom: 12 }}>
-      I am registering as…
-    </p>
-    <div style={{ display: "flex", gap: 12 }}>
-      {[
-        { val: "candidate", icon: "👤", label: "Job Seeker / Candidate", sub: "Find jobs, build profile" },
-        { val: "employer", icon: "🏢", label: "Employer / Company", sub: "Post jobs, hire talent" },
-      ].map((r) => (
-        <div
-          key={r.val}
-          onClick={() => setRole(r.val)}
-          style={{
-            flex: 1,
-            padding: "18px 14px",
-            borderRadius: 10,
-            cursor: "pointer",
-            border: "1px solid var(--color-border-secondary, #C7D2E0)",
-            background: "var(--color-background-secondary)",
-            display: "flex",
-            alignItems: "flex-start",
-            gap: 12,
-          }}
-        >
-          <span style={{ fontSize: 24, flexShrink: 0 }}>{r.icon}</span>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "var(--color-text-primary)" }}>
-              {r.label}
+          {!role ? (
+            <div style={{ marginBottom: 8 }}>
+              <p style={{ fontSize: "var(--font-xs)", fontWeight: 600, color: "var(--color-text-secondary)", marginBottom: 12 }}>
+                I am registering as…
+              </p>
+              <div style={{ display: "flex", gap: 12 }}>
+                {[
+                  { val: "candidate", icon: "👤", label: "Job Seeker / Candidate", sub: "Find jobs, build profile" },
+                  { val: "employer", icon: "🏢", label: "Employer / Company", sub: "Post jobs, hire talent" },
+                ].map((r) => (
+                  <div
+                    key={r.val}
+                    onClick={() => setRole(r.val)}
+                    style={{
+                      flex: 1,
+                      padding: "18px 14px",
+                      borderRadius: 10,
+                      cursor: "pointer",
+                      border: "1px solid var(--color-border-secondary, #C7D2E0)",
+                      background: "var(--color-background-secondary)",
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 12,
+                    }}
+                  >
+                    <span style={{ fontSize: 24, flexShrink: 0 }}>{r.icon}</span>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: "var(--color-text-primary)" }}>
+                        {r.label}
+                      </div>
+                      <div style={{ fontSize: "var(--font-xs)", color: "var(--color-text-secondary)", marginTop: 2 }}>
+                        {r.sub}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div style={{ fontSize: "var(--font-xs)", color: "var(--color-text-secondary)", marginTop: 2 }}>
-              {r.sub}
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-) : (
-  !lockedRole && (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-      {/* <span style={{ fontSize: "var(--font-sm)", color: "var(--color-text-secondary)" }}>
+          ) : (
+            !lockedRole && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                {/* <span style={{ fontSize: "var(--font-sm)", color: "var(--color-text-secondary)" }}>
         Registering as{" "}
         <strong style={{ color: "var(--color-text-primary)" }}>
           {role === "candidate" ? "Job Seeker / Candidate" : "Employer / Company"}
@@ -3891,9 +3907,9 @@ function RegisterPageInner() {
       >
         Change
       </button> */}
-    </div>
-  )
-)}
+              </div>
+            )
+          )}
 
           {role === "candidate" && <CandidateForm />}
           {role === "employer" && <EmployerForm />}

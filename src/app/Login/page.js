@@ -229,7 +229,7 @@ function CountryCodeSelect({
           border: "none",
           outline: "none",
           background: "transparent",
-          fontSize: 14,
+          fontSize: 15,
           fontWeight: 600,
           textAlign: "center",
           padding: "0 4px",
@@ -584,6 +584,13 @@ const handleChangeIdentifier = () => {
         padding: "40px 16px",
         position: "relative",
         overflow: "hidden",
+        "--font-xxs": "11px",
+        "--font-xs": "13px",
+        "--font-sm": "15px",
+        "--font-base": "15px",
+        "--font-md": "17px",
+        "--font-lg": "19px",
+        "--font-xl": "21px",
       }}
     >
       <img
@@ -675,7 +682,7 @@ const handleChangeIdentifier = () => {
           >
             <div
               style={{
-                fontSize: "12px",
+                fontSize: "13px",
                 fontWeight: 700,
                 letterSpacing: 1.4,
                 textTransform: "uppercase",
@@ -701,7 +708,7 @@ const handleChangeIdentifier = () => {
 
             <p
               style={{
-                fontSize: "14px",
+                fontSize: "15px",
                 lineHeight: 1.7,
                 color: "var(--color-text-secondary)",
               }}
@@ -723,7 +730,7 @@ const handleChangeIdentifier = () => {
                   background: "#FCEBEB",
                   border: "1px solid #F7C1C1",
                   color: "#A32D2D",
-                  fontSize: 13,
+                  fontSize: 14,
                   lineHeight: 1.5,
                 }}
               >
@@ -737,7 +744,7 @@ const handleChangeIdentifier = () => {
                 style={{
                   display: "block",
                   marginBottom: 8,
-                  fontSize: 13,
+                  fontSize: 14,
                   fontWeight: 600,
                   color: "var(--color-text-secondary)",
                 }}
@@ -796,7 +803,7 @@ const handleChangeIdentifier = () => {
                       left: 16,
                       top: "50%",
                       transform: "translateY(-50%)",
-                      fontSize: 15,
+                      fontSize: 16,
                       color: "var(--color-text-tertiary)",
                       pointerEvents: "none",
                     }}
@@ -822,7 +829,7 @@ const handleChangeIdentifier = () => {
                           : "var(--color-border-secondary)"
                         : "var(--color-border-secondary)"
                         }`,
-                      fontSize: 14,
+                      fontSize: 15,
                       padding: "0 42px",
                       background: otpSent
                         ? "#f7f7f7"
@@ -836,7 +843,7 @@ const handleChangeIdentifier = () => {
                 style={{
                   display: "block",
                   marginTop: 8,
-                  fontSize: 12,
+                  fontSize: 13,
                   color:
                     input && !isInputValid
                       ? "#E24B4A"
@@ -864,7 +871,7 @@ const handleChangeIdentifier = () => {
                     otpSent && resendCooldown > 0 ? "#f7f7f7" : "#ffffff",
                   color: otpSent && resendCooldown > 0 ? "#b9884d" : "#ff9900",
                   fontWeight: 700,
-                  fontSize: 14,
+                  fontSize: 15,
                   cursor:
                     otpSent && resendCooldown > 0 ? "not-allowed" : "pointer",
                   transition: "all 0.25s ease",
@@ -924,7 +931,7 @@ const handleChangeIdentifier = () => {
                   style={{
                     display: "block",
                     marginBottom: 8,
-                    fontSize: 13,
+                    fontSize: 14,
                     fontWeight: 600,
                     color: "var(--color-text-secondary)",
                   }}
@@ -943,7 +950,7 @@ const handleChangeIdentifier = () => {
 >
   <p
     style={{
-      fontSize: 12,
+      fontSize: 13,
       color: "var(--color-text-tertiary)",
       margin: 0,
     }}
@@ -963,7 +970,7 @@ const handleChangeIdentifier = () => {
       border: "none",
       background: "transparent",
       padding: 0,
-      fontSize: 12,
+      fontSize: 13,
       fontWeight: 600,
       color: "#ff9900",
       cursor: "pointer",
@@ -993,7 +1000,7 @@ const handleChangeIdentifier = () => {
                     background: "#ff9900",
                     color: "#ffffff",
                     fontWeight: 700,
-                    fontSize: 15,
+                    fontSize: 16,
                     cursor: "pointer",
                     transition: "all 0.25s ease",
                   }}
@@ -1030,7 +1037,7 @@ const handleChangeIdentifier = () => {
 
               <span
                 style={{
-                  fontSize: 13,
+                  fontSize: 14,
                   color: "var(--color-text-tertiary)",
                   fontWeight: 600,
                 }}
@@ -1070,7 +1077,7 @@ const handleChangeIdentifier = () => {
                   justifyContent: "center",
                   gap: 12,
                   fontWeight: 600,
-                  fontSize: 14,
+                  fontSize: 15,
                   color: "#122359",
                   cursor: "pointer",
                   transition: "all 0.25s ease",
@@ -1113,7 +1120,7 @@ const handleChangeIdentifier = () => {
                   justifyContent: "center",
                   gap: 12,
                   fontWeight: 600,
-                  fontSize: 14,
+                  fontSize: 15,
                   color: "#122359",
                   cursor: "pointer",
                   transition: "all 0.25s ease",
@@ -1151,7 +1158,7 @@ const handleChangeIdentifier = () => {
               <Link
                 href="/register"
                 style={{
-                  fontSize: 14,
+                  fontSize: 15,
                   fontWeight: 600,
                   color: "#ff9900",
                   transition: "all 0.25s ease",
