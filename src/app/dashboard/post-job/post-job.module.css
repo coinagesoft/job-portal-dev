@@ -646,4 +646,13 @@
 .backBtn     { min-width: 100px; }
 .continueBtn { min-width: 160px; }
 
+/* Custom style for checkboxes to match theme orange */
+.layout input[type="checkbox"] {
+  accent-color: #ffa300;
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+}
+
 

@@ -16,7 +16,7 @@ function FieldIcon({ icon }) {
         width: '16px',
         fontSize: '16px',
         textAlign: 'center',
-        color: '#ffa300',
+        color: '#ffb84d',
         flexShrink: 0,
       }}
     ></i>

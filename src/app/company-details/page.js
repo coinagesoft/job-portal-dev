@@ -68,7 +68,7 @@ function OverviewIcon({ iconClass }) {
         justifyContent: "center",
       }}
     >
-      <i className={iconClass} style={{ fontSize: "16px", color: "#ff9900" }}></i>
+      <i className={iconClass} style={{ fontSize: "16px", color: "#ffb84d" }}></i>
     </span>
   );
 }

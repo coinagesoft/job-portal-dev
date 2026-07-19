@@ -641,16 +641,7 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
                           </div>
                         )}
 
-                        <div className="mb-15">
-                          <h6 className="mb-10">Why are you a good fit? (optional)</h6>
-                          <textarea
-                            className="form-control"
-                            rows={2}
-                            placeholder="A short message to the employer"
-                            value={answers.motivation || ""}
-                            onChange={(event) => handleAnswer("motivation", event.target.value)}
-                          />
-                        </div>
+
 
                         {error ? <p className="font-xs mb-10" style={{ color: "#a32d2d" }}>{error}</p> : null}
                       </div>
