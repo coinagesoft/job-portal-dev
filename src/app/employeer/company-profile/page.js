@@ -237,227 +237,6 @@ const Combobox = ({ value, onChange, options, placeholder }) => {
   );
 };
 
-// const EditFieldModal = ({ field, value, onClose, onSave }) => {
-//   const [val, setVal] = useState(value ?? "");
-//   return (
-//     <div
-//       style={{
-//         position: "fixed",
-//         inset: 0,
-//         zIndex: 9999,
-//         background: "rgba(0,0,0,0.5)",
-//         display: "flex",
-//         alignItems: "center",
-//         justifyContent: "center",
-//         padding: "20px",
-//       }}
-//     >
-//       <div
-//         style={{
-//           background: "#fff",
-//           borderRadius: "12px",
-//           width: "100%",
-//           maxWidth: "480px",
-//           boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
-//         }}
-//       >
-//         <div
-//           style={{
-//             padding: "18px 24px 14px",
-//             borderBottom: "1px solid #eee",
-//             display: "flex",
-//             alignItems: "center",
-//             justifyContent: "space-between",
-//           }}
-//         >
-//           <h5 style={{ margin: 0, color: "#122359" }}>Edit: {field}</h5>
-//           <button
-//             onClick={onClose}
-//             style={{
-//               background: "none",
-//               border: "none",
-//               fontSize: "22px",
-//               cursor: "pointer",
-//             }}
-//           >
-//             ×
-//           </button>
-//         </div>
-//         <div style={{ padding: "20px 24px 24px" }}>
-//           <div className="form-group">
-//             <label className="font-sm color-text-mutted mb-10">{field}</label>
-//             <input
-//               className="form-control"
-//               value={val ?? ""}
-//               onChange={(e) => setVal(e.target.value)}
-//             />
-//           </div>
-//           <div
-//             style={{
-//               display: "flex",
-//               gap: "10px",
-//               justifyContent: "flex-end",
-//               marginTop: "12px",
-//             }}
-//           >
-//             <button className="btn btn-border btn-sm" onClick={onClose}>
-//               Cancel
-//             </button>
-//             <button
-//               className="btn btn-default btn-sm"
-//               onClick={() => {
-//                 onSave(val);
-//                 onClose();
-//               }}
-//             >
-//               Save
-//             </button>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// Renders one labeled section of editable rows, reused across Basic Info,
-// Online Presence, Address, and Contact blocks.
-// const FieldSection = ({ title, rows, company, onEdit }) => (
-//   <>
-//     <h4
-//       className="mt-30"
-//       style={{
-//         color: "#122359",
-//         fontWeight: 700,
-//         marginBottom: "20px",
-//       }}
-//     >
-//       {title}
-//     </h4>
-//     <div
-//       style={{
-//         background: "#ffffff",
-//         borderRadius: "20px",
-//         border: "1px solid rgba(18,35,89,0.06)",
-//         overflow: "hidden",
-//         boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
-//         marginBottom: "28px",
-//       }}
-//     >
-//       {rows.map((row, index) => (
-//         <div
-//           key={row.key}
-//           style={{
-//             display: "flex",
-//             alignItems: "center",
-//             justifyContent: "space-between",
-//             gap: "18px",
-//             padding: "18px 22px",
-//             borderBottom:
-//               index !== rows.length - 1
-//                 ? "1px solid rgba(18,35,89,0.06)"
-//                 : "none",
-//             transition: "all .35s ease",
-//             border: "1px solid transparent",
-//             position: "relative",
-//             background: "#ffffff",
-//           }}
-//           onMouseEnter={(e) => {
-//             e.currentTarget.style.background = "#fffaf2";
-//             e.currentTarget.style.transform = "translateY(-3px)";
-//             e.currentTarget.style.borderColor = "rgba(255,153,0,0.28)";
-//             e.currentTarget.style.boxShadow =
-//               "0 12px 28px rgba(255,163,0,0.10)";
-//           }}
-//           onMouseLeave={(e) => {
-//             e.currentTarget.style.background = "#ffffff";
-//             e.currentTarget.style.transform = "translateY(0px)";
-//             e.currentTarget.style.borderColor = "transparent";
-//             e.currentTarget.style.boxShadow = "none";
-//           }}
-//         >
-//           <div style={{ minWidth: "180px" }}>
-//             <div
-//               style={{
-//                 fontSize: "12px",
-//                 fontWeight: 700,
-//                 textTransform: "uppercase",
-//                 letterSpacing: ".5px",
-//                 color: "#ff9900",
-//                 marginBottom: "4px",
-//               }}
-//             >
-//               {row.label}
-//             </div>
-
-//             <div
-//               style={{
-//                 color: "#122359",
-//                 fontSize: "15px",
-//                 fontWeight: 600,
-//                 wordBreak: "break-word",
-//               }}
-//             >
-//               {row.key === "website" ? (
-//                 company.website ? (
-//                   <a
-//                     href={`https://${company.website.replace(/^https?:\/\//, "")}`}
-//                     target="_blank"
-//                     rel="noopener noreferrer"
-//                     style={{ color: "#122359", textDecoration: "underline" }}
-//                   >
-//                     {company.website}
-//                   </a>
-//                 ) : (
-//                   "—"
-//                 )
-//               ) : row.key === "highlights" ? (
-//                 Array.isArray(company.highlights) &&
-//                 company.highlights.length > 0
-//                   ? company.highlights.join(", ")
-//                   : "—"
-//               ) : (
-//                 company[row.key] || "—"
-//               )}
-//             </div>
-//           </div>
-
-//           <button
-//             className="btn btn-border btn-sm"
-//             style={{
-//               borderRadius: "10px",
-//               padding: "8px 14px",
-//               fontWeight: 600,
-//               minWidth: "90px",
-//               transition: "all .25s ease",
-//             }}
-//             onMouseEnter={(e) => {
-//               e.currentTarget.style.background = "#122359";
-//               e.currentTarget.style.color = "#ffffff";
-//             }}
-//             onMouseLeave={(e) => {
-//               e.currentTarget.style.background = "#ffffff";
-//               e.currentTarget.style.color = "#122359";
-//             }}
-//             onClick={() =>
-//               onEdit({
-//                 field: row.label,
-//                 key: row.key,
-//                 value:
-//                   row.key === "highlights"
-//                     ? (company.highlights || []).join(", ")
-//                     : company[row.key] ?? "",
-//               })
-//             }
-//           >
-//             <i className="fi fi-rr-edit" style={{ marginRight: "5px" }} />
-//             Edit
-//           </button>
-//         </div>
-//       ))}
-//     </div>
-//   </>
-// );
-
 // Read-only section for verification / system-managed fields — no Edit button,
 // since these come from GST/POE/RPSL verification flows or are system-set.
 const ReadOnlySection = ({ title, rows, company }) => (
@@ -553,7 +332,6 @@ export default function EmployerCompanyProfilePage() {
   const [activeTab, setActiveTab] = useState("about");
   const [company, setCompany] = useState({});
   const [loading, setLoading] = useState(true);
-  // const [editModal, setEditModal] = useState(null);
   const [description, setDescription] = useState("");
   const [officeSameAsAddress, setOfficeSameAsAddress] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -891,6 +669,14 @@ export default function EmployerCompanyProfilePage() {
       return;
     }
 
+    if (highlightsOverLimit) {
+      showToast(
+        `Company Highlights is over the ${HIGHLIGHTS_WORD_LIMIT}-word limit (${highlightsWordCount} words). Please shorten it.`,
+        "error"
+      );
+      return;
+    }
+
     try {
       await Promise.all([
         handleSaveField("legalName", company.legalName),
@@ -961,43 +747,14 @@ export default function EmployerCompanyProfilePage() {
   const DESCRIPTION_WORD_LIMIT = 300;
   const descriptionWordCount = countWords(description);
   const descriptionOverLimit = descriptionWordCount > DESCRIPTION_WORD_LIMIT;
-  // const basicInfoRows = [
-  //   { label: "Legal Name", key: "legalName" },
-  //   { label: "Trade Name", key: "tradeName" },
-  //   { label: "Display Name", key: "displayName" },
-  //   { label: "Industry", key: "industry" },
-  //   { label: "Business Type", key: "businessType" },
-  //   { label: "Company Size", key: "size" },
-  //   { label: "Total Employees", key: "totalEmployees" },
-  //   { label: "Founded", key: "founded" },
-  //   { label: "Company Highlights", key: "highlights" },
-  //   { label: "Time Zone", key: "timeZone" },
-  // ];
 
-  // const onlinePresenceRows = [
-  //   { label: "Website", key: "website" },
-  //   { label: "LinkedIn", key: "linkedInUrl" },
-  //   { label: "Instagram", key: "instagramUrl" },
-  //   { label: "Facebook", key: "facebookUrl" },
-  // ];
-
-  // const addressRows = [
-  //   { label: "Address Line 1", key: "addressLine1" },
-  //   { label: "Address Line 2", key: "addressLine2" },
-  //   { label: "City", key: "city" },
-  //   { label: "State", key: "state" },
-  //   { label: "Pincode", key: "pincode" },
-  //   { label: "Country", key: "country" },
-  //   { label: "Office Address", key: "officeAddress" },
-  // ];
-
-  // const contactRows = [
-  //   { label: "Contact Phone", key: "phone" },
-  //   { label: "Contact Email", key: "email" },
-  //   { label: "Contact Person", key: "contactPersonName" },
-  //   { label: "Designation", key: "designation" },
-  //   { label: "Operating Hours", key: "operatingHours" },
-  // ];
+  // Highlights are comma-separated entries (e.g. "ISO Certified, Offshore
+  // Projects, 500+ Employees") rather than free-flowing prose, so the cap
+  // is smaller than the description's — enough for a generous list of
+  // short highlight phrases without turning into a second description.
+  const HIGHLIGHTS_WORD_LIMIT = 50;
+  const highlightsWordCount = countWords(company.highlights);
+  const highlightsOverLimit = highlightsWordCount > HIGHLIGHTS_WORD_LIMIT;
 
   const verificationRows = [
     { label: "GST Registered", key: "gstRegistered" },
@@ -1006,8 +763,6 @@ export default function EmployerCompanyProfilePage() {
     { label: "CIN", key: "cin" },
     { label: "Account Status", key: "accountStatus" },
     { label: "Profile Completion", key: "profileCompletionScore" },
-    // { label: "Trial Expires", key: "trialExpiresAt" },
-    // { label: "Review Count", key: "reviewCount" },
   ];
 
   // Maps the row `key` used in UI state to the exact field name expected by
@@ -1115,7 +870,6 @@ export default function EmployerCompanyProfilePage() {
           >
             <div
               style={{
-                position: "relative",
                 zIndex: 10,
                 width: "130px",
                 flexShrink: 0,
@@ -1174,47 +928,56 @@ export default function EmployerCompanyProfilePage() {
                 />
               </label>
             </div>
-
-            <div
-              style={{
-                flex: 1,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: "16px",
-                flexWrap: "wrap",
-                minWidth: 0,
-              }}
-            >
-              <div style={{ minWidth: 0 }}>
-                <h4
-                  className="f-18"
-                  style={{ marginTop: "-50px", lineHeight: 1.3, color: "#122359" }}
-                >
+            <div className="row mt-2">
+              <div className="col-lg-8 col-md-12">
+                <h5 className="f-18">
                   {company.displayName}
-                </h4>
-                <p className="font-md color-text-paragraph-2 mb-0 mt-5">
+
+                </h5>
+                <p className=" font-md color-text-paragraph-2 mb-15">
                   {company.tagline}
                 </p>
+                {/* Stats row */}
+                {/* <div style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
+                  {[
+                    ["Active Jobs", company.activeJobs],
+                    ["Total Hired", company.totalHired],
+                    ["Avg. Time to Hire", company.avgTime],
+                  ].map(([label, val]) => (
+                    <div key={label} style={{ textAlign: "center" }}>
+                      <div
+                        style={{
+                          fontSize: "22px",
+                          fontWeight: "700",
+                          color: "#122359",
+                        }}
+                      >
+                        {val}
+                      </div>
+                      <div style={{ fontSize: "12px", color: "#9ca3af" }}>
+                        {label}
+                      </div>
+                    </div>
+                  ))}
+                </div> */}
               </div>
-
-              <span className="card-location font-regular" style={{ marginLeft: 0, flexShrink: 0 ,marginTop: "-70px",}}>
+              <span className="card-location font-regular ml-20">
                 {company.location}
               </span>
             </div>
           </div>
 
           {/* Tab nav */}
-          <div className="box-nav-tabs mt-40 mb-5">
-            <ul className="nav" role="tablist">
+          <div className="box-nav-tabs" style={{ marginTop: 28, marginBottom: 8 }}>
+            <ul className="nav" role="tablist" style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
               {[
                 ["about", "About Us"],
                 ["recruitments", "Recruitments"],
                 ["people", "People"],
               ].map(([key, label]) => (
-                <li key={key}>
+                <li key={key} style={{ margin: 0 }}>
                   <button
-                    className={`btn btn-border mr-15 mb-5 ${activeTab === key ? "active" : ""}`}
+                    className={`btn btn-border ${activeTab === key ? "active" : ""}`}
                     onClick={() => setActiveTab(key)}
                     style={{
                       border:
@@ -1228,11 +991,11 @@ export default function EmployerCompanyProfilePage() {
               ))}
             </ul>
           </div>
-          <div className="border-bottom pt-10 pb-10" />
+          <div className="border-bottom" style={{ marginTop: 8, marginBottom: 8 }} />
         </div>
       </section>
 
-      <section className="section-box mb-3">
+      <section className="section-box mt-50">
         <div className="container">
           <div className="row">
             {/* Main content */}
@@ -1240,25 +1003,8 @@ export default function EmployerCompanyProfilePage() {
               {activeTab === "about" && (
                 <div className="content-single ">
                   <h4>Welcome to {company.displayName}</h4>
-                  {/* <div className="form-group mb-20">
-                    <label className="form-label">Company description</label>
-                    <textarea
-                      className="form-control"
-                      rows="5"
-                      value={description ?? ""}
-                      onChange={(e) => setDescription(e.target.value)}
-                    // onBlur={handleDescriptionBlur}
-                    />
-                    <p className="font-xs color-text-paragraph-2 mb-0 mt-5">
-                      Keep this summary concise and role-focused so candidates
-                      quickly understand your hiring needs.
-                    </p>
-                  </div> */}
-
 
                   <SectionCard
-                    // title="Basic Information"
-                    // subtitle="Core company information"
                     onUpdate={updateBasicInfo}
                   >
 
@@ -1279,7 +1025,6 @@ export default function EmployerCompanyProfilePage() {
                           onChange={(e) =>
                             handleInputChange("legalName", e.target.value)
                           }
-                        // onBlur={() => handleBlurSave("legalName")}
                         />
                       </Field>
 
@@ -1289,7 +1034,6 @@ export default function EmployerCompanyProfilePage() {
                           onChange={(e) =>
                             handleInputChange("tradeName", e.target.value)
                           }
-                        // onBlur={() => handleBlurSave("tradeName")}
                         />
                       </Field>
                     </div>
@@ -1307,7 +1051,6 @@ export default function EmployerCompanyProfilePage() {
                           onChange={(e) =>
                             handleInputChange("displayName", e.target.value)
                           }
-                        // onBlur={() => handleBlurSave("displayName")}
                         />
                       </Field>
 
@@ -1345,7 +1088,6 @@ export default function EmployerCompanyProfilePage() {
                             handleInputChange("size", e.target.value)
                           }
                         >
-                          {/* <option value="">--</option> */}
                           <option value="1-10">1-10</option>
                           <option value="11-50">11-50</option>
                           <option value="51-200">51-200</option>
@@ -1414,7 +1156,23 @@ export default function EmployerCompanyProfilePage() {
                         onChange={(e) =>
                           handleInputChange("highlights", e.target.value)
                         }
+                        style={{
+                          borderColor: highlightsOverLimit ? "#dc2626" : undefined,
+                        }}
                       />
+                      <p
+                        style={{
+                          fontSize: "12px",
+                          marginTop: "6px",
+                          marginBottom: 0,
+                          fontWeight: 600,
+                          color: highlightsOverLimit ? "#dc2626" : "#94a3b8",
+                          textAlign: "right",
+                        }}
+                      >
+                        {highlightsWordCount} / {HIGHLIGHTS_WORD_LIMIT} words
+                        {highlightsOverLimit && " — please shorten"}
+                      </p>
                     </Field>
                     <Field label="Company Description">
                       <p
@@ -1456,8 +1214,6 @@ export default function EmployerCompanyProfilePage() {
 
 
                   <SectionCard
-                    // title="Online Presence"
-                    // subtitle=""
                     onUpdate={updateOnlinePresence}
                   >
                     <h4 style={{ color: "#122359" }}>Online Presence</h4>
@@ -1501,8 +1257,6 @@ export default function EmployerCompanyProfilePage() {
                   </SectionCard>
 
                   <SectionCard
-                    // title="Address"
-                    // subtitle="Office and location details"
                     onUpdate={updateAddress}
                   >
                     <h4 style={{ color: "#122359", marginBottom: "20px" }}>
@@ -1524,19 +1278,8 @@ export default function EmployerCompanyProfilePage() {
                           onChange={(e) =>
                             handleInputChange("addressLine1", e.target.value)
                           }
-                        // onBlur={() => handleBlurSave("addressLine1")}
                         />
                       </Field>
-
-                      {/* <Field label="Address Line 2">
-                        <Inp
-                          value={company.addressLine2 || ""}
-                          onChange={(e) =>
-                            handleInputChange("addressLine2", e.target.value)
-                          }
-                        // onBlur={() => handleBlurSave("addressLine2")}
-                        />
-                      </Field> */}
 
                       <Field label="City">
                         <Inp
@@ -1544,7 +1287,6 @@ export default function EmployerCompanyProfilePage() {
                           onChange={(e) =>
                             handleInputChange("city", e.target.value)
                           }
-                        // onBlur={() => handleBlurSave("city")}
                         />
                       </Field>
 
@@ -1554,7 +1296,6 @@ export default function EmployerCompanyProfilePage() {
                           onChange={(e) =>
                             handleInputChange("state", e.target.value)
                           }
-                        // onBlur={() => handleBlurSave("state")}
                         />
                       </Field>
 
@@ -1564,7 +1305,6 @@ export default function EmployerCompanyProfilePage() {
                           onChange={(e) =>
                             handleInputChange("pincode", e.target.value)
                           }
-                        // onBlur={() => handleBlurSave("pincode")}
                         />
                       </Field>
 
@@ -1574,7 +1314,6 @@ export default function EmployerCompanyProfilePage() {
                           onChange={(e) =>
                             handleInputChange("country", e.target.value)
                           }
-                        // onBlur={() => handleBlurSave("country")}
                         />
                       </Field>
                     </div>
@@ -1615,15 +1354,12 @@ export default function EmployerCompanyProfilePage() {
                           onChange={(e) =>
                             handleInputChange("officeAddress", e.target.value)
                           }
-                        // onBlur={() => handleBlurSave("officeAddress")}
                         />
                       )}
                     </Field>
                   </SectionCard>
 
                   <SectionCard
-                    // title="Address"
-                    // subtitle="Office and location details"
                     onUpdate={updateContact}
                   >
                     <h4 style={{ color: "#122359", marginBottom: "20px" }}>
@@ -1646,7 +1382,6 @@ export default function EmployerCompanyProfilePage() {
                           onChange={(e) =>
                             handleInputChange("phone", e.target.value)
                           }
-                        // onBlur={() => handleBlurSave("phone")}
                         />
                       </Field>
 
@@ -1656,7 +1391,6 @@ export default function EmployerCompanyProfilePage() {
                           onChange={(e) =>
                             handleInputChange("email", e.target.value)
                           }
-                        // onBlur={() => handleBlurSave("email")}
                         />
                       </Field>
 
@@ -1669,9 +1403,6 @@ export default function EmployerCompanyProfilePage() {
                               e.target.value
                             )
                           }
-                        // onBlur={() =>
-                        //   handleBlurSave("contactPersonName")
-                        // }
                         />
                       </Field>
 
@@ -1681,7 +1412,6 @@ export default function EmployerCompanyProfilePage() {
                           onChange={(e) =>
                             handleInputChange("designation", e.target.value)
                           }
-                        // onBlur={() => handleBlurSave("designation")}
                         />
                       </Field>
                     </div>
@@ -1693,7 +1423,6 @@ export default function EmployerCompanyProfilePage() {
                         onChange={(e) =>
                           handleInputChange("operatingHours", e.target.value)
                         }
-                      // onBlur={() => handleBlurSave("operatingHours")}
                       />
                     </Field>
                   </SectionCard>
@@ -1752,7 +1481,7 @@ export default function EmployerCompanyProfilePage() {
                     <p style={{ color: "#66789c" }}>Loading recruitments…</p>
                   ) : jobs.length === 0 ? (
                     <p style={{ color: "#66789c" }}>
-                      No active job postings yet. Click “Post New Job” to
+                      No active job postings yet. Click "Post New Job" to
                       create one.
                     </p>
                   ) : (
@@ -1823,14 +1552,6 @@ export default function EmployerCompanyProfilePage() {
                                         marginLeft: 0,
                                       }}
                                     >
-                                      {/* <i
-                                        className="fi fi-rr-marker"
-                                        style={{
-                                          fontSize: "12px",
-                                          color: "#66789c",
-                                          lineHeight: 1,
-                                        }}
-                                      /> */}
                                       {job.location}
                                     </span>
                                   </div>
@@ -2036,7 +1757,7 @@ export default function EmployerCompanyProfilePage() {
                     <p style={{ color: "#66789c" }}>Loading team members…</p>
                   ) : people.length === 0 ? (
                     <p style={{ color: "#66789c" }}>
-                      No team members yet. Click “Invite Member” to add one.
+                      No team members yet. Click "Invite Member" to add one.
                     </p>
                   ) : (
                     <div
@@ -2189,39 +1910,10 @@ export default function EmployerCompanyProfilePage() {
                   </ul>
                 </div>
               </div>
-              {/* <div
-                className="sidebar-border-bg bg-right"
-                style={{ marginTop: "20px" }}
-              >
-                <span className="text-grey">WE ARE</span>
-                <span className="text-hiring">HIRING</span>
-                <p className="font-xxs color-text-paragraph mt-5">
-                  Offshore and domestic trade positions are open. View active
-                  roles in the Recruitments tab.
-                </p>
-                <div className="mt-15">
-                  <button
-                    className="btn btn-paragraph-2"
-                    onClick={() => setActiveTab("recruitments")}
-                  >
-                    View Open Roles
-                  </button>
-                </div>
-              </div> */}
             </div>
           </div>
         </div>
       </section>
-
-      {/* Edit field modal */}
-      {/* {editModal && (
-        <EditFieldModal
-          field={editModal.field}
-          value={editModal.value}
-          onClose={() => setEditModal(null)}
-          onSave={(val) => handleSaveField(editModal.key, val)}
-        />
-      )} */}
     </main>
     </SubUserViewOnlyGuard>
   );

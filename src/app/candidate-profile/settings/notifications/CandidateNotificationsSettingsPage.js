@@ -2,7 +2,6 @@
 
 
 import { useToast } from "@/components/Toast";
-import { getCandidateId } from "@/utils/authHelper";
 import SettingsPageShell from "../components/SettingsPageShell";
 
 import { useEffect, useMemo, useState } from "react";
@@ -51,8 +50,8 @@ const DEFAULT_SETTINGS = {
 
 const CandidateNotificationsSettingsPage = () => {
   const showToast = useToast();
-  const candidateId = getCandidateId();
  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+ const [savingId, setSavingId] = useState(null);
 
 useEffect(() => {
   loadNotifications();
@@ -60,7 +59,7 @@ useEffect(() => {
 
 const loadNotifications = async () => {
   try {
-   const response = await getNotifications(candidateId);
+   const response = await getNotifications();
 
 console.log("GET Notifications Response:", response.data);
 
@@ -84,6 +83,11 @@ console.log("GET Notifications Response:", response.data);
       "Notification Load Error",
       error
     );
+    showToast(
+      error.response?.data?.message ||
+        "Failed to load notification preferences.",
+      "error",
+    );
   }
 };
 
@@ -92,16 +96,52 @@ console.log("GET Notifications Response:", response.data);
     [settings]
   );
 
-  const toggleSetting = (id) => {
-    setSettings((prev) => ({ ...prev, [id]: !prev[id] }));
+  // Each toggle saves immediately (matching the employer notifications
+  // page's behavior) instead of silently only updating local state until
+  // some later "Save" click — the toggle IS the save action. Optimistic
+  // update with rollback on failure so the switch never lies about what
+  // actually got persisted.
+  const toggleSetting = async (id) => {
+    const next = { ...settings, [id]: !settings[id] };
+    setSettings(next);
+    setSavingId(id);
+
+    const payload = {
+      jobMatches: next.jobMatches,
+      applicationUpdates: next.applicationUpdates,
+      recruiterMessages: next.messages,
+      documentReminders: next.documentAlerts,
+      offersAnnouncements: next.marketing,
+    };
+
+    try {
+      const response = await updateNotifications(payload);
+
+      if (!response?.data?.success) {
+        throw new Error(
+          response?.data?.message || "Failed to save preference.",
+        );
+      }
+
+      showToast("Preference updated.", "success");
+    } catch (error) {
+      console.error(error);
+      setSettings(settings); // revert on failure
+      showToast(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to save preference.",
+        "error",
+      );
+    } finally {
+      setSavingId(null);
+    }
   };
 
  const handleReset = async () => {
   try {
     const response =
-      await resetNotifications(
-        candidateId
-      );
+      await resetNotifications();
 
     if (response?.data?.success) {
       await loadNotifications();
@@ -115,43 +155,7 @@ console.log("GET Notifications Response:", response.data);
     console.error(error);
 
     showToast(
-      "Reset failed",
-      "error"
-    );
-  }
-};
-
-  const handleSave = async () => {
-  try {
-    const payload = {
-      jobMatches: settings.jobMatches,
-      applicationUpdates:
-        settings.applicationUpdates,
-      recruiterMessages:
-        settings.messages,
-      documentReminders:
-        settings.documentAlerts,
-      offersAnnouncements:
-        settings.marketing,
-    };
-
-    const response =
-      await updateNotifications(
-        candidateId,
-        payload
-      );
-
-    if (response?.data?.success) {
-      showToast(
-        "Notification settings saved.",
-        "success"
-      );
-    }
-  } catch (error) {
-    console.error(error);
-
-    showToast(
-      "Failed to save notifications",
+      error.response?.data?.message || "Reset failed",
       "error"
     );
   }
@@ -186,6 +190,7 @@ console.log("GET Notifications Response:", response.data);
               <button
                 type="button"
                 onClick={() => toggleSetting(item.id)}
+                disabled={savingId === item.id}
                 aria-label={`Toggle ${item.label}`}
                 style={{
                   width: "42px",
@@ -194,7 +199,9 @@ console.log("GET Notifications Response:", response.data);
                   border: "none",
                   background: settings[item.id] ? "#ffa300" : "#ffc151",
                   position: "relative",
-                  flexShrink: 0
+                  flexShrink: 0,
+                  opacity: savingId === item.id ? 0.6 : 1,
+                  cursor: savingId === item.id ? "not-allowed" : "pointer",
                 }}
               >
                 <span
@@ -222,9 +229,6 @@ console.log("GET Notifications Response:", response.data);
 >
   Reset Notifications
 </button>
-          <button type="button" className="btn btn-brand-1 btn-small" onClick={handleSave}>
-            Save Notifications
-          </button>
         </div>
       </div>
     </SettingsPageShell>

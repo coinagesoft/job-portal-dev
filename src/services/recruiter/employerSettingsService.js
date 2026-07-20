@@ -28,6 +28,10 @@ export const getAccountSettings = async () => {
 };
 
 /* ---------------- UPDATE ACCOUNT ---------------- */
+// NOTE: Email and Mobile Number are intentionally NOT sent here anymore —
+// changing either now requires the OTP flow below (request-otp then
+// verify-otp). This endpoint only ever touches ContactPersonName,
+// Designation and TimeZone.
 
 export const updateAccountSettings = async (data) => {
   const employerId = getEmployerId();
@@ -36,9 +40,6 @@ export const updateAccountSettings = async (data) => {
   formData.append("ContactPersonName", data.contactPersonName);
   formData.append("Designation", data.designation);
   formData.append("TimeZone", data.timeZone);
-  formData.append("Email", data.email);
-  formData.append("MobileNumber", data.mobileNumber);
-  formData.append("CountryCode", data.countryCode);
 
   const response = await api.patch(
     `/api/recruiter/settings/account/${employerId}`,
@@ -50,6 +51,50 @@ export const updateAccountSettings = async (data) => {
     }
   );
 
+  return response.data;
+};
+
+/* ---------------- EMAIL CHANGE (OTP-gated) ---------------- */
+
+export const requestEmailChangeOtp = async (newEmail) => {
+  const employerId = getEmployerId();
+  const response = await api.post(
+    `/api/recruiter/settings/account/${employerId}/email/request-otp`,
+    { newEmail },
+  );
+  return response.data;
+};
+
+export const verifyEmailChangeOtp = async (newEmail, otpCode) => {
+  const employerId = getEmployerId();
+  const response = await api.post(
+    `/api/recruiter/settings/account/${employerId}/email/verify-otp`,
+    { newEmail, otpCode },
+  );
+  return response.data;
+};
+
+/* ---------------- MOBILE CHANGE (OTP-gated) ---------------- */
+
+export const requestMobileChangeOtp = async (newMobileNumber, newCountryCode) => {
+  const employerId = getEmployerId();
+  const response = await api.post(
+    `/api/recruiter/settings/account/${employerId}/mobile/request-otp`,
+    { newMobileNumber, newCountryCode },
+  );
+  return response.data;
+};
+
+export const verifyMobileChangeOtp = async (
+  newMobileNumber,
+  newCountryCode,
+  otpCode,
+) => {
+  const employerId = getEmployerId();
+  const response = await api.post(
+    `/api/recruiter/settings/account/${employerId}/mobile/verify-otp`,
+    { newMobileNumber, newCountryCode, otpCode },
+  );
   return response.data;
 };
 /* ---------------- NOTIFICATION SETTINGS ---------------- */
@@ -117,6 +162,32 @@ export const getSessions = async () => {
 export const revokeSession = async (sessionId) => {
   const response = await api.patch(
     `/api/recruiter/settings/sessions/revoke/${sessionId}`,
+  );
+  return response.data;
+};
+
+/* ---------------- DANGER ZONE ---------------- */
+
+export const deactivateAccount = async () => {
+  const employerId = getEmployerId();
+  const response = await api.patch(
+    `/api/recruiter/settings/deactivate/${employerId}`,
+  );
+  return response.data;
+};
+
+export const deleteAllJobs = async () => {
+  const employerId = getEmployerId();
+  const response = await api.delete(
+    `/api/recruiter/settings/jobs/${employerId}`,
+  );
+  return response.data;
+};
+
+export const deleteAccountPermanently = async () => {
+  const employerId = getEmployerId();
+  const response = await api.delete(
+    `/api/recruiter/settings/account/${employerId}`,
   );
   return response.data;
 };

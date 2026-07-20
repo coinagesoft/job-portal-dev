@@ -1,8 +1,5 @@
 import jwtDecode from "jwt-decode";
 
-const NAME_IDENTIFIER_CLAIM =
-  "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier";
-
 const ROLE_CLAIM =
   "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
 
@@ -46,8 +43,6 @@ export const getCandidateId = () => {
   const candidateId =
     decoded?.CandidateId ||
     decoded?.candidateId ||
-    decoded?.userId ||
-    decoded?.[NAME_IDENTIFIER_CLAIM] ||
     getStoredValue("candidateId") ||
     null;
 

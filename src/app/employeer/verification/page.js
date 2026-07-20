@@ -20,6 +20,8 @@ const UPLOADABLE_TYPES = [
   { value: "POE", label: "POE Licence" },
   { value: "RPSL", label: "RPSL Licence" },
   { value: "BUSINESS_REGISTRATION", label: "Business Registration" },
+  { value: "GST", label: "GST Certificate" },
+  { value: "PAN", label: "PAN Card" },
 ];
 
 /* Statuses the backend treats as "positive/done" */

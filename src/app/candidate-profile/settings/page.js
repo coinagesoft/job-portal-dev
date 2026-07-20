@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 
 import Link from "next/link";
 import { useToast } from "@/components/Toast";
-import { getCandidateId } from "@/utils/authHelper";
 
 import {
   getPreferences,
@@ -45,7 +44,6 @@ const CandidateSettingsPage = () => {
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [lastPasswordUpdatedAt, setLastPasswordUpdatedAt] = useState("");
   const [lastLoginAt, setLastLoginAt] = useState("");
-  const candidateId = getCandidateId();
 
   useEffect(() => {
     loadPreferences();
@@ -53,7 +51,7 @@ const CandidateSettingsPage = () => {
 
   const loadPreferences = async () => {
     try {
-      const response = await getPreferences(candidateId);
+      const response = await getPreferences();
 
       if (response?.data?.success) {
         const data = response.data.data;
@@ -76,6 +74,11 @@ const CandidateSettingsPage = () => {
       }
     } catch (error) {
       console.error("Preferences Error:", error);
+      showToast(
+        error.response?.data?.message ||
+          "Failed to load your preferences.",
+        "error",
+      );
     }
   };
 
@@ -88,10 +91,7 @@ const CandidateSettingsPage = () => {
         communicationPreference: comms,
       };
 
-      const response = await updatePreferences(
-        candidateId,
-        payload
-      );
+      const response = await updatePreferences(payload);
 
       if (response?.data?.success) {
         setSaved(true);

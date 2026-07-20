@@ -30,7 +30,6 @@ const getWordCount = (str) => {
 
 const screeningFilters = [
   { key: "minExperience3Years", label: "Experience 3+ years" },
-  { key: "relocationReady", label: "Relocation ready", unavailable: true },
   { key: "noticePeriodMax30Days", label: "Notice period <= 30 days" },
   { key: "mandatoryAnswersComplete", label: "Mandatory answers complete" },
 ];
@@ -40,7 +39,6 @@ const STATUS_BADGE = {
   Applied: { label: "Applied", bg: "#EAF4FF", color: "#1D4ED8" },
   InReview: { label: "In Review", bg: "#FEF3C7", color: "#92400E" },
   Shortlisted: { label: "Shortlisted", bg: "#DCFCE7", color: "#166534" },
-  // Interview:   { label: "Interview",   bg: "#EDE9FE", color: "#6D28D9" },
   Hired: { label: "Hired", bg: "#CCFBF1", color: "#0F766E" },
   Rejected: { label: "Rejected", bg: "#FEE2E2", color: "#B91C1C" },
   Withdrawn: { label: "Withdrawn", bg: "#E5E7EB", color: "#374151" },
@@ -374,7 +372,6 @@ const EmployerApplicantsClient = () => {
           count: counts.shortlisted ?? counts.Shortlisted,
           value: "Shortlisted",
         },
-        // { label: "Interview",   count: counts.interview ?? counts.Interview,       value: "Interview" },
         { label: "Hired", count: counts.hired ?? counts.Hired, value: "Hired" },
         {
           label: "Rejected",
@@ -403,6 +400,8 @@ const EmployerApplicantsClient = () => {
         await hireApplicant(statusPopup.applicationId, statusNote.trim());
 
       // Optional note — only sent if the employer actually typed one.
+      // Rejected applications don't collect a separate note (only the
+      // rejection reason above), so this never fires in that branch.
       if (statusNote.trim()) {
         try {
           await addNote(statusPopup.applicationId, statusNote.trim());
@@ -1054,20 +1053,24 @@ const EmployerApplicantsClient = () => {
                                 }}
                               >
                                 <span
-                                  style={{
-                                    fontSize: 12,
-                                    color: "#94a3b8",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 5,
-                                  }}
-                                >
-                                  <i
-                                    className="fi-rr-briefcase"
-                                    style={{ color: "#ffa300" }}
-                                  />
-                                  {applicant.jobTitle}
-                                </span>
+  style={{
+    fontSize: "14px",
+    color: "#122359",      // Theme dark blue
+    display: "flex",
+    alignItems: "center",
+    fontWeight: 600,
+    gap: 6,
+  }}
+>
+  <i
+    className="fi-rr-briefcase"
+    style={{
+      color: "#ff9900",
+      fontSize: "15px",
+    }}
+  />
+  {applicant.jobTitle}
+</span>
 
                                 {applicant.currentCity && (
                                   <span
@@ -1264,15 +1267,6 @@ const EmployerApplicantsClient = () => {
                       <i className="fi-rr-download" />
                       <span>Download CV</span>
                     </button>
-                    {/* 
-                    <button
-                      className={styles.dropdownItem}
-                      disabled={detailLoading}
-                      onClick={() => { handleViewDetail(menuApplicant.applicationId); setOpenMenu(null); }}
-                    >
-                      <i className="fi-rr-eye" />
-                      <span>{detailLoading ? "Loading…" : "View Details"}</span>
-                    </button> */}
 
                     <button
                       className={styles.dropdownItem}
@@ -1569,7 +1563,7 @@ const EmployerApplicantsClient = () => {
             </div>
           </div>
 
-          {selectedStatus === "Rejected" && (
+          {selectedStatus === "Rejected" ? (
             <div style={{ marginBottom: "16px" }}>
               <label
                 style={{
@@ -1590,116 +1584,118 @@ const EmployerApplicantsClient = () => {
                 onChange={(e) => setRejectReason(e.target.value)}
               />
             </div>
-          )}
-
-          {existingNotes.length > 0 && (
-            <div style={{ marginBottom: "16px" }}>
-              <label
-                style={{
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  color: "#374151",
-                  marginBottom: "8px",
-                  display: "block",
-                }}
-              >
-                Previous notes:
-              </label>
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "8px",
-                  maxHeight: "160px",
-                  overflowY: "auto",
-                }}
-              >
-                {existingNotes.map((n, i) => (
-                  <div
-                    key={n.recruiterNoteId || i}
+          ) : (
+            <>
+              {existingNotes.length > 0 && (
+                <div style={{ marginBottom: "16px" }}>
+                  <label
                     style={{
-                      background: "#f9fafb",
-                      border: "1px solid #f3f4f6",
-                      borderRadius: "10px",
-                      padding: "10px 12px",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      color: "#374151",
+                      marginBottom: "8px",
+                      display: "block",
                     }}
                   >
-                    <p
-                      style={{ margin: 0, fontSize: "13px", color: "#374151" }}
-                    >
-                      {n.noteText}
-                    </p>
-                    {n.createdAt && (
-                      <p
+                    Previous notes:
+                  </label>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "8px",
+                      maxHeight: "160px",
+                      overflowY: "auto",
+                    }}
+                  >
+                    {existingNotes.map((n, i) => (
+                      <div
+                        key={n.recruiterNoteId || i}
                         style={{
-                          margin: "4px 0 0",
-                          fontSize: "11px",
-                          color: "#9ca3af",
+                          background: "#f9fafb",
+                          border: "1px solid #f3f4f6",
+                          borderRadius: "10px",
+                          padding: "10px 12px",
                         }}
                       >
-                        {formatDate(n.createdAt)}
-                      </p>
-                    )}
+                        <p
+                          style={{ margin: 0, fontSize: "13px", color: "#374151" }}
+                        >
+                          {n.noteText}
+                        </p>
+                        {n.createdAt && (
+                          <p
+                            style={{
+                              margin: "4px 0 0",
+                              fontSize: "11px",
+                              color: "#9ca3af",
+                            }}
+                          >
+                            {formatDate(n.createdAt)}
+                          </p>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
+              )}
+
+              {notesLoading && (
+                <p
+                  style={{
+                    fontSize: "12px",
+                    color: "#9ca3af",
+                    marginBottom: "16px",
+                  }}
+                >
+                  Loading previous notes…
+                </p>
+              )}
+
+              <div style={{ marginBottom: "16px" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: "8px",
+                  }}
+                >
+                  <label
+                    style={{
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      color: "#374151",
+                      margin: 0,
+                    }}
+                  >
+                    Add a note (optional):
+                  </label>
+                  <span
+                    style={{
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      color: getWordCount(statusNote) > 100 ? "#dc2626" : "#6b7280",
+                    }}
+                  >
+                    {getWordCount(statusNote)} / 100 words
+                  </span>
+                </div>
+                <textarea
+                  className="form-control"
+                  rows={3}
+                  placeholder="e.g. Strong communication skills, follow up next week…"
+                  value={statusNote}
+                  onChange={(e) => setStatusNote(e.target.value)}
+                  style={
+                    getWordCount(statusNote) > 100
+                      ? { borderColor: "#dc2626" }
+                      : undefined
+                  }
+                />
               </div>
-            </div>
+            </>
           )}
-
-          {notesLoading && (
-            <p
-              style={{
-                fontSize: "12px",
-                color: "#9ca3af",
-                marginBottom: "16px",
-              }}
-            >
-              Loading previous notes…
-            </p>
-          )}
-
-          <div style={{ marginBottom: "16px" }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "8px",
-              }}
-            >
-              <label
-                style={{
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  color: "#374151",
-                  margin: 0,
-                }}
-              >
-                Add a note (optional):
-              </label>
-              <span
-                style={{
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  color: getWordCount(statusNote) > 100 ? "#dc2626" : "#6b7280",
-                }}
-              >
-                {getWordCount(statusNote)} / 100 words
-              </span>
-            </div>
-            <textarea
-              className="form-control"
-              rows={3}
-              placeholder="e.g. Strong communication skills, follow up next week…"
-              value={statusNote}
-              onChange={(e) => setStatusNote(e.target.value)}
-              style={
-                getWordCount(statusNote) > 100
-                  ? { borderColor: "#dc2626" }
-                  : undefined
-              }
-            />
-          </div>
 
           <div
             style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}
@@ -1717,7 +1713,10 @@ const EmployerApplicantsClient = () => {
             <button
               className="btn btn-default btn-sm"
               onClick={handleStatusUpdate}
-              disabled={updatingStatus || getWordCount(statusNote) > 100}
+              disabled={
+                updatingStatus ||
+                (selectedStatus !== "Rejected" && getWordCount(statusNote) > 100)
+              }
             >
               {updatingStatus ? "Updating…" : "Update Status"}
             </button>
