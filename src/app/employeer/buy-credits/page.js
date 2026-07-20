@@ -443,7 +443,7 @@ const EmployerBuyCreditsPage = () => {
                           </p>
                         </div>
                         <ul className="list-package-feature flex-grow-1 mb-30">
-                          <li>{pack.rateLabel}</li>
+                          {/* <li>{pack.rateLabel}</li> */}
                           <li>GST-compliant invoice generated</li>
                           <li>Shared wallet with sub-users</li>
                           <li>Unlock profiles across bands</li>
