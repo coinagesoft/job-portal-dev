@@ -53,6 +53,7 @@ const SavedJobsTab = () => {
     loadSavedJobs();
   }, []);
 
+  
   const loadSavedJobs = async () => {
     try {
       setLoading(true);
@@ -122,6 +123,7 @@ const SavedJobsTab = () => {
     }
   };
 
+
  const handleUnsave = async (jobId) => {
     try {
       const response = await saveJob(jobId);
@@ -138,6 +140,7 @@ const SavedJobsTab = () => {
       );
     }
   };
+
 
   const totalPages = Math.max(
     1,

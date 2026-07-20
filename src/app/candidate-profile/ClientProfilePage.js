@@ -237,7 +237,7 @@ const Btn = ({
 }) => {
   const variants = {
     primary: { background: T.orange, color: T.white, border: "none" },
-   outline: {
+    outline: {
       background: T.white,
       color: T.navy,
       border: `1.5px solid ${T.navy}`,
@@ -776,8 +776,20 @@ const StepPersonal = ({
           value={data.summary || ""}
           onChange={(e) => onChange("summary", e.target.value)}
           rows={4}
+          maxLength={1000}
           placeholder="Describe your key skills and years of experience..."
         />
+
+        <div
+          style={{
+            textAlign: "right",
+            fontSize: "12px",
+            color: "#6c757d",
+            marginTop: "4px",
+          }}
+        >
+          {(data.summary || "").length}/1000
+        </div>
         {errors.summary && (
           <p style={{ color: "red", fontSize: "12px", marginTop: "4px" }}>
             {errors.summary}
@@ -901,97 +913,97 @@ const StepWork = ({ data, onUpdate, onAdd, onRemove }) => {
   });
   const showToast = useToast();
 
- const handleSave = async () => {
-  if (!newEntry.title.trim() || !newEntry.company.trim()) {
-    showToast(
-      "Role and company name are required.",
-      "error"
-    );
-    return;
-  }
-
-  if (!newEntry.startDate) {
-    showToast("Start date is required.", "error");
-    return;
-  }
-
-  // Start date cannot be in the future
-  if (newEntry.startDate > today) {
-    showToast(
-      "Start date cannot be a future date.",
-      "error"
-    );
-    return;
-  }
-
-  // End date required for previous employment
-  if (!newEntry.current && !newEntry.endDate) {
-    showToast(
-      "End date is required unless this is your current job.",
-      "error"
-    );
-    return;
-  }
-
-  if (!newEntry.current && newEntry.endDate) {
-    // End date cannot be in the future
-    if (newEntry.endDate > today) {
+  const handleSave = async () => {
+    if (!newEntry.title.trim() || !newEntry.company.trim()) {
       showToast(
-        "End date cannot be a future date.",
+        "Role and company name are required.",
         "error"
       );
       return;
     }
 
-    // End date cannot be before start date
-    if (newEntry.endDate < newEntry.startDate) {
+    if (!newEntry.startDate) {
+      showToast("Start date is required.", "error");
+      return;
+    }
+
+    // Start date cannot be in the future
+    if (newEntry.startDate > today) {
       showToast(
-        "End date cannot be earlier than start date.",
+        "Start date cannot be a future date.",
         "error"
       );
       return;
     }
-  }
 
-  // Notice period required for current job
-  if (
-    newEntry.current &&
-    !newEntry.noticePeriod
-  ) {
-    showToast(
-      "Please select your notice period.",
-      "error"
-    );
-    return;
-  }
+    // End date required for previous employment
+    if (!newEntry.current && !newEntry.endDate) {
+      showToast(
+        "End date is required unless this is your current job.",
+        "error"
+      );
+      return;
+    }
 
-  const payload = {
-    ...newEntry,
+    if (!newEntry.current && newEntry.endDate) {
+      // End date cannot be in the future
+      if (newEntry.endDate > today) {
+        showToast(
+          "End date cannot be a future date.",
+          "error"
+        );
+        return;
+      }
 
-    // Ensure current jobs never save an old end date
-    endDate: newEntry.current
-      ? ""
-      : newEntry.endDate,
+      // End date cannot be before start date
+      if (newEntry.endDate < newEntry.startDate) {
+        showToast(
+          "End date cannot be earlier than start date.",
+          "error"
+        );
+        return;
+      }
+    }
+
+    // Notice period required for current job
+    if (
+      newEntry.current &&
+      !newEntry.noticePeriod
+    ) {
+      showToast(
+        "Please select your notice period.",
+        "error"
+      );
+      return;
+    }
+
+    const payload = {
+      ...newEntry,
+
+      // Ensure current jobs never save an old end date
+      endDate: newEntry.current
+        ? ""
+        : newEntry.endDate,
+    };
+
+    const saved = await onAdd(payload);
+
+    if (!saved) return;
+
+    setNewEntry({
+      title: "",
+      company: "",
+      location: "",
+      startDate: "",
+      endDate: "",
+      current: false,
+      noticePeriod: "",
+      isOffshore: false,
+      description: "",
+    });
+
+    setShowForm(false);
   };
-
-  const saved = await onAdd(payload);
-
-  if (!saved) return;
-
-  setNewEntry({
-    title: "",
-    company: "",
-    location: "",
-    startDate: "",
-    endDate: "",
-    current: false,
-    noticePeriod: "",
-    isOffshore: false,
-    description: "",
-  });
-
-  setShowForm(false);
-};
 
   return (
     <div>
@@ -1181,7 +1193,19 @@ const StepWork = ({ data, onUpdate, onAdd, onRemove }) => {
                     onUpdate(entry.id, "description", e.target.value)
                   }
                   rows={3}
+                  maxLength={1000}
                 />
+
+                <div
+                  style={{
+                    textAlign: "right",
+                    fontSize: "12px",
+                    color: "#6c757d",
+                    marginTop: "4px",
+                  }}
+                >
+                  {(entry.description || "").length}/1000
+                </div>
               </Field>
             </div>
             <button
@@ -1393,10 +1417,25 @@ const StepWork = ({ data, onUpdate, onAdd, onRemove }) => {
             <Textarea
               value={newEntry.description}
               onChange={(e) =>
-                setNewEntry((p) => ({ ...p, description: e.target.value }))
+                setNewEntry((p) => ({
+                  ...p,
+                  description: e.target.value,
+                }))
               }
               rows={3}
+              maxLength={1000}
             />
+
+            <div
+              style={{
+                textAlign: "right",
+                fontSize: "12px",
+                color: "#6c757d",
+                marginTop: "4px",
+              }}
+            >
+              {(newEntry.description || "").length}/1000
+            </div>
           </Field>
           <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
             <Btn onClick={handleSave}>Save Entry</Btn>
@@ -1554,7 +1593,7 @@ const StepEducation = ({ data, onUpdate, onAdd, onRemove }) => {
               }}
             >
               <i className="fi-rr-cross-small" aria-hidden="true" />
-               Remove
+              Remove
             </button>
           </div>
         </Card>
@@ -2765,9 +2804,13 @@ const CandidateProfilePage = () => {
       newErrors.trade = "Trade/Job Title is required";
     }
 
-    // Summary
-    if (!profileData.summary.trim()) {
+    const summary = profileData.summary.trim();
+
+    if (!summary) {
       newErrors.summary = "Professional summary is required";
+    } else if (summary.length > 500) {
+      newErrors.summary =
+        "Professional summary cannot exceed 500 characters";
     }
 
     // Salary
@@ -4384,17 +4427,17 @@ const CandidateProfilePage = () => {
                     }}
                   >
                     <Btn
-  variant="outline"
-  onClick={() => setCurrentStep((s) => Math.max(1, s - 1))}
-  disabled={currentStep === 1}
-  style={{ border: `1.5px solid ${T.orange}` }}
->
-  <i
-    className="fi-rr-arrow-small-left"
-    aria-hidden="true"
-  />
-  Back
-</Btn>
+                      variant="outline"
+                      onClick={() => setCurrentStep((s) => Math.max(1, s - 1))}
+                      disabled={currentStep === 1}
+                      style={{ border: `1.5px solid ${T.orange}` }}
+                    >
+                      <i
+                        className="fi-rr-arrow-small-left"
+                        aria-hidden="true"
+                      />
+                      Back
+                    </Btn>
                     <div
                       style={{ display: "flex", alignItems: "center", gap: 6 }}
                     >

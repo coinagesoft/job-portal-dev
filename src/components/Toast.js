@@ -69,12 +69,6 @@ export const ToastProvider = ({ children }) => {
                 : `slideInToast ${ENTRY_ANIMATION_DURATION}ms ease-out forwards`,
             }}
           >
-            <span style={{ fontSize: "18px" }}>
-              {toast.type === "success" ? "✓"
-                : toast.type === "error" ? "✕"
-                : toast.type === "warning" ? "⚠"
-                : "ℹ"}
-            </span>
             <span style={{ flex: 1 }}>{toast.message}</span>
             <button
               onClick={() => dismissToast(toast.id)}

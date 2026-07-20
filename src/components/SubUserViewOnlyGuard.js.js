@@ -43,19 +43,23 @@ export default function SubUserViewOnlyGuard({ children, message }) {
   return (
     <div style={{ position: "relative" }}>
       <div
+        className="subuser-viewonly-banner"
         style={{
           background: "#FFF5E8",
           border: "1px solid #FFD48A",
           color: "#8a5a00",
           borderRadius: 8,
           padding: "10px 20px",
-          margin: "16px auto 0",
-          maxWidth: 1200,
+          marginTop: 16,
+          marginRight: 24,
+          marginBottom: 0,
           fontSize: 13,
           fontWeight: 600,
           display: "flex",
           alignItems: "center",
           gap: 8,
+          position: "relative",
+          zIndex: 90,
         }}
       >
         <i className="fi-rr-lock" aria-hidden="true" />

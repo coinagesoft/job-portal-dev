@@ -12,8 +12,6 @@ const Pagination = ({ currentPage, totalPages, onPageChange, loading = false }) 
 
   const pagesToShow = Array.from({ length: totalPages }, (_, i) => i + 1)
     .filter((page) => {
-      // Always show first, last, current, and neighbours;
-      // collapse the rest so the bar stays readable even with many pages.
       return (
         page === 1 ||
         page === totalPages ||

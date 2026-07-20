@@ -249,7 +249,6 @@ const EmployerCandidateProfilePage = () => {
   const workHistories = profile.workHistories || [];
   const cv = profile.cv || null;
   const unlockStatus = profile.unlockStatus || {};
-
   const isUnlocked = unlockStatus.isUnlocked ?? overview.isUnlocked ?? false;
   const cvAvailable = !!(cv?.cvAvailable || cv?.canDownloadCv || cv?.cvUrl || cv?.resumeUrl || cv?.fileName || cv?.documentUrl);
 

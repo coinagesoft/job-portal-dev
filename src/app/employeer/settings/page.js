@@ -2,16 +2,33 @@
 
 import { useToast } from "@/components/Toast";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import SubUserViewOnlyGuard from "@/components/SubUserViewOnlyGuard.js";
 import TimezoneSelect from "react-timezone-select";
+import {
+  CountrySelector,
+  DialCodePreview,
+  defaultCountries,
+  parseCountry,
+} from "react-international-phone";
+import "react-international-phone/style.css";
+import styles from "../company-profile/company-profile.module.css";
 import {
   getAccountSettings,
   updateAccountSettings,
+  requestEmailChangeOtp,
+  verifyEmailChangeOtp,
+  requestMobileChangeOtp,
+  verifyMobileChangeOtp,
   getNotificationSettings,
   updateNotificationSettings,
   getPreferences,
   updatePreferences,
   getSessions,
   revokeSession,
+  deactivateAccount,
+  deleteAllJobs,
+  deleteAccountPermanently,
 } from "@/services/recruiter/employerSettingsService";
 const LANGUAGES = [
   "English",
@@ -30,6 +47,69 @@ const LANGUAGES = [
   "French",
   "German",
 ];
+
+// Same country/dial-code dataset the registration page uses (built from
+// react-international-phone's ~218-country list), so the Country Code
+// dropdown here looks and behaves identically to the one at sign-up.
+const PHONE_COUNTRIES = defaultCountries.map((c) => {
+  const parsed = parseCountry(c);
+  return {
+    iso2: parsed.iso2,
+    name: parsed.name,
+    code: `+${parsed.dialCode}`,
+    dialCode: parsed.dialCode,
+  };
+});
+
+const getCountryMeta = (code) =>
+  PHONE_COUNTRIES.find((c) => c.code === code) ||
+  PHONE_COUNTRIES.find((c) => c.code === "+91") ||
+  PHONE_COUNTRIES[0];
+
+// Flag + dial-code dropdown — same component/behavior as the register
+// page's CountryCodeSelect, restyled to sit inside the settings .control
+// field height instead of the registration form's own sizing.
+function CountryCodeSelect({ value, onChange, disabled }) {
+  const meta = getCountryMeta(value);
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        height: 52,
+        borderRadius: 12,
+        border: "1px solid rgba(18,35,89,0.12)",
+        background: disabled ? "#F8FAFC" : "#fff",
+        paddingLeft: 2,
+        paddingRight: 10,
+        gap: 2,
+      }}
+    >
+      <CountrySelector
+        selectedCountry={meta.iso2}
+        onSelect={(country) => onChange(`+${country.dialCode}`)}
+        disabled={disabled}
+        buttonStyle={{
+          border: "none",
+          background: "transparent",
+          height: 44,
+          padding: "0 6px",
+          cursor: disabled ? "not-allowed" : "pointer",
+        }}
+      />
+      <DialCodePreview
+        dialCode={meta.dialCode}
+        prefix="+"
+        style={{
+          fontWeight: 600,
+          fontSize: 14,
+          color: disabled ? "#64748B" : "#122359",
+        }}
+      />
+    </div>
+  );
+}
 
 const SETTINGS_TABS = [
   { key: "account", label: "Account Details", icon: "fi-rr-user" },
@@ -76,58 +156,36 @@ const NOTIFICATION_PREFS = [
   },
 ];
 
-/* ── Shared card shell ── */
+/* ── Shared card shell — same look as Company Profile's .sectionCard ── */
 const Card = ({ children, style = {} }) => (
-  <div
-    className="subuser-hover-card"
-    style={{
-      background: "#ffffff",
-      borderRadius: "24px",
-      boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
-      padding: "28px",
-      marginBottom: "24px",
-      ...style,
-    }}
-  >
-    {children}
+  <div className={styles.sectionCard} style={style}>
+    <div className={styles.sectionBody}>{children}</div>
   </div>
 );
 
-/* ── Section icon header ── */
+/* ── Section icon header — same layout as Company Profile's .sectionHeading,
+     with the circular .sectionStep badge repurposed to hold an icon
+     instead of a step number ── */
 const SectionHeader = ({ icon, title, subtitle, danger = false }) => (
-  <div
-    style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}
-  >
+  <div className={styles.sectionHeading} style={{ marginBottom: 24 }}>
     <div
-      style={{
-        width: 48,
-        height: 48,
-        borderRadius: 16,
-        flexShrink: 0,
-        background: danger
-          ? "linear-gradient(135deg,#a32d2d,#c0392b)"
-          : "linear-gradient(135deg,#122359,#1e3a8a)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
+      className={styles.sectionStep}
+      style={
+        danger
+          ? { color: "#c0392b", borderColor: "rgba(224,32,32,0.35)" }
+          : undefined
+      }
     >
-      <i
-        className={icon}
-        style={{ color: danger ? "#fff" : "#ffa300", fontSize: 18 }}
-      />
+      <i className={icon} />
     </div>
     <div>
       <h5
-        style={{
-          margin: 0,
-          color: danger ? "#a32d2d" : "#122359",
-          fontWeight: 800,
-        }}
+        className={styles.sectionTitle}
+        style={danger ? { color: "#a32d2d" } : undefined}
       >
         {title}
       </h5>
-      <p style={{ margin: 0, color: "#66789c", fontSize: 13 }}>{subtitle}</p>
+      <p className={styles.sectionSub}>{subtitle}</p>
     </div>
   </div>
 );
@@ -167,7 +225,9 @@ const Toggle = ({ enabled, onToggle }) => (
 
 const EmployerSettingsPage = () => {
   const showToast = useToast();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("account");
+  const [dangerLoading, setDangerLoading] = useState(null); // "deactivate" | "deleteJobs" | "deleteAccount" | null
   const [saved, setSaved] = useState(false);
   const [account, setAccount] = useState({
     contactPersonName: "",
@@ -180,9 +240,24 @@ const EmployerSettingsPage = () => {
 
   const [loading, setLoading] = useState(false);
 
+  // Email change (OTP-gated): "idle" -> "input" -> "otp" -> back to "idle"
+  const [emailStep, setEmailStep] = useState("idle");
+  const [newEmailValue, setNewEmailValue] = useState("");
+  const [emailOtpCode, setEmailOtpCode] = useState("");
+  const [emailOtpLoading, setEmailOtpLoading] = useState(false);
+
+  // Mobile number change (OTP-gated) — same shape as email above.
+  const [mobileStep, setMobileStep] = useState("idle");
+  const [newMobileValue, setNewMobileValue] = useState("");
+  const [newCountryCodeValue, setNewCountryCodeValue] = useState("+91");
+  const [mobileOtpCode, setMobileOtpCode] = useState("");
+  const [mobileOtpLoading, setMobileOtpLoading] = useState(false);
+
   const [language, setLanguage] = useState("English");
   const [secondaryLanguage, setSecondaryLanguage] = useState("");
   const [langSaved, setLangSaved] = useState(false);
+  const [langSaving, setLangSaving] = useState(false);
+  const [langResetting, setLangResetting] = useState(false);
 
   const [notifPrefs, setNotifPrefs] = useState(NOTIFICATION_PREFS);
   const [sessions, setSessions] = useState([]);
@@ -210,8 +285,152 @@ const EmployerSettingsPage = () => {
     }
   };
 
+  // ── Email change (OTP-gated) ──────────────────────────────
+  const startEmailChange = () => {
+    setNewEmailValue(account.email || "");
+    setEmailOtpCode("");
+    setEmailStep("input");
+  };
+
+  const cancelEmailChange = () => {
+    setEmailStep("idle");
+    setNewEmailValue("");
+    setEmailOtpCode("");
+  };
+
+  const handleSendEmailOtp = async () => {
+    if (!newEmailValue || newEmailValue === account.email) {
+      showToast("Enter a different email address first.", "error");
+      return;
+    }
+    try {
+      setEmailOtpLoading(true);
+      const result = await requestEmailChangeOtp(newEmailValue);
+      showToast(result?.message || "OTP sent to your new email.", "success");
+      setEmailStep("otp");
+    } catch (error) {
+      console.log(error);
+      showToast(
+        error.response?.data?.message || "Failed to send OTP.",
+        "error",
+      );
+    } finally {
+      setEmailOtpLoading(false);
+    }
+  };
+
+  const handleVerifyEmailOtp = async () => {
+    if (!emailOtpCode) {
+      showToast("Enter the OTP sent to your new email.", "error");
+      return;
+    }
+    try {
+      setEmailOtpLoading(true);
+      const result = await verifyEmailChangeOtp(newEmailValue, emailOtpCode);
+      setAccount((prev) => ({ ...prev, email: newEmailValue }));
+      showToast(result?.message || "Email updated successfully.", "success");
+      cancelEmailChange();
+    } catch (error) {
+      console.log(error);
+      showToast(
+        error.response?.data?.message || "Invalid OTP. Please try again.",
+        "error",
+      );
+    } finally {
+      setEmailOtpLoading(false);
+    }
+  };
+
+  // ── Mobile number change (OTP-gated) ──────────────────────
+  const startMobileChange = () => {
+    setNewMobileValue(account.mobileNumber || "");
+    setNewCountryCodeValue(account.countryCode || "+91");
+    setMobileOtpCode("");
+    setMobileStep("input");
+  };
+
+  const cancelMobileChange = () => {
+    setMobileStep("idle");
+    setNewMobileValue("");
+    setMobileOtpCode("");
+  };
+
+  const handleSendMobileOtp = async () => {
+    if (
+      !newMobileValue ||
+      (newMobileValue === account.mobileNumber &&
+        newCountryCodeValue === account.countryCode)
+    ) {
+      showToast("Enter a different mobile number first.", "error");
+      return;
+    }
+    try {
+      setMobileOtpLoading(true);
+      const result = await requestMobileChangeOtp(
+        newMobileValue,
+        newCountryCodeValue,
+      );
+      showToast(result?.message || "OTP sent to your new number.", "success");
+      setMobileStep("otp");
+    } catch (error) {
+      console.log(error);
+      showToast(
+        error.response?.data?.message || "Failed to send OTP.",
+        "error",
+      );
+    } finally {
+      setMobileOtpLoading(false);
+    }
+  };
+
+  const handleVerifyMobileOtp = async () => {
+    if (!mobileOtpCode) {
+      showToast("Enter the OTP sent to your new number.", "error");
+      return;
+    }
+    try {
+      setMobileOtpLoading(true);
+      const result = await verifyMobileChangeOtp(
+        newMobileValue,
+        newCountryCodeValue,
+        mobileOtpCode,
+      );
+      setAccount((prev) => ({
+        ...prev,
+        mobileNumber: newMobileValue,
+        countryCode: newCountryCodeValue,
+      }));
+      showToast(
+        result?.message || "Mobile number updated successfully.",
+        "success",
+      );
+      cancelMobileChange();
+    } catch (error) {
+      console.log(error);
+      showToast(
+        error.response?.data?.message || "Invalid OTP. Please try again.",
+        "error",
+      );
+    } finally {
+      setMobileOtpLoading(false);
+    }
+  };
+
+  // Primary and secondary can never point at the same language — if the
+  // person switches Primary to whatever Secondary is currently set to,
+  // clear Secondary instead of leaving a stale value that no longer shows
+  // up in its own dropdown (the option disappears visually, but without
+  // this the old value would still get submitted on Save).
+  const handlePrimaryLanguageChange = (value) => {
+    setLanguage(value);
+    if (secondaryLanguage === value) {
+      setSecondaryLanguage("");
+    }
+  };
+
   const handleLangSave = async () => {
     try {
+      setLangSaving(true);
       await updatePreferences({
         primaryLanguage: language,
         secondaryLanguage: secondaryLanguage,
@@ -222,6 +441,26 @@ const EmployerSettingsPage = () => {
     } catch (error) {
       console.log(error);
       showToast("Failed to save preferences.", "error");
+    } finally {
+      setLangSaving(false);
+    }
+  };
+
+  const handleLangReset = async () => {
+    try {
+      setLangResetting(true);
+      await updatePreferences({
+        primaryLanguage: "English",
+        secondaryLanguage: "",
+      });
+      setLanguage("English");
+      setSecondaryLanguage("");
+      showToast("Language preference reset to default.", "success");
+    } catch (error) {
+      console.log(error);
+      showToast("Failed to reset language preference.", "error");
+    } finally {
+      setLangResetting(false);
     }
   };
 
@@ -249,6 +488,101 @@ const EmployerSettingsPage = () => {
       console.log(error);
       setNotifPrefs(notifPrefs); // revert on failure
       showToast("Could not save preference.", "error");
+    }
+  };
+
+  const logoutAndRedirect = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("candidateId");
+    localStorage.removeItem("employerId");
+    router.push("/Login");
+  };
+
+  const handleDeactivateAccount = async () => {
+    if (
+      !window.confirm(
+        "Deactivate your account? Your jobs and data will be hidden but not deleted, and you'll be signed out. You can reactivate at any time by contacting support.",
+      )
+    )
+      return;
+
+    try {
+      setDangerLoading("deactivate");
+      const result = await deactivateAccount();
+      showToast(
+        result?.message || "Account deactivated successfully.",
+        "success",
+      );
+      logoutAndRedirect();
+    } catch (error) {
+      console.log(error);
+      showToast(
+        error.response?.data?.message || "Failed to deactivate account.",
+        "error",
+      );
+    } finally {
+      setDangerLoading(null);
+    }
+  };
+
+  const handleDeleteAllJobs = async () => {
+    if (
+      !window.confirm(
+        "Permanently delete ALL your posted jobs and their applicant data? This cannot be undone.",
+      )
+    )
+      return;
+
+    try {
+      setDangerLoading("deleteJobs");
+      const result = await deleteAllJobs();
+      showToast(result?.message || "All jobs deleted successfully.", "success");
+    } catch (error) {
+      console.log(error);
+      showToast(
+        error.response?.data?.message || "Failed to delete jobs.",
+        "error",
+      );
+    } finally {
+      setDangerLoading(null);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (
+      !window.confirm(
+        "Permanently delete your employer account, all jobs, applicants, and billing history? This cannot be reversed.",
+      )
+    )
+      return;
+
+    const typed = window.prompt(
+      'This is permanent. Type "DELETE" (in capitals) to confirm account deletion.',
+    );
+
+    if (typed !== "DELETE") {
+      if (typed !== null) {
+        showToast("Account deletion cancelled — text did not match.", "info");
+      }
+      return;
+    }
+
+    try {
+      setDangerLoading("deleteAccount");
+      const result = await deleteAccountPermanently();
+      showToast(
+        result?.message || "Account deleted successfully.",
+        "success",
+      );
+      logoutAndRedirect();
+    } catch (error) {
+      console.log(error);
+      showToast(
+        error.response?.data?.message || "Failed to delete account.",
+        "error",
+      );
+    } finally {
+      setDangerLoading(null);
     }
   };
 
@@ -337,6 +671,7 @@ const EmployerSettingsPage = () => {
   }, []);
 
   return (
+    <SubUserViewOnlyGuard message="You don't have permission to change account settings. Only your account owner can make changes here.">
     <main className="main">
       <section className="section-box mt-50 mb-50">
         <div className="container">
@@ -434,13 +769,11 @@ const EmployerSettingsPage = () => {
                   title="Account Details"
                   subtitle="Update your contact and timezone information"
                 />
-                <div className="row">
-                  {}
-                  <div className="col-lg-6 col-12 mb-15">
-                    <label>Contact Name</label>
-
+                <div className={styles.grid2}>
+                  <div className={styles.field}>
+                    <label className={styles.label}>Contact Name</label>
                     <input
-                      className="form-control"
+                      className={styles.control}
                       type="text"
                       value={account.contactPersonName}
                       onChange={(e) =>
@@ -451,11 +784,10 @@ const EmployerSettingsPage = () => {
                       }
                     />
                   </div>
-                  <div className="col-lg-6 col-12 mb-15">
-                    <label>Designation</label>
-
+                  <div className={styles.field}>
+                    <label className={styles.label}>Designation</label>
                     <input
-                      className="form-control"
+                      className={styles.control}
                       type="text"
                       value={account.designation}
                       onChange={(e) =>
@@ -466,95 +798,285 @@ const EmployerSettingsPage = () => {
                       }
                     />
                   </div>
-                  <div className="col-lg-6 col-12 mb-15">
-                    <label>Email</label>
 
-                    <input
-                      className="form-control"
-                      type="email"
-                      value={account.email}
-                      disabled
-                      style={{
-                        background: "#F8FAFC",
-                        cursor: "not-allowed",
-                        color: "#64748B",
-                      }}
-                    />
+                  <div className={styles.field}>
+                    <label className={styles.label}>Email</label>
+
+                    {emailStep === "idle" && (
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <input
+                          className={styles.control}
+                          type="email"
+                          value={account.email}
+                          disabled
+                          style={{
+                            background: "#F8FAFC",
+                            cursor: "not-allowed",
+                            color: "#64748B",
+                          }}
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-border btn-sm"
+                          onClick={startEmailChange}
+                          style={{ whiteSpace: "nowrap" }}
+                        >
+                          Change
+                        </button>
+                      </div>
+                    )}
+
+                    {emailStep === "input" && (
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <input
+                          className={styles.control}
+                          type="email"
+                          value={newEmailValue}
+                          onChange={(e) => setNewEmailValue(e.target.value)}
+                          placeholder="Enter new email address"
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-default btn-sm"
+                          onClick={handleSendEmailOtp}
+                          disabled={emailOtpLoading}
+                          style={{ whiteSpace: "nowrap" }}
+                        >
+                          {emailOtpLoading ? "Sending..." : "Send OTP"}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-grey-small"
+                          onClick={cancelEmailChange}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
+
+                    {emailStep === "otp" && (
+                      <div className={styles.inlinePanel} style={{ marginTop: 4 }}>
+                        <div className={styles.inlinePanelHead}>
+                          <p className={styles.inlinePanelTitle}>
+                            Verify New Email
+                          </p>
+                          <span className={styles.inlinePanelBadge}>
+                            OTP Sent
+                          </span>
+                        </div>
+                        <p className={styles.inlinePanelText}>
+                          Enter the code sent to <strong>{newEmailValue}</strong>
+                        </p>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <input
+                            className={styles.control}
+                            type="text"
+                            maxLength={6}
+                            value={emailOtpCode}
+                            onChange={(e) => setEmailOtpCode(e.target.value)}
+                            placeholder="Enter 6-digit OTP"
+                          />
+                          <button
+                            type="button"
+                            className="btn btn-default btn-sm"
+                            onClick={handleVerifyEmailOtp}
+                            disabled={emailOtpLoading}
+                            style={{ whiteSpace: "nowrap" }}
+                          >
+                            {emailOtpLoading ? "Verifying..." : "Verify"}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-grey-small"
+                            onClick={cancelEmailChange}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleSendEmailOtp}
+                          disabled={emailOtpLoading}
+                          className={styles.bottomLink}
+                          style={{
+                            border: "none",
+                            background: "none",
+                            padding: 0,
+                            marginTop: 10,
+                            textAlign: "left",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <a>Resend OTP</a>
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  <div className="col-lg-6 col-12 mb-15">
-                    <label>Country Code</label>
 
-                    <input
-                      className="form-control"
-                      value={account.countryCode}
-                      disabled
-                      style={{
-                        background: "#F8FAFC",
-                        cursor: "not-allowed",
-                        color: "#64748B",
-                      }}
+                  <div className={styles.field}>
+                    <label className={styles.label}>Country Code</label>
+                    <CountryCodeSelect
+                      value={
+                        mobileStep === "input" || mobileStep === "otp"
+                          ? newCountryCodeValue
+                          : account.countryCode
+                      }
+                      onChange={(code) => setNewCountryCodeValue(code)}
+                      disabled={mobileStep === "idle"}
                     />
-                  </div>
-                  <div className="col-lg-6 col-12 mb-15">
-                    <label>Mobile Number</label>
-
-                    <input
-                      className="form-control"
-                      type="tel"
-                      value={account.mobileNumber}
-                      disabled
-                      style={{
-                        background: "#F8FAFC",
-                        cursor: "not-allowed",
-                        color: "#64748B",
-                      }}
-                    />
-
-                    <p style={{ color: "#94A3B8" }}>
-                      Mobile number can only be changed by contacting support.
+                    <p className={styles.hint}>
+                      Edit together with Mobile Number below.
                     </p>
                   </div>
 
-                  <div className="col-lg-6 col-12 mb-15">
-                    <label
-                      style={{
-                        display: "block",
-                        marginBottom: 6,
-                        fontSize: 13,
-                        fontWeight: 600,
-                        color: "#66789c",
+                  <div className={styles.field}>
+                    <label className={styles.label}>Mobile Number</label>
+
+                    {mobileStep === "idle" && (
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <input
+                          className={styles.control}
+                          type="tel"
+                          value={account.mobileNumber}
+                          disabled
+                          style={{
+                            background: "#F8FAFC",
+                            cursor: "not-allowed",
+                            color: "#64748B",
+                          }}
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-border btn-sm"
+                          onClick={startMobileChange}
+                          style={{ whiteSpace: "nowrap" }}
+                        >
+                          Change
+                        </button>
+                      </div>
+                    )}
+
+                    {mobileStep === "input" && (
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <input
+                          className={styles.control}
+                          type="tel"
+                          value={newMobileValue}
+                          onChange={(e) => setNewMobileValue(e.target.value)}
+                          placeholder="Enter new mobile number"
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-default btn-sm"
+                          onClick={handleSendMobileOtp}
+                          disabled={mobileOtpLoading}
+                          style={{ whiteSpace: "nowrap" }}
+                        >
+                          {mobileOtpLoading ? "Sending..." : "Send OTP"}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-grey-small"
+                          onClick={cancelMobileChange}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
+
+                    {mobileStep === "otp" && (
+                      <div className={styles.inlinePanel} style={{ marginTop: 4 }}>
+                        <div className={styles.inlinePanelHead}>
+                          <p className={styles.inlinePanelTitle}>
+                            Verify New Number
+                          </p>
+                          <span className={styles.inlinePanelBadge}>
+                            OTP Sent
+                          </span>
+                        </div>
+                        <p className={styles.inlinePanelText}>
+                          Enter the code sent to{" "}
+                          <strong>
+                            {newCountryCodeValue}
+                            {newMobileValue}
+                          </strong>
+                        </p>
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <input
+                            className={styles.control}
+                            type="text"
+                            maxLength={6}
+                            value={mobileOtpCode}
+                            onChange={(e) => setMobileOtpCode(e.target.value)}
+                            placeholder="Enter 6-digit OTP"
+                          />
+                          <button
+                            type="button"
+                            className="btn btn-default btn-sm"
+                            onClick={handleVerifyMobileOtp}
+                            disabled={mobileOtpLoading}
+                            style={{ whiteSpace: "nowrap" }}
+                          >
+                            {mobileOtpLoading ? "Verifying..." : "Verify"}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-grey-small"
+                            onClick={cancelMobileChange}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleSendMobileOtp}
+                          disabled={mobileOtpLoading}
+                          className={styles.bottomLink}
+                          style={{
+                            border: "none",
+                            background: "none",
+                            padding: 0,
+                            marginTop: 10,
+                            textAlign: "left",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <a>Resend OTP</a>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className={styles.field}>
+                    <label className={styles.label}>Time Zone</label>
+                    <TimezoneSelect
+                      value={account.timeZone}
+                      onChange={(tz) =>
+                        setAccount({
+                          ...account,
+                          timeZone: tz.value,
+                        })
+                      }
+                      styles={{
+                        control: (base) => ({
+                          ...base,
+                          minHeight: "52px",
+                          borderRadius: "12px",
+                          borderColor: "rgba(18,35,89,0.12)",
+                          boxShadow: "none",
+                          fontSize: "14px",
+                        }),
+                        menu: (base) => ({
+                          ...base,
+                          zIndex: 9999,
+                        }),
                       }}
-                    >
-                      Time Zone
-                    </label>
-                   <TimezoneSelect
-  value={account.timeZone}
-  onChange={(tz) =>
-    setAccount({
-      ...account,
-      timeZone: tz.value,
-    })
-  }
-  styles={{
-    control: (base) => ({
-      ...base,
-      minHeight: "44px",
-      borderRadius: "12px",
-      borderColor: "rgba(18,35,89,0.12)",
-      boxShadow: "none",
-      fontSize: "13px",
-    }),
-    menu: (base) => ({
-      ...base,
-      zIndex: 9999,
-    }),
-  }}
-/>
+                    />
                   </div>
                 </div>
                 <div
                   style={{
-                    borderTop: "1px solid rgba(18,35,89,0.06)",
+                    borderTop: "1px solid var(--border-light)",
                     marginTop: 8,
                     paddingTop: 20,
                     display: "flex",
@@ -566,11 +1088,6 @@ const EmployerSettingsPage = () => {
                     type="button"
                     onClick={handleSave}
                     disabled={loading}
-                    style={{
-                      borderRadius: 12,
-                      fontWeight: 700,
-                      boxShadow: "0 8px 20px rgba(255,163,0,0.18)",
-                    }}
                   >
                     {loading ? "Saving..." : saved ? "✓ Saved" : "Save Changes"}
                   </button>
@@ -612,7 +1129,9 @@ const EmployerSettingsPage = () => {
                     <select
                       className="form-control form-select"
                       value={language}
-                      onChange={(e) => setLanguage(e.target.value)}
+                      onChange={(e) =>
+                        handlePrimaryLanguageChange(e.target.value)
+                      }
                       style={{
                         height: 44,
                         fontSize: 13,
@@ -728,24 +1247,40 @@ const EmployerSettingsPage = () => {
                     className="btn btn-default"
                     type="button"
                     onClick={handleLangSave}
+                    disabled={langSaving || langResetting}
                     style={{
                       borderRadius: 12,
                       fontWeight: 700,
                       boxShadow: "0 8px 20px rgba(255,163,0,0.18)",
+                      opacity: langSaving || langResetting ? 0.7 : 1,
+                      cursor:
+                        langSaving || langResetting
+                          ? "not-allowed"
+                          : "pointer",
                     }}
                   >
-                    {langSaved ? "✓ Saved" : "Save Language"}
+                    {langSaving
+                      ? "Saving..."
+                      : langSaved
+                        ? "✓ Saved"
+                        : "Save Language"}
                   </button>
                   <button
                     className="btn btn-border"
                     type="button"
-                    onClick={() => {
-                      setLanguage("English");
-                      setSecondaryLanguage("");
+                    onClick={handleLangReset}
+                    disabled={langSaving || langResetting}
+                    style={{
+                      borderRadius: 12,
+                      fontWeight: 700,
+                      opacity: langSaving || langResetting ? 0.7 : 1,
+                      cursor:
+                        langSaving || langResetting
+                          ? "not-allowed"
+                          : "pointer",
                     }}
-                    style={{ borderRadius: 12, fontWeight: 700 }}
                   >
-                    Reset to Default
+                    {langResetting ? "Resetting..." : "Reset to Default"}
                   </button>
                 </div>
               </Card>
@@ -1259,6 +1794,7 @@ const EmployerSettingsPage = () => {
                 {/* Action cards — styled like subuser user cards */}
                 {[
                   {
+                    id: "deactivate",
                     icon: "fi-rr-pause",
                     iconBg: "#fff7ea",
                     iconColor: "#ff9900",
@@ -1268,9 +1804,12 @@ const EmployerSettingsPage = () => {
                     tagBg: "#ecfdf3",
                     tagColor: "#0BAB7C",
                     btnLabel: "Deactivate Account",
+                    btnLoadingLabel: "Deactivating...",
                     btnClass: "btn-border",
+                    onClick: handleDeactivateAccount,
                   },
                   {
+                    id: "deleteJobs",
                     icon: "fi-rr-trash",
                     iconBg: "#fff5f5",
                     iconColor: "#e02020",
@@ -1280,9 +1819,12 @@ const EmployerSettingsPage = () => {
                     tagBg: "#fff0f0",
                     tagColor: "#e02020",
                     btnLabel: "Delete All Jobs",
+                    btnLoadingLabel: "Deleting...",
                     btnClass: "btn-border",
+                    onClick: handleDeleteAllJobs,
                   },
                   {
+                    id: "deleteAccount",
                     icon: "fi-rr-user-delete",
                     iconBg: "#fff0f0",
                     iconColor: "#c0392b",
@@ -1292,7 +1834,9 @@ const EmployerSettingsPage = () => {
                     tagBg: "#fff0f0",
                     tagColor: "#c0392b",
                     btnLabel: "Delete Account",
+                    btnLoadingLabel: "Deleting...",
                     btnClass: "btn-danger",
+                    onClick: handleDeleteAccount,
                   },
                 ].map((action) => (
                   <div
@@ -1397,14 +1941,23 @@ const EmployerSettingsPage = () => {
                         <button
                           className={`btn ${action.btnClass} btn-sm`}
                           type="button"
+                          disabled={dangerLoading !== null}
+                          onClick={action.onClick}
                           style={{
                             borderRadius: 10,
                             fontWeight: 700,
                             fontSize: 12,
                             whiteSpace: "nowrap",
+                            opacity: dangerLoading !== null ? 0.7 : 1,
+                            cursor:
+                              dangerLoading !== null
+                                ? "not-allowed"
+                                : "pointer",
                           }}
                         >
-                          {action.btnLabel}
+                          {dangerLoading === action.id
+                            ? action.btnLoadingLabel
+                            : action.btnLabel}
                         </button>
                       </div>
                     </div>
@@ -1416,6 +1969,7 @@ const EmployerSettingsPage = () => {
         </div>
       </section>
     </main>
+    </SubUserViewOnlyGuard>
   );
 };
 
