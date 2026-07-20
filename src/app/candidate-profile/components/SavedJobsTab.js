@@ -6,6 +6,41 @@ import { getSavedJobs, saveJob } from "@/services/candidate/savedJobsService";
 import { getAllJobs } from "@/services/candidate/allJobsService";
 import { useToast } from "@/components/Toast";
 
+const formatExperienceDisplay = (job, matchedJob) => {
+  if (job?.experienceDisplay && typeof job.experienceDisplay === "string" && job.experienceDisplay.trim()) {
+    return job.experienceDisplay.trim();
+  }
+  if (matchedJob?.experienceDisplay && typeof matchedJob.experienceDisplay === "string" && matchedJob.experienceDisplay.trim()) {
+    return matchedJob.experienceDisplay.trim();
+  }
+  if (job?.experience && typeof job.experience === "string" && job.experience.trim()) {
+    return job.experience.trim();
+  }
+  if (matchedJob?.experience && typeof matchedJob.experience === "string" && matchedJob.experience.trim()) {
+    return matchedJob.experience.trim();
+  }
+
+  const minExp = matchedJob?.experienceMinYears ?? job?.experienceMinYears ?? matchedJob?.minExperience ?? job?.minExperience;
+  const maxExp = matchedJob?.experienceMaxYears ?? job?.experienceMaxYears ?? matchedJob?.maxExperience ?? job?.maxExperience;
+
+  if (minExp != null && maxExp != null) {
+    const min = Number(minExp);
+    const max = Number(maxExp);
+    if (!isNaN(min) && !isNaN(max)) {
+      if (min === 0 && max === 0) return "Fresher (0-1 yr)";
+      if (max > 0) return `${min}-${max} Years`;
+      return `${min}+ Years`;
+    }
+  } else if (minExp != null) {
+    const min = Number(minExp);
+    if (!isNaN(min)) {
+      return min === 0 ? "Fresher" : `${min}+ Years`;
+    }
+  }
+
+  return "Experience not specified";
+};
+
 const SavedJobsTab = () => {
   const showToast = useToast();
   const [savedJobs, setSavedJobs] = useState([]);
@@ -58,9 +93,7 @@ const SavedJobsTab = () => {
 
             type: job.employmentType,
 
-            experience:
-              job.experienceDisplay ||
-              "Experience not specified",
+            experience: formatExperienceDisplay(job, matchedJob),
 
             description:
               matchedJob?.description ||

@@ -24,6 +24,20 @@ import { getJobResume } from "@/services/recruiter/recruiterJobPostService";
 /* Turn backend enum-style values (Regular_Hiring, Full_Time) into readable text */
 const humanize = (s) => (s ? s.replace(/_/g, " ") : s);
 
+const renderJobCategory = (job) => {
+  if (!job) return "—";
+  const trade = (job.tradeCategory || "").trim();
+  const role = (job.role || job.roleSpecialisation || "").trim();
+  const isOther = trade.toLowerCase() === "other" || trade.toLowerCase() === "othere";
+  if (isOther) {
+    return role || job.department || "Other / Specialisation";
+  }
+  if (role && role.toLowerCase() !== trade.toLowerCase()) {
+    return `${trade} • ${role}`;
+  }
+  return trade || "—";
+};
+
 /* ── reusable pill tag ── */
 const Tag = ({ label }) => {
   const handleEnter = (e) => {
@@ -638,9 +652,10 @@ const EmployerJobListPage = () => {
                               margin: "0 0 12px",
                               color: "#66789c",
                               fontSize: 13,
+                              fontWeight: 600,
                             }}
                           >
-                            {job.tradeCategory}
+                            {renderJobCategory(job)}
                           </p>
 
                           {/* Info row */}

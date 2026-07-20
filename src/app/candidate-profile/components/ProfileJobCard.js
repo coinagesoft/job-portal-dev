@@ -199,7 +199,7 @@ const ProfileJobCard = ({ job, isListView, applyToDetails = false, onUnsave }) =
           {applyToDetails ? (
             <span className="card-time">
               <span>Experience:</span>
-              <span>{job.experience || "0-1 years"}</span>
+              <span>{job.experience || "Not specified"}</span>
             </span>
           ) : (
             <span className="card-time">

@@ -352,33 +352,33 @@ const EmployerApplicantsClient = () => {
   const counts = jobId ? jobStatusCounts : dashboard;
   const statusTabs = counts
     ? [
-        {
-          label: "All",
-          count: jobId ? counts.total : counts.totalApplicants,
-          value: "",
-        },
-        {
-          label: "Applied",
-          count: counts.applied ?? counts.Applied,
-          value: "Applied",
-        },
-        {
-          label: "In Review",
-          count: counts.inReview ?? counts.InReview,
-          value: "InReview",
-        },
-        {
-          label: "Shortlisted",
-          count: counts.shortlisted ?? counts.Shortlisted,
-          value: "Shortlisted",
-        },
-        { label: "Hired", count: counts.hired ?? counts.Hired, value: "Hired" },
-        {
-          label: "Rejected",
-          count: counts.rejected ?? counts.Rejected,
-          value: "Rejected",
-        },
-      ]
+      {
+        label: "All",
+        count: jobId ? counts.total : counts.totalApplicants,
+        value: "",
+      },
+      {
+        label: "Applied",
+        count: counts.applied ?? counts.Applied,
+        value: "Applied",
+      },
+      {
+        label: "In Review",
+        count: counts.inReview ?? counts.InReview,
+        value: "InReview",
+      },
+      {
+        label: "Shortlisted",
+        count: counts.shortlisted ?? counts.Shortlisted,
+        value: "Shortlisted",
+      },
+      { label: "Hired", count: counts.hired ?? counts.Hired, value: "Hired" },
+      {
+        label: "Rejected",
+        count: counts.rejected ?? counts.Rejected,
+        value: "Rejected",
+      },
+    ]
     : [];
 
   /* ── Change Status ── */
@@ -424,16 +424,16 @@ const EmployerApplicantsClient = () => {
       setExistingNotes([]);
       loadData(activeStatus, searchText, pageNumber);
     } catch (err) {
-  console.error(err);
+      console.error(err);
 
-  const message =
-    err?.response?.data?.message ||
-    err?.response?.data?.Message ||
-    err?.response?.data?.error ||
-    "Failed to update status.";
+      const message =
+        err?.response?.data?.message ||
+        err?.response?.data?.Message ||
+        err?.response?.data?.error ||
+        "Failed to update status.";
 
-  showToast(message, "error");
-} finally {
+      showToast(message, "error");
+    } finally {
       setUpdatingStatus(false);
     }
   };
@@ -467,7 +467,7 @@ const EmployerApplicantsClient = () => {
 
       showToast(
         result.message ||
-          `CV downloaded for ${applicant.candidateName}. ${result.creditsDeducted ?? 0} credit(s) used.`,
+        `CV downloaded for ${applicant.candidateName}. ${result.creditsDeducted ?? 0} credit(s) used.`,
         "success",
       );
 
@@ -480,8 +480,8 @@ const EmployerApplicantsClient = () => {
     } catch (err) {
       showToast(
         err.response?.data?.message ||
-          err.response?.data?.Message ||
-          "Unable to download CV.",
+        err.response?.data?.Message ||
+        "Unable to download CV.",
         "error",
       );
     }
@@ -1053,24 +1053,24 @@ const EmployerApplicantsClient = () => {
                                 }}
                               >
                                 <span
-  style={{
-    fontSize: "14px",
-    color: "#122359",      // Theme dark blue
-    display: "flex",
-    alignItems: "center",
-    fontWeight: 600,
-    gap: 6,
-  }}
->
-  <i
-    className="fi-rr-briefcase"
-    style={{
-      color: "#ff9900",
-      fontSize: "15px",
-    }}
-  />
-  {applicant.jobTitle}
-</span>
+                                  style={{
+                                    fontSize: "14px",
+                                    color: "#122359",      // Theme dark blue
+                                    display: "flex",
+                                    alignItems: "center",
+                                    fontWeight: 600,
+                                    gap: 6,
+                                  }}
+                                >
+                                  <i
+                                    className="fi-rr-briefcase"
+                                    style={{
+                                      color: "#ff9900",
+                                      fontSize: "15px",
+                                    }}
+                                  />
+                                  {applicant.jobTitle}
+                                </span>
 
                                 {applicant.currentCity && (
                                   <span
@@ -1174,9 +1174,9 @@ const EmployerApplicantsClient = () => {
 
                             <button
                               ref={(el) =>
-                                (menuButtonRefs.current[
-                                  applicant.applicationId
-                                ] = el)
+                              (menuButtonRefs.current[
+                                applicant.applicationId
+                              ] = el)
                               }
                               onClick={() => openActionMenu(applicant)}
                               style={{

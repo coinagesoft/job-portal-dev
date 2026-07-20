@@ -181,8 +181,9 @@ export default function JobPreviewModal({ open, onClose, job, loading }) {
             </h4>
             {!loading && job && (
               <p style={{ color: "#c9d4ee", margin: "4px 0 0", fontSize: 13 }}>
-                {humanize(job.TradeCategory)}
-                {job.Role ? ` • ${job.Role}` : ""}
+                {job.TradeCategory?.toLowerCase() === "other" || job.TradeCategory?.toLowerCase() === "othere"
+                  ? (job.Role || "Other / Specialisation")
+                  : `${humanize(job.TradeCategory)}${job.Role ? ` • ${job.Role}` : ""}`}
               </p>
             )}
           </div>

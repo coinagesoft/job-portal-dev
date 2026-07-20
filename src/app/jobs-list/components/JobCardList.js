@@ -351,7 +351,9 @@ const formatTimeAgo = (timeAgo) => {
                   fontWeight: 600,
                 }}
               >
-                {job.tradeCategory}
+                {job.tradeCategory?.toLowerCase() === "other" || job.tradeCategory?.toLowerCase() === "othere"
+                  ? (job.role || job.department || "Other / Specialisation")
+                  : (job.role ? `${job.tradeCategory} • ${job.role}` : job.tradeCategory)}
               </span>
             )}
 
