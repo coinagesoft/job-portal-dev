@@ -40,7 +40,10 @@ const TAB_ICONS = {
 const EmployerSectionSidebar = () => {
   const pathname = usePathname();
   const role = useSelector((state) => state.auth.user?.role);
-  const isCvSearchRoute = isPathActive(pathname, "/employeer/cv-search") || isPathActive(pathname, "/employeer/cvsearch");
+  const isCvSearchOrShortlistRoute =
+    isPathActive(pathname, "/employeer/cv-search") ||
+    isPathActive(pathname, "/employeer/cvsearch") ||
+    isPathActive(pathname, "/employeer/candidate-profile");
 
   const activeTab = EMPLOYER_HEADER_TABS.find((tab) =>
     tab.links.some((link) => isPathActive(pathname, link.href))
@@ -48,16 +51,17 @@ const EmployerSectionSidebar = () => {
 
   useEffect(() => {
     if (typeof document === "undefined") return;
-    const shouldEnableLayoutClass = role === "employer" && Boolean(activeTab) && !isCvSearchRoute;
+    const shouldEnableLayoutClass =
+      role === "employer" && Boolean(activeTab) && !isCvSearchOrShortlistRoute;
     document.body.classList.toggle("employer-panel-with-sidebar", shouldEnableLayoutClass);
     return () => {
       document.body.classList.remove("employer-panel-with-sidebar");
     };
-  }, [activeTab, isCvSearchRoute, role]);
+  }, [activeTab, isCvSearchOrShortlistRoute, role]);
 
   if (role !== "employer") return null;
   if (!activeTab) return null;
-  if (isCvSearchRoute) return null;
+  if (isCvSearchOrShortlistRoute) return null;
 
   const tabIcons = TAB_ICONS[activeTab.key] || {};
 
