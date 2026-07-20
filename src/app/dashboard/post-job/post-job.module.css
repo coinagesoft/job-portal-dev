@@ -91,13 +91,10 @@
   margin-top: 6px;
   text-align: center;
   font-size: 11px;
-  line-height: 16px;
+  line-height: 14px;
   color: var(--text-mid);
   font-weight: 600;
-  /* allow wrapping so long labels don't stretch the item */
-  white-space: normal;
-  word-break: break-word;
-  max-width: 72px;
+  white-space: nowrap;
 }
 
 .stepLine {
@@ -612,7 +609,7 @@
 
   .stepLabel {
     font-size: 10px;
-    max-width: 56px;
+    white-space: nowrap;
   }
 
   .stepLine {
