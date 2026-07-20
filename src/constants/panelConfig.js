@@ -93,4 +93,5 @@ export const ROUTE_PERMISSION_RULES = [
   { prefix: "/employeer/verification", hrManagerViewOnly: true },
   { prefix: "/employeer/sub-user", hrManagerViewOnly: true },
   { prefix: "/employeer/buy-credits", hrManagerViewOnly: true },
+  { prefix: "/employeer/settings", hrManagerViewOnly: true },
 ];

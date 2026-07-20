@@ -157,12 +157,24 @@ a {
   text-decoration: none;
 }
 
+.subuser-viewonly-banner {
+  margin-left: 24px;
+}
+
 @media (min-width: 1200px) {
   body.employer-panel-with-sidebar .main {
     padding-left: 280px;
   }
   body.candidate-panel-with-sidebar .main {
     padding-left: 280px;
+  }
+  /* The sub-user view-only banner renders as a sibling before <main>, so
+     it doesn't automatically inherit .main's own sidebar padding above —
+     without this it centers independently and its left edge ends up
+     tucked under the fixed sidebar card. Give it the same reserved space
+     so it starts flush with the rest of the page's content instead. */
+  body.employer-panel-with-sidebar .subuser-viewonly-banner {
+    margin-left: 280px;
   }
 }
 
