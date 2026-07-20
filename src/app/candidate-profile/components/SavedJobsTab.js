@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import ProfileJobCard from "./ProfileJobCard";
 import { getSavedJobs, saveJob } from "@/services/candidate/savedJobsService";
 import { getAllJobs } from "@/services/candidate/allJobsService";
@@ -53,7 +54,6 @@ const SavedJobsTab = () => {
     loadSavedJobs();
   }, []);
 
-  
   const loadSavedJobs = async () => {
     try {
       setLoading(true);
@@ -67,49 +67,29 @@ const SavedJobsTab = () => {
         const allJobs = allJobsResponse?.data || [];
 
         const formattedJobs = savedResponse.data.savedJobs.map((job) => {
-          // Find matching job from All_Jobs API
-          const matchedJob = allJobs.find(
-            (item) => item.jobId === job.jobId
-          );
+          const matchedJob = allJobs.find((item) => item.jobId === job.jobId);
 
           return {
             id: job.savedJobId,
             jobId: job.jobId,
-
-            // Take logo from All_Jobs API
-            logo:
-              matchedJob?.companyLogoUrl ||
-              "/assets2/imgs/brands/brand-1.png",
-
+            logo: matchedJob?.companyLogoUrl || "/assets2/imgs/brands/brand-1.png",
             company: job.companyName,
             employerId: job.employerId || matchedJob?.employerId || null,
-
             location:
               matchedJob?.jobLocation ||
               matchedJob?.companyLocation ||
               job.locationDisplay ||
               [job.city, job.state].filter(Boolean).join(", "),
-
             title: job.jobTitle,
-
             type: job.employmentType,
-
+            experience: job.experienceDisplay || "Experience not specified",
             experience: formatExperienceDisplay(job, matchedJob),
 
             description:
-              matchedJob?.description ||
-              job.role ||
-              "No description available",
-
+              matchedJob?.description || job.role || "No description available",
             price: job.salaryDisplay,
-
             priceUnit: "",
-
-            tags:
-              job.keySkills?.length > 0
-                ? job.keySkills
-                : job.tags || [],
-
+            tags: job.keySkills?.length > 0 ? job.keySkills : job.tags || [],
             time: job.timeAgo || "Recently",
           };
         });
@@ -123,8 +103,21 @@ const SavedJobsTab = () => {
     }
   };
 
+useEffect(() => {
+  // Perfect Scrollbar cached the page height on load; async content
+  // (like this tab's saved-jobs list) grows after that, so ask it
+  // to recalculate — otherwise scroll stops short of the footer.
+  if (typeof window !== "undefined" && window.Ps) {
+    const scrollContainer = document.querySelector(
+      "[data-scroll], .ps, body"
+    );
+    if (scrollContainer) {
+      window.Ps.update(scrollContainer);
+    }
+  }
+}, [savedJobs, loading]);
 
- const handleUnsave = async (jobId) => {
+  const handleUnsave = async (jobId) => {
     try {
       const response = await saveJob(jobId);
       if (response?.data?.success) {
@@ -141,19 +134,11 @@ const SavedJobsTab = () => {
     }
   };
 
-
-  const totalPages = Math.max(
-    1,
-    Math.ceil(savedJobs.length / jobsPerPage)
-  );
+  const totalPages = Math.max(1, Math.ceil(savedJobs.length / jobsPerPage));
 
   const pagedJobs = useMemo(() => {
     const startIndex = (currentPage - 1) * jobsPerPage;
-
-    return savedJobs.slice(
-      startIndex,
-      startIndex + jobsPerPage
-    );
+    return savedJobs.slice(startIndex, startIndex + jobsPerPage);
   }, [savedJobs, currentPage]);
 
   const handlePageChange = (page) => {
@@ -162,87 +147,119 @@ const SavedJobsTab = () => {
   };
 
   if (loading) {
-    return <p>Loading...</p>;
+    return (
+      <div className="text-center" style={{ padding: "80px 0" }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading…</span>
+        </div>
+        <p className="mt-15 color-text-paragraph-2">Loading your saved jobs…</p>
+      </div>
+    );
   }
 
   return (
     <>
-      <h3 className="mt-0 color-brand-1 mb-50">
-        Saved Jobs
-      </h3>
+      <div style={{ minHeight: "40vh" }}>
+      <h3 className="mt-0 color-brand-1 mb-50">Saved Jobs</h3>
 
-      <div className="row">
-        {pagedJobs.map((job) => (
+      {savedJobs.length === 0 ? (
+        <div
+          className="text-center"
+          style={{
+            padding: "30px 20px",
+            background: "#f8f9fc",
+            borderRadius: "16px",
+            border: "1px dashed #d8dde8",
+          }}
+        >
           <div
-            key={job.id}
-            className="col-xl-4 col-lg-4 col-md-6 col-sm-12 col-12"
             style={{
-              marginBottom: "20px",
+              width: "52px",
+              height: "52px",
+              margin: "0 auto 20px",
+              borderRadius: "50%",
+              background: "#fff7ea",
               display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "28px",
+              color: "#ff9900",
             }}
           >
-            <ProfileJobCard
-              job={job}
-              isListView={false}
-              applyToDetails
-              onUnsave={handleUnsave}
-            />
+            <i className="fi-rr-bookmark" />
           </div>
-        ))}
-      </div>
+          <h5 style={{ color: "#122359", fontWeight: 700, marginBottom: "8px" }}>
+            No saved jobs yet
+          </h5>
+          <p className="color-text-paragraph-2 mb-25" style={{ maxWidth: "360px", margin: "0 auto 25px" }}>
+            Jobs you bookmark while browsing will show up here so you can come
+            back to them later.
+          </p>
+          <Link href="/jobs-list" className="btn btn-default">
+            Browse Jobs
+          </Link>
+        </div>
+      ) : (
+        <>
+          <div className="row">
+            {pagedJobs.map((job) => (
+              <div
+                key={job.id}
+                className="col-xl-4 col-lg-4 col-md-6 col-sm-12 col-12"
+                style={{ marginBottom: "20px", display: "flex" }}
+              >
+                <ProfileJobCard
+                  job={job}
+                  isListView={false}
+                  applyToDetails
+                  onUnsave={handleUnsave}
+                />
+              </div>
+            ))}
+          </div>
 
-      {savedJobs.length === 0 && (
-        <p>No saved jobs found.</p>
+          {totalPages > 1 && (
+            <div className="paginations pagination-center">
+              <ul className="pager">
+                <li>
+                  <button
+                    type="button"
+                    className="pager-prev"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  />
+                </li>
+
+                {Array.from({ length: totalPages }).map((_, index) => {
+                  const page = index + 1;
+                  return (
+                    <li key={page}>
+                      <button
+                        type="button"
+                        className={`pager-number ${currentPage === page ? "active" : ""}`}
+                        onClick={() => handlePageChange(page)}
+                      >
+                        {page}
+                      </button>
+                    </li>
+                  );
+                })}
+
+                <li>
+                  <button
+                    type="button"
+                    className="pager-next"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  />
+                </li>
+              </ul>
+            </div>
+          )}
+        </>
       )}
+        </div>
 
-      <div className="paginations pagination-center">
-        <ul className="pager">
-          <li>
-            <button
-              type="button"
-              className="pager-prev"
-              onClick={() =>
-                handlePageChange(currentPage - 1)
-              }
-              disabled={currentPage === 1}
-            />
-          </li>
-
-          {Array.from({
-            length: totalPages,
-          }).map((_, index) => {
-            const page = index + 1;
-
-            return (
-              <li key={page}>
-                <button
-                  type="button"
-                  className={`pager-number ${currentPage === page
-                      ? "active"
-                      : ""
-                    }`}
-                  onClick={() =>
-                    handlePageChange(page)
-                  }
-                >
-                  {page}
-                </button>
-              </li>
-            );
-          })}
-
-          <li>
-            <button
-              type="button"
-              className="pager-next"
-              onClick={() =>
-                handlePageChange(currentPage + 1)
-              }
-              disabled={currentPage === totalPages}
-            />
-          </li>
-        </ul>
-      </div>
     </>
   );
 };
