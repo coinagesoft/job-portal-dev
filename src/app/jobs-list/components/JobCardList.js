@@ -107,8 +107,10 @@ const formatTimeAgo = (timeAgo) => {
           transition: "all 0.35s ease",
           background: "#ffffff",
           cursor: "pointer",
-          boxShadow:
-            "0 4px 14px rgba(18,35,89,0.04)",
+          boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
+          ...(viewMode === "grid"
+            ? { height: "100%", display: "flex", flexDirection: "column", width: "100%" }
+            : {}),
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.transform =
@@ -132,7 +134,7 @@ const formatTimeAgo = (timeAgo) => {
         }}
       >
         <div className="row">
-          <div className="col-lg-6 col-md-6 col-sm-12">
+          <div className={viewMode === "grid" ? "col-12" : "col-lg-6 col-md-6 col-sm-12"}>
             <div className="card-grid-2-image-left">
               <div className="image-box">
                 <img
@@ -170,6 +172,18 @@ const formatTimeAgo = (timeAgo) => {
                     className="name-job"
                     href={`/company-details?employerId=${job.employerId}`}
                     onClick={(e) => e.stopPropagation()}
+                    style={
+                      viewMode === "grid"
+                        ? {
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            display: "block",
+                            maxWidth: "180px",
+                          }
+                        : undefined
+                    }
+                    title={job.companyName}
                   >
                     {job.companyName}
                   </Link>
@@ -185,24 +199,44 @@ const formatTimeAgo = (timeAgo) => {
                   }}
                 >
                   <span
-                    // className="location-small"
                     style={{
                       display: "flex",
                       alignItems: "center",
                       gap: "4px",
                       color: "#98A2B3",
+                      ...(viewMode === "grid"
+                        ? {
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            maxWidth: "130px",
+                          }
+                        : {}),
                     }}
+                    title={job.jobLocation}
                   >
                     <i
                       className="fi-rr-marker"
                       style={{
                         fontSize: "11px",
-                        // color: "#A0ABB8",
                         color: "#98A2B3",
+                        flexShrink: 0,
                       }}
                     ></i>
 
-                    {job.jobLocation}
+                    <span
+                      style={
+                        viewMode === "grid"
+                          ? {
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }
+                          : undefined
+                      }
+                    >
+                      {job.jobLocation}
+                    </span>
                   </span>
 
                   <span
@@ -228,15 +262,15 @@ const formatTimeAgo = (timeAgo) => {
               </div>
             </div>
           </div>
-          <div className="col-lg-6 text-start text-md-end pr-60 col-md-6 col-sm-12">
+          <div className={viewMode === "grid" ? "col-12 text-start pl-25 pr-25 mt-10" : "col-lg-6 text-start text-md-end pr-60 col-md-6 col-sm-12"}>
             {companyTags.length > 0 && (
               <div
                 style={{
                   display: "flex",
                   flexWrap: "wrap",
-                  justifyContent: "flex-end",
+                  justifyContent: viewMode === "grid" ? "flex-start" : "flex-end",
                   gap: 8,
-                  marginTop: 24,
+                  marginTop: viewMode === "grid" ? 4 : 24,
                   marginBottom: 14,
                 }}
               >
@@ -257,7 +291,12 @@ const formatTimeAgo = (timeAgo) => {
                       lineHeight: 1,
                       transition: "all 0.25s ease",
                       cursor: "pointer",
+                      maxWidth: viewMode === "grid" ? "160px" : "none",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
                     }}
+                    title={tag}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.background = "#1D4ED8";
                       e.currentTarget.style.color = "#ffffff";
@@ -276,7 +315,14 @@ const formatTimeAgo = (timeAgo) => {
             )}
           </div>
         </div>
-        <div className="card-block-info">
+        <div
+          className="card-block-info"
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
 
           <div
             style={{
@@ -292,11 +338,31 @@ const formatTimeAgo = (timeAgo) => {
               style={{
                 margin: 0,
                 lineHeight: 1.3,
+                ...(viewMode === "grid"
+                  ? {
+                      maxWidth: "100%",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }
+                  : {}),
               }}
+              title={job.jobTitle}
             >
               <Link
                 href={getJobDetailsHref(job.jobId)}
                 onClick={(e) => e.stopPropagation()}
+                style={
+                  viewMode === "grid"
+                    ? {
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        display: "block",
+                        maxWidth: "100%",
+                      }
+                    : undefined
+                }
               >
                 {job.jobTitle}
               </Link>
@@ -349,7 +415,16 @@ const formatTimeAgo = (timeAgo) => {
                   color: "#3B4CCA",
                   fontSize: 12,
                   fontWeight: 600,
+                  maxWidth: viewMode === "grid" ? "180px" : "none",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
                 }}
+                title={
+                  job.tradeCategory?.toLowerCase() === "other" || job.tradeCategory?.toLowerCase() === "othere"
+                    ? (job.role || job.department || "Other / Specialisation")
+                    : (job.role ? `${job.tradeCategory} • ${job.role}` : job.tradeCategory)
+                }
               >
                 {job.tradeCategory?.toLowerCase() === "other" || job.tradeCategory?.toLowerCase() === "othere"
                   ? (job.role || job.department || "Other / Specialisation")
@@ -410,47 +485,67 @@ const formatTimeAgo = (timeAgo) => {
 
 
           </div>
-          <p className="font-sm color-text-paragraph mt-10">{job.description}</p>
-          {viewMode === "list" && (
-            <div className="mt-10">
-              <span className="font-xs color-text-paragraph-2">
-                Openings: <strong>{job.vacancies}</strong> - Experience:{" "}
-                <strong>{job.experienceDisplay}</strong>
-              </span>
-              {jobTags.length > 0 && (
-                <div
+          <p
+            className="font-sm color-text-paragraph mt-10"
+            style={{
+              display: "-webkit-box",
+              WebkitLineClamp: viewMode === "grid" ? 2 : 3,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+              minHeight: viewMode === "grid" ? "42px" : "auto",
+              marginBottom: "10px",
+            }}
+          >
+            {job.description}
+          </p>
+
+          <div className="mt-5 mb-10" style={{ fontSize: "12px", color: "#64748B" }}>
+            <span>Openings: <strong style={{ color: "#1E293B" }}>{job.vacancies || 1}</strong></span>
+            {job.experienceDisplay && (
+              <>
+                <span style={{ margin: "0 8px" }}>•</span>
+                <span>Experience: <strong style={{ color: "#1E293B" }}>{job.experienceDisplay}</strong></span>
+              </>
+            )}
+          </div>
+
+          {viewMode === "list" && jobTags.length > 0 && (
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 8,
+                marginTop: 6,
+                marginBottom: 12,
+              }}
+            >
+              {jobTags.map((tag, index) => (
+                <span
+                  key={`job-tag-${job.jobId}-${index}`}
                   style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: 8,
-                    marginTop: 12,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "6px 12px",
+                    borderRadius: 999,
+                    background: "#F3FFF5",
+                    border: "1px solid #B7E8C2",
+                    color: "#15803D",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    lineHeight: 1,
                   }}
                 >
-                  {jobTags.map((tag, index) => (
-                    <span
-                      key={`job-tag-${job.jobId}-${index}`}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        padding: "6px 12px",
-                        borderRadius: 999,
-                        background: "#F3FFF5",
-                        border: "1px solid #B7E8C2",
-                        color: "#15803D",
-                        fontSize: 12,
-                        fontWeight: 600,
-                        lineHeight: 1,
-                      }}
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
+                  {tag}
+                </span>
+              ))}
             </div>
           )}
-          <div className="card-2-bottom mt-20">
+
+          <div
+            className="card-2-bottom mt-20"
+            style={{ marginTop: "auto" }}
+          >
             <div className="row">
               <div className="col-lg-7 col-7">
               <span className="card-text-price">

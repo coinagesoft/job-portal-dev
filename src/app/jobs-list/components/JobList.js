@@ -346,14 +346,26 @@ const JobList = ({ filters = {} }) => {
                   href="#"
                   onClick={(e) => { e.preventDefault(); setViewMode('list'); }}
                 >
-                  <img src="/assets/imgs/template/icons/icon-list.svg" alt="List" />
+                  <img
+                    src="/assets/imgs/template/icons/icon-list.svg"
+                    alt="List"
+                    style={{ opacity: viewMode === 'list' ? 1 : 0.4 }}
+                  />
                 </a>
                 <a
                   className={`view-type ${viewMode === 'grid' ? 'active' : ''}`}
                   href="#"
                   onClick={(e) => { e.preventDefault(); setViewMode('grid'); }}
                 >
-                  <img src="/assets/imgs/template/icons/icon-grid-hover.svg" alt="Grid" />
+                  <img
+                    src={
+                      viewMode === 'grid'
+                        ? "/assets/imgs/template/icons/icon-grid-hover.svg"
+                        : "/assets/imgs/template/icons/icon-grid.svg"
+                    }
+                    alt="Grid"
+                    style={{ opacity: viewMode === 'grid' ? 1 : 0.4 }}
+                  />
                 </a>
               </div>
             </div>
@@ -380,7 +392,8 @@ const JobList = ({ filters = {} }) => {
           {filteredJobs.map((job) => (
             <div
               key={job.jobId}
-              className={viewMode === 'grid' ? 'col-xl-4 col-lg-6 col-md-6 col-sm-12 col-12' : 'col-xl-12 col-12'}
+              className={viewMode === 'grid' ? 'col-xl-4 col-lg-6 col-md-6 col-sm-12 col-12 mb-30' : 'col-xl-12 col-12'}
+              style={{ display: viewMode === 'grid' ? 'flex' : 'block' }}
             >
               <JobCardList
                 job={job}
