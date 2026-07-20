@@ -441,7 +441,18 @@ const SupportTicketCenter = ({
                 type="button"
                 className="btn btn-brand-1 btn-small"
                 onClick={handleSubmit}
-                 style={{fontSize:"16px"}}
+                style={
+                  audience === "candidate"
+                    ? {
+                        fontSize: "16px",
+                        background: "linear-gradient(180deg, #ffac1a 0%, #ff9900 100%)",
+                        borderColor: "#ff9900",
+                        color: "#ffffff",
+                        fontWeight: 700,
+                        boxShadow: "0 8px 20px rgba(255, 153, 0, 0.22)",
+                      }
+                    : { fontSize: "16px" }
+                }
               >
                 Submit Ticket
               </button>
@@ -652,6 +663,27 @@ const SupportTicketCenter = ({
                                 className="btn btn-brand-1 btn-small"
                                 disabled={!newReplyTextByTicket[ticket.id]?.trim()}
                                 onClick={() => addReply(ticket.id)}
+                                style={
+                                  audience === "candidate"
+                                    ? {
+                                        background: !newReplyTextByTicket[ticket.id]?.trim()
+                                          ? "#ffd499"
+                                          : "linear-gradient(180deg, #ffac1a 0%, #ff9900 100%)",
+                                        borderColor: "#ff9900",
+                                        color: "#ffffff",
+                                        fontWeight: 700,
+                                        padding: "8px 20px",
+                                        borderRadius: "10px",
+                                        boxShadow: newReplyTextByTicket[ticket.id]?.trim()
+                                          ? "0 4px 14px rgba(255, 153, 0, 0.25)"
+                                          : "none",
+                                        cursor: !newReplyTextByTicket[ticket.id]?.trim()
+                                          ? "not-allowed"
+                                          : "pointer",
+                                        transition: "all 0.2s ease",
+                                      }
+                                    : undefined
+                                }
                               >
                                 Send
                               </button>

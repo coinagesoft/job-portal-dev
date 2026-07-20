@@ -1,8 +1,9 @@
 "use client";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useToast } from "@/components/Toast";
 import { useEffect } from "react";
+import { Country, State, City } from "country-state-city";
 import companyProfileService from "@/services/recruiter/companyProfileService";
 import SubUserViewOnlyGuard from "@/components/SubUserViewOnlyGuard.js";
 import {
@@ -20,7 +21,11 @@ import styles from "./company-profile.module.css";
 
 // Same option set used in the employer registration wizard (src/app/register/page.js)
 // kept in sync here so the profile page always mirrors what a recruiter saw at sign-up.
+// Kept in sync with `industryOptions` in src/app/dashboard/post-job/page.js
+// so the same Industry Type choices are offered whether describing the
+// company itself or posting a job under it.
 const INDUSTRIES = [
+  "Recruitement Agency",
   "Construction & Infrastructure",
   "Marine & Shipping",
   "Oil & Gas",
@@ -36,6 +41,15 @@ const INDUSTRIES = [
   "Healthcare",
   "IT & Technology",
   "Retail",
+  "Power & Utilities",
+  "Chemicals & Petrochemicals",
+  "Automotive",
+  "Real Estate",
+  "Telecommunications",
+  "Agriculture",
+  "Banking & Financial Services",
+  "Education",
+  "Government / Public Sector",
   "Other",
 ];
 
@@ -57,6 +71,30 @@ const BUSINESS_TYPES = [
   "Joint Venture",
   "Other",
 ];
+
+// Registered-address country/state/city cascade — same data source and
+// helper shape as the "Registered Address" section in src/app/register/page.js,
+// so a saved address is editable through the identical picking flow used
+// at sign-up instead of free-typed text.
+const ALL_COUNTRIES = Country.getAllCountries();
+const COUNTRY_NAMES = ALL_COUNTRIES.map((c) => c.name);
+
+const getCountryIso = (countryName) =>
+  ALL_COUNTRIES.find((c) => c.name === countryName)?.isoCode || "";
+
+const getStateNamesForCountry = (countryIso) =>
+  countryIso ? State.getStatesOfCountry(countryIso).map((s) => s.name) : [];
+
+const getStateIso = (countryIso, stateName) =>
+  countryIso
+    ? State.getStatesOfCountry(countryIso).find((s) => s.name === stateName)
+      ?.isoCode || ""
+    : "";
+
+const getCityNamesForState = (countryIso, stateIso) =>
+  countryIso && stateIso
+    ? City.getCitiesOfState(countryIso, stateIso).map((c) => c.name)
+    : [];
 
 const TIME_ZONES = [
   "Asia/Kolkata",
@@ -159,38 +197,106 @@ const Textarea = (props) => (
   />
 );
 
-// Dropdown-with-free-text field, same pattern used in the registration wizard's
-// Business Type / Industry pickers — lets existing saved values that aren't in
-// the preset list (e.g. custom text typed at registration) still display correctly.
-const Combobox = ({ value, onChange, options, placeholder }) => {
+// Strict dropdown-only field — same component/behavior as Combobox in
+// src/app/dashboard/post-job/page.js. Typing only filters the list below;
+// it never commits the raw typed text as the field's value. Only clicking
+// an option (or pressing Enter on an exact match) does that — anything
+// else reverts to the last valid selection on blur/Escape. This replaces
+// the previous "type your own" version, which is why garbled/runaway text
+// (e.g. "Private Limitedfhfhfhfhfhfhfhfhfhg") could get saved before.
+const Combobox = ({ value, onChange, options, placeholder, disabled }) => {
+  const normalized = (options || []).map((o) =>
+    typeof o === "string" ? { value: o, label: o } : o,
+  );
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
+  const justSelectedRef = useRef(false);
+
+  const matched = normalized.find((o) => o.value === value);
+  const [query, setQuery] = useState(matched ? matched.label : value || "");
+
+  // Keep the visible text in sync whenever the selected value changes from
+  // outside (loading saved data, parent resetting the field, etc).
+  useEffect(() => {
+    const m = normalized.find((o) => o.value === value);
+    setQuery(m ? m.label : value || "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  const revertIfUnmatched = () => {
+    const m = normalized.find((o) => o.value === value);
+    setQuery(m ? m.label : value || "");
+  };
 
   useEffect(() => {
     const onClickOutside = (e) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) {
+        setOpen(false);
+        revertIfUnmatched();
+      }
     };
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, options]);
 
-  const query = value || "";
   const filtered = query
-    ? options.filter((o) => o.toLowerCase().includes(query.toLowerCase()))
-    : options;
+    ? normalized.filter((o) => o.label.toLowerCase().includes(query.toLowerCase()))
+    : normalized;
+
+  const selectOption = (opt) => {
+    justSelectedRef.current = true;
+    onChange(opt.value);
+    setQuery(opt.label);
+    setOpen(false);
+  };
 
   return (
     <div ref={wrapRef} style={{ position: "relative" }}>
       <input
         className={styles.control}
         value={query}
-        placeholder={placeholder || "Type or select…"}
+        placeholder={placeholder || "Type to search…"}
         autoComplete="off"
+        disabled={disabled}
+        style={disabled ? { background: "#F8FAFC", cursor: "not-allowed" } : undefined}
         onChange={(e) => {
-          onChange(e.target.value);
+          // Typing only filters the dropdown below — it never submits the
+          // raw text as the field's value. Only selecting an option does.
+          setQuery(e.target.value);
           setOpen(true);
         }}
         onFocus={() => setOpen(true)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            if (filtered.length === 1) {
+              selectOption(filtered[0]);
+            } else {
+              const exact = normalized.find(
+                (o) => o.label.toLowerCase() === query.trim().toLowerCase(),
+              );
+              if (exact) selectOption(exact);
+              else revertIfUnmatched();
+            }
+            setOpen(false);
+          } else if (e.key === "Escape") {
+            setOpen(false);
+            revertIfUnmatched();
+          }
+        }}
+        onBlur={() => {
+          // Give a just-clicked option (onMouseDown, which fires first) a
+          // chance to register before deciding whether to revert.
+          window.setTimeout(() => {
+            if (justSelectedRef.current) {
+              justSelectedRef.current = false;
+              return;
+            }
+            setOpen(false);
+            revertIfUnmatched();
+          }, 0);
+        }}
       />
       {open && filtered.length > 0 && (
         <div
@@ -210,27 +316,44 @@ const Combobox = ({ value, onChange, options, placeholder }) => {
         >
           {filtered.map((opt) => (
             <div
-              key={opt}
-              onMouseDown={() => {
-                onChange(opt);
-                setOpen(false);
-              }}
+              key={opt.value}
+              onMouseDown={() => selectOption(opt)}
               style={{
                 padding: "9px 14px",
                 fontSize: "14px",
                 cursor: "pointer",
                 color: "#122359",
-                background: opt === query ? "#FFF4E0" : "transparent",
+                background: opt.label === query ? "#FFF4E0" : "transparent",
               }}
               onMouseEnter={(e) => (e.currentTarget.style.background = "#FFF4E0")}
               onMouseLeave={(e) =>
               (e.currentTarget.style.background =
-                opt === query ? "#FFF4E0" : "transparent")
+                opt.label === query ? "#FFF4E0" : "transparent")
               }
             >
-              {opt}
+              {opt.label}
             </div>
           ))}
+        </div>
+      )}
+      {open && filtered.length === 0 && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            left: 0,
+            right: 0,
+            zIndex: 40,
+            background: "#fff",
+            border: "1px solid rgba(18,35,89,0.12)",
+            borderRadius: 8,
+            boxShadow: "0 12px 28px rgba(18,35,89,0.14)",
+            padding: "10px 14px",
+            fontSize: 13,
+            color: "#94a3b8",
+          }}
+        >
+          No matches — pick from the list
         </div>
       )}
     </div>
@@ -335,6 +458,18 @@ export default function EmployerCompanyProfilePage() {
   const [description, setDescription] = useState("");
   const [officeSameAsAddress, setOfficeSameAsAddress] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+
+  // Derived (not stored) — recomputed whenever the saved country/state
+  // text changes, so the City/State cascade always matches loaded data
+  // without needing a second piece of state to keep in sync.
+  const countryIso = useMemo(
+    () => getCountryIso(company.country || ""),
+    [company.country],
+  );
+  const stateIso = useMemo(
+    () => getStateIso(countryIso, company.state || ""),
+    [countryIso, company.state],
+  );
   const [uploadingCover, setUploadingCover] = useState(false);
 
   // Recruitments tab (live job postings)
@@ -1023,6 +1158,7 @@ export default function EmployerCompanyProfilePage() {
                       <Field label="Legal Name">
                         <Inp
                           value={company.legalName || ""}
+                          maxLength={200}
                           onChange={(e) =>
                             handleInputChange("legalName", e.target.value)
                           }
@@ -1032,6 +1168,7 @@ export default function EmployerCompanyProfilePage() {
                       <Field label="Trade Name">
                         <Inp
                           value={company.tradeName || ""}
+                          maxLength={200}
                           onChange={(e) =>
                             handleInputChange("tradeName", e.target.value)
                           }
@@ -1049,6 +1186,7 @@ export default function EmployerCompanyProfilePage() {
                       <Field label="Display Name">
                         <Inp
                           value={company.displayName || ""}
+                          maxLength={200}
                           onChange={(e) =>
                             handleInputChange("displayName", e.target.value)
                           }
@@ -1223,6 +1361,7 @@ export default function EmployerCompanyProfilePage() {
                     <Field label="Website">
                       <Inp
                         value={company.website || ""}
+                        maxLength={300}
                         onChange={(e) =>
                           handleInputChange("website", e.target.value)
                         }
@@ -1232,6 +1371,7 @@ export default function EmployerCompanyProfilePage() {
                     <Field label="LinkedIn">
                       <Inp
                         value={company.linkedInUrl || ""}
+                        maxLength={300}
                         onChange={(e) =>
                           handleInputChange("linkedInUrl", e.target.value)
                         }
@@ -1241,6 +1381,7 @@ export default function EmployerCompanyProfilePage() {
                     <Field label="Instagram">
                       <Inp
                         value={company.instagramUrl || ""}
+                        maxLength={300}
                         onChange={(e) =>
                           handleInputChange("instagramUrl", e.target.value)
                         }
@@ -1250,6 +1391,7 @@ export default function EmployerCompanyProfilePage() {
                     <Field label="Facebook">
                       <Inp
                         value={company.facebookUrl || ""}
+                        maxLength={300}
                         onChange={(e) =>
                           handleInputChange("facebookUrl", e.target.value)
                         }
@@ -1276,44 +1418,72 @@ export default function EmployerCompanyProfilePage() {
                       <Field label="Address Line 1">
                         <Inp
                           value={company.addressLine1 || ""}
+                          maxLength={200}
                           onChange={(e) =>
                             handleInputChange("addressLine1", e.target.value)
                           }
                         />
                       </Field>
 
-                      <Field label="City">
-                        <Inp
-                          value={company.city || ""}
-                          onChange={(e) =>
-                            handleInputChange("city", e.target.value)
-                          }
+                      <Field label="Country">
+                        <Combobox
+                          value={company.country || ""}
+                          options={COUNTRY_NAMES}
+                          placeholder="Type or select your country (e.g. India)"
+                          onChange={(v) => {
+                            // Changing the country invalidates whatever
+                            // state/city was previously picked for a
+                            // different country — same as the register page.
+                            setCompany((prev) => ({
+                              ...prev,
+                              country: v,
+                              state: "",
+                              city: "",
+                            }));
+                          }}
                         />
                       </Field>
 
                       <Field label="State">
-                        <Inp
+                        <Combobox
                           value={company.state || ""}
-                          onChange={(e) =>
-                            handleInputChange("state", e.target.value)
+                          disabled={!countryIso}
+                          options={getStateNamesForCountry(countryIso)}
+                          placeholder={
+                            countryIso
+                              ? "Type or select your state (e.g. Maharashtra)"
+                              : "Select a country first"
                           }
+                          onChange={(v) => {
+                            setCompany((prev) => ({
+                              ...prev,
+                              state: v,
+                              city: "",
+                            }));
+                          }}
+                        />
+                      </Field>
+
+                      <Field label="City">
+                        <Combobox
+                          value={company.city || ""}
+                          disabled={!stateIso}
+                          options={getCityNamesForState(countryIso, stateIso)}
+                          placeholder={
+                            stateIso
+                              ? "Type or select your city (e.g. Mumbai)"
+                              : "Select a state first"
+                          }
+                          onChange={(v) => handleInputChange("city", v)}
                         />
                       </Field>
 
                       <Field label="Pincode">
                         <Inp
                           value={company.pincode || ""}
+                          maxLength={10}
                           onChange={(e) =>
                             handleInputChange("pincode", e.target.value)
-                          }
-                        />
-                      </Field>
-
-                      <Field label="Country">
-                        <Inp
-                          value={company.country || ""}
-                          onChange={(e) =>
-                            handleInputChange("country", e.target.value)
                           }
                         />
                       </Field>
@@ -1351,6 +1521,7 @@ export default function EmployerCompanyProfilePage() {
                       {!officeSameAsAddress && (
                         <Textarea
                           rows={3}
+                          maxLength={500}
                           value={company.officeAddress || ""}
                           onChange={(e) =>
                             handleInputChange("officeAddress", e.target.value)
@@ -1838,7 +2009,10 @@ export default function EmployerCompanyProfilePage() {
                 <div className="sidebar-heading">
                   <div className="avatar-sidebar">
                     <div className="sidebar-info pl-0">
-                      <span className="sidebar-company">
+                      <span
+                        className="sidebar-company"
+                        style={{ display: "block", marginBottom: 8 }}
+                      >
                         {company.displayName}
                       </span>
                       <span className="card-location">{company.location}</span>
@@ -1895,7 +2069,17 @@ export default function EmployerCompanyProfilePage() {
                         </div>
                         <div className="sidebar-text-info">
                           <span className="text-description">{item.label}</span>
-                          <strong className="small-heading">
+                          <strong
+                            className="small-heading"
+                            title={item.value || undefined}
+                            style={{
+                              display: "block",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              maxWidth: "100%",
+                            }}
+                          >
                             {item.value || "—"}
                           </strong>
                         </div>
@@ -1905,7 +2089,18 @@ export default function EmployerCompanyProfilePage() {
                 </div>
                 <div className="sidebar-list-job">
                   <ul className="ul-disc">
-                    <li>{buildRegisteredAddress() || "—"}</li>
+                    <li
+                      style={{
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: "vertical",
+                      }}
+                      title={buildRegisteredAddress() || undefined}
+                    >
+                      {buildRegisteredAddress() || "—"}
+                    </li>
                     <li>Phone: {company.phone}</li>
                     <li>Email: {company.email}</li>
                   </ul>
