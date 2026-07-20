@@ -274,6 +274,15 @@ const SupportTicketCenter = ({
     const replyText = newReplyTextByTicket[ticketId] || "";
     if (!replyText.trim()) return;
 
+    const ticket = allTickets.find((t) => t.id === ticketId);
+    if (ticket?.status === "Resolved") {
+      showToast(
+        "This ticket is resolved and no longer accepts new messages.",
+        "error",
+      );
+      return;
+    }
+
     try {
       if (audience !== "employer" && !candidateId) {
         showToast("Please log in again to send a reply.", "error");
@@ -296,7 +305,10 @@ const SupportTicketCenter = ({
       }
     } catch (error) {
       console.error(error);
-      showToast("Failed to send reply", "error");
+      showToast(
+        error.response?.data?.message || "Failed to send reply",
+        "error",
+      );
     }
   };
 
@@ -599,35 +611,52 @@ const SupportTicketCenter = ({
                             ))}
                           </div>
 
-                          <div
-                            style={{
-                              marginTop: "8px",
-                              display: "flex",
-                              gap: "8px",
-                            }}
-                          >
-                            <input
-                              className="form-control"
-                              type="text"
-                              placeholder="Write a reply..."
-                              value={newReplyTextByTicket[ticket.id] || ""}
-                              onChange={(event) =>
-                                setNewReplyTextByTicket((prev) => ({
-                                  ...prev,
-                                  [ticket.id]: event.target.value,
-                                }))
-                              }
-                              required
-                            />
-                            <button
-                              type="button"
-                              className="btn btn-brand-1 btn-small"
-                              disabled={!newReplyTextByTicket[ticket.id]?.trim()}
-                              onClick={() => addReply(ticket.id)}
+                          {ticket.status === "Resolved" ? (
+                            <div
+                              style={{
+                                marginTop: "8px",
+                                padding: "8px 10px",
+                                borderRadius: "8px",
+                                background: "#f5f7fa",
+                                color: "#66789c",
+                                fontSize: "13px",
+                              }}
                             >
-                              Send
-                            </button>
-                          </div>
+                              This ticket is resolved and no longer accepts
+                              new messages. Please raise a new ticket if you
+                              need further help.
+                            </div>
+                          ) : (
+                            <div
+                              style={{
+                                marginTop: "8px",
+                                display: "flex",
+                                gap: "8px",
+                              }}
+                            >
+                              <input
+                                className="form-control"
+                                type="text"
+                                placeholder="Write a reply..."
+                                value={newReplyTextByTicket[ticket.id] || ""}
+                                onChange={(event) =>
+                                  setNewReplyTextByTicket((prev) => ({
+                                    ...prev,
+                                    [ticket.id]: event.target.value,
+                                  }))
+                                }
+                                required
+                              />
+                              <button
+                                type="button"
+                                className="btn btn-brand-1 btn-small"
+                                disabled={!newReplyTextByTicket[ticket.id]?.trim()}
+                                onClick={() => addReply(ticket.id)}
+                              >
+                                Send
+                              </button>
+                            </div>
+                          )}
                         </div>
                       ) : null}
                     </div>
