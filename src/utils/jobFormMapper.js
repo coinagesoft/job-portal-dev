@@ -4,6 +4,15 @@
  * job-list Preview modal. Kept in one place so both pages always agree on
  * field names.
  */
+
+// Some jobs were created before the current dropdown options existed and
+// still carry old enum-style values ("Full_Time", "Below_10th") instead of
+// today's plain-text ones ("Full Time"). Rather than chase every place
+// that displays these fields, normalize once here — every consumer of
+// mapResumeToForm gets the human-readable form automatically.
+const humanize = (value) =>
+  typeof value === "string" ? value.replace(/_/g, " ").trim() : value;
+
 export const mapResumeToForm = (response, defaultTradeCategory = "Welding") => ({
   // Step 1
   JobTitle: response.step1Data?.jobTitle ?? "",
@@ -12,9 +21,9 @@ export const mapResumeToForm = (response, defaultTradeCategory = "Welding") => (
   IndustryType: response.step1Data?.industryType ?? "",
   ExperienceMinYears: response.step1Data?.experienceMinYears ?? "",
   ExperienceMaxYears: response.step1Data?.experienceMaxYears ?? "",
-  JobType: response.step1Data?.jobType ?? "",
-  EmploymentType: response.step1Data?.employmentType ?? "Full_Time",
-  EmploymentMode: response.step1Data?.employmentMode ?? "Onsite",
+  JobType: humanize(response.step1Data?.jobType) ?? "",
+  EmploymentType: humanize(response.step1Data?.employmentType) ?? "Full Time",
+  EmploymentMode: humanize(response.step1Data?.employmentMode) ?? "Onsite",
   Department: response.step1Data?.department ?? "",
   DutyHoursPerDay: response.step1Data?.dutyHoursPerDay ?? "",
   IsOilField: response.step1Data?.isOilField ?? false,
@@ -26,7 +35,7 @@ export const mapResumeToForm = (response, defaultTradeCategory = "Welding") => (
   SalaryMin: response.step2Data?.salaryMin?.toString() ?? "",
   SalaryMax: response.step2Data?.salaryMax?.toString() ?? "",
   SalaryCurrency: response.step2Data?.salaryCurrency ?? "INR",
-  SalaryDisplayOption: response.step2Data?.salaryDisplayOption ?? "Show_Range",
+  SalaryDisplayOption: humanize(response.step2Data?.salaryDisplayOption) ?? "Show Range",
 
   // Step 3
   KeySkills: response.step3Data?.keySkills ?? [],
@@ -39,16 +48,16 @@ export const mapResumeToForm = (response, defaultTradeCategory = "Welding") => (
 
   // Step 4
   Vacancies: response.step4Data?.vacancies ?? 1,
-  EducationRequired: response.step4Data?.educationRequired ?? "Any",
+  EducationRequired: humanize(response.step4Data?.educationRequired) ?? "Any",
   AgeMin: response.step4Data?.ageMin ?? "",
   AgeMax: response.step4Data?.ageMax ?? "",
-  GenderPreferred: response.step4Data?.genderPreferred ?? "Any",
+  GenderPreferred: humanize(response.step4Data?.genderPreferred) ?? "Any",
   DisabilityEligible: response.step4Data?.disabilityEligible ?? false,
   PassportRequired: response.step4Data?.passportRequired ?? false,
   PassportValidityMonths: response.step4Data?.passportValidityMonths ?? "",
 
   // Step 5
-  LocationType: response.step5Data?.locationType ?? "Onshore",
+  LocationType: humanize(response.step5Data?.locationType) ?? "Onshore",
   Country: response.step5Data?.country ?? "India",
   WorkAddressLine: response.step5Data?.workAddressLine ?? "",
   OnshoreCity: response.step5Data?.onshoreCity ?? "",
@@ -66,7 +75,7 @@ export const mapResumeToForm = (response, defaultTradeCategory = "Welding") => (
 
   // Step 7 – publishing data IS returned in resume as step7Data
   ApplicationDeadline: response.step7Data?.applicationDeadline ?? "",
-  CompanyVisibility: response.step7Data?.companyVisibility ?? "ShowName",
+  CompanyVisibility: humanize(response.step7Data?.companyVisibility) ?? "Show Name",
   PublishingTags: response.step7Data?.publishingTags ?? [],
   PublishNow: response.step7Data?.publishNow ?? true,
 });

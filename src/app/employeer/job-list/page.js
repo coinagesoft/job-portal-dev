@@ -24,6 +24,20 @@ import { getJobResume } from "@/services/recruiter/recruiterJobPostService";
 /* Turn backend enum-style values (Regular_Hiring, Full_Time) into readable text */
 const humanize = (s) => (s ? s.replace(/_/g, " ") : s);
 
+const renderJobCategory = (job) => {
+  if (!job) return "—";
+  const trade = (job.tradeCategory || "").trim();
+  const role = (job.role || job.roleSpecialisation || "").trim();
+  const isOther = trade.toLowerCase() === "other" || trade.toLowerCase() === "othere";
+  if (isOther) {
+    return role || job.department || "Other / Specialisation";
+  }
+  if (role && role.toLowerCase() !== trade.toLowerCase()) {
+    return `${trade} • ${role}`;
+  }
+  return trade || "—";
+};
+
 /* ── reusable pill tag ── */
 const Tag = ({ label }) => {
   const handleEnter = (e) => {
@@ -160,10 +174,22 @@ const EmployerJobListPage = () => {
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
+  const handlePause = async (jobId) => {
+    try {
+      const res = await pauseJob(jobId);
+      showToast(res.message || "Job paused successfully", "success");
+      setOpenMenu(null);
+      await Promise.all([loadData(), loadJobs(activeStatus, activeType)]);
+    } catch (err) {
+      showToast(err.response?.data?.message || "Unable to pause job", "error");
+    }
+  };
+
   const handleClose = async (jobId) => {
     try {
       const res = await closeJob(jobId);
-      showToast(res.message, "success");
+      showToast(res.message || "Job closed successfully", "success");
+      setOpenMenu(null);
       await Promise.all([loadData(), loadJobs(activeStatus, activeType)]);
     } catch (err) {
       showToast(err.response?.data?.message || "Unable to close job", "error");
@@ -173,7 +199,8 @@ const EmployerJobListPage = () => {
   const handleResume = async (jobId) => {
     try {
       const res = await resumeJob(jobId);
-      showToast(res.message, "success");
+      showToast(res.message || "Job resumed successfully", "success");
+      setOpenMenu(null);
       await Promise.all([loadData(), loadJobs(activeStatus, activeType)]);
     } catch (err) {
       showToast(err.response?.data?.message || "Unable to resume job", "error");
@@ -638,9 +665,10 @@ const EmployerJobListPage = () => {
                               margin: "0 0 12px",
                               color: "#66789c",
                               fontSize: 13,
+                              fontWeight: 600,
                             }}
                           >
-                            {job.tradeCategory}
+                            {renderJobCategory(job)}
                           </p>
 
                           {/* Info row */}
@@ -1212,6 +1240,36 @@ const EmployerJobListPage = () => {
                               <span>Close Job</span>
                             </button>
                           </>
+                        )}
+
+                        {canManageJobs && job.jobStatus === "Paused" && (
+                          <>
+                            <button
+                              className={styles.dropdownItem}
+                              onClick={() => handleResume(job.jobId)}
+                            >
+                              <i className="fi-rr-play" />
+                              <span>Resume Job</span>
+                            </button>
+
+                            <button
+                              className={styles.dropdownItem}
+                              onClick={() => handleArchive(job.jobId)}
+                            >
+                              <i className="fi-rr-archive" />
+                              <span>Archive Job</span>
+                            </button>
+                          </>
+                        )}
+
+                        {canManageJobs && job.jobStatus === "Closed" && (
+                          <button
+                            className={styles.dropdownItem}
+                            onClick={() => handleArchive(job.jobId)}
+                          >
+                            <i className="fi-rr-archive" />
+                            <span>Archive Job</span>
+                          </button>
                         )}
 
                         {canManageJobs && (

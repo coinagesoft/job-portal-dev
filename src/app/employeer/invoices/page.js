@@ -89,21 +89,30 @@ const EmployerInvoicesPage = () => {
                 <div className="row align-items-end">
                   <div className="col-md-4 col-sm-12">
                     <label className="form-label mb-5">From</label>
-                    <input
-                      className="form-control"
-                      type="date"
-                      value={fromDate}
-                      onChange={(e) => setFromDate(e.target.value)}
-                    />
+                   <input
+  className="form-control"
+  type="date"
+  value={fromDate}
+  onChange={(e) => {
+    const newFromDate = e.target.value;
+    setFromDate(newFromDate);
+
+    // Ensure To Date is never earlier than From Date
+    if (toDate < newFromDate) {
+      setToDate(newFromDate);
+    }
+  }}
+/>
                   </div>
                   <div className="col-md-4 col-sm-12 mt-sm-10">
                     <label className="form-label mb-5">To</label>
-                    <input
-                      className="form-control"
-                      type="date"
-                      value={toDate}
-                      onChange={(e) => setToDate(e.target.value)}
-                    />
+                   <input
+  className="form-control"
+  type="date"
+  value={toDate}
+  min={fromDate}
+  onChange={(e) => setToDate(e.target.value)}
+/>
                   </div>
                   <div className="col-md-4 col-sm-12 mt-sm-10 text-md-end">
                     <button

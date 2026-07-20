@@ -229,7 +229,7 @@ const Header = () => {
       className={`block-signin ${styles.headerActionGroup}`}
     >
       {/* NOTIFICATION */}
-      <div className="dropdown d-inline-block">
+      {/* <div className="dropdown d-inline-block">
         <a
           className="btn btn-notify"
           id="dropdownNotify"
@@ -349,7 +349,7 @@ const Header = () => {
             </a>
           </li>
         </ul>
-      </div>
+      </div> */}
 
       {/* PROFILE */}
       <div

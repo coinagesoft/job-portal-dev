@@ -10,6 +10,39 @@ import currencyCodes from "currency-codes";
 import countries from "world-countries"; 
 import JobPreviewModal from "@/components/JobPreviewModal"; 
 import { mapResumeToForm } from "@/utils/jobFormMapper"; 
+import { Country, State } from "country-state-city";
+import { resolveCountry } from "@/utils/locationResolver";
+
+const ALL_CSC_COUNTRIES = Country.getAllCountries();
+
+const getCountryIso = (countryName) => {
+  if (!countryName) return "";
+  const cleaned = countryName.trim().toLowerCase();
+
+  const match = ALL_CSC_COUNTRIES.find(
+    (c) => c.name.trim().toLowerCase() === cleaned || c.isoCode.trim().toLowerCase() === cleaned
+  );
+  if (match) return match.isoCode;
+
+  const resolvedName = resolveCountry(countryName);
+  if (resolvedName) {
+    const matchResolved = ALL_CSC_COUNTRIES.find(
+      (c) => c.name.trim().toLowerCase() === resolvedName.trim().toLowerCase()
+    );
+    if (matchResolved) return matchResolved.isoCode;
+  }
+
+  const partial = ALL_CSC_COUNTRIES.find(
+    (c) => c.name.trim().toLowerCase().includes(cleaned) || cleaned.includes(c.name.trim().toLowerCase())
+  );
+  return partial?.isoCode || "";
+};
+
+const getStatesForCountry = (countryName) => {
+  const iso = getCountryIso(countryName);
+  if (!iso) return [];
+  return State.getStatesOfCountry(iso).map((s) => s.name);
+};
  
  
  
@@ -921,12 +954,28 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
         </Field> 
  
         {/* Role (optional free-text specialisation) */} 
-        <Field label="Role / Specialisation"> 
+        <Field 
+          label={
+            jobForm.TradeCategory?.toLowerCase() === "other" || jobForm.TradeCategory?.toLowerCase() === "othere"
+              ? "Role / Specialisation *"
+              : "Role / Specialisation"
+          }
+          hint={
+            jobForm.TradeCategory?.toLowerCase() === "other" || jobForm.TradeCategory?.toLowerCase() === "othere"
+              ? "Please specify your trade, role, or specialisation"
+              : undefined
+          }
+          required={jobForm.TradeCategory?.toLowerCase() === "other" || jobForm.TradeCategory?.toLowerCase() === "othere"}
+        > 
           <input 
             value={jobForm.Role} 
             onChange={(e) => setJobForm((p) => ({ ...p, Role: e.target.value }))} 
             className={styles.control} 
-            placeholder="e.g. Pipe Welder" 
+            placeholder={
+              jobForm.TradeCategory?.toLowerCase() === "other" || jobForm.TradeCategory?.toLowerCase() === "othere"
+                ? "e.g. Solar Technician, Scaffolding Inspector"
+                : "e.g. Pipe Welder"
+            } 
           /> 
         </Field> 
  
@@ -1735,7 +1784,47 @@ function Step4({ go, jobForm, setJobForm, onSubmit }) {
 function Step5({ go, jobForm, setJobForm, onSubmit, errors, }) { 
   const isOnshore = jobForm.LocationType === "Onshore"; 
   const isOffshore = jobForm.LocationType === "Offshore"; 
- 
+
+  const activeCountry = jobForm.OnshoreCountry || jobForm.Country || "India";
+
+  const stateOptions = useMemo(() => {
+    const states = getStatesForCountry(activeCountry);
+    return states.length > 0 ? states : indianStates;
+  }, [activeCountry]);
+
+  const handleCountryChange = (countryVal) => {
+    setJobForm((p) => {
+      const updatedOnshoreCountry =
+        p.OnshoreCountry === p.Country || !p.OnshoreCountry ? countryVal : p.OnshoreCountry;
+      const targetCountry = updatedOnshoreCountry || countryVal;
+      const validStates = getStatesForCountry(targetCountry);
+      const isCurrentStateValid =
+        validStates.length === 0 || validStates.includes(p.OnshoreState);
+
+      return {
+        ...p,
+        Country: countryVal,
+        OnshoreCountry: updatedOnshoreCountry,
+        OnshoreState: isCurrentStateValid ? p.OnshoreState : "",
+      };
+    });
+  };
+
+  const handleOnshoreCountryChange = (countryVal) => {
+    setJobForm((p) => {
+      const validStates = getStatesForCountry(countryVal);
+      const isCurrentStateValid =
+        validStates.length === 0 || validStates.includes(p.OnshoreState);
+
+      return {
+        ...p,
+        OnshoreCountry: countryVal,
+        Country: p.Country || countryVal,
+        OnshoreState: isCurrentStateValid ? p.OnshoreState : "",
+      };
+    });
+  };
+
   return ( 
     <StepCard 
       stepNum={5} 
@@ -1759,7 +1848,7 @@ function Step5({ go, jobForm, setJobForm, onSubmit, errors, }) {
         <Field label="Country" required> 
           <Combobox 
             value={jobForm.Country} 
-            onChange={(v) => setJobForm((p) => ({ ...p, Country: v }))} 
+            onChange={handleCountryChange} 
             options={countryOptions} 
             placeholder="e.g. India" 
           /> 
@@ -1794,19 +1883,24 @@ function Step5({ go, jobForm, setJobForm, onSubmit, errors, }) {
               <Combobox 
                 value={jobForm.OnshoreState} 
                 onChange={(v) => setJobForm((p) => ({ ...p, OnshoreState: v }))} 
-                options={indianStates} 
-                placeholder="e.g. Maharashtra" 
+                options={stateOptions} 
+                placeholder={
+                  activeCountry
+                    ? `e.g. Select state in ${activeCountry}`
+                    : "Select a state"
+                } 
               /> 
             </Field> 
  
             <Field label="Onshore Country"> 
               <Combobox 
                 value={jobForm.OnshoreCountry} 
-                onChange={(v) => setJobForm((p) => ({ ...p, OnshoreCountry: v }))} 
+                onChange={handleOnshoreCountryChange} 
                 options={countryOptions} 
                 placeholder="e.g. India" 
               /> 
             </Field> 
+
  
             <Field label="Pin / Zip Code"> 
               <input 
@@ -2405,6 +2499,12 @@ export default function DashboardPostJobPage() {
   const handleStep1 = async () => { 
     if (!jobForm.JobTitle.trim()) return showToast("Job Title is required", "error"); 
     if (!jobForm.TradeCategory) return showToast("Trade Category is required", "error"); 
+    if (
+      (jobForm.TradeCategory?.toLowerCase() === "other" || jobForm.TradeCategory?.toLowerCase() === "othere") &&
+      !jobForm.Role.trim()
+    ) {
+      return showToast("Please specify your Role / Specialisation when 'Other' trade category is selected", "error");
+    }
     if (!jobForm.IndustryType) return showToast("Industry Type is required", "error"); 
     if (!jobForm.JobType) return showToast("Job Type is required", "error"); 
     if (!jobForm.JobDescription.trim()) return showToast("Job Description is required", "error"); 

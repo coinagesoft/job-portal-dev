@@ -407,7 +407,7 @@ const JobContent = ({ job = {}, isApplied = false, isSaved = false, onSavedToggl
   {isSaved ? "Unsave" : "Save job"}
 </button>
           </div>    
-          <div className="col-md-7 text-lg-end social-share">
+          {/* <div className="col-md-7 text-lg-end social-share">
             <h6 className="color-text-paragraph-2 d-inline-block d-baseline mr-10">
               Follow us
             </h6>
@@ -463,7 +463,7 @@ const JobContent = ({ job = {}, isApplied = false, isSaved = false, onSavedToggl
             >
               <img alt="Website" src="/assets/imgs/template/icons/share-whatsapp.svg" />
             </a>
-          </div>
+          </div> */}
         </div>
       </div>
       <ApplyJobModal

@@ -10,7 +10,7 @@ import { useToast } from '@/components/Toast';
 import { getMyApplications } from "@/services/candidate/myApplicationsService";
 import { acknowledgeNote, withdrawApplication } from "@/services/candidate/applicationActionsService";
 
-const FILTERS = ['All', 'Applied', 'In Review', 'Shortlisted', 'Interview', 'Hired', 'Rejected', 'Withdrawn'];
+const FILTERS = ['All', 'Applied', 'In Review', 'Shortlisted', 'Hired', 'Rejected', 'Withdrawn'];
 const ACK_STORAGE_KEY = 'candidate_application_message_acknowledged';
 
 const timeAgo = (dateInput) => {
@@ -52,7 +52,7 @@ const STATUS_COLOR_MAP = {
   Applied: { bg: '#eef1f8', color: '#3a4a7a', border: '#d7ddef' },
   'In Review': { bg: '#fff6e6', color: '#a86a00', border: '#ffe3ad' },
   Shortlisted: { bg: '#e9f7ef', color: '#1c7a45', border: '#c3ebd3' },
-  Interview: { bg: '#e8f0fe', color: '#1a56c4', border: '#c7dcff' },
+  // Interview: { bg: '#e8f0fe', color: '#1a56c4', border: '#c7dcff' },
   Hired: { bg: '#e6f7ec', color: '#0f7a3d', border: '#b9e6c9' },
   Rejected: { bg: '#fdecec', color: '#b23b3b', border: '#f5c9c9' },
   Withdrawn: { bg: '#f1f2f5', color: '#6b7280', border: '#e2e4e9' },
@@ -614,7 +614,7 @@ const ClientApplicationStatusPage = () => {
     const activeCount = applications.filter((item) =>
       ['Applied', 'In Review', 'Shortlisted'].includes(item.status)
     ).length;
-    const interviewCount = applications.filter((item) => item.status === 'Interview').length;
+    // const interviewCount = applications.filter((item) => item.status === 'Interview').length;
    const rejectedCount = applications.filter((item) =>
   ['Rejected', 'Withdrawn'].includes(item.status)
 ).length;
@@ -622,7 +622,7 @@ const ClientApplicationStatusPage = () => {
     return [
       { id: 'total', label: 'Total Applications', value: applications.length, tone: 'brand' },
       { id: 'active', label: 'Active Pipeline', value: activeCount, tone: 'active' },
-      { id: 'interview', label: 'Interviews', value: interviewCount, tone: 'interview' },
+      // { id: 'interview', label: 'Interviews', value: interviewCount, tone: 'interview' },
       { id: 'closed', label: 'Closed', value: rejectedCount, tone: 'closed' }
     ];
   }, [applications]);
@@ -782,7 +782,7 @@ const ClientApplicationStatusPage = () => {
           <div className="candidate-inner-panel candidate-application-status-shell">
             <h3 className="mt-0 color-brand-1 mb-20">My Application Status</h3>
             <p className="font-md color-text-paragraph-2 mb-30">
-              Track every application stage from submission to interview and final decision.
+              Track every application stage from submission to Hiring and final decision.
             </p>
 
             <div className="candidate-status-overview mb-25">
