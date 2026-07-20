@@ -1138,7 +1138,7 @@ export default function EmployerCompanyProfilePage() {
             <div className="col-lg-8 col-md-12 col-sm-12">
               {activeTab === "about" && (
                 <div className="content-single ">
-                  <h4>Welcome to {company.displayName}</h4>
+                  <h4 style={{ color: "#122359" }}>Welcome to {company.displayName}</h4>
 
                   <SectionCard
                     onUpdate={updateBasicInfo}
@@ -2009,7 +2009,10 @@ export default function EmployerCompanyProfilePage() {
                 <div className="sidebar-heading">
                   <div className="avatar-sidebar">
                     <div className="sidebar-info pl-0">
-                      <span className="sidebar-company">
+                      <span
+                        className="sidebar-company"
+                        style={{ display: "block", marginBottom: 8 }}
+                      >
                         {company.displayName}
                       </span>
                       <span className="card-location">{company.location}</span>
