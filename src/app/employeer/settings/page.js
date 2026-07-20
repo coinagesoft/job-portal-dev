@@ -1057,18 +1057,84 @@ const EmployerSettingsPage = () => {
                           timeZone: tz.value,
                         })
                       }
+                      menuPortalTarget={
+                        typeof window !== "undefined" ? document.body : null
+                      }
+                      menuPosition="fixed"
                       styles={{
-                        control: (base) => ({
+                        menuPortal: (base) => ({
+                          ...base,
+                          zIndex: 9999,
+                        }),
+                        control: (base, state) => ({
                           ...base,
                           minHeight: "52px",
                           borderRadius: "12px",
-                          borderColor: "rgba(18,35,89,0.12)",
-                          boxShadow: "none",
+                          border: state.isFocused
+                            ? "1px solid #ffa300"
+                            : "1px solid rgba(18,35,89,0.12)",
+                          boxShadow: state.isFocused
+                            ? "0 0 0 4px rgba(255,163,0,0.12)"
+                            : "none",
+                          background: "#ffffff",
+                          "&:hover": {
+                            border: state.isFocused
+                              ? "1px solid #ffa300"
+                              : "1px solid rgba(18,35,89,0.12)",
+                          },
+                        }),
+                        valueContainer: (base) => ({
+                          ...base,
+                          padding: "2px 16px",
+                        }),
+                        input: (base) => ({
+                          ...base,
                           fontSize: "14px",
+                          color: "#122359",
+                          margin: 0,
+                          padding: 0,
+                        }),
+                        singleValue: (base) => ({
+                          ...base,
+                          fontSize: "14px",
+                          color: "#122359",
+                        }),
+                        placeholder: (base) => ({
+                          ...base,
+                          fontSize: "14px",
+                          color: "#94a3b8",
+                        }),
+                        indicatorSeparator: (base) => ({
+                          ...base,
+                          display: "none",
+                        }),
+                        dropdownIndicator: (base) => ({
+                          ...base,
+                          color: "#66789c",
+                          padding: "0 12px 0 4px",
                         }),
                         menu: (base) => ({
                           ...base,
                           zIndex: 9999,
+                          borderRadius: "12px",
+                          overflow: "hidden",
+                          border: "1px solid rgba(18,35,89,0.12)",
+                          boxShadow: "0 12px 28px rgba(18,35,89,0.14)",
+                        }),
+                        menuList: (base) => ({
+                          ...base,
+                          padding: 0,
+                        }),
+                        option: (base, state) => ({
+                          ...base,
+                          fontSize: "14px",
+                          background: state.isSelected
+                            ? "#ffa300"
+                            : state.isFocused
+                              ? "#FFF4E0"
+                              : "#ffffff",
+                          color: state.isSelected ? "#ffffff" : "#122359",
+                          cursor: "pointer",
                         }),
                       }}
                     />
@@ -1113,31 +1179,17 @@ const EmployerSettingsPage = () => {
                   title="Language Preference"
                   subtitle="Set your preferred language for the portal interface and email communications"
                 />
-                <div className="row">
-                  <div className="col-lg-6 col-12 mb-20">
-                    <label
-                      style={{
-                        display: "block",
-                        marginBottom: 6,
-                        fontSize: 13,
-                        fontWeight: 600,
-                        color: "#66789c",
-                      }}
-                    >
-                      Primary Language <span style={{ color: "#e03" }}>*</span>
+                <div className={styles.grid2}>
+                  <div className={styles.field}>
+                    <label className={styles.label}>
+                      Primary Language <span className={styles.required}>*</span>
                     </label>
                     <select
-                      className="form-control form-select"
+                      className={styles.control}
                       value={language}
                       onChange={(e) =>
                         handlePrimaryLanguageChange(e.target.value)
                       }
-                      style={{
-                        height: 44,
-                        fontSize: 13,
-                        borderRadius: 12,
-                        border: "1px solid rgba(18,35,89,0.12)",
-                      }}
                     >
                       {LANGUAGES.map((lang) => (
                         <option key={lang} value={lang}>
@@ -1145,41 +1197,21 @@ const EmployerSettingsPage = () => {
                         </option>
                       ))}
                     </select>
-                    <p
-                      style={{
-                        margin: "5px 0 0",
-                        fontSize: 11,
-                        color: "#94a3b8",
-                      }}
-                    >
+                    <p className={styles.hint}>
                       Used for portal interface and system notifications.
                     </p>
                   </div>
-                  <div className="col-lg-6 col-12 mb-20">
-                    <label
-                      style={{
-                        display: "block",
-                        marginBottom: 6,
-                        fontSize: 13,
-                        fontWeight: 600,
-                        color: "#66789c",
-                      }}
-                    >
+                  <div className={styles.field}>
+                    <label className={styles.label}>
                       Secondary Language{" "}
-                      <span style={{ fontSize: 11, fontWeight: 400 }}>
+                      <span style={{ fontSize: 11, fontWeight: 400, textTransform: "none" }}>
                         (Optional)
                       </span>
                     </label>
                     <select
-                      className="form-control form-select"
+                      className={styles.control}
                       value={secondaryLanguage}
                       onChange={(e) => setSecondaryLanguage(e.target.value)}
-                      style={{
-                        height: 44,
-                        fontSize: 13,
-                        borderRadius: 12,
-                        border: "1px solid rgba(18,35,89,0.12)",
-                      }}
                     >
                       <option value="">-- None --</option>
                       {LANGUAGES.filter((l) => l !== language).map((lang) => (
@@ -1188,39 +1220,20 @@ const EmployerSettingsPage = () => {
                         </option>
                       ))}
                     </select>
-                    <p
-                      style={{
-                        margin: "5px 0 0",
-                        fontSize: 11,
-                        color: "#94a3b8",
-                      }}
-                    >
+                    <p className={styles.hint}>
                       Shown as alternate in candidate-facing job listings.
                     </p>
                   </div>
                 </div>
 
                 {/* Current setting preview */}
-                <div
-                  style={{
-                    padding: "16px 20px",
-                    borderRadius: 16,
-                    marginBottom: 24,
-                    background: "#fff7ea",
-                    border: "1px solid rgba(255,163,0,0.18)",
-                  }}
-                >
-                  <p
-                    style={{
-                      margin: "0 0 4px",
-                      fontWeight: 700,
-                      color: "#122359",
-                      fontSize: 13,
-                    }}
-                  >
-                    Current Language Setting
-                  </p>
-                  <p style={{ margin: 0, color: "#66789c", fontSize: 13 }}>
+                <div className={styles.inlinePanel} style={{ marginBottom: 24 }}>
+                  <div className={styles.inlinePanelHead}>
+                    <p className={styles.inlinePanelTitle}>
+                      Current Language Setting
+                    </p>
+                  </div>
+                  <p className={styles.inlinePanelText} style={{ margin: 0 }}>
                     Portal language:{" "}
                     <strong style={{ color: "#122359" }}>{language}</strong>
                     {secondaryLanguage && (
@@ -1237,7 +1250,7 @@ const EmployerSettingsPage = () => {
 
                 <div
                   style={{
-                    borderTop: "1px solid rgba(18,35,89,0.06)",
+                    borderTop: "1px solid var(--border-light)",
                     paddingTop: 20,
                     display: "flex",
                     gap: 10,
@@ -1249,9 +1262,6 @@ const EmployerSettingsPage = () => {
                     onClick={handleLangSave}
                     disabled={langSaving || langResetting}
                     style={{
-                      borderRadius: 12,
-                      fontWeight: 700,
-                      boxShadow: "0 8px 20px rgba(255,163,0,0.18)",
                       opacity: langSaving || langResetting ? 0.7 : 1,
                       cursor:
                         langSaving || langResetting
@@ -1300,26 +1310,13 @@ const EmployerSettingsPage = () => {
                   />
 
                   {/* OTP info row */}
-                  <div
-                    style={{
-                      padding: "16px 20px",
-                      borderRadius: 16,
-                      marginBottom: 24,
-                      background: "#fff7ea",
-                      border: "1px solid rgba(255,163,0,0.18)",
-                    }}
-                  >
-                    <p
-                      style={{
-                        margin: "0 0 4px",
-                        fontWeight: 700,
-                        color: "#122359",
-                        fontSize: 14,
-                      }}
-                    >
-                      OTP-based Login Active
-                    </p>
-                    <p style={{ margin: 0, color: "#66789c", fontSize: 13 }}>
+                  <div className={styles.inlinePanel} style={{ marginBottom: 24 }}>
+                    <div className={styles.inlinePanelHead}>
+                      <p className={styles.inlinePanelTitle}>
+                        OTP-based Login Active
+                      </p>
+                    </div>
+                    <p className={styles.inlinePanelText} style={{ margin: 0 }}>
                       Your account uses mobile OTP for authentication. No
                       password is required.
                     </p>
@@ -1343,9 +1340,8 @@ const EmployerSettingsPage = () => {
                       justifyContent: "space-between",
                       gap: 14,
                       padding: "16px 18px",
-                      borderRadius: 18,
-                      border: "1px solid rgba(18,35,89,0.06)",
-                      marginBottom: 24,
+                      borderRadius: 14,
+                      border: "1px solid rgba(18,35,89,0.08)",
                       background: "#ffffff",
                     }}
                   >
@@ -1353,18 +1349,8 @@ const EmployerSettingsPage = () => {
                       style={{ display: "flex", alignItems: "center", gap: 14 }}
                     >
                       <div
-                        style={{
-                          width: 44,
-                          height: 44,
-                          borderRadius: 14,
-                          background: "#fff7ea",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          color: "#ff9900",
-                          fontSize: 18,
-                          flexShrink: 0,
-                        }}
+                        className={styles.sectionStep}
+                        style={{ color: "#ff9900" }}
                       >
                         <i className="fi-rr-mobile" />
                       </div>
@@ -1386,62 +1372,45 @@ const EmployerSettingsPage = () => {
                         </p>
                       </div>
                     </div>
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        padding: "6px 14px",
-                        borderRadius: 999,
-                        background: "#ecfdf3",
-                        color: "#0BAB7C",
-                        fontSize: 12,
-                        fontWeight: 700,
-                      }}
-                    >
+                    <span className={styles.pillNeutral} style={{
+                      background: "#ecfdf3",
+                      color: "#0BAB7C",
+                    }}>
                       Enabled
                     </span>
                   </div>
                 </Card>
 
-                {/* Active Sessions — card-per-session like sub-user cards */}
-                <div style={{ marginBottom: 8 }}>
+                {/* Active Sessions — same card theme as everything else */}
+                <Card>
                   <div
                     style={{
                       display: "flex",
                       justifyContent: "space-between",
-                      alignItems: "center",
+                      alignItems: "flex-start",
                       marginBottom: 20,
                       flexWrap: "wrap",
                       gap: 10,
                     }}
                   >
-                    <div>
-                      <h5
-                        style={{
-                          color: "#122359",
-                          fontWeight: 800,
-                          marginBottom: 4,
-                        }}
-                      >
-                        Active Sessions
-                      </h5>
-                      <p style={{ margin: 0, color: "#66789c", fontSize: 13 }}>
-                        Devices currently signed in to your account.
-                      </p>
+                    <div style={{ display: "flex", gap: 12 }}>
+                      <div className={styles.sectionStep}>
+                        <i className="fi-rr-shield-check" />
+                      </div>
+                      <div>
+                        <h5 className={styles.sectionTitle}>
+                          Active Sessions
+                        </h5>
+                        <p className={styles.sectionSub}>
+                          Devices currently signed in to your account.
+                        </p>
+                      </div>
                     </div>
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        padding: "6px 12px",
-                        borderRadius: 999,
-                        background: "#EAF4FF",
-                        border: "1px solid #B9DCFF",
-                        color: "#1D4ED8",
-                        fontSize: 12,
-                        fontWeight: 600,
-                      }}
-                    >
+                    <span className={styles.pillNeutral} style={{
+                      background: "#EAF4FF",
+                      border: "1px solid #B9DCFF",
+                      color: "#1D4ED8",
+                    }}>
                       {sessions.length} active
                     </span>
                   </div>
@@ -1449,13 +1418,11 @@ const EmployerSettingsPage = () => {
                   {sessions.map((session) => (
                     <div
                       key={session.sessionId}
-                      className="subuser-hover-card"
                       style={{
-                        background: "#ffffff",
-                        borderRadius: 22,
-                        boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
-                        padding: 22,
-                        marginBottom: 16,
+                        border: "1px solid rgba(18,35,89,0.08)",
+                        borderRadius: 14,
+                        padding: 18,
+                        marginBottom: 12,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
@@ -1473,18 +1440,8 @@ const EmployerSettingsPage = () => {
                         }}
                       >
                         <div
-                          style={{
-                            width: 52,
-                            height: 52,
-                            borderRadius: 16,
-                            flexShrink: 0,
-                            background: "#fff7ea",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: "#ff9900",
-                            fontSize: 20,
-                          }}
+                          className={styles.sectionStep}
+                          style={{ color: "#ff9900" }}
                         >
                           <i className={session.icon} />
                         </div>
@@ -1511,18 +1468,10 @@ const EmployerSettingsPage = () => {
                         </div>
                       </div>
                       {session.current ? (
-                        <span
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            padding: "6px 14px",
-                            borderRadius: 999,
-                            background: "#ecfdf3",
-                            color: "#0BAB7C",
-                            fontSize: 12,
-                            fontWeight: 700,
-                          }}
-                        >
+                        <span className={styles.pillNeutral} style={{
+                          background: "#ecfdf3",
+                          color: "#0BAB7C",
+                        }}>
                           Current Session
                         </span>
                       ) : (
@@ -1530,11 +1479,6 @@ const EmployerSettingsPage = () => {
                           className="btn btn-border btn-sm"
                           type="button"
                           onClick={() => handleRevokeSession(session.sessionId)}
-                          style={{
-                            borderRadius: 10,
-                            fontWeight: 700,
-                            fontSize: 12,
-                          }}
                         >
                           <i
                             className="fi-rr-cross-circle"
@@ -1545,7 +1489,7 @@ const EmployerSettingsPage = () => {
                       )}
                     </div>
                   ))}
-                </div>
+                </Card>
               </>
             )}
 
@@ -1555,53 +1499,35 @@ const EmployerSettingsPage = () => {
             {activeTab === "preferences" && (
               <>
                 {/* Email Notification Preferences */}
-                <div
-                  className="subuser-hover-card"
-                  style={{
-                    background: "#ffffff",
-                    borderRadius: 24,
-                    boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
-                    padding: 28,
-                    marginBottom: 24,
-                  }}
-                >
+                <Card>
                   <div
                     style={{
                       display: "flex",
-                      alignItems: "center",
+                      alignItems: "flex-start",
                       justifyContent: "space-between",
                       marginBottom: 20,
                       flexWrap: "wrap",
                       gap: 10,
                     }}
                   >
-                    <div>
-                      <h5
-                        style={{
-                          margin: "0 0 4px",
-                          color: "#122359",
-                          fontWeight: 800,
-                        }}
-                      >
-                        Email Notifications
-                      </h5>
-                      <p style={{ margin: 0, color: "#66789c", fontSize: 13 }}>
-                        Control which employer alerts you want to receive.
-                      </p>
+                    <div style={{ display: "flex", gap: 12 }}>
+                      <div className={styles.sectionStep}>
+                        <i className="fi-rr-bell" />
+                      </div>
+                      <div>
+                        <h5 className={styles.sectionTitle}>
+                          Email Notifications
+                        </h5>
+                        <p className={styles.sectionSub}>
+                          Control which employer alerts you want to receive.
+                        </p>
+                      </div>
                     </div>
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        padding: "6px 12px",
-                        borderRadius: 999,
-                        background: "#EAF4FF",
-                        border: "1px solid #B9DCFF",
-                        color: "#1D4ED8",
-                        fontSize: 12,
-                        fontWeight: 600,
-                      }}
-                    >
+                    <span className={styles.pillNeutral} style={{
+                      background: "#EAF4FF",
+                      border: "1px solid #B9DCFF",
+                      color: "#1D4ED8",
+                    }}>
                       {notifPrefs.filter((p) => p.enabled).length} enabled
                     </span>
                   </div>
@@ -1616,8 +1542,8 @@ const EmployerSettingsPage = () => {
                         justifyContent: "space-between",
                         gap: 14,
                         padding: "16px 18px",
-                        borderRadius: 18,
-                        border: "1px solid rgba(18,35,89,0.06)",
+                        borderRadius: 14,
+                        border: "1px solid rgba(18,35,89,0.08)",
                         marginBottom: 12,
                         background: "#ffffff",
                       }}
@@ -1649,77 +1575,32 @@ const EmployerSettingsPage = () => {
                       />
                     </div>
                   ))}
-                </div>
+                </Card>
 
                 {/* Display Preferences */}
-                <div
-                  className="subuser-hover-card"
-                  style={{
-                    background: "#ffffff",
-                    borderRadius: 24,
-                    boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
-                    padding: 28,
-                    marginBottom: 24,
-                  }}
-                >
-                  <h5
-                    style={{
-                      margin: "0 0 20px",
-                      color: "#122359",
-                      fontWeight: 800,
-                    }}
-                  >
-                    Display
-                  </h5>
-                  <div className="row">
-                    <div className="col-lg-6 col-12 mb-15">
-                      <label
-                        style={{
-                          display: "block",
-                          marginBottom: 6,
-                          fontSize: 13,
-                          fontWeight: 600,
-                          color: "#66789c",
-                        }}
-                      >
-                        Items per page
-                      </label>
+                <Card>
+                  <SectionHeader
+                    icon="fi-rr-settings"
+                    title="Display"
+                    subtitle="Control how lists and dates appear across the portal"
+                  />
+                  <div className={styles.grid2}>
+                    <div className={styles.field}>
+                      <label className={styles.label}>Items per page</label>
                       <select
-                        className="form-control form-select"
+                        className={styles.control}
                         defaultValue="10"
-                        style={{
-                          height: 44,
-                          fontSize: 13,
-                          borderRadius: 12,
-                          border: "1px solid rgba(18,35,89,0.12)",
-                        }}
                       >
                         <option value="10">10</option>
                         <option value="25">25</option>
                         <option value="50">50</option>
                       </select>
                     </div>
-                    <div className="col-lg-6 col-12 mb-15">
-                      <label
-                        style={{
-                          display: "block",
-                          marginBottom: 6,
-                          fontSize: 13,
-                          fontWeight: 600,
-                          color: "#66789c",
-                        }}
-                      >
-                        Date Format
-                      </label>
+                    <div className={styles.field}>
+                      <label className={styles.label}>Date Format</label>
                       <select
-                        className="form-control form-select"
+                        className={styles.control}
                         defaultValue="dd-mmm-yyyy"
-                        style={{
-                          height: 44,
-                          fontSize: 13,
-                          borderRadius: 12,
-                          border: "1px solid rgba(18,35,89,0.12)",
-                        }}
                       >
                         <option value="dd-mmm-yyyy">DD MMM YYYY</option>
                         <option value="dd/mm/yyyy">DD/MM/YYYY</option>
@@ -1729,7 +1610,7 @@ const EmployerSettingsPage = () => {
                   </div>
                   <div
                     style={{
-                      borderTop: "1px solid rgba(18,35,89,0.06)",
+                      borderTop: "1px solid var(--border-light)",
                       paddingTop: 20,
                       marginTop: 8,
                     }}
@@ -1738,16 +1619,11 @@ const EmployerSettingsPage = () => {
                       className="btn btn-default"
                       type="button"
                       onClick={handleSave}
-                      style={{
-                        borderRadius: 12,
-                        fontWeight: 700,
-                        boxShadow: "0 8px 20px rgba(255,163,0,0.18)",
-                      }}
                     >
                       {saved ? "✓ Saved" : "Save Preferences"}
                     </button>
                   </div>
-                </div>
+                </Card>
               </>
             )}
 
@@ -1761,7 +1637,7 @@ const EmployerSettingsPage = () => {
                   className="subuser-hover-card"
                   style={{
                     background: "#fff8f8",
-                    borderRadius: 24,
+                    borderRadius: 18,
                     boxShadow: "0 4px 14px rgba(160,0,0,0.04)",
                     padding: "22px 28px",
                     marginBottom: 24,
@@ -1844,7 +1720,7 @@ const EmployerSettingsPage = () => {
                     className="subuser-hover-card"
                     style={{
                       background: "#ffffff",
-                      borderRadius: 22,
+                      borderRadius: 18,
                       boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
                       padding: 24,
                       marginBottom: 16,
