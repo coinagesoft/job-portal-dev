@@ -157,10 +157,12 @@ const ProfileJobCard = ({ job, isListView, applyToDetails = false, onUnsave }) =
                 href={job.employerId ? `/company-details?employerId=${job.employerId}` : "/company-details"}
                 style={{
                   display: "block",
-                  width: "100%",
-                  whiteSpace: "normal",
-                  wordBreak: "break-word",
+                  maxWidth: "100%",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
                 }}
+                title={job.company}
               >
                 {job.company}
               </Link>

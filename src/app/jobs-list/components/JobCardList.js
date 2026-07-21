@@ -154,7 +154,7 @@ const formatTimeAgo = (timeAgo) => {
                   alt="jobBox"
                 />
               </div>
-              <div className="right-info">
+              <div className="right-info" style={{ minWidth: 0, flex: 1 }}>
                 {isConfidential ? (
                   <span
                     className="name-job"
@@ -163,7 +163,13 @@ const formatTimeAgo = (timeAgo) => {
                       pointerEvents: "none",
                       textDecoration: "none",
                       color: "inherit",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      display: "block",
+                      maxWidth: "100%",
                     }}
+                    title="Confidential Company"
                   >
                     Confidential Company
                   </span>
@@ -172,17 +178,13 @@ const formatTimeAgo = (timeAgo) => {
                     className="name-job"
                     href={`/company-details?employerId=${job.employerId}`}
                     onClick={(e) => e.stopPropagation()}
-                    style={
-                      viewMode === "grid"
-                        ? {
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                            display: "block",
-                            maxWidth: "180px",
-                          }
-                        : undefined
-                    }
+                    style={{
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      display: "block",
+                      maxWidth: "100%",
+                    }}
                     title={job.companyName}
                   >
                     {job.companyName}
