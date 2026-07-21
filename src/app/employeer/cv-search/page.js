@@ -68,6 +68,40 @@ const getUniqueLocations = (optionsFromApi, candidates) => {
 
 const formatExperience = (candidate) => `${candidate.experienceYears} yrs exp`;
 
+const isCandidateAvailable = (c) => {
+  if (!c) return false;
+  const status = String(c.availabilityStatus || c.availability || "").toLowerCase().trim();
+  if (
+    status === "available" ||
+    status === "available now" ||
+    status === "availablenow" ||
+    status === "open_to_opportunities" ||
+    status === "opentoopportunities" ||
+    status === "open to opportunities"
+  ) {
+    return true;
+  }
+  if (
+    status === "not available" ||
+    status === "notavailable" ||
+    status === "not_available" ||
+    status === "unavailable" ||
+    status === "not_looking"
+  ) {
+    return false;
+  }
+  if (c.isAvailableForWork !== undefined && c.isAvailableForWork !== null) {
+    return Boolean(c.isAvailableForWork);
+  }
+  if (c.availableForWork !== undefined && c.availableForWork !== null) {
+    return Boolean(c.availableForWork);
+  }
+  if (c.isAvailable !== undefined && c.isAvailable !== null) {
+    return Boolean(c.isAvailable);
+  }
+  return status === "true" || status === "1" || status === "yes";
+};
+
 const availabilityLabel = (availability) =>
   availability === "available" ? "Available now" : "Not available";
 
@@ -146,7 +180,7 @@ const createProfileHighlightTags = (candidate) => {
   }
 
   // Available
-  if (candidate.availabilityStatus?.toLowerCase() === "available") {
+  if (isCandidateAvailable(candidate)) {
     tags.push({
       label: "Ready to Join",
       tone: "ready",
@@ -302,10 +336,26 @@ const EmployerCvSearchPage = () => {
     try {
       setLoading(true);
 
-      const response = await searchCandidates(overrideFilters ?? filters);
+      const activeFilters = overrideFilters ?? filters;
+      const response = await searchCandidates(activeFilters);
 
-      setCvCandidates(response.candidates);
-      setTotalCandidates(response.totalCandidates);
+      let candidateList = response?.candidates ?? [];
+      let totalCount = response?.totalCandidates ?? candidateList.length;
+
+      if (activeFilters.availabilityStatus) {
+        const val = String(activeFilters.availabilityStatus).toLowerCase().trim();
+        const wantAvailable =
+          val === "available" ||
+          val === "available now" ||
+          val === "opentoopportunities" ||
+          val === "open_to_opportunities";
+
+        candidateList = candidateList.filter((c) => isCandidateAvailable(c) === wantAvailable);
+        totalCount = candidateList.length;
+      }
+
+      setCvCandidates(candidateList);
+      setTotalCandidates(totalCount);
     } catch (error) {
       console.error(error);
     } finally {
@@ -345,17 +395,7 @@ const EmployerCvSearchPage = () => {
   const handleJobChange = async (jobId) => {
     const next = { ...filters, jobId, pageNumber: 1, sortBy: jobId ? "AiMatch" : "KeywordMatch" };
     setFilters(next);
-
-    try {
-      setLoading(true);
-      const response = await searchCandidates(next);
-      setCvCandidates(response.candidates);
-      setTotalCandidates(response.totalCandidates);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
+    loadCandidates(next);
   };
 
   const loadFilterOptions = async () => {
@@ -402,35 +442,6 @@ const EmployerCvSearchPage = () => {
     setFilters(next);
     loadCandidates(next);
   };
-  const [completionMap, setCompletionMap] = useState({});
-
-// Fetch profile-completion % for every candidate currently on screen.
-useEffect(() => {
-  if (!cvCandidates.length) return;
-  let cancelled = false;
-
-  (async () => {
-    const entries = await Promise.all(
-      cvCandidates.map(async (c) => {
-        try {
-          const res = await getProfileCompletion(c.candidateId);
-          console.log(`[CV Search] Profile completion for candidate ${c.fullName} (${c.candidateId}):`, res?.data);
-          return [c.candidateId, res?.data?.data?.overallPct ?? null];
-        } catch (error) {
-          console.error(`[CV Search] Failed to fetch profile completion for ${c.fullName} (${c.candidateId}):`, error.response?.status, error.message);
-          return [c.candidateId, null];
-        }
-      })
-    );
-    if (!cancelled) {
-      setCompletionMap((prev) => ({ ...prev, ...Object.fromEntries(entries) }));
-    }
-  })();
-
-  return () => {
-    cancelled = true;
-  };
-}, [cvCandidates]);
 
   // const handleReset = () => {
   //   const defaultFilters = {
@@ -725,29 +736,26 @@ useEffect(() => {
                                   </div>
 
                                   <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap", marginTop: "6px" }}>
-                                    {candidate.availabilityStatus?.toLowerCase() === "available" && (
+                                    {isCandidateAvailable(candidate) ? (
                                       <span className="available-now-text" style={{ margin: 0 }}>
                                         Available now
                                       </span>
-                                    )}
-
-                                    {completionMap[candidate.candidateId] != null && (
+                                    ) : (
                                       <span
                                         style={{
                                           display: "inline-flex",
                                           alignItems: "center",
-                                          gap: "6px",
                                           padding: "3px 10px",
                                           borderRadius: "999px",
-                                          background: "#fff7ea",
-                                          border: "1px solid rgba(255,163,0,0.25)",
-                                          color: "#ff9900",
+                                          background: "#FFFBEB",
+                                          border: "1px solid rgba(245,158,11,0.3)",
+                                          color: "#D97706",
                                           fontSize: "11px",
-                                          fontWeight: 700,
+                                          fontWeight: 600,
+                                          margin: 0,
                                         }}
                                       >
-                                        <i className="fi-rr-stats" style={{ fontSize: "11px" }} />
-                                        {completionMap[candidate.candidateId]}% Profile Complete
+                                        Not available
                                       </span>
                                     )}
                                   </div>
@@ -1065,11 +1073,9 @@ useEffect(() => {
       value={filters.availabilityStatus}
       onChange={(e) => updateFilterAndSearch({ availabilityStatus: e.target.value })}
     >
-      <option value="" disabled hidden>
-        Select availability
-      </option>
+      <option value="">Any availability</option>
       <option value="Available">Available now</option>
-      <option value="Unavailable">Not available</option>
+      <option value="Not Available">Not available</option>
     </select>
   </div>
 </div>
@@ -1202,10 +1208,7 @@ useEffect(() => {
         }
       `}</style>
     </main>
-
-    
   );
-  
 };
 
 export default EmployerCvSearchPage;
