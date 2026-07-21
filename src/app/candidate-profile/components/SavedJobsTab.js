@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import ProfileJobCard from "./ProfileJobCard";
+import Preloader from "@/app/Homepage/components/Preloader";
 import { getSavedJobs, saveJob } from "@/services/candidate/savedJobsService";
 import { getAllJobs } from "@/services/candidate/allJobsService";
 import { useToast } from "@/components/Toast";
@@ -50,6 +51,15 @@ const SavedJobsTab = () => {
 
   const jobsPerPage = 6;
 
+  // Tag <body> only while this page is mounted, so the scroll-fix CSS
+  // below applies here and nowhere else, and cleans up on navigation.
+  useEffect(() => {
+    document.body.classList.add("saved-jobs-native-scroll");
+    return () => {
+      document.body.classList.remove("saved-jobs-native-scroll");
+    };
+  }, []);
+
   useEffect(() => {
     loadSavedJobs();
   }, []);
@@ -82,9 +92,7 @@ const SavedJobsTab = () => {
               [job.city, job.state].filter(Boolean).join(", "),
             title: job.jobTitle,
             type: job.employmentType,
-            experience: job.experienceDisplay || "Experience not specified",
             experience: formatExperienceDisplay(job, matchedJob),
-
             description:
               matchedJob?.description || job.role || "No description available",
             price: job.salaryDisplay,
@@ -102,20 +110,6 @@ const SavedJobsTab = () => {
       setLoading(false);
     }
   };
-
-useEffect(() => {
-  // Perfect Scrollbar cached the page height on load; async content
-  // (like this tab's saved-jobs list) grows after that, so ask it
-  // to recalculate — otherwise scroll stops short of the footer.
-  if (typeof window !== "undefined" && window.Ps) {
-    const scrollContainer = document.querySelector(
-      "[data-scroll], .ps, body"
-    );
-    if (scrollContainer) {
-      window.Ps.update(scrollContainer);
-    }
-  }
-}, [savedJobs, loading]);
 
   const handleUnsave = async (jobId) => {
     try {
@@ -147,119 +141,135 @@ useEffect(() => {
   };
 
   if (loading) {
-    return (
-      <div className="text-center" style={{ padding: "80px 0" }}>
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading…</span>
-        </div>
-        <p className="mt-15 color-text-paragraph-2">Loading your saved jobs…</p>
-      </div>
-    );
+    return <Preloader />;
   }
 
   return (
     <>
-      <div style={{ minHeight: "40vh" }}>
-      <h3 className="mt-0 color-brand-1 mb-50">Saved Jobs</h3>
+      <div>
+        <h3 className="mt-0 color-brand-1 mb-3">Saved Jobs</h3>
 
-      {savedJobs.length === 0 ? (
-        <div
-          className="text-center"
-          style={{
-            padding: "30px 20px",
-            background: "#f8f9fc",
-            borderRadius: "16px",
-            border: "1px dashed #d8dde8",
-          }}
-        >
+        {savedJobs.length === 0 ? (
           <div
+            className="text-center"
             style={{
-              width: "52px",
-              height: "52px",
-              margin: "0 auto 20px",
-              borderRadius: "50%",
-              background: "#fff7ea",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "28px",
-              color: "#ff9900",
+              padding: "30px 20px",
+              background: "#f8f9fc",
+              borderRadius: "16px",
+              border: "1px dashed #d8dde8",
             }}
           >
-            <i className="fi-rr-bookmark" />
-          </div>
-          <h5 style={{ color: "#122359", fontWeight: 700, marginBottom: "8px" }}>
-            No saved jobs yet
-          </h5>
-          <p className="color-text-paragraph-2 mb-25" style={{ maxWidth: "360px", margin: "0 auto 25px" }}>
-            Jobs you bookmark while browsing will show up here so you can come
-            back to them later.
-          </p>
-          <Link href="/jobs-list" className="btn btn-default">
-            Browse Jobs
-          </Link>
-        </div>
-      ) : (
-        <>
-          <div className="row">
-            {pagedJobs.map((job) => (
-              <div
-                key={job.id}
-                className="col-xl-4 col-lg-4 col-md-6 col-sm-12 col-12"
-                style={{ marginBottom: "20px", display: "flex" }}
-              >
-                <ProfileJobCard
-                  job={job}
-                  isListView={false}
-                  applyToDetails
-                  onUnsave={handleUnsave}
-                />
-              </div>
-            ))}
-          </div>
-
-          {totalPages > 1 && (
-            <div className="paginations pagination-center">
-              <ul className="pager">
-                <li>
-                  <button
-                    type="button"
-                    className="pager-prev"
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                  />
-                </li>
-
-                {Array.from({ length: totalPages }).map((_, index) => {
-                  const page = index + 1;
-                  return (
-                    <li key={page}>
-                      <button
-                        type="button"
-                        className={`pager-number ${currentPage === page ? "active" : ""}`}
-                        onClick={() => handlePageChange(page)}
-                      >
-                        {page}
-                      </button>
-                    </li>
-                  );
-                })}
-
-                <li>
-                  <button
-                    type="button"
-                    className="pager-next"
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                  />
-                </li>
-              </ul>
+            <div
+              style={{
+                width: "52px",
+                height: "52px",
+                margin: "0 auto 20px",
+                borderRadius: "50%",
+                background: "#fff7ea",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "28px",
+                color: "#ff9900",
+              }}
+            >
+              <i className="fi-rr-bookmark" />
             </div>
-          )}
-        </>
-      )}
-        </div>
+            <h5 style={{ color: "#122359", fontWeight: 700, marginBottom: "8px" }}>
+              No saved jobs yet
+            </h5>
+            <p className="color-text-paragraph-2 mb-25" style={{ maxWidth: "360px", margin: "0 auto 25px" }}>
+              Jobs you bookmark while browsing will show up here so you can come
+              back to them later.
+            </p>
+            <Link href="/jobs-list" className="btn btn-default">
+              Browse Jobs
+            </Link>
+          </div>
+        ) : (
+          <>
+            <div className="row">
+              {pagedJobs.map((job) => (
+                <div
+                  key={job.id}
+                  className="col-xl-4 col-lg-4 col-md-6 col-sm-12 col-12"
+                  style={{ marginBottom: "20px", display: "flex" }}
+                >
+                  <ProfileJobCard
+                    job={job}
+                    isListView={false}
+                    applyToDetails
+                    onUnsave={handleUnsave}
+                  />
+                </div>
+              ))}
+            </div>
 
+            {totalPages > 1 && (
+              <div className="paginations pagination-center">
+                <ul className="pager">
+                  <li>
+                    <button
+                      type="button"
+                      className="pager-prev"
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                    />
+                  </li>
+
+                  {Array.from({ length: totalPages }).map((_, index) => {
+                    const page = index + 1;
+                    return (
+                      <li key={page}>
+                        <button
+                          type="button"
+                          className={`pager-number ${currentPage === page ? "active" : ""}`}
+                          onClick={() => handlePageChange(page)}
+                        >
+                          {page}
+                        </button>
+                      </li>
+                    );
+                  })}
+
+                  <li>
+                    <button
+                      type="button"
+                      className="pager-next"
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                    />
+                  </li>
+                </ul>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Scoped only to this page — reverts the moment you navigate
+          away, since the "saved-jobs-native-scroll" class is removed
+          from <body> on unmount. Forces native browser scroll and
+          neutralizes any JS scroll-plugin (Perfect Scrollbar, etc.)
+          that may be clamping/bouncing scroll on this page only. */}
+      <style jsx global>{`
+        body.saved-jobs-native-scroll,
+        body.saved-jobs-native-scroll html {
+          overflow-y: auto !important;
+          height: auto !important;
+        }
+
+        body.saved-jobs-native-scroll .ps,
+        body.saved-jobs-native-scroll [class*="ps--"] {
+          overflow: visible !important;
+          height: auto !important;
+        }
+
+        body.saved-jobs-native-scroll .ps__rail-x,
+        body.saved-jobs-native-scroll .ps__rail-y {
+          display: none !important;
+        }
+      `}</style>
     </>
   );
 };

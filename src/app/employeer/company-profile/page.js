@@ -991,7 +991,7 @@ export default function EmployerCompanyProfilePage() {
             </label>
           </div>
 
-       <div
+   <div
             style={{
               position: "relative",
               zIndex: 5,
@@ -1009,8 +1009,8 @@ export default function EmployerCompanyProfilePage() {
                 zIndex: 10,
                 width: "130px",
                 flexShrink: 0,
-                marginTop: "-70px",
-                marginLeft:"40px"
+                marginTop: "-90px",
+                marginLeft:"30px"
               }}
             >
               <img
@@ -1070,9 +1070,9 @@ export default function EmployerCompanyProfilePage() {
                   {company.displayName}
 
                 </h5>
-                <p className=" font-md color-text-paragraph-2 mb-15">
+                {/* <p className=" font-md color-text-paragraph-2 mb-15">
                   {company.tagline}
-                </p>
+                </p> */}
                 {/* Stats row */}
                 {/* <div style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
                   {[
@@ -1097,7 +1097,7 @@ export default function EmployerCompanyProfilePage() {
                   ))}
                 </div> */}
               </div>
-              <span className="card-location font-regular ml-20">
+              <span className="card-location font-regular ml-10 " >
                 {company.location}
               </span>
             </div>
@@ -1131,14 +1131,14 @@ export default function EmployerCompanyProfilePage() {
         </div>
       </section>
 
-      <section className="section-box mt-50">
+      <section className="section-box ">
         <div className="container">
           <div className="row">
             {/* Main content */}
             <div className="col-lg-8 col-md-12 col-sm-12">
               {activeTab === "about" && (
                 <div className="content-single ">
-                  <h4>Welcome to {company.displayName}</h4>
+                  <h4 style={{ color: "#122359" }}>Welcome to {company.displayName}</h4>
 
                   <SectionCard
                     onUpdate={updateBasicInfo}
@@ -2009,7 +2009,10 @@ export default function EmployerCompanyProfilePage() {
                 <div className="sidebar-heading">
                   <div className="avatar-sidebar">
                     <div className="sidebar-info pl-0">
-                      <span className="sidebar-company">
+                      <span
+                        className="sidebar-company"
+                        style={{ display: "block", marginBottom: 8 }}
+                      >
                         {company.displayName}
                       </span>
                       <span className="card-location">{company.location}</span>

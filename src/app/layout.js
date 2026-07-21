@@ -34,7 +34,7 @@ export default function RootLayout({ children }) {
   />
 </head>
 
-      <body suppressHydrationWarning={true}>
+      <body suppressHydrationWarning={true} className="d-flex flex-column min-vh-100">
         <Provider store={store}>
           <ToastProvider>
             <AuthInitializer />
@@ -43,7 +43,9 @@ export default function RootLayout({ children }) {
   clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}
 >
             <Header />
-            {children}
+               <main className="flex-grow-1">
+          {children}
+        </main>
             </GoogleOAuthProvider>
             <EmployerSectionSidebar />
             <CandidateSettingsSidebar />

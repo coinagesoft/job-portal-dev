@@ -560,28 +560,6 @@ useEffect(() => {
       </datalist>
     </div>
 
-    {/* Availability */}
-    <div style={{ flex: "1 1 120px", minWidth: "120px" }}>
-      <select
-        className="form-input select-active dashboard-select-arrow"
-        value={filters.availabilityStatus}
-        onChange={(e) =>
-          updateFilterAndSearch({
-            availabilityStatus: e.target.value,
-          })
-        }
-        style={{
-          width: "100%",
-          height: "50px",
-          borderRadius: "8px",
-        }}
-      >
-        <option value="">Any Availability</option>
-        <option value="Available">Available Now</option>
-        <option value="Unavailable">Not Available</option>
-      </select>
-    </div>
-
     {/* Search */}
     <button
       className="btn btn-default btn-find font-sm"

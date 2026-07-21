@@ -64,7 +64,7 @@ const EmployerInvoicesPage = () => {
                 <div className="col-xl-8 col-lg-8">
                   <h3 className="mb-5">Invoices & Transactions</h3>
                   <span className="font-sm color-text-paragraph-2">
-                    Download GST-compliant billing records
+                    Download GST - compliant billing records
                   </span>
                 </div>
                 <div className="col-xl-4 col-lg-4 text-lg-end mt-sm-15">
