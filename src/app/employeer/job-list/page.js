@@ -466,107 +466,207 @@ const EmployerJobListPage = () => {
 
             {/* ── Job Cards ── */}
             <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-              {jobs.map((job) => (
+              {jobsLoading ? (
                 <div
-                  key={job.jobId}
-                  className="subuser-hover-card"
-                  onClick={() => handlePreview(job.jobId)}
+                  className="text-center"
                   style={{
+                    padding: "60px 20px",
                     background: "#fff",
                     borderRadius: 24,
-                    position: "relative",
-                    zIndex: 1,
-                    cursor: "pointer",
+                    border: "1px solid rgba(18, 35, 89, 0.08)",
+                  }}
+                >
+                  <div
+                    className="spinner-border text-warning"
+                    role="status"
+                    style={{ width: "3rem", height: "3rem" }}
+                  >
+                    <span className="visually-hidden">Loading jobs...</span>
+                  </div>
+                  <p
+                    style={{
+                      marginTop: 16,
+                      color: "#66789c",
+                      fontSize: 15,
+                      fontWeight: 600,
+                    }}
+                  >
+                    Loading jobs...
+                  </p>
+                </div>
+              ) : jobs.length === 0 ? (
+                <div
+                  className="text-center"
+                  style={{
+                    padding: "50px 20px",
+                    background: "#ffffff",
+                    borderRadius: 24,
+                    border: "1px dashed rgba(18, 35, 89, 0.16)",
+                    boxShadow: "0 4px 14px rgba(18,35,89,0.02)",
                   }}
                 >
                   <div
                     style={{
-                      padding: "24px 28px",
+                      width: "60px",
+                      height: "60px",
+                      margin: "0 auto 16px",
+                      borderRadius: "50%",
+                      background: "#FFF8EC",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "26px",
+                      color: "#ffa300",
+                    }}
+                  >
+                    <i className="fi-rr-briefcase" />
+                  </div>
+                  <h4
+                    style={{
+                      color: "#122359",
+                      fontWeight: 800,
+                      marginBottom: 8,
+                    }}
+                  >
+                    No jobs posted yet
+                  </h4>
+                  <p
+                    style={{
+                      color: "#66789c",
+                      fontSize: 14,
+                      maxWidth: 400,
+                      margin: "0 auto 20px",
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    {activeStatus !== "All"
+                      ? `No ${activeStatus.toLowerCase()} jobs found. Try changing the filter tab above.`
+                      : "You haven't posted any jobs yet. Create a new job posting to start receiving applications."}
+                  </p>
+                  {canManageJobs && (
+                    <Link
+                      className="btn btn-default"
+                      href="/dashboard/post-job"
+                      style={{
+                        borderRadius: 12,
+                        fontWeight: 700,
+                        boxShadow: "0 8px 20px rgba(255,163,0,0.18)",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 7,
+                      }}
+                    >
+                      <i
+                        className="fi-rr-plus"
+                        style={{ fontSize: 13, lineHeight: 1 }}
+                      />
+                      Post a Job
+                    </Link>
+                  )}
+                </div>
+              ) : (
+                jobs.map((job) => (
+                  <div
+                    key={job.jobId}
+                    className="subuser-hover-card"
+                    onClick={() => handlePreview(job.jobId)}
+                    style={{
+                      background: "#fff",
+                      borderRadius: 24,
+                      position: "relative",
+                      zIndex: 1,
+                      cursor: "pointer",
                     }}
                   >
                     <div
                       style={{
-                        display: "flex",
-                        gap: 24,
-                        flexWrap: "wrap",
-                        alignItems: "flex-start",
+                        padding: "24px 28px",
                       }}
                     >
-                      {/* ── Left: job icon + info ── */}
                       <div
                         style={{
                           display: "flex",
-                          gap: 18,
-                          flex: 1,
-                          minWidth: 280,
+                          gap: 24,
+                          flexWrap: "wrap",
+                          alignItems: "flex-start",
                         }}
                       >
-                        {/* Job icon */}
+                        {/* ── Left: job icon + info ── */}
                         <div
                           style={{
-                            width: 54,
-                            height: 54,
-                            borderRadius: 8,
-                            flexShrink: 0,
-                            overflow: "hidden",
-                            border: "1px solid #E5E7EB",
-                            background: "#fff",
                             display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
+                            gap: 18,
+                            flex: 1,
+                            minWidth: 280,
                           }}
                         >
-                          <img
-                            src={
-                              companyLogos[job.employerId || getEmployerId()] ||
-                              "/assets/imgs/page/company/company.png"
-                            }
-                            alt="Company Logo"
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              objectFit: "cover",
-                            }}
-                            onError={(e) => {
-                              e.currentTarget.src =
-                                "/assets/imgs/page/company/company.png";
-                            }}
-                          />
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          {/* Title row */}
+                          {/* Job icon */}
                           <div
                             style={{
+                              width: 54,
+                              height: 54,
+                              borderRadius: 8,
+                              flexShrink: 0,
+                              overflow: "hidden",
+                              border: "1px solid #E5E7EB",
+                              background: "#fff",
                               display: "flex",
                               alignItems: "center",
-                              gap: 10,
-                              flexWrap: "wrap",
-                              marginBottom: 5,
+                              justifyContent: "center",
                             }}
                           >
+                            <img
+                              src={
+                                companyLogos[job.employerId || getEmployerId()] ||
+                                "/assets/imgs/page/company/company.png"
+                              }
+                              alt="Company Logo"
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                              }}
+                              onError={(e) => {
+                                e.currentTarget.src =
+                                  "/assets/imgs/page/company/company.png";
+                              }}
+                            />
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            {/* Title row */}
                             <div
                               style={{
                                 display: "flex",
                                 alignItems: "center",
-                                gap: 8,
+                                gap: 10,
                                 flexWrap: "wrap",
+                                marginBottom: 5,
                               }}
                             >
-                              <h5
+                              <div
                                 style={{
-                                  margin: 0,
-                                  color: "#122359",
-                                  fontWeight: 800,
-                                  fontSize: 17,
-                                  cursor: "pointer",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 8,
+                                  flexWrap: "wrap",
                                 }}
-                                onClick={() => handlePreview(job.jobId)}
-                                title="Click to preview this job posting"
                               >
-                                {job.jobTitle}
-                              </h5>
-
-                              {/* <span
+                                <h5
+                                  style={{
+                                    margin: 0,
+                                    color: "#122359",
+                                    fontWeight: 800,
+                                    fontSize: 17,
+                                    cursor: "pointer",
+                                  }}
+                                  onClick={() => handlePreview(job.jobId)}
+                                  title="Click to preview this job posting"
+                                >
+                                  {job.jobTitle}
+                                </h5>
+                              </div>
+                              {/* Employment type badge */}
+                              <span
                                 style={{
                                   display: "inline-flex",
                                   alignItems: "center",
@@ -579,556 +679,290 @@ const EmployerJobListPage = () => {
                                   fontWeight: 700,
                                 }}
                               >
-                                {job.appliedCount} Applicant{job.appliedCount !== 1 ? "s" : ""}
-                              </span> */}
+                                {humanize(job.employmentType) ||
+                                  humanize(job.jobType)}
+                              </span>
+                              {/* Status badge */}
+                              <span
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  padding: "4px 10px",
+                                  borderRadius: 999,
+                                  background:
+                                    job.jobStatus === "Active"
+                                      ? "#DCFCE7"
+                                      : job.jobStatus === "Paused"
+                                        ? "#FEF3C7"
+                                        : job.jobStatus === "Closed"
+                                          ? "#FEE2E2"
+                                          : job.jobStatus === "Draft"
+                                            ? "#EAF4FF"
+                                            : "#E5E7EB",
+
+                                  color:
+                                    job.jobStatus === "Active"
+                                      ? "#166534"
+                                      : job.jobStatus === "Paused"
+                                        ? "#92400E"
+                                        : job.jobStatus === "Closed"
+                                          ? "#B91C1C"
+                                          : job.jobStatus === "Draft"
+                                            ? "#1D4ED8"
+                                            : "#374151",
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                }}
+                              >
+                                {job.jobStatus}
+                              </span>
                             </div>
-                            {/* Employment type badge (Full Time / Contract / etc.) */}
-                            <span
+
+                            {/* Meta */}
+                            <p
                               style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                padding: "4px 10px",
-                                borderRadius: 999,
-                                background: "#EAF4FF",
-                                border: "1px solid #B9DCFF",
-                                color: "#1D4ED8",
-                                fontSize: 11,
-                                fontWeight: 700,
+                                margin: "0 0 12px",
+                                color: "#66789c",
+                                fontSize: 13,
                               }}
                             >
-                              {humanize(job.employmentType) ||
-                                humanize(job.jobType)}
-                            </span>
-                            {/* Status badge */}
-                            <span
-                              style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                padding: "4px 10px",
-                                borderRadius: 999,
-                                background:
-                                  job.jobStatus === "Active"
-                                    ? "#DCFCE7"
-                                    : job.jobStatus === "Paused"
-                                      ? "#FEF3C7"
-                                      : job.jobStatus === "Closed"
-                                        ? "#FEE2E2"
-                                        : job.jobStatus === "Draft"
-                                          ? "#EAF4FF"
-                                          : "#E5E7EB",
+                              {job.tradeCategory}
+                            </p>
 
-                                color:
-                                  job.jobStatus === "Active"
-                                    ? "#166534"
-                                    : job.jobStatus === "Paused"
-                                      ? "#92400E"
-                                      : job.jobStatus === "Closed"
-                                        ? "#B91C1C"
-                                        : job.jobStatus === "Draft"
-                                          ? "#1D4ED8"
-                                          : "#374151",
-                                fontSize: 11,
-                                fontWeight: 700,
+                            {/* Info row */}
+                            <div
+                              style={{
+                                display: "flex",
+                                flexWrap: "wrap",
+                                gap: "6px 20px",
+                                marginBottom: 14,
                               }}
                             >
-                              {job.jobStatus}
-                            </span>
-                          </div>
+                              <span
+                                style={{
+                                  fontSize: 12,
+                                  color: "#94a3b8",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 5,
+                                }}
+                              >
+                                <i
+                                  className="fi-rr-marker"
+                                  style={{ color: "#ffa300" }}
+                                />
+                                {job.location}
+                              </span>
 
-                          {/* Meta */}
-                          <p
-                            style={{
-                              margin: "0 0 12px",
-                              color: "#66789c",
-                              fontSize: 13,
-                            }}
-                          >
-                            {job.tradeCategory}
-                          </p>
+                              <span
+                                style={{
+                                  fontSize: 12,
+                                  color: "#94a3b8",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 5,
+                                }}
+                              >
+                                <i
+                                  className="fi-rr-users"
+                                  style={{ color: "#ffa300" }}
+                                />
+                                Vacancies: {job.vacancies}
+                              </span>
 
-                          {/* Info row */}
-                          <div
-                            style={{
-                              display: "flex",
-                              flexWrap: "wrap",
-                              gap: "6px 20px",
-                              marginBottom: 14,
-                            }}
-                          >
-                            <span
+                              <span
+                                style={{
+                                  fontSize: 12,
+                                  color: "#94a3b8",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 5,
+                                }}
+                              >
+                                <i
+                                  className="fi-rr-money"
+                                  style={{ color: "#ffa300" }}
+                                />
+                                ₹{job.salaryMin?.toLocaleString()} - ₹
+                                {job.salaryMax?.toLocaleString()}
+                              </span>
+                            </div>
+
+                            {/* Last applicant */}
+                            <div
                               style={{
+                                marginBottom: 14,
                                 fontSize: 12,
-                                color: "#94a3b8",
+                                color: "#66789c",
                                 display: "flex",
                                 alignItems: "center",
-                                gap: 5,
+                                gap: 6,
                               }}
                             >
                               <i
-                                className="fi-rr-marker"
-                                style={{ color: "#ffa300" }}
+                                className="fi-rr-clock"
+                                style={{ color: "#ffa300", fontSize: 11 }}
                               />
-                              {job.location}
-                            </span>
-
-                            <span
-                              style={{
-                                fontSize: 12,
-                                color: "#94a3b8",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 5,
-                              }}
-                            >
-                              <i
-                                className="fi-rr-users"
-                                style={{ color: "#ffa300" }}
-                              />
-                              Vacancies: {job.vacancies}
-                            </span>
-
-                            <span
-                              style={{
-                                fontSize: 12,
-                                color: "#94a3b8",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 5,
-                              }}
-                            >
-                              <i
-                                className="fi-rr-money"
-                                style={{ color: "#ffa300" }}
-                              />
-                              ₹{job.salaryMin?.toLocaleString()} - ₹
-                              {job.salaryMax?.toLocaleString()}
-                            </span>
-                          </div>
-
-                          {/* Last applicant */}
-                          <div
-                            style={{
-                              marginBottom: 14,
-                              fontSize: 12,
-                              color: "#66789c",
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 6,
-                            }}
-                          >
-                            <i
-                              className="fi-rr-clock"
-                              style={{ color: "#ffa300", fontSize: 11 }}
-                            />
-                            Application Deadline:{" "}
-                            <strong style={{ color: "#122359" }}>
-                              {job.applicationDeadline}
-                            </strong>
+                              Application Deadline:{" "}
+                              <strong style={{ color: "#122359" }}>
+                                {job.applicationDeadline}
+                              </strong>
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      {/* ── Right: applicant count + actions ── */}
-                      <div
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "flex-end",
-                          justifyContent: "space-between",
-                          minWidth: 160,
-                          gap: 16,
-                        }}
-                      >
-                        {/* Applicant count pill */}
-                        {/* <div
-                          style={{
-                            background:
-                              job.appliedCount > 0 ? "#EAF4FF" : "#f8fafc",
-                            border: `1px solid ${job.appliedCount > 0
-                                ? "#B9DCFF"
-                                : "rgba(18,35,89,0.08)"
-                              }`,
-                            borderRadius: 14,
-                            padding: "10px 16px",
-                            textAlign: "center",
-                            minWidth: 110,
-                          }}
-                        >
-                          <div
-                            style={{
-                              fontSize: 26,
-                              fontWeight: 800,
-                              color:
-                                job.appliedCount > 0 ? "#1D4ED8" : "#94a3b8",
-                              lineHeight: 1,
-                            }}
-                          >
-                            {job.appliedCount}
-                          </div>
-                          <div
-                            style={{
-                              fontSize: 11,
-                              color: "#66789c",
-                              marginTop: 3,
-                              fontWeight: 600,
-                            }}
-                          >
-                            Applicant{job.appliedCount !== 1 ? "s" : ""}
-                          </div>
-                        </div> */}
-
-                        {/* Action buttons */}
-                        {/* <div
-                          style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 8,
-                            width: "100%",
-                          }}
-                        >
-                          <div
-                            style={{
-                              display: "flex",
-                              flexDirection: "column",
-                              gap: 8,
-                              width: "100%",
-                            }}
-                          >
-                            <Link
-                              href={`/dashboard/post-job?jobId=${job.jobId}`}
-                              className="btn btn-default btn-sm"
-                              style={{
-                                borderRadius: 10,
-                                fontWeight: 700,
-                                textAlign: "center",
-                              }}
-                            >
-                              <i
-                                className="fi-rr-edit"
-                                style={{ marginRight: 5 }}
-                              />
-                              Edit
-                            </Link>
-
-                            <Link
-                              href={`/employeer/applicants?jobId=${job.jobId}&jobTitle=${encodeURIComponent(job.jobTitle || "")}`}
-                              className="btn btn-border btn-sm"
-                              style={{
-                                borderRadius: 10,
-                                fontWeight: 700,
-                                textAlign: "center",
-                              }}
-                            >
-                              <i
-                                className="fi-rr-users"
-                                style={{ marginRight: 5 }}
-                              />
-                              Applicants
-                            </Link>
-                            {job.jobStatus === "Active" && (
-                              <>
-                                <button
-                                  className="btn btn-warning btn-sm"
-                                  onClick={() => handlePause(job.jobId)}
-                                >
-                                  Pause
-                                </button>
-
-                                <button
-                                  className="btn btn-danger btn-sm"
-                                  onClick={() => handleClose(job.jobId)}
-                                >
-                                  Close
-                                </button>
-                              </>
-                            )}
-
-                            {job.jobStatus === "Paused" && (
-                              <>
-                                <button
-                                  className="btn btn-success btn-sm"
-                                  onClick={() => handleResume(job.jobId)}
-                                >
-                                  Resume
-                                </button>
-
-                                <button
-                                  className="btn btn-dark btn-sm"
-                                  onClick={() => handleArchive(job.jobId)}
-                                >
-                                  Archive
-                                </button>
-                              </>
-                            )}
-
-                            {job.jobStatus === "Closed" && (
-                              <button
-                                className="btn btn-danger btn-sm"
-                                onClick={() => handleArchive(job.jobId)}
-                              >
-                                Archive
-                              </button>
-                            )}
-
-
-                            <button
-                              className="btn btn-outline-danger btn-sm"
-                              onClick={() => handleDelete(job.jobId, job.jobTitle)}
-                            >
-                              <i className="fi-rr-trash" style={{ marginRight: 5 }} />
-                              Delete
-                            </button>
-                          </div>
-                        </div> */}
-
+                        {/* ── Right: applicant count + actions ── */}
                         <div
                           style={{
                             display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                            position: "relative",
+                            flexDirection: "column",
+                            alignItems: "flex-end",
+                            justifyContent: "space-between",
+                            minWidth: 160,
+                            gap: 16,
                           }}
                         >
-                          <Link
-                            href={`/employeer/applicants?jobId=${job.jobId}&jobTitle=${encodeURIComponent(job.jobTitle || "")}`}
-                            onClick={(e) => e.stopPropagation()}
-                            title="View applicants"
+                          <div
                             style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              height: 44,
-                              padding: "0 16px",
-                              borderRadius: 14,
-                              background: "#EAF4FF",
-                              border: "1px solid #B9DCFF",
-                              color: "#1D4ED8",
-                              fontSize: 12,
-                              fontWeight: 700,
-                              whiteSpace: "nowrap",
-                              textDecoration: "none",
-                              boxShadow: "0 4px 12px rgba(18,35,89,.08)",
-                              transition: ".25s",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.background = "#1D4ED8";
-                              e.currentTarget.style.color = "#fff";
-                              e.currentTarget.style.borderColor = "#1D4ED8";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.background = "#EAF4FF";
-                              e.currentTarget.style.color = "#1D4ED8";
-                              e.currentTarget.style.borderColor = "#B9DCFF";
-                            }}
-                          >
-                            {job.appliedCount} Applicant
-                            {job.appliedCount !== 1 ? "s" : ""}
-                          </Link>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handlePreview(job.jobId);
-                            }}
-                            title="Preview"
-                            style={{
-                              width: 44,
-                              height: 44,
-                              borderRadius: 14,
-                              border: "1px solid #E5E7EB",
-                              background: "#fff",
                               display: "flex",
                               alignItems: "center",
-                              justifyContent: "center",
-                              cursor: "pointer",
-                              boxShadow: "0 4px 12px rgba(18,35,89,.08)",
-                              transition: ".25s",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.borderColor = "#FFA300";
-                              e.currentTarget.style.background = "#FFF8EC";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.borderColor = "#E5E7EB";
-                              e.currentTarget.style.background = "#fff";
+                              gap: "8px",
+                              position: "relative",
                             }}
                           >
-                            <i
-                              className="fi-rr-eye"
+                            <Link
+                              href={`/employeer/applicants?jobId=${job.jobId}&jobTitle=${encodeURIComponent(job.jobTitle || "")}`}
+                              onClick={(e) => e.stopPropagation()}
+                              title="View applicants"
                               style={{
-                                fontSize: 18,
-                                color: "#122359",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                height: 44,
+                                padding: "0 16px",
+                                borderRadius: 14,
+                                background: "#EAF4FF",
+                                border: "1px solid #B9DCFF",
+                                color: "#1D4ED8",
+                                fontSize: 12,
+                                fontWeight: 700,
+                                whiteSpace: "nowrap",
+                                textDecoration: "none",
+                                boxShadow: "0 4px 12px rgba(18,35,89,.08)",
+                                transition: ".25s",
                               }}
-                            />
-                          </button>
-                          <button
-                            ref={(el) =>
-                              (menuButtonRefs.current[job.jobId] = el)
-                            }
-                            onClick={(e) => {
-                              e.stopPropagation();
-
-                              if (openMenu === job.jobId) {
-                                setOpenMenu(null);
-                                return;
-                              }
-
-                              const rect =
-                                menuButtonRefs.current[
-                                  job.jobId
-                                ].getBoundingClientRect();
-
-                              setMenuPosition({
-                                top: rect.bottom + 8,
-                                left: rect.left - 190,
-                              });
-
-                              setOpenMenu(job.jobId);
-                            }}
-                            style={{
-                              width: 44,
-                              height: 44,
-                              borderRadius: 14,
-                              border: "1px solid #E5E7EB",
-                              background: "#fff",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              cursor: "pointer",
-                              boxShadow: "0 4px 12px rgba(18,35,89,.08)",
-                              transition: ".25s",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.borderColor = "#FFA300";
-                              e.currentTarget.style.background = "#FFF8EC";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.borderColor = "#E5E7EB";
-                              e.currentTarget.style.background = "#fff";
-                            }}
-                          >
-                            <i
-                              className="fi-rr-menu-dots-vertical"
-                              style={{
-                                fontSize: 18,
-                                color: "#122359",
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = "#1D4ED8";
+                                e.currentTarget.style.color = "#fff";
+                                e.currentTarget.style.borderColor = "#1D4ED8";
                               }}
-                            />
-                          </button>
-
-                          {/* {openMenu === job.jobId && (
-                            <div
-                              style={{
-                                position: "absolute",
-                                top: 0,
-                                right: "52px",
-                                width: 220,
-                                background: "#fff",
-                                borderRadius: 18,
-                                border: "1px solid #EEF2F7",
-                                boxShadow: "0 18px 40px rgba(18,35,89,.12)",
-                                zIndex: 9999,
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = "#EAF4FF";
+                                e.currentTarget.style.color = "#1D4ED8";
+                                e.currentTarget.style.borderColor = "#B9DCFF";
                               }}
                             >
-                              <Link
-                                href={`/dashboard/post-job?jobId=${job.jobId}`}
-                                className={styles.dropdownItem}
-                              >
-                                <>
-                                  <i className="fi-rr-edit" />
-                                  <span>Edit Job</span>
-                                </>
-                              </Link>
+                              {job.appliedCount} Applicant
+                              {job.appliedCount !== 1 ? "s" : ""}
+                            </Link>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handlePreview(job.jobId);
+                              }}
+                              title="Preview"
+                              style={{
+                                width: 44,
+                                height: 44,
+                                borderRadius: 14,
+                                border: "1px solid #E5E7EB",
+                                background: "#fff",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                cursor: "pointer",
+                                boxShadow: "0 4px 12px rgba(18,35,89,.08)",
+                                transition: ".25s",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.borderColor = "#FFA300";
+                                e.currentTarget.style.background = "#FFF8EC";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.borderColor = "#E5E7EB";
+                                e.currentTarget.style.background = "#fff";
+                              }}
+                            >
+                              <i
+                                className="fi-rr-eye"
+                                style={{
+                                  fontSize: 18,
+                                  color: "#122359",
+                                }}
+                              />
+                            </button>
+                            <button
+                              ref={(el) =>
+                                (menuButtonRefs.current[job.jobId] = el)
+                              }
+                              onClick={(e) => {
+                                e.stopPropagation();
 
-                              <Link
-                                href={`/employeer/applicants?jobId=${job.jobId}&jobTitle=${encodeURIComponent(
-                                  job.jobTitle || ""
-                                )}`}
-                                className={styles.dropdownItem}
-                              >
-                                <>
-                                  <i className="fi-rr-users" />
-                                  <span>View Applicants</span>
-                                </>
-                              </Link>
-
-                              {job.jobStatus === "Active" && (
-                                <>
-                                  <button
-                                    className={styles.dropdownItem}
-                                    onClick={() => handlePause(job.jobId)}
-                                  >
-                                    <>
-                                      <i className="fi-rr-pause" />
-                                      <span>Pause Job</span>
-                                    </>
-                                  </button>
-
-                                  <button
-                                    className={styles.dropdownItem}
-                                    onClick={() => handleClose(job.jobId)}
-                                  >
-                                    <>
-                                      <i className="fi-rr-cross-circle" />
-                                      <span>Close Job</span>
-                                    </>
-                                  </button>
-                                </>
-                              )}
-
-                              {job.jobStatus === "Paused" && (
-                                <>
-                                  <button
-                                    className={styles.dropdownItem}
-                                    onClick={() => handleResume(job.jobId)}
-                                  >
-                                    <>
-                                      <i className="fi-rr-play" />
-                                      <span>Resume Job</span>
-                                    </>
-                                  </button>
-
-                                  <button
-                                    className={styles.dropdownItem}
-                                    onClick={() => handleArchive(job.jobId)}
-                                  >
-                                    <>
-                                      <i className="fi-rr-archive" />
-                                      <span>Archive Job</span>
-                                    </>
-                                  </button>
-                                </>
-                              )}
-
-                              {job.jobStatus === "Closed" && (
-                                <button
-                                  className={styles.dropdownItem}
-                                  onClick={() => handleArchive(job.jobId)}
-                                >
-                                  📦 Archive
-                                </button>
-                              )}
-
-                              <button
-                                className={styles.dropdownItem}
-                                onClick={() =>
-                                  handleDelete(job.jobId, job.jobTitle)
+                                if (openMenu === job.jobId) {
+                                  setOpenMenu(null);
+                                  return;
                                 }
-                                style={{ color: "#dc2626" }}
-                              >
-                                <>
-                                  <i className="fi-rr-trash" />
-                                  <span>Delete Job</span>
-                                </>
-                              </button>
-                            </div>
-                          )} */}
-                        </div>
+
+                                const rect =
+                                  menuButtonRefs.current[
+                                    job.jobId
+                                  ].getBoundingClientRect();
+
+                                setMenuPosition({
+                                  top: rect.bottom + 8,
+                                  left: rect.left - 190,
+                                });
+
+                                setOpenMenu(job.jobId);
+                              }}
+                              style={{
+                                width: 44,
+                                height: 44,
+                                borderRadius: 14,
+                                border: "1px solid #E5E7EB",
+                                background: "#fff",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                cursor: "pointer",
+                                boxShadow: "0 4px 12px rgba(18,35,89,.08)",
+                                transition: ".25s",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.borderColor = "#FFA300";
+                                e.currentTarget.style.background = "#FFF8EC";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.borderColor = "#E5E7EB";
+                                e.currentTarget.style.background = "#fff";
+                              }}
+                            >
+                              <i
+                                className="fi-rr-menu-dots-vertical"
+                                style={{
+                                  fontSize: 18,
+                                  color: "#122359",
+                                }}
+                              />
+                            </button>
+                          </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              ))}
+              ))
+            )}
 
               {openMenu && (
                 <div
