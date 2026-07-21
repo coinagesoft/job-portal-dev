@@ -160,10 +160,23 @@ const EmployerJobListPage = () => {
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
+
+  const handlePause = async (jobId) => {
+    setOpenMenu(null);
+    try {
+      const res = await pauseJob(jobId);
+      showToast(res?.message || "Job paused successfully", "success");
+      await Promise.all([loadData(), loadJobs(activeStatus, activeType)]);
+    } catch (err) {
+      showToast(err.response?.data?.message || "Unable to pause job", "error");
+    }
+  };
+
   const handleClose = async (jobId) => {
+    setOpenMenu(null);
     try {
       const res = await closeJob(jobId);
-      showToast(res.message, "success");
+      showToast(res?.message || "Job closed successfully", "success");
       await Promise.all([loadData(), loadJobs(activeStatus, activeType)]);
     } catch (err) {
       showToast(err.response?.data?.message || "Unable to close job", "error");
@@ -171,9 +184,10 @@ const EmployerJobListPage = () => {
   };
 
   const handleResume = async (jobId) => {
+    setOpenMenu(null);
     try {
       const res = await resumeJob(jobId);
-      showToast(res.message, "success");
+      showToast(res?.message || "Job resumed successfully", "success");
       await Promise.all([loadData(), loadJobs(activeStatus, activeType)]);
     } catch (err) {
       showToast(err.response?.data?.message || "Unable to resume job", "error");
@@ -181,9 +195,10 @@ const EmployerJobListPage = () => {
   };
 
   const handleArchive = async (jobId) => {
+    setOpenMenu(null);
     try {
       const res = await archiveJob(jobId);
-      showToast(res.message, "success");
+      showToast(res?.message || "Job archived successfully", "success");
       await Promise.all([loadData(), loadJobs(activeStatus, activeType)]);
     } catch (err) {
       showToast(
@@ -219,6 +234,53 @@ const EmployerJobListPage = () => {
       count: dashboard?.archivedJobs || 0,
     },
   ];
+
+  const getEmptyStateDetails = (statusLabel) => {
+    switch (statusLabel) {
+      case "Draft":
+        return {
+          title: "No Draft Jobs",
+          description: "You don't have any draft job postings right now.",
+          icon: "fi-rr-document",
+          showPostJobBtn: true,
+        };
+      case "Active":
+        return {
+          title: "No Active Jobs",
+          description: "You don't have any active job postings currently accepting applications.",
+          icon: "fi-rr-checkbox",
+          showPostJobBtn: true,
+        };
+      case "Paused":
+        return {
+          title: "No Paused Jobs",
+          description: "You don't have any paused job postings.",
+          icon: "fi-rr-pause",
+          showResetBtn: true,
+        };
+      case "Closed":
+        return {
+          title: "No Closed Jobs",
+          description: "You don't have any closed job postings.",
+          icon: "fi-rr-cross-circle",
+          showResetBtn: true,
+        };
+      case "Archived":
+        return {
+          title: "No Archived Jobs",
+          description: "You don't have any archived job postings.",
+          icon: "fi-rr-archive",
+          showResetBtn: true,
+        };
+      default:
+        return {
+          title: "No Jobs Posted Yet",
+          description: "You haven't posted any jobs yet. Create a new job posting to start finding candidates.",
+          icon: "fi-rr-briefcase",
+          showPostJobBtn: true,
+        };
+    }
+  };
 
   const POSTING_TYPE_TABS = [
     {
@@ -495,75 +557,97 @@ const EmployerJobListPage = () => {
                   </p>
                 </div>
               ) : jobs.length === 0 ? (
-                <div
-                  className="text-center"
-                  style={{
-                    padding: "50px 20px",
-                    background: "#ffffff",
-                    borderRadius: 24,
-                    border: "1px dashed rgba(18, 35, 89, 0.16)",
-                    boxShadow: "0 4px 14px rgba(18,35,89,0.02)",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: "60px",
-                      height: "60px",
-                      margin: "0 auto 16px",
-                      borderRadius: "50%",
-                      background: "#FFF8EC",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "26px",
-                      color: "#ffa300",
-                    }}
-                  >
-                    <i className="fi-rr-briefcase" />
-                  </div>
-                  <h4
-                    style={{
-                      color: "#122359",
-                      fontWeight: 800,
-                      marginBottom: 8,
-                    }}
-                  >
-                    No jobs posted yet
-                  </h4>
-                  <p
-                    style={{
-                      color: "#66789c",
-                      fontSize: 14,
-                      maxWidth: 400,
-                      margin: "0 auto 20px",
-                      lineHeight: 1.6,
-                    }}
-                  >
-                    {activeStatus !== "All"
-                      ? `No ${activeStatus.toLowerCase()} jobs found. Try changing the filter tab above.`
-                      : "You haven't posted any jobs yet. Create a new job posting to start receiving applications."}
-                  </p>
-                  {canManageJobs && (
-                    <Link
-                      className="btn btn-default"
-                      href="/dashboard/post-job"
+                (() => {
+                  const emptyInfo = getEmptyStateDetails(activeStatus);
+                  return (
+                    <div
+                      className="text-center"
                       style={{
-                        borderRadius: 12,
-                        fontWeight: 700,
-                        boxShadow: "0 8px 20px rgba(255,163,0,0.18)",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 7,
+                        padding: "50px 20px",
+                        background: "#ffffff",
+                        borderRadius: 24,
+                        border: "1px dashed rgba(18, 35, 89, 0.16)",
+                        boxShadow: "0 4px 14px rgba(18,35,89,0.02)",
                       }}
                     >
-                      <i
-                        className="fi-rr-plus"
-                        style={{ fontSize: 13, lineHeight: 1 }}
-                      />
-                      Post a Job
-                    </Link>
-                  )}
-                </div>
+                      <div
+                        style={{
+                          width: "60px",
+                          height: "60px",
+                          margin: "0 auto 16px",
+                          borderRadius: "50%",
+                          background: "#FFF8EC",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "26px",
+                          color: "#ffa300",
+                        }}
+                      >
+                        <i className={emptyInfo.icon} />
+                      </div>
+                      <h4
+                        style={{
+                          color: "#122359",
+                          fontWeight: 800,
+                          marginBottom: 8,
+                        }}
+                      >
+                        {emptyInfo.title}
+                      </h4>
+                      <p
+                        style={{
+                          color: "#66789c",
+                          fontSize: 14,
+                          maxWidth: 400,
+                          margin: "0 auto 20px",
+                          lineHeight: 1.6,
+                        }}
+                      >
+                        {emptyInfo.description}
+                      </p>
+                      <div style={{ display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
+                        {emptyInfo.showPostJobBtn && canManageJobs && (
+                          <Link
+                            className="btn btn-default"
+                            href="/dashboard/post-job"
+                            style={{
+                              borderRadius: 12,
+                              fontWeight: 700,
+                              boxShadow: "0 8px 20px rgba(255,163,0,0.18)",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 7,
+                            }}
+                          >
+                            <i
+                              className="fi-rr-plus"
+                              style={{ fontSize: 13, lineHeight: 1 }}
+                            />
+                            Post a Job
+                          </Link>
+                        )}
+                        {emptyInfo.showResetBtn && (
+                          <button
+                            type="button"
+                            className="btn btn-border"
+                            onClick={() => setActiveStatus("All")}
+                            style={{
+                              borderRadius: 12,
+                              fontWeight: 700,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 7,
+                            }}
+                          >
+                            <i className="fi-rr-refresh" style={{ fontSize: 13 }} />
+                            View All Jobs
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()
               ) : (
                 jobs.map((job) => (
                   <div
@@ -1049,6 +1133,36 @@ const EmployerJobListPage = () => {
                               <span>Close Job</span>
                             </button>
                           </>
+                        )}
+
+                        {canManageJobs && job.jobStatus === "Paused" && (
+                          <>
+                            <button
+                              className={styles.dropdownItem}
+                              onClick={() => handleResume(job.jobId)}
+                            >
+                              <i className="fi-rr-play" />
+                              <span>Resume Job</span>
+                            </button>
+
+                            <button
+                              className={styles.dropdownItem}
+                              onClick={() => handleClose(job.jobId)}
+                            >
+                              <i className="fi-rr-cross-circle" />
+                              <span>Close Job</span>
+                            </button>
+                          </>
+                        )}
+
+                        {canManageJobs && job.jobStatus === "Closed" && (
+                          <button
+                            className={styles.dropdownItem}
+                            onClick={() => handleArchive(job.jobId)}
+                          >
+                            <i className="fi-rr-archive" />
+                            <span>Archive Job</span>
+                          </button>
                         )}
 
                         {canManageJobs && (
