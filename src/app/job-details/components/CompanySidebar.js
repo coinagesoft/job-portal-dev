@@ -11,7 +11,17 @@ const CompanySidebar = ({ job = {} }) => {
   const [companyId, setCompanyId] = useState(null);
   const [employerId, setEmployerId] = useState(job.employerId || null);
 
-  const isConfidential = job.companyVisibility === "HideName";
+  const isConfidential =
+    job.companyVisibility === "HideName" ||
+    String(job.companyName || "").toLowerCase().includes("confidential") ||
+    String(job.companyFull || "").toLowerCase().includes("confidential") ||
+    String(job.company || "").toLowerCase().includes("confidential");
+
+  const companyDisplayName = isConfidential
+    ? "Confidential Company"
+    : (job.companyName || job.companyFull || job.company || "");
+
+  const canNavigate = !isConfidential && Boolean(employerId);
 
   const humanize = (value) => {
     if (value === null || value === undefined) return value;
@@ -19,13 +29,12 @@ const CompanySidebar = ({ job = {} }) => {
     return value.replace(/_/g, ' ');
   };
 
-
-
   const formatHourlyPrice = (value) => {
     const text = String(value || '').trim();
     if (!text) return '';
     return text.includes('$') ? text : `$${text}`;
   };
+
   useEffect(() => {
     if (job.employerId) {
       setEmployerId(job.employerId);
@@ -33,86 +42,175 @@ const CompanySidebar = ({ job = {} }) => {
   }, [job.employerId]);
 
   useEffect(() => {
-  const loadData = async () => {
-    try {
-      const response = await getAllJobs();
-      const jobs = response.data || [];
+    const loadData = async () => {
+      try {
+        const response = await getAllJobs();
+        const jobs = response.data || [];
 
-      // Find the current job
-      const currentJob = jobs.find(
-        (item) => item.jobId === job.jobId
-      );
+        // Find the current job
+        const currentJob = jobs.find(
+          (item) => item.jobId === job.jobId
+        );
 
-     console.log(currentJob);
+        if (currentJob) {
+          setCompanyId(currentJob.companyId);
+          if (!job.employerId) {
+            setEmployerId(currentJob.employerId || null);
+          }
+        }
 
-if (currentJob) {
-    setCompanyId(currentJob.companyId);
-    if (!job.employerId) {
-      setEmployerId(currentJob.employerId || null);
-    }
-}
+        // Similar jobs
+        const filteredJobs = jobs
+          .filter((item) => item.jobId !== job.jobId)
+          .slice(0, 5);
 
-      // Similar jobs
-      const filteredJobs = jobs
-        .filter((item) => item.jobId !== job.jobId)
-        .slice(0, 5);
+        setSimilarJobs(filteredJobs);
+      } catch (error) {
+        console.error(error);
+      }
+    };
 
-      setSimilarJobs(filteredJobs);
-    } catch (error) {
-      console.error(error);
-    }
-  };
+    loadData();
+  }, [job.jobId]);
 
-  loadData();
-}, [job.jobId]);
   return (
     <>
       {/* ── Company Card ─────────────────────────────────── */}
       <div className="sidebar-border employer-cv-surface-card">
         <div className="sidebar-heading">
-          <Link
-            href={employerId ? `/company-details?employerId=${employerId}` : "#"}
-            className="avatar-sidebar"
-            style={{ textDecoration: 'none', color: 'inherit', cursor: employerId ? 'pointer' : 'default' }}
-            onClick={(e) => { if (!employerId) e.preventDefault(); }}
-          >
-            <figure>
-              <img
-                alt="jobBox"
-                src={
-                  isConfidential
-                    ? "/assets/imgs/page/job-single/industry.svg"
-                    : job.companyLogoUrl || "/assets/imgs/page/homepage1/img1.png"
-                }
-                style={{
-                  width: "48px",
-                  height: "48px",
-                  objectFit: "cover",
-                  cursor: "pointer",
-                }}
-              />
-            </figure>
-            <div className="sidebar-info">
-              {job.companyFull && (
-                <span className="sidebar-company">{job.companyFull}</span>
-              )}
-              {job.location && (
-                <span className="card-location">
-                  {/* <i className="fa-solid fa-location-dot mr-5" style={{ color: 'var(--color-brand-1)' }}></i> */}
-                  {job.location}
-                </span>
-              )}
-              {job.openJobs != null && (
-                <span className="link-underline mt-15">
-                  <i className="fa-solid fa-briefcase mr-5"></i>
-                  {job.openJobs} Open Jobs
-                </span>
-              )}
+          {canNavigate ? (
+            <Link
+              href={`/company-details?employerId=${employerId}`}
+              className="avatar-sidebar"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                textDecoration: 'none',
+                color: 'inherit',
+                cursor: 'pointer',
+              }}
+            >
+              <figure style={{ flexShrink: 0, margin: 0 }}>
+                <img
+                  alt="jobBox"
+                  src={
+                    job.companyLogoUrl || "/assets/imgs/page/homepage1/img1.png"
+                  }
+                  style={{
+                    width: "48px",
+                    height: "48px",
+                    objectFit: "cover",
+                    borderRadius: "8px",
+                  }}
+                />
+              </figure>
+              <div className="sidebar-info" style={{ minWidth: 0, flex: 1, paddingLeft: 0 }}>
+                {companyDisplayName && (
+                  <span
+                    className="sidebar-company"
+                    style={{
+                      display: "block",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      maxWidth: "100%",
+                    }}
+                    title={companyDisplayName}
+                  >
+                    {companyDisplayName}
+                  </span>
+                )}
+                {job.location && (
+                  <span
+                    className="card-location"
+                    style={{
+                      display: "block",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      maxWidth: "100%",
+                    }}
+                  >
+                    {job.location}
+                  </span>
+                )}
+                {job.openJobs != null && (
+                  <span className="link-underline mt-15">
+                    <i className="fa-solid fa-briefcase mr-5"></i>
+                    {job.openJobs} Open Jobs
+                  </span>
+                )}
+              </div>
+            </Link>
+          ) : (
+            <div
+              className="avatar-sidebar"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                textDecoration: 'none',
+                color: 'inherit',
+                cursor: 'default',
+              }}
+            >
+              <figure style={{ flexShrink: 0, margin: 0 }}>
+                <img
+                  alt="jobBox"
+                  src={
+                    isConfidential
+                      ? "/assets/imgs/page/job-single/industry.svg"
+                      : job.companyLogoUrl || "/assets/imgs/page/homepage1/img1.png"
+                  }
+                  style={{
+                    width: "48px",
+                    height: "48px",
+                    objectFit: isConfidential ? "contain" : "cover",
+                    borderRadius: "8px",
+                  }}
+                />
+              </figure>
+              <div className="sidebar-info" style={{ minWidth: 0, flex: 1, paddingLeft: 0 }}>
+                {companyDisplayName && (
+                  <span
+                    className="sidebar-company"
+                    style={{
+                      display: "block",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      maxWidth: "100%",
+                    }}
+                    title={companyDisplayName}
+                  >
+                    {companyDisplayName}
+                  </span>
+                )}
+                {job.location && (
+                  <span
+                    className="card-location"
+                    style={{
+                      display: "block",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      maxWidth: "100%",
+                    }}
+                  >
+                    {job.location}
+                  </span>
+                )}
+                {job.openJobs != null && (
+                  <span className="link-underline mt-15">
+                    <i className="fa-solid fa-briefcase mr-5"></i>
+                    {job.openJobs} Open Jobs
+                  </span>
+                )}
+              </div>
             </div>
-          </Link>
+          )}
         </div>
-
-
       </div>
 
       {/* ── Similar Jobs ──────────────────────────────────── */}

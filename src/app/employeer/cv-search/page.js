@@ -993,24 +993,25 @@ useEffect(() => {
                       </div>
                     </div>
 
-                    <div className="filter-block mb-20">
-                      <div className="form-group">
-                        <label className="mb-5">Trade category</label>
-                        <select
-                          className="form-control form-icons select-active"
-                          value={filters.tradeCategory}
-                          onChange={(e) => updateFilterAndSearch({ tradeCategory: e.target.value })}
-                        >
-                          <option value="">Any trade</option>
-                          {(filterOptions?.tradeCategories ?? []).map((tradeOption) => (
-                            <option key={tradeOption} value={tradeOption}>
-                              {tradeOption}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
+  <div className="filter-block mb-20">
+  <div className="form-group">
+    <label className="mb-5">Trade category</label>
+    <select
+      className="form-control select-active trade-category-select"
+      value={filters.tradeCategory}
+      onChange={(e) => updateFilterAndSearch({ tradeCategory: e.target.value })}
+    >
+      <option value="" disabled hidden>
+        Select trade category
+      </option>
+      {(filterOptions?.tradeCategories ?? []).map((tradeOption) => (
+        <option key={tradeOption} value={tradeOption}>
+          {tradeOption}
+        </option>
+      ))}
+    </select>
+  </div>
+</div>
                     <div className="filter-block mb-20">
                       <div className="form-group">
                         <label className="mb-5">Experience</label>
@@ -1037,37 +1038,41 @@ useEffect(() => {
                     </div>
 
                     <div className="filter-block mb-20">
-                      <div className="form-group">
-                        <label className="mb-5">Location</label>
-                        <select
-  className="form-control form-icons select-active"
-  value={filters.location}
-  onChange={(e) => updateFilterAndSearch({ location: e.target.value })}
->
-  <option value="">Any location</option>
-  {getUniqueLocations(filterOptions?.locations, cvCandidates).map((loc) => (
-    <option key={loc} value={loc}>
-      {loc}
-    </option>
-  ))}
-</select>
-                      </div>
-                    </div>
+  <div className="form-group">
+    <label className="mb-5">Location</label>
+    <select
+      className="form-control select-active left-align-select"
+      value={filters.location}
+      onChange={(e) => updateFilterAndSearch({ location: e.target.value })}
+    >
+      <option value="" disabled hidden>
+        Select location
+      </option>
+      {getUniqueLocations(filterOptions?.locations, cvCandidates).map((loc) => (
+        <option key={loc} value={loc}>
+          {loc}
+        </option>
+      ))}
+    </select>
+  </div>
+</div>
 
-                    <div className="filter-block mb-20">
-                      <div className="form-group">
-                        <label className="mb-5">Availability</label>
-                        <select
-                          className="form-control form-icons select-active"
-                          value={filters.availabilityStatus}
-                          onChange={(e) => updateFilterAndSearch({ availabilityStatus: e.target.value })}
-                        >
-                          <option value="">Any</option>
-                          <option value="Available">Available now</option>
-                          <option value="Unavailable">Not available</option>
-                        </select>
-                      </div>
-                    </div>
+<div className="filter-block mb-20">
+  <div className="form-group">
+    <label className="mb-5">Availability</label>
+    <select
+      className="form-control select-active left-align-select"
+      value={filters.availabilityStatus}
+      onChange={(e) => updateFilterAndSearch({ availabilityStatus: e.target.value })}
+    >
+      <option value="" disabled hidden>
+        Select availability
+      </option>
+      <option value="Available">Available now</option>
+      <option value="Unavailable">Not available</option>
+    </select>
+  </div>
+</div>
                     <div className="filter-block mb-20">
                       <div className="form-group">
                         <label className="mb-5">Certifications & Status</label>
@@ -1124,33 +1129,26 @@ useEffect(() => {
                       </div>
                     </div>
 
-                    <div className="filter-block mb-30">
-                      <div className="form-group">
-                        <label className="mb-5">Sort by</label>
-                        <select
-                          className="form-control form-icons select-active"
-                          name="sort"
-                          value={filters.sortBy}
-                          onChange={(e) =>
-                            setFilters({
-                              ...filters,
-                              sortBy: e.target.value,
-                            })
-                          }
-                        >
-                          <option value="KeywordMatch">
-                            AI match score
-                          </option>
-
-                          <option value="Newest">Newest profile update</option>
-
-                          <option value="Experience">
-                            Experience high to low
-                          </option>
-                        </select>
-                      </div>
-                    </div>
-
+                 <div className="filter-block mb-30">
+  <div className="form-group">
+    <label className="mb-5">Sort by</label>
+    <select
+      className="form-control select-active left-align-select"
+      name="sort"
+      value={filters.sortBy}
+      onChange={(e) =>
+        setFilters({
+          ...filters,
+          sortBy: e.target.value,
+        })
+      }
+    >
+      <option value="KeywordMatch">AI match score</option>
+      <option value="Newest">Newest profile update</option>
+      <option value="Experience">Experience high to low</option>
+    </select>
+  </div>
+</div>
                     <div className="filter-block mb-20">
                       <button
                         className="btn btn-default w-100 mb-10"
