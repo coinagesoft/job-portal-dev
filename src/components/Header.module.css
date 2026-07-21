@@ -19,11 +19,11 @@
 }
 
 .profileBlock {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 10px;
 }
-
 .profileToggle {
   display: inline-flex;
   align-items: center;
@@ -209,3 +209,21 @@
   flex-shrink: 0;
 }
 
+.profileDropdown {
+  position: absolute !important;
+  top: calc(100% + 8px);
+  right: 0;
+  left: auto;
+  min-width: 220px;
+  display: none;
+  background: #fff;
+  border: 1px solid #ffc151;
+  border-radius: 10px;
+  box-shadow: 0 8px 28px rgba(5, 38, 78, 0.13);
+  padding: 6px 0;
+  z-index: 9999;
+}
+
+.profileDropdown.show {
+  display: block;
+}
