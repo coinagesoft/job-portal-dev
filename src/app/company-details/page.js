@@ -760,13 +760,31 @@ function CompanyDetailsContent() {
             </div>
 
             <div className="col-lg-4 col-md-12 col-sm-12 col-12 pl-40 pl-lg-15 mt-lg-30">
-              <div className="sidebar-border employer-cv-surface-card">
+              <div className="sidebar-border employer-cv-surface-card" style={{ minWidth: 0, width: "100%" }}>
                 <div className="sidebar-heading">
                   <div className="avatar-sidebar">
-                    <div className="sidebar-info pl-0">
-                      <span className="sidebar-company">{companyInfo.companyName}</span>
+                    <div className="sidebar-info pl-0" style={{ minWidth: 0, width: "100%" }}>
+                      <span
+                        className="sidebar-company"
+                        style={{
+                          display: "block",
+                          overflowWrap: "anywhere",
+                          wordBreak: "break-word",
+                          whiteSpace: "normal",
+                        }}
+                      >
+                        {companyInfo.companyName}
+                      </span>
                       {(companyInfo.city || companyInfo.state || companyInfo.country) && (
-                        <span className="card-location">
+                        <span
+                          className="card-location"
+                          style={{
+                            display: "block",
+                            overflowWrap: "anywhere",
+                            wordBreak: "break-word",
+                            whiteSpace: "normal",
+                          }}
+                        >
                           {[companyInfo.city, companyInfo.state, companyInfo.country].filter(Boolean).join(", ")}
                         </span>
                       )}
@@ -790,13 +808,21 @@ function CompanyDetailsContent() {
                 <div className="sidebar-list-job">
                   <ul>
                     {companyInfo.industry && (
-                      <li>
-                        <div className="sidebar-icon-item">
+                      <li style={{ display: "flex", alignItems: "flex-start", gap: "10px", minWidth: 0, width: "100%" }}>
+                        <div className="sidebar-icon-item" style={{ flexShrink: 0, width: "24px", paddingTop: "2px" }}>
                           <i className="fi-rr-briefcase"></i>
                         </div>
-                        <div className="sidebar-text-info">
+                        <div className="sidebar-text-info" style={{ minWidth: 0, flex: 1, paddingLeft: 0, overflowWrap: "anywhere", wordBreak: "break-word" }}>
                           <span className="text-description">Company field</span>
-                          <strong className="small-heading">
+                          <strong
+                            className="small-heading"
+                            style={{
+                              display: "block",
+                              overflowWrap: "anywhere",
+                              wordBreak: "break-word",
+                              whiteSpace: "normal",
+                            }}
+                          >
                             {humanize(companyInfo.industry)}
                           </strong>
                         </div>
@@ -804,13 +830,21 @@ function CompanyDetailsContent() {
                     )}
 
                     {(companyInfo.officeAddress || companyInfo.addressLine1) && (
-                      <li>
-                        <div className="sidebar-icon-item">
+                      <li style={{ display: "flex", alignItems: "flex-start", gap: "10px", minWidth: 0, width: "100%" }}>
+                        <div className="sidebar-icon-item" style={{ flexShrink: 0, width: "24px", paddingTop: "2px" }}>
                           <i className="fi-rr-marker"></i>
                         </div>
-                        <div className="sidebar-text-info">
+                        <div className="sidebar-text-info" style={{ minWidth: 0, flex: 1, paddingLeft: 0, overflowWrap: "anywhere", wordBreak: "break-word" }}>
                           <span className="text-description">Location</span>
-                          <strong className="small-heading">
+                          <strong
+                            className="small-heading"
+                            style={{
+                              display: "block",
+                              overflowWrap: "anywhere",
+                              wordBreak: "break-word",
+                              whiteSpace: "normal",
+                            }}
+                          >
                             {companyInfo.officeAddress || companyInfo.addressLine1}
                           </strong>
                         </div>
@@ -818,25 +852,43 @@ function CompanyDetailsContent() {
                     )}
 
                     {companyInfo.yearEstablished && (
-                      <li>
-                        <div className="sidebar-icon-item">
+                      <li style={{ display: "flex", alignItems: "flex-start", gap: "10px", minWidth: 0, width: "100%" }}>
+                        <div className="sidebar-icon-item" style={{ flexShrink: 0, width: "24px", paddingTop: "2px" }}>
                           <i className="fi-rr-clock"></i>
                         </div>
-                        <div className="sidebar-text-info">
+                        <div className="sidebar-text-info" style={{ minWidth: 0, flex: 1, paddingLeft: 0, overflowWrap: "anywhere", wordBreak: "break-word" }}>
                           <span className="text-description">Year Established</span>
-                          <strong className="small-heading">{companyInfo.yearEstablished}</strong>
+                          <strong
+                            className="small-heading"
+                            style={{
+                              display: "block",
+                              overflowWrap: "anywhere",
+                              wordBreak: "break-word",
+                              whiteSpace: "normal",
+                            }}
+                          >
+                            {companyInfo.yearEstablished}
+                          </strong>
                         </div>
                       </li>
                     )}
 
                     {companyInfo.companySize && (
-                      <li>
-                        <div className="sidebar-icon-item">
+                      <li style={{ display: "flex", alignItems: "flex-start", gap: "10px", minWidth: 0, width: "100%" }}>
+                        <div className="sidebar-icon-item" style={{ flexShrink: 0, width: "24px", paddingTop: "2px" }}>
                           <i className="fi-rr-time-fast"></i>
                         </div>
-                        <div className="sidebar-text-info">
+                        <div className="sidebar-text-info" style={{ minWidth: 0, flex: 1, paddingLeft: 0, overflowWrap: "anywhere", wordBreak: "break-word" }}>
                           <span className="text-description">Company Size</span>
-                          <strong className="small-heading">
+                          <strong
+                            className="small-heading"
+                            style={{
+                              display: "block",
+                              overflowWrap: "anywhere",
+                              wordBreak: "break-word",
+                              whiteSpace: "normal",
+                            }}
+                          >
                             {formatCompanySize(companyInfo.companySize)}
                           </strong>
                         </div>
@@ -844,25 +896,43 @@ function CompanyDetailsContent() {
                     )}
 
                     {companyInfo.openJobsCount != null && (
-                      <li>
-                        <div className="sidebar-icon-item">
+                      <li style={{ display: "flex", alignItems: "flex-start", gap: "10px", minWidth: 0, width: "100%" }}>
+                        <div className="sidebar-icon-item" style={{ flexShrink: 0, width: "24px", paddingTop: "2px" }}>
                           <i className="fi-rr-briefcase"></i>
                         </div>
-                        <div className="sidebar-text-info">
+                        <div className="sidebar-text-info" style={{ minWidth: 0, flex: 1, paddingLeft: 0, overflowWrap: "anywhere", wordBreak: "break-word" }}>
                           <span className="text-description">Open Jobs</span>
-                          <strong className="small-heading">{companyInfo.openJobsCount}</strong>
+                          <strong
+                            className="small-heading"
+                            style={{
+                              display: "block",
+                              overflowWrap: "anywhere",
+                              wordBreak: "break-word",
+                              whiteSpace: "normal",
+                            }}
+                          >
+                            {companyInfo.openJobsCount}
+                          </strong>
                         </div>
                       </li>
                     )}
 
                     {companyInfo.websiteUrl && (
-                      <li>
-                        <div className="sidebar-icon-item">
+                      <li style={{ display: "flex", alignItems: "flex-start", gap: "10px", minWidth: 0, width: "100%" }}>
+                        <div className="sidebar-icon-item" style={{ flexShrink: 0, width: "24px", paddingTop: "2px" }}>
                           <i className="fi-rr-globe"></i>
                         </div>
-                        <div className="sidebar-text-info" style={{
-                          borderBottom: "none",
-                        }}>
+                        <div
+                          className="sidebar-text-info"
+                          style={{
+                            minWidth: 0,
+                            flex: 1,
+                            paddingLeft: 0,
+                            overflowWrap: "anywhere",
+                            wordBreak: "break-word",
+                            borderBottom: "none",
+                          }}
+                        >
                           <span className="text-description" style={{ whiteSpace: "nowrap" }}>
                             Company Website
                           </span>
@@ -872,6 +942,7 @@ function CompanyDetailsContent() {
                               display: "block",
                               overflowWrap: "anywhere",
                               wordBreak: "break-word",
+                              whiteSpace: "normal",
                             }}
                           >
                             <a
@@ -885,6 +956,7 @@ function CompanyDetailsContent() {
                                 display: "block",
                                 overflowWrap: "anywhere",
                                 wordBreak: "break-word",
+                                whiteSpace: "normal",
                               }}
                             >
                               {companyInfo.websiteUrl}
@@ -900,12 +972,12 @@ function CompanyDetailsContent() {
                   <div className="sidebar-list-job">
                     <ul>
                       {companyInfo.phone && (
-                        <li>
-                          <div className="sidebar-icon-item">
+                        <li style={{ display: "flex", alignItems: "flex-start", gap: "10px", minWidth: 0, width: "100%" }}>
+                          <div className="sidebar-icon-item" style={{ flexShrink: 0, width: "24px", paddingTop: "2px" }}>
                             <i className="fi-rr-phone-call"></i>
                           </div>
 
-                          <div className="sidebar-text-info">
+                          <div className="sidebar-text-info" style={{ minWidth: 0, flex: 1, paddingLeft: 0, overflowWrap: "anywhere", wordBreak: "break-word" }}>
                             <span className="text-description">Phone</span>
 
                             <strong
@@ -914,6 +986,7 @@ function CompanyDetailsContent() {
                                 display: "block",
                                 overflowWrap: "anywhere",
                                 wordBreak: "break-word",
+                                whiteSpace: "normal",
                               }}
                             >
                               <a
@@ -925,6 +998,7 @@ function CompanyDetailsContent() {
                                   display: "block",
                                   overflowWrap: "anywhere",
                                   wordBreak: "break-word",
+                                  whiteSpace: "normal",
                                 }}
                               >
                                 {companyInfo.phone}
@@ -935,12 +1009,12 @@ function CompanyDetailsContent() {
                       )}
 
                       {companyInfo.email && (
-                        <li>
-                          <div className="sidebar-icon-item">
+                        <li style={{ display: "flex", alignItems: "flex-start", gap: "10px", minWidth: 0, width: "100%" }}>
+                          <div className="sidebar-icon-item" style={{ flexShrink: 0, width: "24px", paddingTop: "2px" }}>
                             <i className="fi-rr-envelope"></i>
                           </div>
 
-                          <div className="sidebar-text-info">
+                          <div className="sidebar-text-info" style={{ minWidth: 0, flex: 1, paddingLeft: 0, overflowWrap: "anywhere", wordBreak: "break-word" }}>
                             <span className="text-description">Email</span>
 
                             <strong
@@ -949,6 +1023,7 @@ function CompanyDetailsContent() {
                                 display: "block",
                                 overflowWrap: "anywhere",
                                 wordBreak: "break-word",
+                                whiteSpace: "normal",
                               }}
                             >
                               <a
@@ -960,6 +1035,7 @@ function CompanyDetailsContent() {
                                   display: "block",
                                   overflowWrap: "anywhere",
                                   wordBreak: "break-word",
+                                  whiteSpace: "normal",
                                 }}
                               >
                                 {companyInfo.email}
