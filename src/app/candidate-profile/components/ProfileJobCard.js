@@ -105,7 +105,9 @@ const ProfileJobCard = ({ job, isListView, applyToDetails = false, onUnsave }) =
       : `₹${text}`;
   };
 
-  const displayPrice = formatSalary(job.price);
+  const displayPrice = (job.salaryVisibility === "Hide Salary" || job.salaryVisibility === "Hide_Salary" || job.salaryDisplayOption === "Hide Salary" || job.salaryDisplayOption === "Hide_Salary")
+    ? ""
+    : formatSalary(job.price);
   const visibleTags = applyToDetails
     ? (job.tags || []).slice(0, 2)
     : (job.tags || []);

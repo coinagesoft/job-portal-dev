@@ -61,7 +61,13 @@ const JobOverview = ({ job = {} }) => {
     {
       title: 'Compensation & Experience',
       items: [
-        { icon: 'fa-solid fa-sack-dollar', label: 'Salary', value: job.salaryRange },
+        {
+          icon: 'fa-solid fa-sack-dollar',
+          label: 'Salary',
+          value: (job.salaryVisibility === "Hide Salary" || job.salaryVisibility === "Hide_Salary" || job.salaryDisplayOption === "Hide Salary" || job.salaryDisplayOption === "Hide_Salary")
+            ? null
+            : job.salaryRange
+        },
         {
           icon: 'fa-solid fa-user-clock',
           label: 'Experience',

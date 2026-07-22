@@ -298,11 +298,13 @@ const CompanySidebar = ({ job = {} }) => {
                     </div>
 
                     {/* Salary */}
-                    <div className="mt-5">
-                      <h6 className="card-price mb-0">
-                        {item.salaryRange || 'Confidential'}
-                      </h6>
-                    </div>
+                    {!(item.salaryVisibility === "Hide Salary" || item.salaryVisibility === "Hide_Salary" || item.salaryDisplayOption === "Hide Salary" || item.salaryDisplayOption === "Hide_Salary") && (
+                      <div className="mt-5">
+                        <h6 className="card-price mb-0">
+                          {item.salaryRange || 'Confidential'}
+                        </h6>
+                      </div>
+                    )}
                   </div>
                 </div>
               </li>

@@ -97,6 +97,8 @@ const SavedJobsTab = () => {
               matchedJob?.description || job.role || "No description available",
             price: job.salaryDisplay,
             priceUnit: "",
+            salaryVisibility: matchedJob?.salaryVisibility || job.salaryVisibility || null,
+            salaryDisplayOption: matchedJob?.salaryDisplayOption || job.salaryDisplayOption || null,
             tags: job.keySkills?.length > 0 ? job.keySkills : job.tags || [],
             time: job.timeAgo || "Recently",
           };

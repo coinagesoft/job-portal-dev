@@ -70,6 +70,8 @@ import {
   searchRoles, 
   suggestSkills, 
 } from "@/services/recruiter/recruiterJobPostService"; 
+
+const COMBOBOX_SEARCH_THRESHOLD = 8;
  
 /* ─── static data ─────────────────────────────────────────────────────────── */ 
 const roleCategories = [ 
@@ -124,9 +126,9 @@ const employmentTypeOptions = [
   { label: "Contract", value: "Contract" }, 
   { label: "Freelance", value: "Freelance" }, 
   { label: "Internship / Trainee", value: "Internship" }, 
-  { label: "Apprenticeship", value: "Apprenticeship" }, 
-  { label: "Permanent", value: "Permanent" }, 
-  { label: "Temporary", value: "Temporary" }, 
+  // { label: "Apprenticeship", value: "Apprenticeship" }, 
+  // { label: "Permanent", value: "Permanent" }, 
+  // { label: "Temporary", value: "Temporary" }, 
 ]; 
 const employmentModeOptions = [ 
   { label: "Onsite", value: "Onsite" }, 
@@ -181,7 +183,7 @@ const suggestedLanguages = [
   "Punjabi", 
   "Malayalam", 
   "Odia", 
-  "Local Language", 
+  // "Local Language", 
 ]; 
 const industryOptions = [ 
   "Recruitement Agency",
@@ -249,7 +251,8 @@ const salaryDisplayOptions = [
   { value: "Show Range", label: "Show Range" }, 
   { value: "Show Min Only", label: "Show Minimum Only" }, 
   { value: "Show Max Only", label: "Show Maximum Only" }, 
-  { value: "Negotiable", label: "Negotiable" }, 
+  { value: "Negotiable", label: "Negotiable" },
+   { value: "Hide Salary", label: "Hide Salary" },  
 ]; 
 const educationOptions = [ 
   { value: "No Specific Requirement", label: "No Specific Requirement" }, 
@@ -284,6 +287,16 @@ const JOB_STEPS = [
   { id: "publishing", step: "07", title: "Publishing" }, 
 ]; 
  
+
+const contractPeriodOptions = [
+  { label: "1 Month", value: "1 Month" },
+  { label: "3 Months", value: "3 Months" },
+  { label: "6 Months", value: "6 Months" },
+  { label: "1 Year", value: "1 Year" },
+  { label: "2 Years", value: "2 Years" },
+  { label: "3+ Years", value: "3+ Years" },
+  { label: "Other", value: "Other" },
+];
 /** 
  * Single source of truth for "is this job ready to publish?". 
  * Walks every step's required fields (mirroring each handleStepN's own 
@@ -427,6 +440,8 @@ function Combobox({ value, onChange, options, placeholder }) {
   const normalized = (options || []).map((o) => 
     typeof o === "string" ? { value: o, label: o } : o 
   ); 
+  const isSearchable = normalized.length > COMBOBOX_SEARCH_THRESHOLD;
+
   const [open, setOpen] = useState(false); 
   const wrapRef = useRef(null); 
   const justSelectedRef = useRef(false); 
@@ -434,8 +449,6 @@ function Combobox({ value, onChange, options, placeholder }) {
   const matched = normalized.find((o) => o.value === value); 
   const [query, setQuery] = useState(matched ? matched.label : (value || "")); 
  
-  // Keep the visible text in sync whenever the selected value changes from 
-  // outside (loading a draft, parent resetting the field, etc). 
   useEffect(() => { 
     const m = normalized.find((o) => o.value === value); 
     setQuery(m ? m.label : (value || "")); 
@@ -459,9 +472,21 @@ function Combobox({ value, onChange, options, placeholder }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps 
   }, [value, options]); 
  
-  const filtered = query 
-    ? normalized.filter((o) => o.label.toLowerCase().includes(query.toLowerCase())) 
-    : normalized; 
+  const filtered = isSearchable && query 
+    ? (() => {
+        const q = query.toLowerCase().trim();
+        const starts = [];
+        const contains = [];
+        for (const o of normalized) {
+          const label = o.label.toLowerCase();
+          if (label.startsWith(q)) starts.push(o);
+          else if (label.includes(q)) contains.push(o);
+        }
+        starts.sort((a, b) => a.label.localeCompare(b.label));
+        contains.sort((a, b) => a.label.localeCompare(b.label));
+        return [...starts, ...contains];
+      })()
+    : normalized;
  
   const selectOption = (opt) => { 
     justSelectedRef.current = true; 
@@ -475,16 +500,26 @@ function Combobox({ value, onChange, options, placeholder }) {
       <input 
         className={styles.control} 
         value={query} 
+        readOnly={!isSearchable}
         placeholder={placeholder || "Type to search…"} 
         autoComplete="off" 
         onChange={(e) => { 
-          // Typing only filters the dropdown below — it never submits the 
-          // raw text as the field's value. Only selecting an option does. 
+          if (!isSearchable) return;
           setQuery(e.target.value); 
           setOpen(true); 
         }} 
         onFocus={() => setOpen(true)} 
+        onClick={() => setOpen(true)}
         onKeyDown={(e) => { 
+          if (!isSearchable) {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setOpen((o) => !o);
+            } else if (e.key === "Escape") {
+              setOpen(false);
+            }
+            return;
+          }
           if (e.key === "Enter") { 
             e.preventDefault(); 
             if (filtered.length === 1) { 
@@ -503,17 +538,16 @@ function Combobox({ value, onChange, options, placeholder }) {
           } 
         }} 
         onBlur={() => { 
-          // Give a just-clicked option (onMouseDown, which fires first) a 
-          // chance to register before deciding whether to revert. 
           window.setTimeout(() => { 
             if (justSelectedRef.current) { 
               justSelectedRef.current = false; 
               return; 
             } 
             setOpen(false); 
-            revertIfUnmatched(); 
+            if (isSearchable) revertIfUnmatched(); 
           }, 0); 
         }} 
+        style={!isSearchable ? { cursor: "pointer", backgroundColor: "#fff" } : undefined}
       /> 
       {open && filtered.length > 0 && ( 
         <div 
@@ -575,7 +609,7 @@ function Combobox({ value, onChange, options, placeholder }) {
       )} 
     </div> 
   ); 
-} 
+}
  
 /** 
  * Same dropdown-with-typing UX as Combobox, but the option list comes from 
@@ -1065,14 +1099,33 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
         </Field> 
  
         {/* Employment Type */} 
-        <Field label="Employment Type" required> 
+         <Field label="Employment Type" required> 
           <Combobox 
             value={jobForm.EmploymentType} 
-            onChange={(v) => setJobForm((p) => ({ ...p, EmploymentType: v }))} 
+            onChange={(v) => 
+              setJobForm((p) => ({ 
+                ...p, 
+                EmploymentType: v, 
+                // clear any stale period if they switch away from Contract
+                ContractPeriod: v === "Contract" ? p.ContractPeriod : "", 
+              })) 
+            } 
             options={employmentTypeOptions} 
             placeholder="e.g. Full Time" 
           /> 
         </Field> 
+
+        {/* Contract Period — only when Employment Type is Contract */}
+        {jobForm.EmploymentType === "Contract" && (
+          <Field label="Contract Period" required hint="How long is this contract?">
+            <Combobox
+              value={jobForm.ContractPeriod}
+              onChange={(v) => setJobForm((p) => ({ ...p, ContractPeriod: v }))}
+              options={contractPeriodOptions}
+              placeholder="e.g. 6 Months"
+            />
+          </Field>
+        )}
  
         {/* Employment Mode */} 
         <Field label="Employment Mode" required> 
@@ -2215,6 +2268,7 @@ export default function DashboardPostJobPage() {
     ExperienceMaxYears: "", 
     JobType: "", 
     EmploymentType: "", 
+      ContractPeriod: "", 
     EmploymentMode: "", 
     Department: "", 
     DutyHoursPerDay: "", 

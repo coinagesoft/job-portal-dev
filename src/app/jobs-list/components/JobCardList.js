@@ -58,6 +58,10 @@ const getDisplaySalary = (salaryRange, salaryVisibility) => {
   if (!salaryRange) return "";
 
   switch (salaryVisibility) {
+    case "Hide Salary":
+    case "Hide_Salary":
+      return "";
+
     case "Show Range":
     case "Show_Range":
       return salaryRange;

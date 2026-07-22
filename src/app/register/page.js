@@ -406,9 +406,20 @@ function Combobox({ value, onChange, options, placeholder, error, disabled }) {
     return () => document.removeEventListener("mousedown", onClickOutside);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, options]);
-
-  const filtered = query
-    ? normalized.filter((o) => o.label.toLowerCase().includes(query.toLowerCase()))
+const filtered = query
+    ? (() => {
+        const q = query.toLowerCase().trim();
+        const starts = [];
+        const contains = [];
+        for (const o of normalized) {
+          const label = o.label.toLowerCase();
+          if (label.startsWith(q)) starts.push(o);
+          else if (label.includes(q)) contains.push(o);
+        }
+        starts.sort((a, b) => a.label.localeCompare(b.label));
+        contains.sort((a, b) => a.label.localeCompare(b.label));
+        return [...starts, ...contains];
+      })()
     : normalized;
 
   const selectOption = (opt) => {
@@ -2430,6 +2441,16 @@ function EmployerForm() {
             placeholder="Type or select business type (e.g. Private Limited)"
           />
         </Field>
+            {data.hasGst && (
+          <Field label="GST Registration Date" hint="Auto-filled for GST users">
+            <Input
+              type="date"
+              value={data.gstRegDate}
+              onChange={(e) => set("gstRegDate", e.target.value)}
+              style={{ background: data.gstRegDate ? "#ffffff" : undefined }}
+            />
+          </Field>
+        )}
         <Field label="Company Size">
           <Combobox
             value={data.companySize}
@@ -2448,16 +2469,7 @@ function EmployerForm() {
         </Field>
 
         {/* GST Registration Date only for GST employers */}
-        {data.hasGst && (
-          <Field label="GST Registration Date" hint="Auto-filled for GST users">
-            <Input
-              type="date"
-              value={data.gstRegDate}
-              onChange={(e) => set("gstRegDate", e.target.value)}
-              style={{ background: data.gstRegDate ? "#ffffff" : undefined }}
-            />
-          </Field>
-        )}
+    
 
         <Field label="CIN" hint="Company Identification Number (if applicable)">
           <Input
@@ -2579,16 +2591,7 @@ function EmployerForm() {
             }}
           />
         </Field>
-        <Field label="Official Website">
-          <Input
-            value={data.officialWebsite}
-            onChange={(e) => set("officialWebsite", e.target.value)}
-            placeholder="Enter your company website (e.g. https://www.company.com)"
-          />
-        </Field>
-      </div>
-
-      <Field
+          <Field
         label="Full Registered Address"
         required
         error={attempt2 && !data.address ? "Full registered address is required" : null}
@@ -2604,6 +2607,16 @@ function EmployerForm() {
         />
       </Field>
 
+        <Field label="Official Website">
+          <Input
+            value={data.officialWebsite}
+            onChange={(e) => set("officialWebsite", e.target.value)}
+            placeholder="Enter your company website (e.g. https://www.company.com)"
+          />
+        </Field>
+      </div>
+
+    
       <Field label="Company Logo">
         <div
           onClick={() => logoRef.current?.click()}
@@ -2769,7 +2782,7 @@ function EmployerForm() {
               placeholder="Enter their designation/role (e.g. HR Manager)"
             />
           </Field>
-          <Field
+          {/* <Field
             label="Contact Person Email"
             required
             error={
@@ -2789,18 +2802,19 @@ function EmployerForm() {
               }}
               placeholder="Enter contact person's email (e.g. contact@personal.com)"
             />
-          </Field>
+          </Field> */}
         </div>
 
         <Field
-          label="Company Email"
-          required
-          error={
-            corpEmailTouched && !corpEmailValid
-              ? "Enter a valid company email address"
-              : null
-          }
-        >
+  label="Company Email"
+  required
+  hint="You'll use this email to log in to your account"
+  error={
+    corpEmailTouched && !corpEmailValid
+      ? "Enter a valid company email address"
+      : null
+  }
+>
           <Input
             type="email"
             value={data.corpEmail}

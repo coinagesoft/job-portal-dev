@@ -214,13 +214,15 @@ export default function JobsOfTheDay() {
                             : job.companyLogoUrl || "/assets/imgs/brands/brand-1.png";
 
                           const displaySalary =
-                            job.salaryVisibility === "Negotiable"
-                              ? "Negotiable"
-                              : job.salaryRange
-                                ? job.salaryRange.includes("$")
-                                  ? job.salaryRange
-                                  : `${job.salaryRange}`
-                                : "Negotiable";
+                            (job.salaryVisibility === "Hide Salary" || job.salaryVisibility === "Hide_Salary" || job.salaryDisplayOption === "Hide Salary" || job.salaryDisplayOption === "Hide_Salary")
+                              ? ""
+                              : job.salaryVisibility === "Negotiable"
+                                ? "Negotiable"
+                                : job.salaryRange
+                                  ? job.salaryRange.includes("$")
+                                    ? job.salaryRange
+                                    : `${job.salaryRange}`
+                                  : "Negotiable";
 
                           const cardTags = (job.tags && job.tags.length > 0)
                             ? job.tags
@@ -287,17 +289,19 @@ export default function JobsOfTheDay() {
                                       </span>
                                     </div>
                                   </div>
-                                  <div className="salary-row mt-2">
-                                    <span className="salary">
-                                      {displaySalary}
-                                    </span>
-
-                                    {displaySalary !== "Negotiable" && (
-                                      <span className="salary-type">
-                                        /Hour
+                                  {displaySalary && (
+                                    <div className="salary-row mt-2">
+                                      <span className="salary">
+                                        {displaySalary}
                                       </span>
-                                    )}
-                                  </div>
+
+                                      {displaySalary !== "Negotiable" && (
+                                        <span className="salary-type">
+                                          /Hour
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </div>
