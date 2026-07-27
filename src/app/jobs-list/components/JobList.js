@@ -73,7 +73,13 @@ const JobList = ({ filters = {} }) => {
   };
 
   useEffect(() => {
-    loadAppliedJobs();
+    // Only logged-in candidates have applications to fetch. Calling this
+    // for anonymous visitors hits an [Authorize]-protected endpoint, which
+    // returns 401 and trips the global axios interceptor into redirecting
+    // everyone (even anonymous browsers) to /Login.
+    if (getCandidateId()) {
+      loadAppliedJobs();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
