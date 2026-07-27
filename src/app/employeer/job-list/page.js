@@ -748,6 +748,7 @@ const EmployerJobListPage = () => {
                                 >
                                   {job.jobTitle}
                                 </h5>
+
                               </div>
                               {/* Employment type badge */}
                               <span
@@ -805,14 +806,23 @@ const EmployerJobListPage = () => {
                             {/* Meta */}
                             <p
                               style={{
-                                margin: "0 0 12px",
+                                margin: "6px 0 12px",
+                                fontSize: 14,
                                 color: "#66789c",
-                                fontSize: 13,
+                                fontWeight:
+                                  job.isClientHiring &&
+                                    job.showClientName &&
+                                    job.clientName
+                                    ? 700
+                                    : 400,
                               }}
                             >
-                              {job.tradeCategory}
+                              {job.isClientHiring &&
+                                job.showClientName &&
+                                job.clientName
+                                ? job.clientName
+                                : job.tradeCategory}
                             </p>
-
                             {/* Info row */}
                             <div
                               style={{
@@ -1041,12 +1051,12 @@ const EmployerJobListPage = () => {
                               />
                             </button>
                           </div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))
-            )}
+                ))
+              )}
 
               {openMenu && (
                 <div

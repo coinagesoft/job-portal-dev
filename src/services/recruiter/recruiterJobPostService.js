@@ -13,10 +13,27 @@ export const saveJobDetails = async (payload) => {
   formData.append("TradeCategory", payload.TradeCategory ?? "");
   formData.append("Role", payload.Role ?? "");
   formData.append("IndustryType", payload.IndustryType ?? "");
+  formData.append("IsClientHiring", String(payload.IsClientHiring ?? false));
+  formData.append("ClientName", payload.ClientName ?? "");
+  formData.append("ShowClientName", String(payload.ShowClientName ?? false));
   formData.append("JobType", payload.JobType ?? "");
   formData.append("EmploymentType", payload.EmploymentType ?? "Full_Time");
   formData.append("EmploymentMode", payload.EmploymentMode ?? "Onsite");
   formData.append("Department", payload.Department ?? "");
+  formData.append(
+    "IsClientHiring",
+    String(payload.IsClientHiring ?? false)
+  );
+
+  formData.append(
+    "ClientName",
+    payload.ClientName ?? ""
+  );
+
+  formData.append(
+    "ShowClientName",
+    String(payload.ShowClientName ?? false)
+  );
   formData.append("JobDescription", payload.JobDescription ?? "");
 
   if (payload.ExperienceMinYears !== null && payload.ExperienceMinYears !== undefined && payload.ExperienceMinYears !== "") {
@@ -32,8 +49,8 @@ export const saveJobDetails = async (payload) => {
     formData.append("PaidOvertime", String(payload.PaidOvertime));
   }
   if (payload.IsOilField !== undefined && payload.IsOilField !== null) {
-  formData.append("IsOilField", String(payload.IsOilField));
-}
+    formData.append("IsOilField", String(payload.IsOilField));
+  }
 
   // array field
   (payload.KeyResponsibilities ?? []).forEach((r) =>

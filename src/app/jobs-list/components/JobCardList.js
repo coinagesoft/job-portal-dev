@@ -33,7 +33,12 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) 
   const jobTagsFromData = toSafeTags(job.jobTags);
   const derivedCompanyBadge = COMPANY_BADGE_BY_POSTED_BY[job.postedBy];
   const isConfidential = job.companyVisibility === "HideName";
-
+  const displayCompanyName =
+    job.isClientHiring &&
+      job.showClientName &&
+      job.clientName
+      ? job.clientName
+      : job.companyName;
   console.log(job.companyVisibility);
   console.log(job);
   const companyTags =
@@ -50,47 +55,47 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) 
     jobTagsFromData.length > 0
       ? jobTagsFromData
       : tags.filter((tag) => !COMPANY_RELATED_TAGS.has(tag));
-// console.log("job =", job);
-// console.log("companyVisibility =", job.companyVisibility);
-// console.log("isConfidential =", job.companyVisibility === "HideName");
+  // console.log("job =", job);
+  // console.log("companyVisibility =", job.companyVisibility);
+  // console.log("isConfidential =", job.companyVisibility === "HideName");
 
-const getDisplaySalary = (salaryRange, salaryVisibility) => {
-  if (!salaryRange) return "";
+  const getDisplaySalary = (salaryRange, salaryVisibility) => {
+    if (!salaryRange) return "";
 
-  switch (salaryVisibility) {
-    case "Hide Salary":
-    case "Hide_Salary":
-      return "";
+    switch (salaryVisibility) {
+      case "Hide Salary":
+      case "Hide_Salary":
+        return "";
 
-    case "Show Range":
-    case "Show_Range":
-      return salaryRange;
+      case "Show Range":
+      case "Show_Range":
+        return salaryRange;
 
-    case "Show Min Only":
-      return salaryRange.includes("-")
-        ? salaryRange.split("-")[0].trim()
-        : salaryRange;
+      case "Show Min Only":
+        return salaryRange.includes("-")
+          ? salaryRange.split("-")[0].trim()
+          : salaryRange;
 
-    case "Show Max Only":
-      return salaryRange.includes("-")
-        ? salaryRange.split("-")[1].trim()
-        : salaryRange;
+      case "Show Max Only":
+        return salaryRange.includes("-")
+          ? salaryRange.split("-")[1].trim()
+          : salaryRange;
 
-    case "Negotiable":
-      return "Negotiable";
+      case "Negotiable":
+        return "Negotiable";
 
-    default:
-      return salaryRange;
-  }
-};
-const formatTimeAgo = (timeAgo) => {
-  if (!timeAgo) return "Recently Posted";
+      default:
+        return salaryRange;
+    }
+  };
+  const formatTimeAgo = (timeAgo) => {
+    if (!timeAgo) return "Recently Posted";
 
-  return timeAgo
-    .replace(" day(s)", timeAgo.startsWith("1 ") ? " day" : " days")
-    .replace(" hour(s)", timeAgo.startsWith("1 ") ? " hour" : " hours")
-    .replace(" minute(s)", timeAgo.startsWith("1 ") ? " minute" : " minutes");
-};
+    return timeAgo
+      .replace(" day(s)", timeAgo.startsWith("1 ") ? " day" : " days")
+      .replace(" hour(s)", timeAgo.startsWith("1 ") ? " hour" : " hours")
+      .replace(" minute(s)", timeAgo.startsWith("1 ") ? " minute" : " minutes");
+  };
   return (
     <>
       <div
@@ -189,9 +194,9 @@ const formatTimeAgo = (timeAgo) => {
                       display: "block",
                       maxWidth: "100%",
                     }}
-                    title={job.companyName}
+                    title={displayCompanyName}
                   >
-                    {job.companyName}
+                    {displayCompanyName}
                   </Link>
                 )}
 
@@ -212,11 +217,11 @@ const formatTimeAgo = (timeAgo) => {
                       color: "#98A2B3",
                       ...(viewMode === "grid"
                         ? {
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                            maxWidth: "130px",
-                          }
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          maxWidth: "130px",
+                        }
                         : {}),
                     }}
                     title={job.jobLocation}
@@ -234,10 +239,10 @@ const formatTimeAgo = (timeAgo) => {
                       style={
                         viewMode === "grid"
                           ? {
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                            }
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }
                           : undefined
                       }
                     >
@@ -346,11 +351,11 @@ const formatTimeAgo = (timeAgo) => {
                 lineHeight: 1.3,
                 ...(viewMode === "grid"
                   ? {
-                      maxWidth: "100%",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }
+                    maxWidth: "100%",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }
                   : {}),
               }}
               title={job.jobTitle}
@@ -361,12 +366,12 @@ const formatTimeAgo = (timeAgo) => {
                 style={
                   viewMode === "grid"
                     ? {
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        display: "block",
-                        maxWidth: "100%",
-                      }
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      display: "block",
+                      maxWidth: "100%",
+                    }
                     : undefined
                 }
               >
@@ -426,15 +431,9 @@ const formatTimeAgo = (timeAgo) => {
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
                 }}
-                title={
-                  job.tradeCategory?.toLowerCase() === "other" || job.tradeCategory?.toLowerCase() === "othere"
-                    ? (job.role || job.department || "Other / Specialisation")
-                    : (job.role ? `${job.tradeCategory} • ${job.role}` : job.tradeCategory)
-                }
+                title={job.tradeCategory}
               >
-                {job.tradeCategory?.toLowerCase() === "other" || job.tradeCategory?.toLowerCase() === "othere"
-                  ? (job.role || job.department || "Other / Specialisation")
-                  : (job.role ? `${job.tradeCategory} • ${job.role}` : job.tradeCategory)}
+                {job.tradeCategory}
               </span>
             )}
 
@@ -554,9 +553,9 @@ const formatTimeAgo = (timeAgo) => {
           >
             <div className="row">
               <div className="col-lg-7 col-7">
-              <span className="card-text-price">
-  {getDisplaySalary(job.salaryRange, job.salaryVisibility)}
-</span>
+                <span className="card-text-price">
+                  {getDisplaySalary(job.salaryRange, job.salaryVisibility)}
+                </span>
               </div>
               <div className="col-lg-5 col-5 text-end">
                 {isApplied ? (
