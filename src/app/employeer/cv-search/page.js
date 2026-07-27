@@ -9,7 +9,7 @@ import {
 } from "@/services/recruiter/recruiterCvSearchService";
 import candidateProfileService from "@/services/recruiter/Candidateprofileservice";
 import { getRecruiterJobs } from "@/services/recruiter/recruiterJobListService";
-// import { getProfileCompletion } from "@/services/candidate/profileCompletionService"; 
+import { getProfileCompletion } from "@/services/candidate/profileCompletionService"; 
 // ↑ adjust the path to wherever you place/export the function above
 
 const getQueryValue = (value, fallback = "") => {
