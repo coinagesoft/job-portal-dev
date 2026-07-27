@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import {
   getInvoices,
   downloadInvoicePdf,
+  emailInvoice,
 } from "@/services/recruiter/recruiterInvoiceService";
 import { useToast } from "@/components/Toast";
 
@@ -15,6 +16,7 @@ const EmployerInvoicesPage = () => {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [downloadingId, setDownloadingId] = useState(null);
+  const [emailingId, setEmailingId] = useState(null);
   const showToast = useToast();
 
   const [fromDate, setFromDate] = useState("2026-01-01");
@@ -47,6 +49,22 @@ const EmployerInvoicesPage = () => {
       }
     } finally {
       setDownloadingId(null);
+    }
+  };
+
+  const handleEmail = async (invoice) => {
+    setEmailingId(invoice.invoiceId);
+    try {
+      const result = await emailInvoice(invoice.invoiceId);
+      showToast(
+        result?.message ||
+        (result?.success
+          ? "Invoice emailed successfully."
+          : "Unable to email invoice."),
+        result?.success ? "success" : "error",
+      );
+    } finally {
+      setEmailingId(null);
     }
   };
 
@@ -89,30 +107,30 @@ const EmployerInvoicesPage = () => {
                 <div className="row align-items-end">
                   <div className="col-md-4 col-sm-12">
                     <label className="form-label mb-5">From</label>
-                   <input
-  className="form-control"
-  type="date"
-  value={fromDate}
-  onChange={(e) => {
-    const newFromDate = e.target.value;
-    setFromDate(newFromDate);
+                    <input
+                      className="form-control"
+                      type="date"
+                      value={fromDate}
+                      onChange={(e) => {
+                        const newFromDate = e.target.value;
+                        setFromDate(newFromDate);
 
-    // Ensure To Date is never earlier than From Date
-    if (toDate < newFromDate) {
-      setToDate(newFromDate);
-    }
-  }}
-/>
+                        // Ensure To Date is never earlier than From Date
+                        if (toDate < newFromDate) {
+                          setToDate(newFromDate);
+                        }
+                      }}
+                    />
                   </div>
                   <div className="col-md-4 col-sm-12 mt-sm-10">
                     <label className="form-label mb-5">To</label>
-                   <input
-  className="form-control"
-  type="date"
-  value={toDate}
-  min={fromDate}
-  onChange={(e) => setToDate(e.target.value)}
-/>
+                    <input
+                      className="form-control"
+                      type="date"
+                      value={toDate}
+                      min={fromDate}
+                      onChange={(e) => setToDate(e.target.value)}
+                    />
                   </div>
                   <div className="col-md-4 col-sm-12 mt-sm-10 text-md-end">
                     <button
@@ -174,15 +192,26 @@ const EmployerInvoicesPage = () => {
 
                             <td>
                               {invoice.invoiceUrl ? (
-                                <button
-                                  className="btn btn-border btn-sm"
-                                  disabled={downloadingId === invoice.invoiceId}
-                                  onClick={() => handleDownload(invoice)}
-                                >
-                                  {downloadingId === invoice.invoiceId
-                                    ? "Downloading…"
-                                    : "Download PDF"}
-                                </button>
+                                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                                  <button
+                                    className="btn btn-border btn-sm"
+                                    disabled={downloadingId === invoice.invoiceId}
+                                    onClick={() => handleDownload(invoice)}
+                                  >
+                                    {downloadingId === invoice.invoiceId
+                                      ? "Downloading…"
+                                      : "Download PDF"}
+                                  </button>
+                                  {/* <button
+                                    className="btn btn-default btn-sm"
+                                    disabled={emailingId === invoice.invoiceId}
+                                    onClick={() => handleEmail(invoice)}
+                                  >
+                                    {emailingId === invoice.invoiceId
+                                      ? "Sending…"
+                                      : "Email"}
+                                  </button> */}
+                                </div>
                               ) : (
                                 "-"
                               )}

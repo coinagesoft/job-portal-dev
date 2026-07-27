@@ -10,6 +10,7 @@ import {
   resendInvite,
   deleteSubUser,
 } from "@/services/recruiter/recruiterSubUserService";
+import { getWallet } from "@/services/recruiter/recruiterCreditWalletService";
 
 import { useToast } from "@/components/Toast";
 import SubUserViewOnlyGuard from "@/components/SubUserViewOnlyGuard.js";
@@ -87,7 +88,19 @@ const EmployerSubUserPage = () => {
     subUserEmail: "",
     subUserMobile: "",
     countryCode: "+91",
+    initialCredits: "",
   });
+
+  const [availableCredits, setAvailableCredits] = useState(null);
+
+  const loadAvailableCredits = async () => {
+    try {
+      const wallet = await getWallet();
+      setAvailableCredits(wallet?.availableCredits ?? 0);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const [formErrors, setFormErrors] = useState({});
 
@@ -117,6 +130,19 @@ const EmployerSubUserPage = () => {
 
     if (!Object.values(permissions).some(Boolean)) {
       errors.permissions = "Select at least one permission";
+    }
+
+    const rawCredits = inviteForm.initialCredits;
+    if (rawCredits !== "" && rawCredits !== null && rawCredits !== undefined) {
+      const creditsNum = Number(rawCredits);
+      if (!Number.isInteger(creditsNum) || creditsNum < 0) {
+        errors.initialCredits = "Enter a whole number, 0 or more";
+      } else if (
+        typeof availableCredits === "number" &&
+        creditsNum > availableCredits
+      ) {
+        errors.initialCredits = `Only ${availableCredits} credit(s) available`;
+      }
     }
 
     setFormErrors(errors);
@@ -153,6 +179,7 @@ const EmployerSubUserPage = () => {
       subUserEmail: "",
       subUserMobile: "",
       countryCode: "+91",
+      initialCredits: "",
     });
     setPermissions({
       canSearchCandidates: false,
@@ -164,6 +191,7 @@ const EmployerSubUserPage = () => {
 
   useEffect(() => {
     loadSubUsers();
+    loadAvailableCredits();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (
@@ -713,6 +741,55 @@ const EmployerSubUserPage = () => {
                       )}
                     </div>
 
+                    {!editingUser && (
+                      <div className="form-group">
+                        <label className="form-label">
+                          Initial credits{" "}
+                          <span style={{ fontWeight: 400, color: "#66789c" }}>
+                            (optional)
+                          </span>
+                        </label>
+                        <input
+                          className="form-control"
+                          type="number"
+                          min={0}
+                          step={1}
+                          placeholder="e.g. 20"
+                          value={inviteForm.initialCredits}
+                          style={
+                            formErrors.initialCredits
+                              ? { borderColor: "#E24B4A" }
+                              : undefined
+                          }
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            // keep empty string editable, otherwise clamp to
+                            // whole numbers >= 0 as the user types
+                            const cleaned =
+                              raw === "" ? "" : Math.max(0, Math.floor(Number(raw) || 0));
+                            setInviteForm({
+                              ...inviteForm,
+                              initialCredits: cleaned,
+                            });
+                            if (formErrors.initialCredits) {
+                              setFormErrors((prev) => ({ ...prev, initialCredits: undefined }));
+                            }
+                          }}
+                        />
+                        {formErrors.initialCredits ? (
+                          <p style={{ color: "#E24B4A", fontSize: 12, marginTop: 6, marginBottom: 0 }}>
+                            {formErrors.initialCredits}
+                          </p>
+                        ) : (
+                          <p style={{ color: "#66789c", fontSize: 12, marginTop: 6, marginBottom: 0 }}>
+                            {typeof availableCredits === "number"
+                              ? `${availableCredits} credit(s) available to allocate.`
+                              : "Allocate credits to this user right away."}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
                     <div className="form-group">
                       <label className="form-label d-block mb-12">
                         Permissions
@@ -839,12 +916,27 @@ const EmployerSubUserPage = () => {
 
                             showToast("User updated successfully", "success");
                           } else {
-                            await inviteSubUser({
-                              ...inviteForm,
+                            const { initialCredits, ...restOfForm } = inviteForm;
+
+                            const response = await inviteSubUser({
+                              ...restOfForm,
                               ...permissions,
+                              // Backend expects a plain integer — send 0 when
+                              // the field was left blank rather than "".
+                              initialCredits:
+                                initialCredits === "" || initialCredits === null
+                                  ? 0
+                                  : Number(initialCredits),
                             });
 
-                            showToast("Invitation sent successfully", "success");
+                            showToast(
+                              response?.allocatedCredits > 0
+                                ? `Invitation sent — ${response.allocatedCredits} credit(s) allocated`
+                                : "Invitation sent successfully",
+                              "success",
+                            );
+
+                            await loadAvailableCredits();
                           }
 
                           await loadSubUsers();
