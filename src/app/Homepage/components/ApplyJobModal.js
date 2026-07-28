@@ -436,6 +436,12 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
                 <div>
                   <p className="font-sm text-brand-2 mb-5">Job Application</p>
                   <h5 className="mb-0 color-brand-1">{job?.jobTitle || "Apply to job"}</h5>
+                  {(job?.location || job?.jobLocation) && (
+                    <p className="font-xs color-text-paragraph-2 mb-0 mt-5">
+                      <i className="fi-rr-marker mr-5"></i>
+                      {job.location || job.jobLocation}
+                    </p>
+                  )}
                 </div>
                 <button
                   className="apply-job-modal-close"
@@ -560,37 +566,37 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
                             </p>
                           ) : (
                             employerQuestions.map((question) => (
-                            <div key={question.id} className="mb-15 ">
-                              <label className="font-sm fw-600  mb-8 d-block">
-                                {question.label}
-                                {question.required ? " *" : ""}
-                              </label>
+                              <div key={question.id} className="mb-15 ">
+                                <label className="font-sm fw-600  mb-8 d-block">
+                                  {question.label}
+                                  {question.required ? " *" : ""}
+                                </label>
 
-                              {question.type === "radio" ? (
-                                <div className="apply-job-question-options">
-                                  {(question.options || []).map((option) => (
-                                    <label key={`${question.id}-${option}`} style={{ display: "flex", gap: "6px" }}>
-                                      <input
-                                        type="radio"
-                                        name={question.id}
-                                        value={option}
-                                        checked={answers[question.id] === option}
-                                        onChange={(event) => handleAnswer(question.id, event.target.value)}
-                                      />
-                                      <span className="font-sm">{option}</span>
-                                    </label>
-                                  ))}
-                                </div>
-                              ) : (
-                                <textarea
-                                  className="form-control"
-                                  rows={2}
-                                  placeholder={question.placeholder || "Type your response"}
-                                  value={answers[question.id] || ""}
-                                  onChange={(event) => handleAnswer(question.id, event.target.value)}
-                                />
-                              )}
-                            </div>
+                                {question.type === "radio" ? (
+                                  <div className="apply-job-question-options">
+                                    {(question.options || []).map((option) => (
+                                      <label key={`${question.id}-${option}`} style={{ display: "flex", gap: "6px" }}>
+                                        <input
+                                          type="radio"
+                                          name={question.id}
+                                          value={option}
+                                          checked={answers[question.id] === option}
+                                          onChange={(event) => handleAnswer(question.id, event.target.value)}
+                                        />
+                                        <span className="font-sm">{option}</span>
+                                      </label>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <textarea
+                                    className="form-control"
+                                    rows={2}
+                                    placeholder={question.placeholder || "Type your response"}
+                                    value={answers[question.id] || ""}
+                                    onChange={(event) => handleAnswer(question.id, event.target.value)}
+                                  />
+                                )}
+                              </div>
                             ))
                           )}
                         </div>
@@ -598,48 +604,48 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
                         {(passportRequired ||
                           requiredLanguages.length > 0 ||
                           requiredCertificates.length > 0) && (
-                          <div className="mb-15">
-                            <h6 className="mb-10">Requirements to confirm</h6>
+                            <div className="mb-15">
+                              <h6 className="mb-10">Requirements to confirm</h6>
 
-                            {passportRequired && (
-                              <label className="mb-8" style={{ display: "flex", gap: "8px" }}>
-                                <input
-                                  type="checkbox"
-                                  checked={confirmations.passport}
-                                  onChange={(e) => togglePassport(e.target.checked)}
-                                  style={{ accentColor: "#F7941D", cursor: "pointer" }}
-                                />
-                                <span className="font-sm">
-                                  I have a valid passport (required for this job) *
-                                </span>
-                              </label>
-                            )}
+                              {passportRequired && (
+                                <label className="mb-8" style={{ display: "flex", gap: "8px" }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={confirmations.passport}
+                                    onChange={(e) => togglePassport(e.target.checked)}
+                                    style={{ accentColor: "#F7941D", cursor: "pointer" }}
+                                  />
+                                  <span className="font-sm">
+                                    I have a valid passport (required for this job) *
+                                  </span>
+                                </label>
+                              )}
 
-                            {requiredLanguages.map((lang) => (
-                              <label key={`lang-${lang}`} className="mb-8" style={{ display: "flex", gap: "8px" }}>
-                                <input
-                                  type="checkbox"
-                                  checked={!!confirmations.languages[lang]}
-                                  onChange={(e) => toggleLanguage(lang, e.target.checked)}
-                                  style={{ accentColor: "#F7941D", cursor: "pointer" }}
-                                />
-                                <span className="font-sm">I can communicate in {lang} *</span>
-                              </label>
-                            ))}
+                              {requiredLanguages.map((lang) => (
+                                <label key={`lang-${lang}`} className="mb-8" style={{ display: "flex", gap: "8px" }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={!!confirmations.languages[lang]}
+                                    onChange={(e) => toggleLanguage(lang, e.target.checked)}
+                                    style={{ accentColor: "#F7941D", cursor: "pointer" }}
+                                  />
+                                  <span className="font-sm">I can communicate in {lang} *</span>
+                                </label>
+                              ))}
 
-                            {requiredCertificates.map((cert) => (
-                              <label key={`cert-${cert}`} className="mb-8" style={{ display: "flex", gap: "8px" }}>
-                                <input
-                                  type="checkbox"
-                                  checked={!!confirmations.certificates[cert]}
-                                  onChange={(e) => toggleCertificate(cert, e.target.checked)}
-                                  style={{ accentColor: "#F7941D", cursor: "pointer" }}
-                                />
-                                <span className="font-sm">I hold the {cert} certificate *</span>
-                              </label>
-                            ))}
-                          </div>
-                        )}
+                              {requiredCertificates.map((cert) => (
+                                <label key={`cert-${cert}`} className="mb-8" style={{ display: "flex", gap: "8px" }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={!!confirmations.certificates[cert]}
+                                    onChange={(e) => toggleCertificate(cert, e.target.checked)}
+                                    style={{ accentColor: "#F7941D", cursor: "pointer" }}
+                                  />
+                                  <span className="font-sm">I hold the {cert} certificate *</span>
+                                </label>
+                              ))}
+                            </div>
+                          )}
 
                         {/* <div className="mb-15">
                           <h6 className="mb-10">Why are you a good fit? (optional)</h6>
@@ -762,12 +768,12 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
                                     {lang.languageName}
                                     {lang.canRead || lang.canWrite || lang.canSpeak
                                       ? ` (${[
-                                          lang.canRead && "R",
-                                          lang.canWrite && "W",
-                                          lang.canSpeak && "S",
-                                        ]
-                                          .filter(Boolean)
-                                          .join("/")})`
+                                        lang.canRead && "R",
+                                        lang.canWrite && "W",
+                                        lang.canSpeak && "S",
+                                      ]
+                                        .filter(Boolean)
+                                        .join("/")})`
                                       : ""}
                                   </span>
                                 ))}
@@ -792,7 +798,7 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
 
                         <div className="login_footer form-group d-flex justify-content-between mt-10 mb-0">
                           <label className="cb-container">
-                            <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)}style={{ accentColor: "#F7941D", cursor: "pointer" }} />
+                            <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} style={{ accentColor: "#F7941D", cursor: "pointer" }} />
                             <span className="text-small">I confirm this CV preview is ready to be shared with employer</span>
                             <span className="checkmark"></span>
                           </label>
@@ -818,7 +824,7 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
         </div>
       </div>
     </>
-  
+
   );
 
   <style jsx>{`
