@@ -2641,12 +2641,20 @@ export default function DashboardPostJobPage() {
     if (!jobForm.JobType) return showToast("Job Type is required", "error");
     if (!jobForm.JobDescription.trim()) return showToast("Job Description is required", "error");
     if (!jobForm.EmploymentType) return showToast("Employment Type is required", "error");
+    if (
+    jobForm.EmploymentType === "Contract" &&
+    !jobForm.ContractPeriod?.trim()
+) {
+    return showToast("Contract Period is required", "error");
+}
     if (!jobForm.EmploymentMode) return showToast("Employment Mode is required", "error");
     if (jobForm.IsClientHiring && !jobForm.ClientName.trim()) {
       return showToast("Client Name is required", "error");
     }
+    console.log("jobForm.ContractPeriod =", jobForm.ContractPeriod);
     setLoading(true);
     try {
+
       const response = await saveJobDetails({
         JobId: jobId ?? "",
         JobTitle: jobForm.JobTitle,
@@ -2662,6 +2670,7 @@ export default function DashboardPostJobPage() {
         ExperienceMaxYears: jobForm.ExperienceMaxYears,
         JobType: jobForm.JobType,
         EmploymentType: jobForm.EmploymentType,
+        ContractPeriod: jobForm.ContractPeriod,
         EmploymentMode: jobForm.EmploymentMode,
         Department: jobForm.Department,
         DutyHoursPerDay: jobForm.DutyHoursPerDay,
@@ -2670,8 +2679,10 @@ export default function DashboardPostJobPage() {
         KeyResponsibilities: jobForm.KeyResponsibilities,
         JobDescription: jobForm.JobDescription,
       });
+      
       setJobId(response.jobId);
       updateDraft(response);
+
       go(2);
     } catch (error) {
       console.error("Step 1:", error?.response?.data ?? error);
