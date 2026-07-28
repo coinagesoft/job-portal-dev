@@ -87,11 +87,17 @@ export const HR_MANAGER_ROLE = "HR_Manager";
 // get through still can't edit anything there — SubUserViewOnlyGuard
 // (rendered inside the page itself) makes it read-only for any sub-user,
 // HR Manager included.
+//
+// `ownerOnly: true` — no sub-user at all gets in, regardless of role or
+// permission flags. Buy Credits and Invoices are wallet/billing pages tied
+// to the account owner's payment method, so every sub-user is redirected
+// away from them.
 export const ROUTE_PERMISSION_RULES = [
   { prefix: "/dashboard/post-job", permission: "canPostJobs" },
   { prefix: "/employeer/company-profile", hrManagerViewOnly: true },
   { prefix: "/employeer/verification", hrManagerViewOnly: true },
   { prefix: "/employeer/sub-user", hrManagerViewOnly: true },
-  { prefix: "/employeer/buy-credits", hrManagerViewOnly: true },
+  { prefix: "/employeer/buy-credits", ownerOnly: true },
+  { prefix: "/employeer/invoices", ownerOnly: true },
   { prefix: "/employeer/settings", hrManagerViewOnly: true },
 ];
