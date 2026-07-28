@@ -1,23 +1,12 @@
 "use client";
 
-import React, {
-  useMemo,
-  useState,
-  useRef,
-  useEffect,
-} from "react";
+import React, { useMemo, useState, useRef, useEffect } from "react";
 
 import Link from "next/link";
 
-import {
-  usePathname,
-  useRouter,
-} from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
-import {
-  useDispatch,
-  useSelector,
-} from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 import { logout } from "@/store/authSlice";
 
@@ -28,51 +17,30 @@ import {
   ROLE_DEFAULT_ROUTE,
 } from "@/constants/panelConfig";
 
-
 import styles from "./Header.module.css";
 
 const normalizePath = (value = "") => {
-  const cleanValue = value
-    .split("?")[0]
-    .split("#")[0];
+  const cleanValue = value.split("?")[0].split("#")[0];
 
-  const normalized =
-    cleanValue.replace(/\/+$/, "");
+  const normalized = cleanValue.replace(/\/+$/, "");
 
   return normalized || "/";
 };
 
-const isPathActive = (
-  pathname,
-  href
-) => {
+const isPathActive = (pathname, href) => {
   if (!pathname || !href) return false;
 
-  const currentPath =
-    normalizePath(pathname);
+  const currentPath = normalizePath(pathname);
 
-  const targetPath =
-    normalizePath(href);
+  const targetPath = normalizePath(href);
 
-  return (
-    currentPath === targetPath ||
-    currentPath.startsWith(
-      `${targetPath}/`
-    )
-  );
+  return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
 };
 
-const isExactPathActive = (
-  pathname,
-  href
-) => {
-  if (!pathname || !href)
-    return false;
+const isExactPathActive = (pathname, href) => {
+  if (!pathname || !href) return false;
 
-  return (
-    normalizePath(pathname) ===
-    normalizePath(href)
-  );
+  return normalizePath(pathname) === normalizePath(href);
 };
 
 // Pages meant to stand completely on their own — e.g. an invite link opened
@@ -82,7 +50,7 @@ const isExactPathActive = (
 const isStandaloneRoute = (pathname) => {
   const current = normalizePath(pathname);
   return PUBLIC_ROUTE_EXCEPTIONS.some(
-    (route) => current === route || current.startsWith(`${route}/`)
+    (route) => current === route || current.startsWith(`${route}/`),
   );
 };
 
@@ -93,32 +61,34 @@ const Header = () => {
 
   const dispatch = useDispatch();
 
-  const user = useSelector(
-    (state) => state.auth.user
-  );
+  const user = useSelector((state) => state.auth.user);
 
   const role = user?.role;
 
-  const [registerOpen, setRegisterOpen] =
-    useState(false);
+  const [registerOpen, setRegisterOpen] = useState(false);
 
   const registerRef = useRef(null);
 
   const [profileName, setProfileName] = useState("");
   const [profileImage, setProfileImage] = useState("");
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const profileRef = useRef(null);
 
   const fetchProfile = async () => {
     if (!role) return;
     try {
       if (role === "candidate") {
-        const { getPersonalInfo } = await import("@/services/candidate/profileService");
+        const { getPersonalInfo } =
+          await import("@/services/candidate/profileService");
         const res = await getPersonalInfo();
         if (res?.data?.success && res?.data?.data) {
           setProfileName(res.data.data.fullName || "");
           const baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
           const photoUrl = res.data.data.profilePhotoUrl || "";
           if (photoUrl) {
-            const absoluteUrl = photoUrl.startsWith("http") ? photoUrl : `${baseUrl}${photoUrl}`;
+            const absoluteUrl = photoUrl.startsWith("http")
+              ? photoUrl
+              : `${baseUrl}${photoUrl}`;
             const separator = absoluteUrl.includes("?") ? "&" : "?";
             setProfileImage(`${absoluteUrl}${separator}t=${Date.now()}`);
           } else {
@@ -126,14 +96,19 @@ const Header = () => {
           }
         }
       } else if (role === "employer") {
-        const { default: companyProfileService } = await import("@/services/recruiter/companyProfileService");
+        const { default: companyProfileService } =
+          await import("@/services/recruiter/companyProfileService");
         const data = await companyProfileService.getCompanyProfile();
         if (data) {
-          setProfileName(data.legalName || data.companyDisplayName || data.tradeName || "");
+          setProfileName(
+            data.legalName || data.companyDisplayName || data.tradeName || "",
+          );
           const baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
           const logoUrl = data.companyLogoUrl || "";
           if (logoUrl) {
-            const absoluteUrl = logoUrl.startsWith("http") ? logoUrl : `${baseUrl}${logoUrl}`;
+            const absoluteUrl = logoUrl.startsWith("http")
+              ? logoUrl
+              : `${baseUrl}${logoUrl}`;
             const separator = absoluteUrl.includes("?") ? "&" : "?";
             setProfileImage(`${absoluteUrl}${separator}t=${Date.now()}`);
           } else {
@@ -145,6 +120,9 @@ const Header = () => {
       console.error("Failed to fetch profile in Header:", err);
     }
   };
+  useEffect(() => {
+    setProfileMenuOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     if (!role) {
@@ -165,55 +143,34 @@ const Header = () => {
   }, [role]);
 
   useEffect(() => {
-    const handleClickOutside = (
-      e
-    ) => {
-      if (
-        registerRef.current &&
-        !registerRef.current.contains(
-          e.target
-        )
-      ) {
+    const handleClickOutside = (e) => {
+      if (registerRef.current && !registerRef.current.contains(e.target)) {
         setRegisterOpen(false);
+      }
+
+      if (profileRef.current && !profileRef.current.contains(e.target)) {
+        setProfileMenuOpen(false);
       }
     };
 
-    document.addEventListener(
-      "mousedown",
-      handleClickOutside
-    );
+    document.addEventListener("mousedown", handleClickOutside);
 
-    return () =>
-      document.removeEventListener(
-        "mousedown",
-        handleClickOutside
-      );
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const activeEmployerTabKey =
-    useMemo(() => {
-      if (!pathname)
-        return EMPLOYER_HEADER_TABS[0]
-          .key;
+  const activeEmployerTabKey = useMemo(() => {
+    if (!pathname) return EMPLOYER_HEADER_TABS[0].key;
 
-      const activeTab =
-        EMPLOYER_HEADER_TABS.find(
-          (tab) =>
-            tab.links.some((link) =>
-              isPathActive(
-                pathname,
-                link.href
-              )
-            )
-        );
+    const activeTab = EMPLOYER_HEADER_TABS.find((tab) =>
+      tab.links.some((link) => isPathActive(pathname, link.href)),
+    );
 
-      return (
-        activeTab?.key ||
-        EMPLOYER_HEADER_TABS[0].key
-      );
-    }, [pathname]);
+    return activeTab?.key || EMPLOYER_HEADER_TABS[0].key;
+  }, [pathname]);
 
   const handleLogout = () => {
+    setProfileMenuOpen(false);
+
     localStorage.removeItem("token");
 
     dispatch(logout());
@@ -221,13 +178,8 @@ const Header = () => {
     router.replace("/Login");
   };
 
-  const renderProfileActions = ({
-    profileLinks,
-    roleLabel,
-  }) => (
-    <div
-      className={`block-signin ${styles.headerActionGroup}`}
-    >
+  const renderProfileActions = ({ profileLinks, roleLabel }) => (
+    <div className={`block-signin ${styles.headerActionGroup}`}>
       {/* NOTIFICATION */}
       {/* <div className="dropdown d-inline-block">
         <a
@@ -353,48 +305,46 @@ const Header = () => {
 
       {/* PROFILE */}
       <div
+        ref={profileRef}
         className={`member-login dropdown ${styles.profileBlock}`}
       >
         <button
-          className={
-            styles.profileToggle
-          }
-          id="dropdownProfile"
           type="button"
-          data-bs-toggle="dropdown"
-          aria-expanded="false"
-          data-bs-display="static"
+          className={styles.profileToggle}
+          onClick={() => setProfileMenuOpen((prev) => !prev)}
         >
           <img
             alt="Profile"
-            src={profileImage || (role === "employer" ? "/assets/imgs/page/company/company.png" : "/assets2/imgs/page/dashboard/profile.png")}
-            style={{ objectFit: 'cover' }}
+            src={
+              profileImage ||
+              (role === "employer"
+                ? "/assets/imgs/page/company/company.png"
+                : "/assets2/imgs/page/dashboard/profile.png")
+            }
+            style={{ objectFit: "cover" }}
           />
 
           <div className="info-member">
-            <strong className="color-brand-1 " style={{ fontSize: "12px" }}>
+            <strong className="color-brand-1" style={{ fontSize: "12px" }}>
               {profileName || "Account Owner"}
             </strong>
-
-            {/* <span className="font-xs color-text-paragraph-2 icon-down">
-              {roleLabel}
-            </span> */}
           </div>
         </button>
 
-        <ul
-          className="dropdown-menu dropdown-menu-light dropdown-menu-end"
-          aria-labelledby="dropdownProfile"
-        >
+       <ul
+  className={`dropdown-menu dropdown-menu-light ${styles.profileDropdown} ${
+    profileMenuOpen ? "show" : ""
+  }`}
+>
           {profileLinks.map((link) => (
             <li key={link.href + link.label}>
               <button
-                className={`dropdown-item ${isExactPathActive(pathname, link.href)
-                    ? "active"
-                    : ""
-                  }`}
+                className={`dropdown-item ${
+                  isExactPathActive(pathname, link.href) ? "active" : ""
+                }`}
                 onClick={() => {
                   console.log("GOING TO:", link.href);
+                  setProfileMenuOpen(false);
                   router.push(link.href);
                 }}
               >
@@ -404,10 +354,7 @@ const Header = () => {
           ))}
 
           <li>
-            <button
-              className="dropdown-item"
-              onClick={handleLogout}
-            >
+            <button className="dropdown-item" onClick={handleLogout}>
               Logout
             </button>
           </li>
@@ -417,63 +364,36 @@ const Header = () => {
   );
 
   const renderCandidateMenu = () =>
-    CANDIDATE_HEADER_SECTIONS.map(
-      (item) => (
-        <li
-          key={
-            item.href + item.label
-          }
+    CANDIDATE_HEADER_SECTIONS.map((item) => (
+      <li key={item.href + item.label}>
+        <Link
+          className={isExactPathActive(pathname, item.href) ? "active" : ""}
+          href={item.href}
         >
-          <Link
-            className={
-              isExactPathActive(
-                pathname,
-                item.href
-              )
-                ? "active"
-                : ""
-            }
-            href={item.href}
-          >
-            {item.label}
-          </Link>
-        </li>
-      )
-    );
+          {item.label}
+        </Link>
+      </li>
+    ));
 
   const renderEmployerTabs = () =>
-    EMPLOYER_HEADER_TABS.map(
-      (tab) => (
-        <li key={tab.key}>
-          <Link
-            className={`${activeEmployerTabKey ===
-                tab.key
-                ? "active"
-                : ""
-              } ${styles.employerTabLink
-              }`}
-            href={
-              tab.links[0].href
-            }
-          >
-            {tab.label}
-          </Link>
-        </li>
-      )
-    );
+    EMPLOYER_HEADER_TABS.map((tab) => (
+      <li key={tab.key}>
+        <Link
+          className={`${activeEmployerTabKey === tab.key ? "active" : ""} ${
+            styles.employerTabLink
+          }`}
+          href={tab.links[0].href}
+        >
+          {tab.label}
+        </Link>
+      </li>
+    ));
 
   const renderPublicMenu = () => (
     <>
       <li>
         <Link
-          className={
-            isExactPathActive(
-              pathname,
-              "/"
-            )
-              ? "active"
-              : ""
-          }
+          className={isExactPathActive(pathname, "/") ? "active" : ""}
           href="/"
         >
           Home
@@ -482,14 +402,7 @@ const Header = () => {
 
       <li>
         <Link
-          className={
-            isExactPathActive(
-              pathname,
-              "/jobs-list"
-            )
-              ? "active"
-              : ""
-          }
+          className={isExactPathActive(pathname, "/jobs-list") ? "active" : ""}
           href="/jobs-list"
         >
           Find a Job
@@ -510,37 +423,21 @@ const Header = () => {
             <div className="header-logo">
               <Link
                 className="d-flex"
-                href={
-                  role
-                    ? ROLE_DEFAULT_ROUTE[
-                    role
-                    ]
-                    : "/"
-                }
+                href={role ? ROLE_DEFAULT_ROUTE[role] : "/"}
               >
-                <img
-                  alt="jobBox"
-                  src="/assets/imgs/template/jobhub-logo.svg"
-                />
+                <img alt="jobBox" src="/assets/imgs/template/jobhub-logo.svg" />
               </Link>
             </div>
           </div>
 
           <div className="header-nav">
             <nav className="nav-main-menu">
-              <ul
-                className={`main-menu ${styles.roleMenu}`}
-              >
-                {!role &&
-                  renderPublicMenu()}
+              <ul className={`main-menu ${styles.roleMenu}`}>
+                {!role && renderPublicMenu()}
 
-                {role ===
-                  "candidate" &&
-                  renderCandidateMenu()}
+                {role === "candidate" && renderCandidateMenu()}
 
-                {role ===
-                  "employer" &&
-                  renderEmployerTabs()}
+                {role === "employer" && renderEmployerTabs()}
               </ul>
             </nav>
 
@@ -557,24 +454,11 @@ const Header = () => {
             {!role ? (
               <div className="block-signin">
                 {/* REGISTER */}
-                <div
-                  className={
-                    styles.registerDropdownWrap
-                  }
-                  ref={registerRef}
-                >
+                <div className={styles.registerDropdownWrap} ref={registerRef}>
                   <button
                     className={`text-link-bd-btom hover-up ${styles.registerTrigger}`}
-                    onMouseEnter={() =>
-                      setRegisterOpen(
-                        true
-                      )
-                    }
-                    onClick={() =>
-                      setRegisterOpen(
-                        (v) => !v
-                      )
-                    }
+                    onMouseEnter={() => setRegisterOpen(true)}
+                    onClick={() => setRegisterOpen((v) => !v)}
                     type="button"
                     style={{ textDecoration: "none" }}
                   >
@@ -583,75 +467,38 @@ const Header = () => {
 
                   {registerOpen && (
                     <div
-                      className={
-                        styles.registerDropdown
-                      }
-                      onMouseLeave={() =>
-                        setRegisterOpen(
-                          false
-                        )
-                      }
+                      className={styles.registerDropdown}
+                      onMouseLeave={() => setRegisterOpen(false)}
                     >
                       <Link
                         href="/register?type=candidate"
-                        className={
-                          styles.registerDropdownItem
-                        }
-                        onClick={() =>
-                          setRegisterOpen(
-                            false
-                          )
-                        }
+                        className={styles.registerDropdownItem}
+                        onClick={() => setRegisterOpen(false)}
                       >
-                        <span
-                          className={
-                            styles.registerDropdownIcon
-                          }
-                        >
+                        <span className={styles.registerDropdownIcon}>
                           <i className="fi-rr-user"></i>
                         </span>
 
                         <span>
-                          <strong>
-                            Candidate
-                          </strong>
+                          <strong>Candidate</strong>
 
-                          <small>
-                            Find jobs &
-                            build
-                            profile
-                          </small>
+                          <small>Find jobs & build profile</small>
                         </span>
                       </Link>
 
                       <Link
                         href="/register?type=employer"
-                        className={
-                          styles.registerDropdownItem
-                        }
-                        onClick={() =>
-                          setRegisterOpen(
-                            false
-                          )
-                        }
+                        className={styles.registerDropdownItem}
+                        onClick={() => setRegisterOpen(false)}
                       >
-                        <span
-                          className={
-                            styles.registerDropdownIcon
-                          }
-                        >
+                        <span className={styles.registerDropdownIcon}>
                           <i className="fi-rr-briefcase"></i>
                         </span>
 
                         <span>
-                          <strong>
-                            Employer
-                          </strong>
+                          <strong>Employer</strong>
 
-                          <small>
-                            Post jobs &
-                            hire talent
-                          </small>
+                          <small>Post jobs & hire talent</small>
                         </span>
                       </Link>
                     </div>
@@ -665,81 +512,60 @@ const Header = () => {
                   Sign in
                 </Link>
               </div>
-            ) : role ===
-              "employer" ? (
+            ) : role === "employer" ? (
               renderProfileActions({
-                roleLabel:
-                  "Employer Panel",
+                roleLabel: "Employer Panel",
 
                 profileLinks: [
                   {
-                    label:
-                      "Company Profile",
-                    href:
-                      "/employeer/company-profile",
+                    label: "Company Profile",
+                    href: "/employeer/company-profile",
                   },
 
                   {
-                    label:
-                      "Sub-Users",
-                    href:
-                      "/employeer/sub-user",
+                    label: "Sub-Users",
+                    href: "/employeer/sub-user",
                   },
 
                   {
-                    label:
-                      "Help & Support",
-                    href:
-                      "/employeer/help-support",
+                    label: "Help & Support",
+                    href: "/employeer/help-support",
                   },
 
                   {
-                    label:
-                      "Settings",
-                    href:
-                      "/employeer/settings",
+                    label: "Settings",
+                    href: "/employeer/settings",
                   },
                 ],
               })
             ) : (
               renderProfileActions({
-                roleLabel:
-                  "Candidate Panel",
+                roleLabel: "Candidate Panel",
 
                 profileLinks: [
                   {
-                    label:
-                      "My Profile",
-                    href:
-                      "/candidate-profile",
+                    label: "My Profile",
+                    href: "/candidate-profile",
                   },
 
                   {
-                    label:
-                      "Saved Jobs",
-                    href:
-                      "/candidate-profile/saved-jobs",
+                    label: "Saved Jobs",
+                    href: "/candidate-profile/saved-jobs",
                   },
 
                   {
-                    label:
-                      "My Applications",
-                    href:
-                      "/candidate-profile/application-status",
+                    label: "My Applications",
+                    href: "/candidate-profile/application-status",
                   },
 
                   {
-                    label:
-                      "Help & Support",
-                    href:
-                      "/candidate-profile/settings/help-support",
+                    label: "Help & Support",
+                    href: "/candidate-profile/settings/help-support",
                   },
 
                   {
-                    label:
-                      "Settings",
-                    href:
-                      "/candidate-profile/settings",
+                    label: "Settings",
+                    href: "/candidate-profile/settings",
                   },
                 ],
               })

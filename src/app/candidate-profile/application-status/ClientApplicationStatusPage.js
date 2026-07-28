@@ -9,6 +9,7 @@ import { useToast } from '@/components/Toast';
 // import { mockApplicationStatuses } from '../components/data';
 import { getMyApplications } from "@/services/candidate/myApplicationsService";
 import { acknowledgeNote, withdrawApplication } from "@/services/candidate/applicationActionsService";
+import { getAllJobs } from "@/services/candidate/allJobsService";
 
 const FILTERS = ['All', 'Applied', 'In Review', 'Shortlisted', 'Hired', 'Rejected', 'Withdrawn'];
 const ACK_STORAGE_KEY = 'candidate_application_message_acknowledged';
@@ -337,16 +338,36 @@ const ApplicationStatusCard = ({ application, isAcknowledged, onAcknowledge, onW
     </Link>
   </h4>
 
-  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
-    {/* <img
-      // src={iconMap.industry}
-      alt="Company"
-      width={14}
-      height={14}
-    /> */}
-    <span style={{ fontSize: 13, color: "#4a5578", fontWeight: 500 }}>
-      {application.company}
-    </span>
+  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+      <img
+        src={iconMap.industry}
+        alt="Company"
+        width={14}
+        height={14}
+        style={{ opacity: 0.7 }}
+      />
+      <span style={{ fontSize: 13, color: "#4a5578", fontWeight: 500 }}>
+        {application.company}
+      </span>
+    </div>
+    {application.location && (
+      <>
+        
+        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <img
+            src={iconMap.location}
+            alt="Location"
+            width={14}
+            height={14}
+            style={{ opacity: 0.7 }}
+          />
+          <span style={{ fontSize: 13, color: "#5a6a85", fontWeight: 500 }}>
+            {application.location}
+          </span>
+        </div>
+      </>
+    )}
   </div>
 </div>
 
@@ -380,35 +401,7 @@ const ApplicationStatusCard = ({ application, isAcknowledged, onAcknowledge, onW
             </span>
           </div>
 
-          <div style={{
-  display: 'flex', alignItems: 'center', gap: 12,
-  marginTop: 12, flexWrap: 'wrap'
-}}>
-  {/* <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-    <img
-      src={iconMap.industry}
-      alt="Company"
-      width={16}
-      height={16}
-    />
-    <span>{application.company}</span>
-  </div> */}
 
-  {application.location && (
-    <span style={{ fontSize: 12, color: '#8891ab' }}> {application.location}</span>
-  )}
-  {/* {application.type && (
-    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-      <img
-        src={iconMap.jobType}
-        alt="Job Type"
-        width={16}
-        height={16}
-      />
-     <span>{formatEmploymentType(application.type)}</span>
-    </div>
-  )} */}
-</div>
           <div
             style={{
               display: "flex",
@@ -662,22 +655,26 @@ const ClientApplicationStatusPage = () => {
 
       try {
         setLoading(true);
-        const response =
-          await getMyApplications();
+        const [appResponse, allJobsResponse] = await Promise.all([
+          getMyApplications(),
+          getAllJobs().catch(() => ({ data: [] })),
+        ]);
 
-        const jobs =
-          response?.data?.applications || [];
+        const jobs = appResponse?.data?.applications || [];
+        const allJobs = allJobsResponse?.data || [];
         const mappedData = jobs.map((item) => {
           const appliedDate = item.appliedAt || item.appliedDate || item.createdAt || item.appliedTimeAgo;
           const updatedDate = item.statusUpdatedAt || item.updatedAt || item.updatedDate || item.updatedTimeAgo || appliedDate;
           const normalizedStatus = item.applicationStatus === 'InReview' ? 'In Review' : item.applicationStatus;
+
+          const matchedJob = allJobs.find((j) => j.jobId === (item.jobId || item.jobPostId || item.id));
 
           return {
             id: item.applicationId,
             jobId: item.jobId || item.jobPostId || item.id || null,
             company: item.companyName,
             title: item.jobTitle,
-            location: [item.city, item.state].filter(Boolean).join(', '),
+            location: matchedJob?.jobLocation || matchedJob?.companyLocation || item.jobLocation || item.location || [item.city, item.state].filter(Boolean).join(', '),
             type: item.employmentType,
             appliedOn: timeAgo(appliedDate),
             updatedOn: timeAgo(updatedDate),

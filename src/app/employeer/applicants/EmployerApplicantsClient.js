@@ -294,6 +294,7 @@ const EmployerApplicantsClient = () => {
           Shortlisted: 0,
           Hired: 0,
           Rejected: 0,
+          Withdrawn: 0,
         };
         all.forEach((a) => {
           if (
@@ -377,6 +378,11 @@ const EmployerApplicantsClient = () => {
         label: "Rejected",
         count: counts.rejected ?? counts.Rejected,
         value: "Rejected",
+      },
+      {
+        label: "Withdrawn",
+        count: counts.withdrawn ?? counts.Withdrawn,
+        value: "Withdrawn",
       },
     ]
     : [];

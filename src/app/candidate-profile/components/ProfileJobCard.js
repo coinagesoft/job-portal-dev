@@ -105,7 +105,9 @@ const ProfileJobCard = ({ job, isListView, applyToDetails = false, onUnsave }) =
       : `₹${text}`;
   };
 
-  const displayPrice = formatSalary(job.price);
+  const displayPrice = (job.salaryVisibility === "Hide Salary" || job.salaryVisibility === "Hide_Salary" || job.salaryDisplayOption === "Hide Salary" || job.salaryDisplayOption === "Hide_Salary")
+    ? ""
+    : formatSalary(job.price);
   const visibleTags = applyToDetails
     ? (job.tags || []).slice(0, 2)
     : (job.tags || []);
@@ -157,10 +159,12 @@ const ProfileJobCard = ({ job, isListView, applyToDetails = false, onUnsave }) =
                 href={job.employerId ? `/company-details?employerId=${job.employerId}` : "/company-details"}
                 style={{
                   display: "block",
-                  width: "100%",
-                  whiteSpace: "normal",
-                  wordBreak: "break-word",
+                  maxWidth: "100%",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
                 }}
+                title={job.company}
               >
                 {job.company}
               </Link>

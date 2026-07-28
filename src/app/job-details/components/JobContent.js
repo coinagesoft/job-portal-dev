@@ -382,8 +382,31 @@ const JobContent = ({ job = {}, isApplied = false, isSaved = false, onSavedToggl
         )}
 
       </div>
-      <div className="author-single">
-        <span>{job.companyName}</span>
+      <div className="author-single" style={{ minWidth: 0, maxWidth: "100%" }}>
+        {(() => {
+          const isConfidential =
+            job.companyVisibility === "HideName" ||
+            String(job.companyName || "").toLowerCase().includes("confidential") ||
+            String(job.company || "").toLowerCase().includes("confidential");
+          const displayName = isConfidential
+            ? "Confidential Company"
+            : (job.companyName || job.company || "");
+
+          return (
+            <span
+              style={{
+                display: "inline-block",
+                maxWidth: "100%",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+              title={displayName}
+            >
+              {displayName}
+            </span>
+          );
+        })()}
       </div>
       <div className="single-apply-jobs">
         <div className="row align-items-center">
