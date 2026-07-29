@@ -17,7 +17,15 @@ export const saveJobDetails = async (payload) => {
   formData.append("ClientName", payload.ClientName ?? "");
   formData.append("ShowClientName", String(payload.ShowClientName ?? false));
   formData.append("JobType", payload.JobType ?? "");
-  formData.append("EmploymentType", payload.EmploymentType ?? "Full_Time");
+  formData.append("EmploymentType", payload.EmploymentType ?? "Full Time");
+  if (
+    payload.EmploymentType === "Contract" &&
+    payload.ContractPeriod !== null &&
+    payload.ContractPeriod !== undefined &&
+    payload.ContractPeriod !== ""
+  ) {
+    formData.append("ContractPeriod", payload.ContractPeriod);
+  }
   formData.append("EmploymentMode", payload.EmploymentMode ?? "Onsite");
   formData.append("Department", payload.Department ?? "");
   formData.append(

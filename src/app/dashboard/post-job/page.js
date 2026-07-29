@@ -2639,6 +2639,9 @@ export default function DashboardPostJobPage() {
     if (!jobForm.JobType) return showToast("Job Type is required", "error");
     if (!jobForm.JobDescription.trim()) return showToast("Job Description is required", "error");
     if (!jobForm.EmploymentType) return showToast("Employment Type is required", "error");
+    if (jobForm.EmploymentType === "Contract" && !jobForm.ContractPeriod) {
+      return showToast("Contract Period is required for contract employment.", "error");
+    }
     if (!jobForm.EmploymentMode) return showToast("Employment Mode is required", "error");
     if (jobForm.IsClientHiring && !jobForm.ClientName.trim()) {
       return showToast("Client Name is required", "error");
@@ -2660,6 +2663,7 @@ export default function DashboardPostJobPage() {
         ExperienceMaxYears: jobForm.ExperienceMaxYears,
         JobType: jobForm.JobType,
         EmploymentType: jobForm.EmploymentType,
+        ContractPeriod: jobForm.EmploymentType === "Contract" ? jobForm.ContractPeriod : "",
         EmploymentMode: jobForm.EmploymentMode,
         Department: jobForm.Department,
         DutyHoursPerDay: jobForm.DutyHoursPerDay,
@@ -2673,7 +2677,10 @@ export default function DashboardPostJobPage() {
       go(2);
     } catch (error) {
       console.error("Step 1:", error?.response?.data ?? error);
-      showToast("Failed to save job details. Please try again.", "error");
+      showToast(
+        error?.response?.data?.message || "Failed to save job details. Please try again.",
+        "error",
+      );
     } finally {
       setLoading(false);
     }
@@ -2698,7 +2705,10 @@ export default function DashboardPostJobPage() {
       go(3);
     } catch (error) {
       console.error("Step 2:", error?.response?.data ?? error);
-      showToast("Failed to save compensation. Please try again.", "error");
+      showToast(
+        error?.response?.data?.message || "Failed to save compensation. Please try again.",
+        "error",
+      );
     } finally {
       setLoading(false);
     }
@@ -2724,7 +2734,10 @@ export default function DashboardPostJobPage() {
       go(4);
     } catch (error) {
       console.error("Step 3:", error?.response?.data ?? error);
-      showToast("Failed to save skills. Please try again.", "error");
+      showToast(
+        error?.response?.data?.message || "Failed to save skills. Please try again.",
+        "error",
+      );
     } finally {
       setLoading(false);
     }
@@ -2751,7 +2764,10 @@ export default function DashboardPostJobPage() {
       go(5);
     } catch (error) {
       console.error("Step 4:", error?.response?.data ?? error);
-      showToast("Failed to save eligibility. Please try again.", "error");
+      showToast(
+        error?.response?.data?.message || "Failed to save eligibility. Please try again.",
+        "error",
+      );
     } finally {
       setLoading(false);
     }
@@ -2795,7 +2811,10 @@ export default function DashboardPostJobPage() {
       go(6);
     } catch (error) {
       console.error("Step 5:", error?.response?.data ?? error);
-      showToast("Failed to save location. Please try again.", "error");
+      showToast(
+        error?.response?.data?.message || "Failed to save location. Please try again.",
+        "error",
+      );
     } finally {
       setLoading(false);
     }
@@ -2817,7 +2836,10 @@ export default function DashboardPostJobPage() {
       go(7);
     } catch (error) {
       console.error("Step 6:", error?.response?.data ?? error);
-      showToast("Failed to save questions. Please try again.", "error");
+      showToast(
+        error?.response?.data?.message || "Failed to save questions. Please try again.",
+        "error",
+      );
     } finally {
       setLoading(false);
     }
