@@ -115,6 +115,45 @@ export const scheduleInterview = async (applicationId, interviewDate, note = "")
 };
 
 /**
+ * PATCH /api/recruiter/applicants/{applicationId}/table-interview
+ * Body: { note } — note is optional
+ */
+export const tableInterviewApplicant = async (applicationId, note = "") => {
+  const { data } = await api.patch(
+    `/api/recruiter/applicants/${applicationId}/table-interview`,
+    { note: note || null },
+    { params: { employerId: getEmployerId() } }
+  );
+  return data;
+};
+
+/**
+ * PATCH /api/recruiter/applicants/{applicationId}/cv-selection
+ * Body: { note } — note is optional
+ */
+export const cvSelectionApplicant = async (applicationId, note = "") => {
+  const { data } = await api.patch(
+    `/api/recruiter/applicants/${applicationId}/cv-selection`,
+    { note: note || null },
+    { params: { employerId: getEmployerId() } }
+  );
+  return data;
+};
+
+/**
+ * PATCH /api/recruiter/applicants/{applicationId}/location-interview
+ * Body: { note } — note is optional
+ */
+export const locationInterviewApplicant = async (applicationId, note = "") => {
+  const { data } = await api.patch(
+    `/api/recruiter/applicants/${applicationId}/location-interview`,
+    { note: note || null },
+    { params: { employerId: getEmployerId() } }
+  );
+  return data;
+};
+
+/**
  * PATCH /api/recruiter/applicants/{applicationId}/reject
  * Body: { reason, note } — both optional
  */

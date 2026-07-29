@@ -9,8 +9,8 @@ import {
 
 /* ── Icon mapping (backend does not send icons) ───────────────────────────── */
 const BADGE_ICONS = {
-  "GST Verified": "fi fi-rr-check",
-  "PAN Verified": "fi fi-rr-id-badge",
+  GST: "fi fi-rr-check",
+  PAN: "fi fi-rr-id-badge",
   "POE Licensed": "fi fi-rr-shield-check",
   "RPSL Licensed": "fi fi-rr-diploma",
 };
@@ -33,8 +33,8 @@ const isPositive = (status) => POSITIVE_STATUSES.includes(status);
 const badgeColors = (status) => {
   if (status === "Approved")
     return { bg: "#ecfdf3", color: "#0BAB7C" };
-  if (status === "Pending" || status === "Not Approved")
-    return { bg: "#fff7ea", color: "#ff9900" };
+  if (status === "Uploaded")
+    return { bg: "#eaf4ff", color: "#1d4ed8" };
   return { bg: "#f4f5f7", color: "#66789c" };
 };
 
@@ -159,496 +159,496 @@ const EmployerVerificationPage = () => {
 
   return (
     <SubUserViewOnlyGuard>
-    <main className="main">
-      <section className="section-box mt-50 mb-50">
-        <div className="container">
-          <div className="content-page">
-            {/* Header */}
-            <div className="mb-30">
-              <h3
-                style={{ color: "#122359", fontWeight: 800, marginBottom: "6px" }}
-              >
-                Verification &amp; Badges
-              </h3>
-              <span className="font-sm color-text-paragraph-2">
-                Build trust with candidates — verified employers get more
-                applicants.
-              </span>
-            </div>
+      <main className="main">
+        <section className="section-box mt-50 mb-50">
+          <div className="container">
+            <div className="content-page">
+              {/* Header */}
+              <div className="mb-30">
+                <h3
+                  style={{ color: "#122359", fontWeight: 800, marginBottom: "6px" }}
+                >
+                  Verification &amp; Badges
+                </h3>
+                <span className="font-sm color-text-paragraph-2">
+                  Build trust with candidates — verified employers get more
+                  applicants.
+                </span>
+              </div>
 
-            {/* Error banner */}
-            {error && (
+              {/* Error banner */}
+              {error && (
+                <div
+                  style={{
+                    background: "#fef2f2",
+                    border: "1px solid #fca5a5",
+                    color: "#b91c1c",
+                    borderRadius: "14px",
+                    padding: "14px 18px",
+                    marginBottom: "24px",
+                    fontWeight: 600,
+                    fontSize: "14px",
+                  }}
+                >
+                  {error}
+                </div>
+              )}
+
+              {/* Trust Badges */}
               <div
                 style={{
-                  background: "#fef2f2",
-                  border: "1px solid #fca5a5",
-                  color: "#b91c1c",
-                  borderRadius: "14px",
-                  padding: "14px 18px",
-                  marginBottom: "24px",
-                  fontWeight: 600,
-                  fontSize: "14px",
+                  background: "#ffffff",
+                  borderRadius: "24px",
+                  border: "1px solid rgba(18,35,89,0.06)",
+                  boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
+                  padding: "28px",
+                  marginBottom: "30px",
                 }}
               >
-                {error}
-              </div>
-            )}
+                <h5
+                  style={{ color: "#122359", fontWeight: 800, marginBottom: "24px" }}
+                >
+                  Trust Badges
+                </h5>
 
-            {/* Trust Badges */}
-            <div
-              style={{
-                background: "#ffffff",
-                borderRadius: "24px",
-                border: "1px solid rgba(18,35,89,0.06)",
-                boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
-                padding: "28px",
-                marginBottom: "30px",
-              }}
-            >
-              <h5
-                style={{ color: "#122359", fontWeight: 800, marginBottom: "24px" }}
-              >
-                Trust Badges
-              </h5>
-
-              {loading ? (
-                <p style={{ color: "#66789c", margin: 0 }}>Loading badges…</p>
-              ) : badges.length === 0 ? (
-                <p style={{ color: "#66789c", margin: 0 }}>
-                  No badges available yet.
-                </p>
-              ) : (
-                <div className="row">
-                  {badges.map((item) => {
-                    const colors = badgeColors(item.status);
-                    return (
-                      <div
-                        className="col-lg-4 col-md-6 col-12 mb-20"
-                        key={item.badgeName}
-                      >
+                {loading ? (
+                  <p style={{ color: "#66789c", margin: 0 }}>Loading badges…</p>
+                ) : badges.length === 0 ? (
+                  <p style={{ color: "#66789c", margin: 0 }}>
+                    No badges available yet.
+                  </p>
+                ) : (
+                  <div className="row">
+                    {badges.map((item) => {
+                      const colors = badgeColors(item.status);
+                      return (
                         <div
+                          className="col-lg-4 col-md-6 col-12 mb-20"
+                          key={item.badgeName}
+                        >
+                          <div
+                            style={{
+                              borderRadius: "22px",
+                              padding: "22px",
+                              border: "1px solid rgba(18,35,89,0.08)",
+                              background: "#ffffff",
+                              transition: "all .35s ease",
+                              boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
+                              height: "100%",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = "translateY(-8px)";
+                              e.currentTarget.style.borderColor =
+                                "rgba(255,153,0,0.32)";
+                              e.currentTarget.style.boxShadow =
+                                "0 0 0 1px rgba(255,153,0,0.18), 0 20px 40px rgba(255,153,0,0.12)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = "translateY(0px)";
+                              e.currentTarget.style.borderColor =
+                                "rgba(18,35,89,0.08)";
+                              e.currentTarget.style.boxShadow =
+                                "0 4px 14px rgba(18,35,89,0.04)";
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "flex-start",
+                                gap: "14px",
+                                marginBottom: "16px",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  width: "52px",
+                                  height: "52px",
+                                  borderRadius: "16px",
+                                  background: "#fff7ea",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  color: "#ff9900",
+                                  fontSize: "20px",
+                                  flexShrink: 0,
+                                }}
+                              >
+                                <i
+                                  className={
+                                    BADGE_ICONS[item.badgeName] ||
+                                    "fi fi-rr-badge"
+                                  }
+                                />
+                              </div>
+
+                              <div style={{ flex: 1 }}>
+                                <div
+                                  style={{
+                                    fontWeight: 700,
+                                    color: "#122359",
+                                    marginBottom: "8px",
+                                    fontSize: "16px",
+                                  }}
+                                >
+                                  {item.badgeName}
+                                </div>
+
+                                <span
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    padding: "6px 12px",
+                                    borderRadius: "999px",
+                                    background: colors.bg,
+                                    color: colors.color,
+                                    fontSize: "11px",
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  {item.status}
+                                </span>
+                              </div>
+                            </div>
+
+                            <p
+                              style={{
+                                margin: 0,
+                                color: "#66789c",
+                                fontSize: "13px",
+                                lineHeight: 1.7,
+                              }}
+                            >
+                              {item.description}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Uploaded Documents */}
+              <div
+                style={{
+                  background: "#ffffff",
+                  borderRadius: "24px",
+                  border: "1px solid rgba(18,35,89,0.06)",
+                  boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
+                  padding: "28px",
+                  marginBottom: "30px",
+                }}
+              >
+                <h5
+                  style={{
+                    margin: "0 0 24px",
+                    color: "#122359",
+                    fontWeight: 800,
+                  }}
+                >
+                  Uploaded Documents
+                </h5>
+
+                {loading ? (
+                  <p style={{ color: "#66789c", margin: 0 }}>Loading documents…</p>
+                ) : documents.length === 0 ? (
+                  <p style={{ color: "#66789c", margin: 0 }}>
+                    No documents found.
+                  </p>
+                ) : (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "14px",
+                    }}
+                  >
+                    {documents.map((doc) => {
+                      const positive = isPositive(doc.status);
+                      return (
+                        <div
+                          key={doc.documentType}
                           style={{
-                            borderRadius: "22px",
-                            padding: "22px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            flexWrap: "wrap",
+                            gap: "14px",
+                            padding: "18px 22px",
+                            borderRadius: "18px",
                             border: "1px solid rgba(18,35,89,0.08)",
                             background: "#ffffff",
                             transition: "all .35s ease",
-                            boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
-                            height: "100%",
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = "translateY(-8px)";
+                            e.currentTarget.style.transform = "translateY(-4px)";
                             e.currentTarget.style.borderColor =
                               "rgba(255,153,0,0.32)";
                             e.currentTarget.style.boxShadow =
-                              "0 0 0 1px rgba(255,153,0,0.18), 0 20px 40px rgba(255,153,0,0.12)";
+                              "0 12px 28px rgba(255,163,0,0.10)";
                           }}
                           onMouseLeave={(e) => {
                             e.currentTarget.style.transform = "translateY(0px)";
                             e.currentTarget.style.borderColor =
                               "rgba(18,35,89,0.08)";
-                            e.currentTarget.style.boxShadow =
-                              "0 4px 14px rgba(18,35,89,0.04)";
+                            e.currentTarget.style.boxShadow = "none";
                           }}
                         >
+                          <div>
+                            <div
+                              style={{
+                                fontWeight: 700,
+                                color: "#122359",
+                                marginBottom: "4px",
+                              }}
+                            >
+                              {prettyDocName(doc.documentType)}
+                            </div>
+                            <div style={{ fontSize: "13px", color: "#66789c" }}>
+                              {doc.uploadedAt
+                                ? `Updated: ${formatDate(doc.uploadedAt)}`
+                                : "Not uploaded yet"}
+                            </div>
+                          </div>
+
                           <div
                             style={{
                               display: "flex",
-                              alignItems: "flex-start",
-                              gap: "14px",
-                              marginBottom: "16px",
+                              alignItems: "center",
+                              gap: "10px",
                             }}
                           >
-                            <div
+                            <span
                               style={{
-                                width: "52px",
-                                height: "52px",
-                                borderRadius: "16px",
-                                background: "#fff7ea",
-                                display: "flex",
+                                display: "inline-flex",
                                 alignItems: "center",
-                                justifyContent: "center",
-                                color: "#ff9900",
-                                fontSize: "20px",
-                                flexShrink: 0,
+                                padding: "6px 12px",
+                                borderRadius: "999px",
+                                background: positive ? "#ecfdf3" : "#fff7ea",
+                                color: positive ? "#0BAB7C" : "#ff9900",
+                                fontSize: "11px",
+                                fontWeight: 700,
                               }}
                             >
+                              {doc.status}
+                            </span>
+
+                            <button
+                              className="btn btn-border btn-sm"
+                              style={{
+                                borderRadius: "10px",
+                                fontWeight: 700,
+                                opacity: doc.fileUrl ? 1 : 0.5,
+                                cursor: doc.fileUrl ? "pointer" : "not-allowed",
+                              }}
+                              type="button"
+                              disabled={!doc.fileUrl}
+                              onClick={() => handleView(doc)}
+                            >
                               <i
-                                className={
-                                  BADGE_ICONS[item.badgeName] ||
-                                  "fi fi-rr-badge"
-                                }
+                                className="fi fi-rr-eye"
+                                style={{ marginRight: "5px" }}
                               />
-                            </div>
-
-                            <div style={{ flex: 1 }}>
-                              <div
-                                style={{
-                                  fontWeight: 700,
-                                  color: "#122359",
-                                  marginBottom: "8px",
-                                  fontSize: "16px",
-                                }}
-                              >
-                                {item.badgeName}
-                              </div>
-
-                              <span
-                                style={{
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  padding: "6px 12px",
-                                  borderRadius: "999px",
-                                  background: colors.bg,
-                                  color: colors.color,
-                                  fontSize: "11px",
-                                  fontWeight: 700,
-                                }}
-                              >
-                                {item.status}
-                              </span>
-                            </div>
-                          </div>
-
-                          <p
-                            style={{
-                              margin: 0,
-                              color: "#66789c",
-                              fontSize: "13px",
-                              lineHeight: 1.7,
-                            }}
-                          >
-                            {item.description}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Uploaded Documents */}
-            <div
-              style={{
-                background: "#ffffff",
-                borderRadius: "24px",
-                border: "1px solid rgba(18,35,89,0.06)",
-                boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
-                padding: "28px",
-                marginBottom: "30px",
-              }}
-            >
-              <h5
-                style={{
-                  margin: "0 0 24px",
-                  color: "#122359",
-                  fontWeight: 800,
-                }}
-              >
-                Uploaded Documents
-              </h5>
-
-              {loading ? (
-                <p style={{ color: "#66789c", margin: 0 }}>Loading documents…</p>
-              ) : documents.length === 0 ? (
-                <p style={{ color: "#66789c", margin: 0 }}>
-                  No documents found.
-                </p>
-              ) : (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "14px",
-                  }}
-                >
-                  {documents.map((doc) => {
-                    const positive = isPositive(doc.status);
-                    return (
-                      <div
-                        key={doc.documentType}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          flexWrap: "wrap",
-                          gap: "14px",
-                          padding: "18px 22px",
-                          borderRadius: "18px",
-                          border: "1px solid rgba(18,35,89,0.08)",
-                          background: "#ffffff",
-                          transition: "all .35s ease",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = "translateY(-4px)";
-                          e.currentTarget.style.borderColor =
-                            "rgba(255,153,0,0.32)";
-                          e.currentTarget.style.boxShadow =
-                            "0 12px 28px rgba(255,163,0,0.10)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = "translateY(0px)";
-                          e.currentTarget.style.borderColor =
-                            "rgba(18,35,89,0.08)";
-                          e.currentTarget.style.boxShadow = "none";
-                        }}
-                      >
-                        <div>
-                          <div
-                            style={{
-                              fontWeight: 700,
-                              color: "#122359",
-                              marginBottom: "4px",
-                            }}
-                          >
-                            {prettyDocName(doc.documentType)}
-                          </div>
-                          <div style={{ fontSize: "13px", color: "#66789c" }}>
-                            {doc.uploadedAt
-                              ? `Updated: ${formatDate(doc.uploadedAt)}`
-                              : "Not uploaded yet"}
+                              View
+                            </button>
                           </div>
                         </div>
-
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "10px",
-                          }}
-                        >
-                          <span
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              padding: "6px 12px",
-                              borderRadius: "999px",
-                              background: positive ? "#ecfdf3" : "#fff7ea",
-                              color: positive ? "#0BAB7C" : "#ff9900",
-                              fontSize: "11px",
-                              fontWeight: 700,
-                            }}
-                          >
-                            {doc.status}
-                          </span>
-
-                          <button
-                            className="btn btn-border btn-sm"
-                            style={{
-                              borderRadius: "10px",
-                              fontWeight: 700,
-                              opacity: doc.fileUrl ? 1 : 0.5,
-                              cursor: doc.fileUrl ? "pointer" : "not-allowed",
-                            }}
-                            type="button"
-                            disabled={!doc.fileUrl}
-                            onClick={() => handleView(doc)}
-                          >
-                            <i
-                              className="fi fi-rr-eye"
-                              style={{ marginRight: "5px" }}
-                            />
-                            View
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Upload Area */}
-            <div
-              style={{
-                background: "#ffffff",
-                borderRadius: "24px",
-                border: "1px solid rgba(18,35,89,0.06)",
-                boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
-                padding: "28px",
-              }}
-            >
-              <h5
-                style={{ color: "#122359", fontWeight: 800, marginBottom: "22px" }}
-              >
-                Upload New Document
-              </h5>
-
-              {/* Document type selector */}
-              <div style={{ marginBottom: "18px", maxWidth: "320px" }}>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: 700,
-                    color: "#122359",
-                    marginBottom: "8px",
-                  }}
-                >
-                  Document type
-                </label>
-                <div style={{ position: "relative" }}>
-                  <select
-                    value={uploadType}
-                    onChange={(e) => setUploadType(e.target.value)}
-                    className="form-control"
-                    style={{
-                      borderRadius: "12px",
-                      border: "1px solid rgba(18,35,89,0.15)",
-                      padding: "10px 40px 10px 14px",
-                      fontWeight: 600,
-                      color: "#122359",
-                      width: "100%",
-                      appearance: "none",
-                      WebkitAppearance: "none",
-                      MozAppearance: "none",
-                    }}
-                  >
-                    {UPLOADABLE_TYPES.map((t) => (
-                      <option key={t.value} value={t.value}>
-                        {t.label}
-                      </option>
-                    ))}
-                  </select>
-                  <i
-                    className="fi-rr-angle-small-down"
-                    style={{
-                      position: "absolute",
-                      right: "14px",
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      color: "#122359",
-                      fontSize: "16px",
-                      pointerEvents: "none",
-                    }}
-                  />
-                </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
-              {/* Hidden file input */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
-                style={{ display: "none" }}
-                onChange={handleFileSelected}
-              />
-
+              {/* Upload Area */}
               <div
                 style={{
-                  border: "2px dashed rgba(255,163,0,0.35)",
+                  background: "#ffffff",
                   borderRadius: "24px",
-                  padding: "50px 30px",
-                  textAlign: "center",
-                  background: "#fffdf9",
-                  cursor: uploading ? "wait" : "pointer",
-                  transition: "all .35s ease",
-                }}
-                onClick={uploading ? undefined : handleBrowseClick}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "#ffa300";
-                  e.currentTarget.style.background = "#fff7ea";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "rgba(255,163,0,0.35)";
-                  e.currentTarget.style.background = "#fffdf9";
+                  border: "1px solid rgba(18,35,89,0.06)",
+                  boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
+                  padding: "28px",
                 }}
               >
-                <div
-                  style={{
-                    width: "72px",
-                    height: "72px",
-                    borderRadius: "22px",
-                    background: "#fff7ea",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    margin: "0 auto 18px",
-                    color: "#ff9900",
-                    fontSize: "28px",
-                  }}
+                <h5
+                  style={{ color: "#122359", fontWeight: 800, marginBottom: "22px" }}
                 >
-                  <i className="fi fi-rr-cloud-upload" />
-                </div>
+                  Upload New Document
+                </h5>
 
-                <p
-                  style={{
-                    fontSize: "15px",
-                    color: "#122359",
-                    fontWeight: 700,
-                    marginBottom: "8px",
-                  }}
-                >
-                  {uploading ? "Uploading…" : "Click to select a document"}
-                </p>
-
-                <p
-                  style={{
-                    fontSize: "13px",
-                    color: "#66789c",
-                    marginBottom: "20px",
-                  }}
-                >
-                  Accepted: PDF, JPG, PNG — Max 5 MB
-                </p>
-
-                <div
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    padding: "8px 12px",
-                    borderRadius: "12px",
-                    background: "#fff7ea",
-                    border: "1px solid rgba(255,163,0,0.28)",
-                    color: "#8a5a00",
-                    fontSize: "12px",
-                    fontWeight: 600,
-                    marginBottom: "18px",
-                  }}
-                >
-                  <i className="fi fi-rr-lock" />
-                  Documents uploaded here are private and are not shared with
-                  candidates.
-                </div>
-
-                <div>
-                  <button
-                    className="btn btn-border btn-sm"
+                {/* Document type selector */}
+                <div style={{ marginBottom: "18px", maxWidth: "320px" }}>
+                  <label
                     style={{
-                      borderRadius: "12px",
-                      padding: "10px 18px",
+                      display: "block",
+                      fontSize: "13px",
                       fontWeight: 700,
+                      color: "#122359",
+                      marginBottom: "8px",
                     }}
-                    type="button"
-                    disabled={uploading}
                   >
-                    {uploading ? "Please wait…" : "Browse Files"}
-                  </button>
+                    Document type
+                  </label>
+                  <div style={{ position: "relative" }}>
+                    <select
+                      value={uploadType}
+                      onChange={(e) => setUploadType(e.target.value)}
+                      className="form-control"
+                      style={{
+                        borderRadius: "12px",
+                        border: "1px solid rgba(18,35,89,0.15)",
+                        padding: "10px 40px 10px 14px",
+                        fontWeight: 600,
+                        color: "#122359",
+                        width: "100%",
+                        appearance: "none",
+                        WebkitAppearance: "none",
+                        MozAppearance: "none",
+                      }}
+                    >
+                      {UPLOADABLE_TYPES.map((t) => (
+                        <option key={t.value} value={t.value}>
+                          {t.label}
+                        </option>
+                      ))}
+                    </select>
+                    <i
+                      className="fi-rr-angle-small-down"
+                      style={{
+                        position: "absolute",
+                        right: "14px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        color: "#122359",
+                        fontSize: "16px",
+                        pointerEvents: "none",
+                      }}
+                    />
+                  </div>
                 </div>
-              </div>
 
-              {/* Upload status message */}
-              {uploadMsg && (
-                <p
+                {/* Hidden file input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  style={{ display: "none" }}
+                  onChange={handleFileSelected}
+                />
+
+                <div
                   style={{
-                    marginTop: "16px",
-                    marginBottom: 0,
-                    fontWeight: 600,
-                    fontSize: "14px",
-                    color:
-                      uploadMsg.type === "success" ? "#0BAB7C" : "#b91c1c",
+                    border: "2px dashed rgba(255,163,0,0.35)",
+                    borderRadius: "24px",
+                    padding: "50px 30px",
+                    textAlign: "center",
+                    background: "#fffdf9",
+                    cursor: uploading ? "wait" : "pointer",
+                    transition: "all .35s ease",
+                  }}
+                  onClick={uploading ? undefined : handleBrowseClick}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = "#ffa300";
+                    e.currentTarget.style.background = "#fff7ea";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = "rgba(255,163,0,0.35)";
+                    e.currentTarget.style.background = "#fffdf9";
                   }}
                 >
-                  {uploadMsg.text}
-                </p>
-              )}
+                  <div
+                    style={{
+                      width: "72px",
+                      height: "72px",
+                      borderRadius: "22px",
+                      background: "#fff7ea",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      margin: "0 auto 18px",
+                      color: "#ff9900",
+                      fontSize: "28px",
+                    }}
+                  >
+                    <i className="fi fi-rr-cloud-upload" />
+                  </div>
+
+                  <p
+                    style={{
+                      fontSize: "15px",
+                      color: "#122359",
+                      fontWeight: 700,
+                      marginBottom: "8px",
+                    }}
+                  >
+                    {uploading ? "Uploading…" : "Click to select a document"}
+                  </p>
+
+                  <p
+                    style={{
+                      fontSize: "13px",
+                      color: "#66789c",
+                      marginBottom: "20px",
+                    }}
+                  >
+                    Accepted: PDF, JPG, PNG — Max 5 MB
+                  </p>
+
+                  <div
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      padding: "8px 12px",
+                      borderRadius: "12px",
+                      background: "#fff7ea",
+                      border: "1px solid rgba(255,163,0,0.28)",
+                      color: "#8a5a00",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      marginBottom: "18px",
+                    }}
+                  >
+                    <i className="fi fi-rr-lock" />
+                    Documents uploaded here are private and are not shared with
+                    candidates.
+                  </div>
+
+                  <div>
+                    <button
+                      className="btn btn-border btn-sm"
+                      style={{
+                        borderRadius: "12px",
+                        padding: "10px 18px",
+                        fontWeight: 700,
+                      }}
+                      type="button"
+                      disabled={uploading}
+                    >
+                      {uploading ? "Please wait…" : "Browse Files"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Upload status message */}
+                {uploadMsg && (
+                  <p
+                    style={{
+                      marginTop: "16px",
+                      marginBottom: 0,
+                      fontWeight: 600,
+                      fontSize: "14px",
+                      color:
+                        uploadMsg.type === "success" ? "#0BAB7C" : "#b91c1c",
+                    }}
+                  >
+                    {uploadMsg.text}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      </section>
-    </main>
+        </section>
+      </main>
     </SubUserViewOnlyGuard>
   );
 };
