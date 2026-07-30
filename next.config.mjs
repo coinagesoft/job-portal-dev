@@ -11,6 +11,18 @@ const nextConfig = {
         hostname: "jobportal.coinage.in",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "localhost",
+        port: "7011",
+        pathname: "/**",
+      },
+      {
+        protocol: "http",
+        hostname: "localhost",
+        port: "7011",
+        pathname: "/**",
+      },
     ],
   },
 };

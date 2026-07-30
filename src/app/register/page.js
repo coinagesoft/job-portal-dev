@@ -1955,7 +1955,6 @@ function EmployerForm() {
   const isStep4Valid =
     data.contactName &&
     data.designation &&
-    isValidEmail(data.contactPersonEmail) &&
     isValidEmail(data.corpEmail) &&
     isValidMobile(data.mobile, data.countryCode) &&
     data.mobileOtp.verified &&
@@ -2810,9 +2809,20 @@ function EmployerForm() {
 
       if (response.data.success) {
         showToast(response.data.message, "success");
+        return true;
       }
+
+      showToast(
+        response.data.message || "Could not save contact details. Please try again.",
+        "error",
+      );
+      return false;
     } catch (err) {
-      showToast(err.response?.data?.message, "error");
+      showToast(
+        err.response?.data?.message || "Could not save contact details. Please try again.",
+        "error",
+      );
+      return false;
     }
   };
 
@@ -2993,8 +3003,8 @@ function EmployerForm() {
             onClick={async () => {
               setAttempt3(true);
               if (!isStep4Valid) return;
-              await saveStep3();
-              setStep(4);
+              const ok = await saveStep3();
+              if (ok) setStep(4);
             }}
           >
             Continue →
@@ -3535,7 +3545,6 @@ function EmployerForm() {
       <ReviewSection icon="fi fi-rr-user" title="Contact & Verification" editStep={3}>
         <ReviewRow label="Contact person" val={data.contactName} />
         <ReviewRow label="Designation" val={data.designation} />
-        <ReviewRow label="Personal email" val={data.contactPersonEmail} />
         <ReviewRow
           label="Company email"
           val={data.corpEmail ? `${data.corpEmail}${data.corpEmailOtp.verified ? "  ✓ Verified" : ""}` : ""}
