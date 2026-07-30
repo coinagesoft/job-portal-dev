@@ -105,7 +105,6 @@ export const saveSkills = async (jobId, payload) => {
 
   // scalars
   formData.append("AdditionalJobDescription", payload.AdditionalJobDescription ?? "");
-  formData.append("LicenceDocsRequired", payload.LicenceDocsRequired ?? "");
   formData.append("LanguageRequired", payload.LanguageRequired ?? "");
 
   const response = await api.patch(
@@ -147,6 +146,11 @@ export const saveEligibility = async (jobId, payload) => {
     formData.append("PassportValidityMonths", Number(payload.PassportValidityMonths));
   }
 
+  formData.append("LicenceDocsRequired", payload.LicenceDocsRequired ?? "");
+  formData.append(
+    "WorkingDocsRequired",
+    payload.WorkingDocsRequired ?? ""
+  );
   const response = await api.patch(
     `/api/recruiter/jobs/${jobId}/step4-eligibility`,
     formData

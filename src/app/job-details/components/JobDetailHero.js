@@ -117,10 +117,10 @@ const JobDetailHero = ({
                 fontSize: '12px',
               }}
             >
-              {job.jobLocation && (
+              {job.location && (
                 <span>
                   <i className="fi-rr-marker mr-5"></i>
-                  {job.jobLocation}
+                  {job.location}
                 </span>
               )}
 
@@ -162,7 +162,7 @@ const JobDetailHero = ({
               <div
                 className="btn btn-apply-icon btn-apply btn-apply-big hover-up"
                 onClick={handleApplyClick}
-                style={{fontSize:"14px"}}
+                style={{ fontSize: "14px" }}
               >
                 Apply now
               </div>
@@ -174,11 +174,11 @@ const JobDetailHero = ({
               style={
                 isSaved
                   ? {
-                      backgroundColor: "#FFF3E0",
-                      borderColor: "#ffa300",
-                      color: "#B15C00",
-                      fontWeight: "600",
-                    }
+                    backgroundColor: "#FFF3E0",
+                    borderColor: "#ffa300",
+                    color: "#B15C00",
+                    fontWeight: "600",
+                  }
                   : {}
               }
               onClick={handleSaveJob}

@@ -126,22 +126,54 @@ export const resendEmailOtp = (
     }
   );
 
-
 // STEP 4
-export const uploadLicences = (
-  formData,
-  sessionId
-) =>
-  api.post(
-    "/api/recruiter/registration/upload-licences",
+
+export const getDocumentTypes = () =>
+  api.get("/api/recruiter/registration/document-types");
+
+export const uploadDocuments = (documents, sessionId) => {
+  const formData = new FormData();
+
+  formData.append("SessionId", sessionId);
+
+  documents.forEach((doc, index) => {
+    if (doc.documentTypeId) {
+      formData.append(
+        `Documents[${index}].DocumentTypeId`,
+        doc.documentTypeId
+      );
+    }
+
+    if (doc.documentName) {
+      formData.append(
+        `Documents[${index}].DocumentName`,
+        doc.documentName
+      );
+    }
+
+    if (doc.category) {
+      formData.append(
+        `Documents[${index}].Category`,
+        doc.category
+      );
+    }
+
+    formData.append(
+      `Documents[${index}].File`,
+      doc.file
+    );
+  });
+
+  return api.post(
+    "/api/recruiter/registration/upload-documents",
     formData,
     {
       headers: {
-        "X-Session-Id": sessionId,
         "Content-Type": "multipart/form-data",
       },
     }
   );
+};
 
 
 // STEP 5

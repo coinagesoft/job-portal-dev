@@ -29,7 +29,8 @@ const joinText = (...values) =>
  * a row/section when its value is empty.
  */
 export const mapApiJobToDetailedJob = (job = {}) => {
-  const cityState = joinText(job.city, job.state);
+  const cityState = joinText(job.city, job.state, job.country);
+  const offshoreLocation = joinText(job.offshoreRegion, job.offshoreVesselName);
 
   const companyName = asText(job.companyName);
   const fullCompanyName = asText(
@@ -41,8 +42,11 @@ export const mapApiJobToDetailedJob = (job = {}) => {
   // Country" string from the API). Previously this checked fields that
   // don't exist on the real response (job.location, job.workLocation),
   // which meant it always fell through to a hardcoded dummy location.
+  // Falls back to the offshore region/vessel when the job has no onshore
+  // city/state (offshore postings), so a location is always available
+  // (e.g. to show the candidate while they're applying).
   const location = asText(
-    job.companyLocation || cityState || job.jobLocation
+    job.companyLocation || cityState || offshoreLocation || job.jobLocation
   );
 
   const roleTitle = asText(job.jobTitle);

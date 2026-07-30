@@ -155,11 +155,18 @@ const suggestedBenefits = [
   "Life Insurance",
   "Skill Training",
 ];
-const suggestedLicenceDocs = [
+// Personal documents — proof of identity, unrelated to the trade/job itself
+const suggestedPersonalDocs = [
   "Government-issued ID",
   "Aadhaar Card / Identity Proof",
   "Passport",
   "Driving License",
+  "Medical Fitness Certificate",
+  "Police Verification Certificate",
+];
+
+// Working documents — trade/professional qualifications tied to the job
+const suggestedWorkingDocs = [
   "ITI Certificate",
   "Diploma Certificate",
   "Degree Certificate",
@@ -168,8 +175,6 @@ const suggestedLicenceDocs = [
   "Forklift Operator License",
   "Welding Certification (CSWIP / AWS)",
   "Work Experience Certificate",
-  "Medical Fitness Certificate",
-  "Police Verification Certificate",
 ];
 const suggestedLanguages = [
   "English",
@@ -750,7 +755,7 @@ const toggleCommaValue = (currentString, item) => {
  */
 function ChipSelect({ options, selected, onToggle }) {
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+    <div className={styles.chipOptions}>
       {(options || []).map((opt) => {
         const active = (selected || []).includes(opt);
         return (
@@ -758,37 +763,19 @@ function ChipSelect({ options, selected, onToggle }) {
             key={opt}
             type="button"
             onClick={() => onToggle(opt)}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "8px 16px",
-              borderRadius: 999,
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: "pointer",
-              transition: "all .15s ease",
-              border: active ? "1px solid #FFA300" : "1px solid #E2E8F0",
-              background: active ? "#FFA300" : "#fff",
-              color: active ? "#fff" : "#122359",
-              boxShadow: active ? "0 4px 10px rgba(255,163,0,0.28)" : "none",
-            }}
+            className={`${styles.chipOption} ${active ? styles.chipOptionActive : ""}`}
           >
             {active && (
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: 16,
-                  height: 16,
-                  borderRadius: "50%",
-                  background: "rgba(255,255,255,0.3)",
-                  fontSize: 10,
-                  lineHeight: 1,
-                }}
-              >
-                ✓
+              <span className={styles.chipCheck}>
+                <svg viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path
+                    d="M1 5L4.3 8.3L11 1.5"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
               </span>
             )}
             {opt}
@@ -839,10 +826,9 @@ function ChipSelectWithAdd({ options, selected, onToggle, placeholder }) {
 
   return (
     <div>
-      <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+      <div className={styles.chipInputRow}>
         <input
-          className={styles.control}
-          style={{ flex: 1 }}
+          className={styles.chipInput}
           placeholder={placeholder || "Type and press Enter…"}
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
@@ -855,7 +841,7 @@ function ChipSelectWithAdd({ options, selected, onToggle, placeholder }) {
         />
         <button
           type="button"
-          className="btn btn-sm btn-border"
+          className={styles.chipAddBtn}
           onClick={commitInput}
         >
           + Add
@@ -1315,7 +1301,8 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
       <Field label="Job Description" required>
         <button
           type="button"
-          className="btn btn-sm btn-default mb-10"
+          className={styles.aiGenerateBtn}
+          style={{ marginBottom: 10 }}
           onClick={handleGenerateJD}
         >
           {loadingAI ? "Generating…" : "✨ Generate with AI"}
@@ -1519,10 +1506,10 @@ function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, han
         required
         hint="Generate with AI, or type your own and press Enter / click Add. Remove any that don't fit."
       >
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
           <button
             type="button"
-            className="btn btn-sm btn-default"
+            className={styles.aiGenerateBtn}
             onClick={handleSuggestSkills}
             disabled={skillsLoading}
           >
@@ -1534,10 +1521,9 @@ function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, han
           </button>
         </div>
 
-        <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
+        <div className={styles.chipInputRow}>
           <input
-            className={styles.control}
-            style={{ flex: 1 }}
+            className={styles.chipInput}
             placeholder="Type a skill and press Enter…"
             value={newSkillInput}
             onChange={(e) => setNewSkillInput(e.target.value)}
@@ -1550,7 +1536,7 @@ function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, han
           />
           <button
             type="button"
-            className="btn btn-sm btn-border"
+            className={styles.chipAddBtn}
             onClick={addManualSkill}
           >
             + Add
@@ -1558,39 +1544,27 @@ function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, han
         </div>
 
         {jobForm.KeySkills.length === 0 && !skillsLoading && (
-          <p style={{ fontSize: 13, color: "#66789c", margin: "4px 0 0" }}>
+          <p className={styles.emptyStateHint}>
             No skills yet — generate with AI above, or type your own and hit
             Enter.
           </p>
         )}
 
         {jobForm.KeySkills.length > 0 && (
-          <div className={styles.chipRow}>
+          <div className={styles.chipOptions}>
             {jobForm.KeySkills.map((s) => (
-              <span
-                key={s}
-                className="btn btn-border btn-sm mr-10 mb-10"
-                style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
-              >
+              <span key={s} className={styles.selectedChip}>
                 {s}
                 <button
                   type="button"
                   aria-label={`Remove ${s}`}
+                  className={styles.selectedChipRemove}
                   onClick={() =>
                     setJobForm((p) => ({
                       ...p,
                       KeySkills: p.KeySkills.filter((k) => k !== s),
                     }))
                   }
-                  style={{
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    color: "#9ca3af",
-                    fontWeight: 700,
-                    lineHeight: 1,
-                    padding: 0,
-                  }}
                 >
                   ×
                 </button>
@@ -1663,21 +1637,6 @@ function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, han
           </div> 
         )} 
       </Field> */}
-
-      {/* Licence / Docs Required — select from suggestions, or type your own */}
-      <Field label="Licence / Documents Required" hint="Select all that apply, or type your own and press Enter / click Add">
-        <ChipSelectWithAdd
-          options={suggestedLicenceDocs}
-          selected={splitComma(jobForm.LicenceDocsRequired || "")}
-          placeholder="e.g. ITI Certificate, CSWIP 3.1"
-          onToggle={(item) =>
-            setJobForm((p) => ({
-              ...p,
-              LicenceDocsRequired: toggleCommaValue(p.LicenceDocsRequired, item),
-            }))
-          }
-        />
-      </Field>
 
       {/* Language Required — select from suggestions, or type your own */}
       <Field label="Language Required" hint="Select all that apply, or type your own and press Enter / click Add">
@@ -1905,6 +1864,44 @@ function Step4({ go, jobForm, setJobForm, onSubmit }) {
           </Field>
         )}
       </div>
+
+      {/* Licence / Documents Required — split into Personal vs Working docs */}
+      <Field
+        label="Personal Documents Required"
+        hint="Identity proof documents — select all that apply, or type your own and press Enter / click Add"
+      >
+        <ChipSelectWithAdd
+          options={suggestedPersonalDocs}
+          selected={splitComma(jobForm.LicenceDocsRequired || "")}
+          placeholder="e.g. Aadhaar Card / Identity Proof"
+          onToggle={(item) =>
+            setJobForm((p) => ({
+              ...p,
+              LicenceDocsRequired: toggleCommaValue(p.LicenceDocsRequired, item),
+            }))
+          }
+        />
+      </Field>
+
+      <Field
+        label="Working Documents Required"
+        hint="Trade / professional certificates — select all that apply, or type your own and press Enter / click Add"
+      >
+        <ChipSelectWithAdd
+          options={suggestedWorkingDocs}
+          selected={splitComma(jobForm.WorkingDocsRequired || "")}
+          placeholder="e.g. Welding Certification (CSWIP / AWS)"
+          onToggle={(item) =>
+            setJobForm((p) => ({
+              ...p,
+              WorkingDocsRequired: toggleCommaValue(
+                p.WorkingDocsRequired,
+                item
+              ),
+            }))
+          }
+        />
+      </Field>
     </StepCard>
   );
 }
@@ -2370,7 +2367,7 @@ export default function DashboardPostJobPage() {
     Step3KeyResponsibilities: [],  // step-3 separate field 
     AdditionalJobDescription: "",
     LicenceDocsRequired: "",
-    LanguageRequired: "",
+
     // Benefits: [], 
     Tags: [],
 
@@ -2383,7 +2380,8 @@ export default function DashboardPostJobPage() {
     DisabilityEligible: false,
     PassportRequired: false,
     PassportValidityMonths: "",
-
+    LicenceDocsRequired: "",
+    WorkingDocsRequired: "",
     // Step 5 
     LocationType: "",
     Country: "",
@@ -2729,7 +2727,6 @@ export default function DashboardPostJobPage() {
         KeySkills: jobForm.KeySkills,
         KeyResponsibilities: jobForm.Step3KeyResponsibilities,
         AdditionalJobDescription: jobForm.AdditionalJobDescription,
-        LicenceDocsRequired: jobForm.LicenceDocsRequired,
         LanguageRequired: jobForm.LanguageRequired,
         Benefits: jobForm.Benefits,
         Tags: jobForm.Tags,
@@ -2758,6 +2755,8 @@ export default function DashboardPostJobPage() {
         DisabilityEligible: jobForm.DisabilityEligible,
         PassportRequired: jobForm.PassportRequired,
         PassportValidityMonths: jobForm.PassportValidityMonths,
+        LicenceDocsRequired: jobForm.LicenceDocsRequired,
+        WorkingDocsRequired: jobForm.WorkingDocsRequired,
       });
       updateDraft(response);
       go(5);

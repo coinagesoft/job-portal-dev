@@ -318,7 +318,6 @@ export default function JobPreviewModal({ open, onClose, job, loading }) {
                     ))}
                   </div>
                 )}
-                <Row label="Licence / Docs Required" value={job.LicenceDocsRequired} />
                 <Row label="Language Required" value={job.LanguageRequired} />
                 {job.Benefits?.filter(Boolean).length > 0 && (
                   <div style={{ marginTop: 10 }}>
@@ -355,6 +354,15 @@ export default function JobPreviewModal({ open, onClose, job, loading }) {
                 {job.PassportRequired && (
                   <Row label="Passport Validity" value={job.PassportValidityMonths ? `${job.PassportValidityMonths} months` : null} />
                 )}
+                <Row
+                  label="Personal Documents Required"
+                  value={job.LicenceDocsRequired}
+                />
+
+                <Row
+                  label="Working Documents Required"
+                  value={job.WorkingDocsRequired}
+                />
               </Section>
 
               <Section title="Location">
