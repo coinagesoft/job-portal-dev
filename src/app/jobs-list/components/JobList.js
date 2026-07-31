@@ -9,10 +9,163 @@ import { getJobDetails } from "@/services/candidate/jobDetailsService";
 import { getMyApplications } from "@/services/candidate/myApplicationsService";
 import { useRouter } from 'next/navigation';
 import { resolveCountry } from '@/utils/locationResolver';
+import { getPersonalInfo } from '@/services/candidate/profileService';
+import { getSkills } from '@/services/candidate/skillsService';
+import { getWorkExperience } from '@/services/candidate/workExperienceService';
 
 const normalizeString = (str) => {
   if (!str) return "";
   return String(str).toLowerCase().replace(/[^a-z0-9]/g, "");
+};
+
+const normalizeAndTokenize = (str) => {
+  if (!str) return [];
+  return String(str)
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter(w => w.length > 2);
+};
+
+const computeCandidateMatchScore = (job, candidateProfile) => {
+  if (!candidateProfile) return 0;
+
+  let score = 0;
+
+  // 1. Specified Job Title & Role Match (Highest priority)
+  const candidateTitles = [
+    candidateProfile.trade,
+    candidateProfile.jobTitle,
+    candidateProfile.role
+  ].filter(Boolean).map(t => t.trim().toLowerCase());
+
+  const jobTitleLower = (job.jobTitle || "").toLowerCase();
+  const tradeCategoryLower = (job.tradeCategory || "").toLowerCase();
+
+  candidateTitles.forEach(title => {
+    if (jobTitleLower === title) {
+      score += 1000;
+    } else if (jobTitleLower.includes(title) || title.includes(jobTitleLower)) {
+      score += 600;
+    } else {
+      // Token overlap
+      const jobTokens = normalizeAndTokenize(jobTitleLower);
+      const titleTokens = normalizeAndTokenize(title);
+      const common = jobTokens.filter(t => titleTokens.includes(t));
+      if (common.length > 0) {
+        score += 200 * common.length;
+      }
+    }
+
+    if (tradeCategoryLower === title) {
+      score += 800;
+    } else if (tradeCategoryLower.includes(title) || title.includes(tradeCategoryLower)) {
+      score += 400;
+    }
+  });
+
+  // 2. Skills Match
+  if (Array.isArray(candidateProfile.skills) && Array.isArray(job.skills)) {
+    const jobSkills = job.skills.map(s => s.toLowerCase());
+    candidateProfile.skills.forEach(skill => {
+      if (jobSkills.includes(skill.toLowerCase())) {
+        score += 100;
+      }
+    });
+  }
+
+  // 3. Work History Job Title Match
+  if (Array.isArray(candidateProfile.workHistory)) {
+    candidateProfile.workHistory.forEach(pastTitle => {
+      const pastTitleLower = pastTitle.toLowerCase();
+      if (jobTitleLower === pastTitleLower) {
+        score += 150;
+      } else if (jobTitleLower.includes(pastTitleLower)) {
+        score += 80;
+      }
+    });
+  }
+
+  return score;
+};
+
+const computeClientAiMatchPercentage = (job, candidateProfile) => {
+  if (!candidateProfile) return null;
+
+  let score = 0;
+
+  // 1. Specified Title/Role match (Max 50%)
+  const candidateTitles = [
+    candidateProfile.trade,
+    candidateProfile.jobTitle,
+    candidateProfile.role
+  ].filter(Boolean).map(t => t.trim().toLowerCase());
+
+  const jobTitleLower = (job.jobTitle || "").toLowerCase();
+  const tradeCategoryLower = (job.tradeCategory || "").toLowerCase();
+
+  let titleMatchScore = 0;
+  candidateTitles.forEach(title => {
+    if (jobTitleLower === title) {
+      titleMatchScore = Math.max(titleMatchScore, 50);
+    } else if (jobTitleLower.includes(title) || title.includes(jobTitleLower)) {
+      titleMatchScore = Math.max(titleMatchScore, 35);
+    } else {
+      const jobTokens = normalizeAndTokenize(jobTitleLower);
+      const titleTokens = normalizeAndTokenize(title);
+      const common = jobTokens.filter(t => titleTokens.includes(t));
+      if (common.length > 0) {
+        titleMatchScore = Math.max(titleMatchScore, Math.min(30, common.length * 15));
+      }
+    }
+
+    if (tradeCategoryLower === title) {
+      titleMatchScore = Math.max(titleMatchScore, 40);
+    } else if (tradeCategoryLower.includes(title)) {
+      titleMatchScore = Math.max(titleMatchScore, 25);
+    }
+  });
+  score += titleMatchScore;
+
+  // 2. Skills Match (Max 30%)
+  if (Array.isArray(candidateProfile.skills) && Array.isArray(job.skills) && candidateProfile.skills.length > 0) {
+    const jobSkills = job.skills.map(s => s.toLowerCase());
+    const matchedSkills = candidateProfile.skills.filter(s => jobSkills.includes(s.toLowerCase()));
+    const ratio = matchedSkills.length / Math.min(candidateProfile.skills.length, 5);
+    score += Math.min(30, Math.round(ratio * 30));
+  }
+
+  // 3. Location Match (Max 10%)
+  const jobLoc = (job.jobLocation || "").toLowerCase();
+  const candCity = (candidateProfile.city || "").toLowerCase();
+  const candState = (candidateProfile.state || "").toLowerCase();
+  if (candCity && jobLoc.includes(candCity)) {
+    score += 10;
+  } else if (candState && jobLoc.includes(candState)) {
+    score += 5;
+  }
+
+  // 4. Experience Match (Max 10%)
+  if (candidateProfile.totalExperienceYears !== undefined) {
+    const candExp = Number(candidateProfile.totalExperienceYears) || 0;
+    const jobExpText = String(job.experienceDisplay || "").toLowerCase();
+    const nums = jobExpText.match(/\d+/g)?.map(Number) || [];
+    if (jobExpText.includes("fresher")) {
+      if (candExp <= 1) score += 10;
+    } else if (nums.length > 0) {
+      const min = nums[0];
+      const max = nums[1] || min;
+      if (candExp >= min && candExp <= max) {
+        score += 10;
+      } else if (candExp >= min) {
+        score += 5;
+      }
+    } else {
+      score += 5;
+    }
+  }
+
+  return Math.min(99, Math.max(10, score));
 };
 
 const JobList = ({ filters = {} }) => {
@@ -26,8 +179,51 @@ const JobList = ({ filters = {} }) => {
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [activeJob, setActiveJob] = useState(null);
   const [appliedJobIds, setAppliedJobIds] = useState(() => new Set());
+  const [candidateProfile, setCandidateProfile] = useState(null);
 
   const requestIdRef = useRef(0);
+
+  useEffect(() => {
+    const fetchCandidateData = async () => {
+      const candidateId = getCandidateId();
+      if (!candidateId) return;
+
+      try {
+        const [infoRes, skillsRes, workRes] = await Promise.allSettled([
+          getPersonalInfo(),
+          getSkills(),
+          getWorkExperience()
+        ]);
+
+        let profile = {};
+
+        if (infoRes.status === 'fulfilled' && infoRes.value?.data?.success) {
+          const info = infoRes.value.data.data || {};
+          profile.trade = info.role || info.jobTitle || "";
+          profile.role = info.role || "";
+          profile.jobTitle = info.jobTitle || "";
+          profile.city = info.currentCity || "";
+          profile.state = info.currentState || "";
+          profile.totalExperienceYears = info.totalExperienceYears || 0;
+        }
+
+        if (skillsRes.status === 'fulfilled' && skillsRes.value?.data?.success) {
+          const skillsData = skillsRes.value.data.data || {};
+          profile.skills = (skillsData.skills || []).map(s => s.skillName) || [];
+        }
+
+        if (workRes.status === 'fulfilled' && workRes.value?.data?.success) {
+          profile.workHistory = (workRes.value.data.data || []).map(w => w.jobTitle) || [];
+        }
+
+        setCandidateProfile(profile);
+      } catch (error) {
+        console.error("Failed to load candidate profile in JobList", error);
+      }
+    };
+
+    fetchCandidateData();
+  }, []);
 
   // ---- Fetch the full job list ONCE (not on every filter/page/sort change) ----
   useEffect(() => {
@@ -261,10 +457,31 @@ const JobList = ({ filters = {} }) => {
     return Number(matchScore) || 0;
   };
 
+  // Inject calculated client-side AI match percentage if backend score is null and candidate profile is loaded
+  const jobsWithAiMatch = useMemo(() => {
+    return allJobs.map(job => {
+      const existingMatch = job.aiMatchPercentage ?? job.matchPercentage ?? job.aiMatch ?? job.aiMatchScore;
+      if (existingMatch != null) {
+        return {
+          ...job,
+          aiMatchPercentage: existingMatch
+        };
+      }
+      if (candidateProfile) {
+        const clientAiMatch = computeClientAiMatchPercentage(job, candidateProfile);
+        return {
+          ...job,
+          aiMatchPercentage: clientAiMatch
+        };
+      }
+      return job;
+    });
+  }, [allJobs, candidateProfile]);
+
   // All filtering + sorting happens here, in memory, against the single
   // `allJobs` array fetched once above — no API round-trip per filter change.
   const sortedFilteredJobs = useMemo(() => {
-    const filtered = allJobs.filter(job =>
+    const filtered = jobsWithAiMatch.filter(job =>
       matchesKeyword(job) &&
       matchesLocationSingle(job) &&
       matchesCity(job) &&
@@ -286,14 +503,25 @@ const JobList = ({ filters = {} }) => {
       if (sortBy === 'Newest Post') return getJobTime(b) - getJobTime(a);
       if (sortBy === 'Oldest Post') return getJobTime(a) - getJobTime(b);
       if (sortBy === 'Best Match') {
-        const diff = getJobMatch(b) - getJobMatch(a);
-        if (diff !== 0) return diff;
-        return getJobTime(b) - getJobTime(a);
+        const matchA = computeCandidateMatchScore(a, candidateProfile);
+        const matchB = computeCandidateMatchScore(b, candidateProfile);
+        
+        if (matchB !== matchA) {
+          return matchB - matchA; // prioritize profile matches at the top
+        }
+
+        const aiA = getJobMatch(a);
+        const aiB = getJobMatch(b);
+        if (aiB !== aiA) {
+          return aiB - aiA; // sort by AI Match score
+        }
+
+        return getJobTime(b) - getJobTime(a); // tie-breaker: newest first
       }
       return 0;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allJobs, filters, sortBy]);
+  }, [jobsWithAiMatch, filters, sortBy, candidateProfile]);
 
   const totalFilteredCount = sortedFilteredJobs.length;
   const totalPages = Math.max(1, Math.ceil(totalFilteredCount / showPerPage));
