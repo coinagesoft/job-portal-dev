@@ -73,7 +73,27 @@ export const downloadInvoicePdf = async (
     try {
       const text = await error?.response?.data?.text?.();
       if (text) message = JSON.parse(text).message || message;
-    } catch (_) {}
+    } catch (_) { }
     return { success: false, message };
+  }
+};
+
+/**
+ * POST /api/recruiter/invoices/{invoiceId}/email
+ * Regenerates the invoice PDF server-side and emails it to the employer's
+ * contact email as an attachment. Returns { success, message }.
+ */
+export const emailInvoice = async (invoiceId) => {
+  try {
+    const { data } = await api.post(
+      `/api/recruiter/invoices/${invoiceId}/email`
+    );
+    return data;
+  } catch (error) {
+    return {
+      success: false,
+      message:
+        error?.response?.data?.message || "Unable to email invoice.",
+    };
   }
 };

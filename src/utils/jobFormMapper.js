@@ -19,6 +19,9 @@ export const mapResumeToForm = (response, defaultTradeCategory = "Welding") => (
   TradeCategory: response.step1Data?.tradeCategory ?? defaultTradeCategory,
   Role: response.step1Data?.role ?? "",
   IndustryType: response.step1Data?.industryType ?? "",
+  IsClientHiring: response.step1Data?.isClientHiring ?? false,
+  ClientName: response.step1Data?.clientName ?? "",
+  ShowClientName: response.step1Data?.showClientName ?? false,
   ExperienceMinYears: response.step1Data?.experienceMinYears ?? "",
   ExperienceMaxYears: response.step1Data?.experienceMaxYears ?? "",
   JobType: humanize(response.step1Data?.jobType) ?? "",
@@ -41,7 +44,6 @@ export const mapResumeToForm = (response, defaultTradeCategory = "Welding") => (
   KeySkills: response.step3Data?.keySkills ?? [],
   Step3KeyResponsibilities: response.step3Data?.keyResponsibilities ?? [],
   AdditionalJobDescription: response.step3Data?.additionalJobDescription ?? "",
-  LicenceDocsRequired: response.step3Data?.licenceDocsRequired ?? "",
   LanguageRequired: response.step3Data?.languageRequired ?? "",
   Benefits: response.step3Data?.benefits ?? [],
   Tags: response.step3Data?.tags ?? [],
@@ -55,6 +57,11 @@ export const mapResumeToForm = (response, defaultTradeCategory = "Welding") => (
   DisabilityEligible: response.step4Data?.disabilityEligible ?? false,
   PassportRequired: response.step4Data?.passportRequired ?? false,
   PassportValidityMonths: response.step4Data?.passportValidityMonths ?? "",
+  LicenceDocsRequired:
+    response.step4Data?.licenceDocsRequired ?? "",
+
+  WorkingDocsRequired:
+    response.step4Data?.workingDocsRequired ?? "",
 
   // Step 5
   LocationType: humanize(response.step5Data?.locationType) ?? "Onshore",

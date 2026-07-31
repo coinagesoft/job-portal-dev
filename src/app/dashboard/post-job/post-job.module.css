@@ -52,7 +52,10 @@
   /* hide scrollbar visually but keep it functional */
   scrollbar-width: none;
 }
-.stepWrapper::-webkit-scrollbar { display: none; }
+
+.stepWrapper::-webkit-scrollbar {
+  display: none;
+}
 
 .stepItem {
   display: flex;
@@ -106,6 +109,7 @@
   margin-top: 18px;
   flex-shrink: 1;
 }
+
 .aiSuggestions {
   margin-top: 10px;
   display: flex;
@@ -127,6 +131,7 @@
   background: #0057ff;
   color: #fff;
 }
+
 .inlineSuggestion {
   margin-top: 10px;
   padding: 10px 14px;
@@ -375,11 +380,9 @@
 .inlinePanel {
   border: 1px solid rgba(255, 193, 81, 0.4);
   border-radius: 16px;
-  background: linear-gradient(
-    180deg,
-    #ffffff 0%,
-    #fffaf2 100%
-  );
+  background: linear-gradient(180deg,
+      #ffffff 0%,
+      #fffaf2 100%);
   padding: 18px;
 }
 
@@ -583,6 +586,189 @@
 }
 
 /* =========================================================
+   CHIP OPTIONS (Language / Benefits / Documents / Skills)
+   Redesigned so the selected state reads clearly and the
+   input+add control feels like one piece, not two boxes.
+========================================================= */
+
+.chipInputRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px;
+  margin-bottom: 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(18, 35, 89, 0.12);
+  background: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.chipInputRow:focus-within {
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 4px rgba(255, 163, 0, 0.12);
+}
+
+.chipInput {
+  flex: 1;
+  min-width: 0;
+  min-height: 42px;
+  padding: 0 12px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: var(--font-base);
+  color: var(--text-dark);
+}
+
+.chipAddBtn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 10px;
+  background: #ffa300;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.chipAddBtn:hover {
+  background: #122359;
+  transform: translateY(-1px);
+}
+
+.chipAddBtn:active {
+  transform: translateY(0);
+}
+
+.chipOptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.chipOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(18, 35, 89, 0.10);
+  background: #f5f7fb;
+  color: var(--text-mid);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chipOption:hover {
+  border-color: rgba(255, 163, 0, 0.55);
+  background: #fff6e8;
+  color: #c57600;
+}
+
+.chipOptionActive,
+.chipOptionActive:hover {
+  border-color: #ffa300;
+  background: #ffa300;
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(255, 163, 0, 0.28);
+}
+
+.chipCheck {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.32);
+}
+
+.chipCheck svg {
+  width: 9px;
+  height: 9px;
+  display: block;
+}
+
+.aiGenerateBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 20px;
+  border: none;
+  border-radius: 999px;
+  background: #ffa300;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.aiGenerateBtn:hover:not(:disabled) {
+  background: #122359;
+  transform: translateY(-1px);
+}
+
+.aiGenerateBtn:disabled {
+  opacity: 0.65;
+  cursor: default;
+  transform: none;
+}
+
+.selectedChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px 8px 16px;
+  border-radius: 999px;
+  border: none;
+  background: #ffa300;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.selectedChipRemove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.selectedChipRemove:hover {
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.emptyStateHint {
+  margin: 4px 0 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #f7f9fc;
+  border: 1px dashed rgba(18, 35, 89, 0.16);
+  color: var(--text-light);
+  font-size: 13px;
+}
+
+/* =========================================================
    MOBILE
 ========================================================= */
 
@@ -627,10 +813,21 @@
     align-items: flex-start;
   }
 }
+
 /* ── Additional classes for one-step-at-a-time layout ── */
-.stepCompleted { background: #22c55e; border-color: #22c55e; color: #ffffff; }
-.stepLabelActive { color: var(--primary-blue); }
-.stepLineActive  { background: #22c55e; }
+.stepCompleted {
+  background: #22c55e;
+  border-color: #22c55e;
+  color: #ffffff;
+}
+
+.stepLabelActive {
+  color: var(--primary-blue);
+}
+
+.stepLineActive {
+  background: #22c55e;
+}
 
 .stepActions {
   display: flex;
@@ -640,8 +837,14 @@
   padding-top: 20px;
   border-top: 1px solid var(--border-light);
 }
-.backBtn     { min-width: 100px; }
-.continueBtn { min-width: 160px; }
+
+.backBtn {
+  min-width: 100px;
+}
+
+.continueBtn {
+  min-width: 160px;
+}
 
 /* Custom style for checkboxes to match theme orange */
 .layout input[type="checkbox"] {
@@ -651,5 +854,3 @@
   height: 16px;
   vertical-align: middle;
 }
-
-

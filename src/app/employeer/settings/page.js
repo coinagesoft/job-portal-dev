@@ -551,13 +551,13 @@ const EmployerSettingsPage = () => {
   const handleDeleteAccount = async () => {
     if (
       !window.confirm(
-        "Permanently delete your employer account, all jobs, applicants, and billing history? This cannot be reversed.",
+        "Delete your employer account, all jobs, applicants, and billing history? You can recover your account by logging in again within 30 days — after that, it's permanently erased.",
       )
     )
       return;
 
     const typed = window.prompt(
-      'This is permanent. Type "DELETE" (in capitals) to confirm account deletion.',
+      'Type "DELETE" (in capitals) to confirm. You\'ll have 30 days to recover this account by logging back in.',
     );
 
     if (typed !== "DELETE") {
@@ -672,74 +672,55 @@ const EmployerSettingsPage = () => {
 
   return (
     <SubUserViewOnlyGuard message="You don't have permission to change account settings. Only your account owner can make changes here.">
-    <main className="main">
-      <section className="section-box mt-50 mb-50">
-        <div className="container">
-          <div className="content-page">
-            {/* ── Page Header ── */}
-            <div className="box-filters-job mb-25">
-              <div className="row align-items-center">
-                <div className="col-12">
-                  <h3
-                    style={{
-                      color: "#122359",
-                      fontWeight: 800,
-                      marginBottom: 6,
-                    }}
-                  >
-                    Settings
-                  </h3>
-                  <span className="font-sm color-text-paragraph-2">
-                    Manage your account preferences, language, security, and
-                    notifications.
-                  </span>
+      <main className="main">
+        <section className="section-box mt-50 mb-50">
+          <div className="container">
+            <div className="content-page">
+              {/* ── Page Header ── */}
+              <div className="box-filters-job mb-25">
+                <div className="row align-items-center">
+                  <div className="col-12">
+                    <h3
+                      style={{
+                        color: "#122359",
+                        fontWeight: 800,
+                        marginBottom: 6,
+                      }}
+                    >
+                      Settings
+                    </h3>
+                    <span className="font-sm color-text-paragraph-2">
+                      Manage your account preferences, language, security, and
+                      notifications.
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* ── Top Tab Navigation ── */}
-            <div className="box-nav-tabs mb-5">
-              <ul
-                className="nav"
-                role="tablist"
-                style={{ flexWrap: "wrap", gap: 6 }}
-              >
-                {SETTINGS_TABS.map((tab) => {
-                  const isActive = activeTab === tab.key;
-                  const isDanger = tab.key === "danger";
-                  return (
-                    <li key={tab.key}>
-                      <button
-                        className={`btn btn-border mr-5 mb-5${isActive ? " active" : ""}`}
-                        onClick={() => setActiveTab(tab.key)}
-                        style={{
-                          border:
-                            isDanger && isActive
-                              ? "2px solid #e02020"
-                              : isActive
-                                ? "2px solid #ffa300"
-                                : isDanger
-                                  ? "1px solid #f3c3c3"
-                                  : undefined,
-                          color:
-                            isDanger && isActive
-                              ? "#e02020"
-                              : isActive
-                                ? "#ffa300"
-                                : isDanger
-                                  ? "#c0392b"
-                                  : undefined,
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 7,
-                          fontSize: 13,
-                          padding: "8px 16px",
-                        }}
-                      >
-                        <i
-                          className={tab.icon}
+              {/* ── Top Tab Navigation ── */}
+              <div className="box-nav-tabs mb-5">
+                <ul
+                  className="nav"
+                  role="tablist"
+                  style={{ flexWrap: "wrap", gap: 6 }}
+                >
+                  {SETTINGS_TABS.map((tab) => {
+                    const isActive = activeTab === tab.key;
+                    const isDanger = tab.key === "danger";
+                    return (
+                      <li key={tab.key}>
+                        <button
+                          className={`btn btn-border mr-5 mb-5${isActive ? " active" : ""}`}
+                          onClick={() => setActiveTab(tab.key)}
                           style={{
-                            fontSize: 13,
+                            border:
+                              isDanger && isActive
+                                ? "2px solid #e02020"
+                                : isActive
+                                  ? "2px solid #ffa300"
+                                  : isDanger
+                                    ? "1px solid #f3c3c3"
+                                    : undefined,
                             color:
                               isDanger && isActive
                                 ? "#e02020"
@@ -747,143 +728,121 @@ const EmployerSettingsPage = () => {
                                   ? "#ffa300"
                                   : isDanger
                                     ? "#c0392b"
-                                    : "#9ca3af",
+                                    : undefined,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 7,
+                            fontSize: 13,
+                            padding: "8px 16px",
                           }}
-                        />
-                        {tab.label}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-            <div className="border-bottom pt-5 pb-5 mb-30" />
+                        >
+                          <i
+                            className={tab.icon}
+                            style={{
+                              fontSize: 13,
+                              color:
+                                isDanger && isActive
+                                  ? "#e02020"
+                                  : isActive
+                                    ? "#ffa300"
+                                    : isDanger
+                                      ? "#c0392b"
+                                      : "#9ca3af",
+                            }}
+                          />
+                          {tab.label}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+              <div className="border-bottom pt-5 pb-5 mb-30" />
 
-            {/* ════════════════════════════════
+              {/* ════════════════════════════════
                 ACCOUNT DETAILS
             ════════════════════════════════ */}
-            {activeTab === "account" && (
-              <Card>
-                <SectionHeader
-                  icon="fi-rr-user"
-                  title="Account Details"
-                  subtitle="Update your contact and timezone information"
-                />
-                <div className={styles.grid2}>
-                  <div className={styles.field}>
-                    <label className={styles.label}>Contact Name</label>
-                    <input
-                      className={styles.control}
-                      type="text"
-                      value={account.contactPersonName}
-                      onChange={(e) =>
-                        setAccount({
-                          ...account,
-                          contactPersonName: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                  <div className={styles.field}>
-                    <label className={styles.label}>Designation</label>
-                    <input
-                      className={styles.control}
-                      type="text"
-                      value={account.designation}
-                      onChange={(e) =>
-                        setAccount({
-                          ...account,
-                          designation: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
+              {activeTab === "account" && (
+                <Card>
+                  <SectionHeader
+                    icon="fi-rr-user"
+                    title="Account Details"
+                    subtitle="Update your contact and timezone information"
+                  />
+                  <div className={styles.grid2}>
+                    <div className={styles.field}>
+                      <label className={styles.label}>Contact Name</label>
+                      <input
+                        className={styles.control}
+                        type="text"
+                        value={account.contactPersonName}
+                        onChange={(e) =>
+                          setAccount({
+                            ...account,
+                            contactPersonName: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className={styles.field}>
+                      <label className={styles.label}>Designation</label>
+                      <input
+                        className={styles.control}
+                        type="text"
+                        value={account.designation}
+                        onChange={(e) =>
+                          setAccount({
+                            ...account,
+                            designation: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
 
-                  <div className={styles.field}>
-                    <label className={styles.label}>Email</label>
+                    <div className={styles.field}>
+                      <label className={styles.label}>Email</label>
 
-                    {emailStep === "idle" && (
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <input
-                          className={styles.control}
-                          type="email"
-                          value={account.email}
-                          disabled
-                          style={{
-                            background: "#F8FAFC",
-                            cursor: "not-allowed",
-                            color: "#64748B",
-                          }}
-                        />
-                        <button
-                          type="button"
-                          className="btn btn-border btn-sm"
-                          onClick={startEmailChange}
-                          style={{ whiteSpace: "nowrap" }}
-                        >
-                          Change
-                        </button>
-                      </div>
-                    )}
-
-                    {emailStep === "input" && (
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <input
-                          className={styles.control}
-                          type="email"
-                          value={newEmailValue}
-                          onChange={(e) => setNewEmailValue(e.target.value)}
-                          placeholder="Enter new email address"
-                        />
-                        <button
-                          type="button"
-                          className="btn btn-default btn-sm"
-                          onClick={handleSendEmailOtp}
-                          disabled={emailOtpLoading}
-                          style={{ whiteSpace: "nowrap" }}
-                        >
-                          {emailOtpLoading ? "Sending..." : "Send OTP"}
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-grey-small"
-                          onClick={cancelEmailChange}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    )}
-
-                    {emailStep === "otp" && (
-                      <div className={styles.inlinePanel} style={{ marginTop: 4 }}>
-                        <div className={styles.inlinePanelHead}>
-                          <p className={styles.inlinePanelTitle}>
-                            Verify New Email
-                          </p>
-                          <span className={styles.inlinePanelBadge}>
-                            OTP Sent
-                          </span>
-                        </div>
-                        <p className={styles.inlinePanelText}>
-                          Enter the code sent to <strong>{newEmailValue}</strong>
-                        </p>
+                      {emailStep === "idle" && (
                         <div style={{ display: "flex", gap: 8 }}>
                           <input
                             className={styles.control}
-                            type="text"
-                            maxLength={6}
-                            value={emailOtpCode}
-                            onChange={(e) => setEmailOtpCode(e.target.value)}
-                            placeholder="Enter 6-digit OTP"
+                            type="email"
+                            value={account.email}
+                            disabled
+                            style={{
+                              background: "#F8FAFC",
+                              cursor: "not-allowed",
+                              color: "#64748B",
+                            }}
+                          />
+                          <button
+                            type="button"
+                            className="btn btn-border btn-sm"
+                            onClick={startEmailChange}
+                            style={{ whiteSpace: "nowrap" }}
+                          >
+                            Change
+                          </button>
+                        </div>
+                      )}
+
+                      {emailStep === "input" && (
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <input
+                            className={styles.control}
+                            type="email"
+                            value={newEmailValue}
+                            onChange={(e) => setNewEmailValue(e.target.value)}
+                            placeholder="Enter new email address"
                           />
                           <button
                             type="button"
                             className="btn btn-default btn-sm"
-                            onClick={handleVerifyEmailOtp}
+                            onClick={handleSendEmailOtp}
                             disabled={emailOtpLoading}
                             style={{ whiteSpace: "nowrap" }}
                           >
-                            {emailOtpLoading ? "Verifying..." : "Verify"}
+                            {emailOtpLoading ? "Sending..." : "Send OTP"}
                           </button>
                           <button
                             type="button"
@@ -893,131 +852,127 @@ const EmployerSettingsPage = () => {
                             Cancel
                           </button>
                         </div>
-                        <button
-                          type="button"
-                          onClick={handleSendEmailOtp}
-                          disabled={emailOtpLoading}
-                          className={styles.bottomLink}
-                          style={{
-                            border: "none",
-                            background: "none",
-                            padding: 0,
-                            marginTop: 10,
-                            textAlign: "left",
-                            cursor: "pointer",
-                          }}
-                        >
-                          <a>Resend OTP</a>
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                      )}
 
-                  <div className={styles.field}>
-                    <label className={styles.label}>Country Code</label>
-                    <CountryCodeSelect
-                      value={
-                        mobileStep === "input" || mobileStep === "otp"
-                          ? newCountryCodeValue
-                          : account.countryCode
-                      }
-                      onChange={(code) => setNewCountryCodeValue(code)}
-                      disabled={mobileStep === "idle"}
-                    />
-                    <p className={styles.hint}>
-                      Edit together with Mobile Number below.
-                    </p>
-                  </div>
-
-                  <div className={styles.field}>
-                    <label className={styles.label}>Mobile Number</label>
-
-                    {mobileStep === "idle" && (
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <input
-                          className={styles.control}
-                          type="tel"
-                          value={account.mobileNumber}
-                          disabled
-                          style={{
-                            background: "#F8FAFC",
-                            cursor: "not-allowed",
-                            color: "#64748B",
-                          }}
-                        />
-                        <button
-                          type="button"
-                          className="btn btn-border btn-sm"
-                          onClick={startMobileChange}
-                          style={{ whiteSpace: "nowrap" }}
-                        >
-                          Change
-                        </button>
-                      </div>
-                    )}
-
-                    {mobileStep === "input" && (
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <input
-                          className={styles.control}
-                          type="tel"
-                          value={newMobileValue}
-                          onChange={(e) => setNewMobileValue(e.target.value)}
-                          placeholder="Enter new mobile number"
-                        />
-                        <button
-                          type="button"
-                          className="btn btn-default btn-sm"
-                          onClick={handleSendMobileOtp}
-                          disabled={mobileOtpLoading}
-                          style={{ whiteSpace: "nowrap" }}
-                        >
-                          {mobileOtpLoading ? "Sending..." : "Send OTP"}
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-grey-small"
-                          onClick={cancelMobileChange}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    )}
-
-                    {mobileStep === "otp" && (
-                      <div className={styles.inlinePanel} style={{ marginTop: 4 }}>
-                        <div className={styles.inlinePanelHead}>
-                          <p className={styles.inlinePanelTitle}>
-                            Verify New Number
+                      {emailStep === "otp" && (
+                        <div className={styles.inlinePanel} style={{ marginTop: 4 }}>
+                          <div className={styles.inlinePanelHead}>
+                            <p className={styles.inlinePanelTitle}>
+                              Verify New Email
+                            </p>
+                            <span className={styles.inlinePanelBadge}>
+                              OTP Sent
+                            </span>
+                          </div>
+                          <p className={styles.inlinePanelText}>
+                            Enter the code sent to <strong>{newEmailValue}</strong>
                           </p>
-                          <span className={styles.inlinePanelBadge}>
-                            OTP Sent
-                          </span>
+                          <div style={{ display: "flex", gap: 8 }}>
+                            <input
+                              className={styles.control}
+                              type="text"
+                              maxLength={6}
+                              value={emailOtpCode}
+                              onChange={(e) => setEmailOtpCode(e.target.value)}
+                              placeholder="Enter 6-digit OTP"
+                            />
+                            <button
+                              type="button"
+                              className="btn btn-default btn-sm"
+                              onClick={handleVerifyEmailOtp}
+                              disabled={emailOtpLoading}
+                              style={{ whiteSpace: "nowrap" }}
+                            >
+                              {emailOtpLoading ? "Verifying..." : "Verify"}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-grey-small"
+                              onClick={cancelEmailChange}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleSendEmailOtp}
+                            disabled={emailOtpLoading}
+                            className={styles.bottomLink}
+                            style={{
+                              border: "none",
+                              background: "none",
+                              padding: 0,
+                              marginTop: 10,
+                              textAlign: "left",
+                              cursor: "pointer",
+                            }}
+                          >
+                            <a>Resend OTP</a>
+                          </button>
                         </div>
-                        <p className={styles.inlinePanelText}>
-                          Enter the code sent to{" "}
-                          <strong>
-                            {newCountryCodeValue}
-                            {newMobileValue}
-                          </strong>
-                        </p>
+                      )}
+                    </div>
+
+                    <div className={styles.field}>
+                      <label className={styles.label}>Country Code</label>
+                      <CountryCodeSelect
+                        value={
+                          mobileStep === "input" || mobileStep === "otp"
+                            ? newCountryCodeValue
+                            : account.countryCode
+                        }
+                        onChange={(code) => setNewCountryCodeValue(code)}
+                        disabled={mobileStep === "idle"}
+                      />
+                      <p className={styles.hint}>
+                        Edit together with Mobile Number below.
+                      </p>
+                    </div>
+
+                    <div className={styles.field}>
+                      <label className={styles.label}>Mobile Number</label>
+
+                      {mobileStep === "idle" && (
                         <div style={{ display: "flex", gap: 8 }}>
                           <input
                             className={styles.control}
-                            type="text"
-                            maxLength={6}
-                            value={mobileOtpCode}
-                            onChange={(e) => setMobileOtpCode(e.target.value)}
-                            placeholder="Enter 6-digit OTP"
+                            type="tel"
+                            value={account.mobileNumber}
+                            disabled
+                            style={{
+                              background: "#F8FAFC",
+                              cursor: "not-allowed",
+                              color: "#64748B",
+                            }}
+                          />
+                          <button
+                            type="button"
+                            className="btn btn-border btn-sm"
+                            onClick={startMobileChange}
+                            style={{ whiteSpace: "nowrap" }}
+                          >
+                            Change
+                          </button>
+                        </div>
+                      )}
+
+                      {mobileStep === "input" && (
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <input
+                            className={styles.control}
+                            type="tel"
+                            value={newMobileValue}
+                            onChange={(e) => setNewMobileValue(e.target.value)}
+                            placeholder="Enter new mobile number"
                           />
                           <button
                             type="button"
                             className="btn btn-default btn-sm"
-                            onClick={handleVerifyMobileOtp}
+                            onClick={handleSendMobileOtp}
                             disabled={mobileOtpLoading}
                             style={{ whiteSpace: "nowrap" }}
                           >
-                            {mobileOtpLoading ? "Verifying..." : "Verify"}
+                            {mobileOtpLoading ? "Sending..." : "Send OTP"}
                           </button>
                           <button
                             type="button"
@@ -1027,423 +982,377 @@ const EmployerSettingsPage = () => {
                             Cancel
                           </button>
                         </div>
-                        <button
-                          type="button"
-                          onClick={handleSendMobileOtp}
-                          disabled={mobileOtpLoading}
-                          className={styles.bottomLink}
-                          style={{
-                            border: "none",
-                            background: "none",
-                            padding: 0,
-                            marginTop: 10,
-                            textAlign: "left",
-                            cursor: "pointer",
-                          }}
-                        >
-                          <a>Resend OTP</a>
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                      )}
 
-                  <div className={styles.field}>
-                    <label className={styles.label}>Time Zone</label>
-                    <TimezoneSelect
-                      value={account.timeZone}
-                      onChange={(tz) =>
-                        setAccount({
-                          ...account,
-                          timeZone: tz.value,
-                        })
-                      }
-                      menuPortalTarget={
-                        typeof window !== "undefined" ? document.body : null
-                      }
-                      menuPosition="fixed"
-                      styles={{
-                        menuPortal: (base) => ({
-                          ...base,
-                          zIndex: 9999,
-                        }),
-                        control: (base, state) => ({
-                          ...base,
-                          minHeight: "52px",
-                          borderRadius: "12px",
-                          border: state.isFocused
-                            ? "1px solid #ffa300"
-                            : "1px solid rgba(18,35,89,0.12)",
-                          boxShadow: state.isFocused
-                            ? "0 0 0 4px rgba(255,163,0,0.12)"
-                            : "none",
-                          background: "#ffffff",
-                          "&:hover": {
+                      {mobileStep === "otp" && (
+                        <div className={styles.inlinePanel} style={{ marginTop: 4 }}>
+                          <div className={styles.inlinePanelHead}>
+                            <p className={styles.inlinePanelTitle}>
+                              Verify New Number
+                            </p>
+                            <span className={styles.inlinePanelBadge}>
+                              OTP Sent
+                            </span>
+                          </div>
+                          <p className={styles.inlinePanelText}>
+                            Enter the code sent to{" "}
+                            <strong>
+                              {newCountryCodeValue}
+                              {newMobileValue}
+                            </strong>
+                          </p>
+                          <div style={{ display: "flex", gap: 8 }}>
+                            <input
+                              className={styles.control}
+                              type="text"
+                              maxLength={6}
+                              value={mobileOtpCode}
+                              onChange={(e) => setMobileOtpCode(e.target.value)}
+                              placeholder="Enter 6-digit OTP"
+                            />
+                            <button
+                              type="button"
+                              className="btn btn-default btn-sm"
+                              onClick={handleVerifyMobileOtp}
+                              disabled={mobileOtpLoading}
+                              style={{ whiteSpace: "nowrap" }}
+                            >
+                              {mobileOtpLoading ? "Verifying..." : "Verify"}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-grey-small"
+                              onClick={cancelMobileChange}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleSendMobileOtp}
+                            disabled={mobileOtpLoading}
+                            className={styles.bottomLink}
+                            style={{
+                              border: "none",
+                              background: "none",
+                              padding: 0,
+                              marginTop: 10,
+                              textAlign: "left",
+                              cursor: "pointer",
+                            }}
+                          >
+                            <a>Resend OTP</a>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className={styles.field}>
+                      <label className={styles.label}>Time Zone</label>
+                      <TimezoneSelect
+                        value={account.timeZone}
+                        onChange={(tz) =>
+                          setAccount({
+                            ...account,
+                            timeZone: tz.value,
+                          })
+                        }
+                        menuPortalTarget={
+                          typeof window !== "undefined" ? document.body : null
+                        }
+                        menuPosition="fixed"
+                        styles={{
+                          menuPortal: (base) => ({
+                            ...base,
+                            zIndex: 9999,
+                          }),
+                          control: (base, state) => ({
+                            ...base,
+                            minHeight: "52px",
+                            borderRadius: "12px",
                             border: state.isFocused
                               ? "1px solid #ffa300"
                               : "1px solid rgba(18,35,89,0.12)",
-                          },
-                        }),
-                        valueContainer: (base) => ({
-                          ...base,
-                          padding: "2px 16px",
-                        }),
-                        input: (base) => ({
-                          ...base,
-                          fontSize: "14px",
-                          color: "#122359",
-                          margin: 0,
-                          padding: 0,
-                        }),
-                        singleValue: (base) => ({
-                          ...base,
-                          fontSize: "14px",
-                          color: "#122359",
-                        }),
-                        placeholder: (base) => ({
-                          ...base,
-                          fontSize: "14px",
-                          color: "#94a3b8",
-                        }),
-                        indicatorSeparator: (base) => ({
-                          ...base,
-                          display: "none",
-                        }),
-                        dropdownIndicator: (base) => ({
-                          ...base,
-                          color: "#66789c",
-                          padding: "0 12px 0 4px",
-                        }),
-                        menu: (base) => ({
-                          ...base,
-                          zIndex: 9999,
-                          borderRadius: "12px",
-                          overflow: "hidden",
-                          border: "1px solid rgba(18,35,89,0.12)",
-                          boxShadow: "0 12px 28px rgba(18,35,89,0.14)",
-                        }),
-                        menuList: (base) => ({
-                          ...base,
-                          padding: 0,
-                        }),
-                        option: (base, state) => ({
-                          ...base,
-                          fontSize: "14px",
-                          background: state.isSelected
-                            ? "#ffa300"
-                            : state.isFocused
-                              ? "#FFF4E0"
-                              : "#ffffff",
-                          color: state.isSelected ? "#ffffff" : "#122359",
-                          cursor: "pointer",
-                        }),
-                      }}
-                    />
-                  </div>
-                </div>
-                <div
-                  style={{
-                    borderTop: "1px solid var(--border-light)",
-                    marginTop: 8,
-                    paddingTop: 20,
-                    display: "flex",
-                    gap: 10,
-                  }}
-                >
-                  <button
-                    className="btn btn-default"
-                    type="button"
-                    onClick={handleSave}
-                    disabled={loading}
-                  >
-                    {loading ? "Saving..." : saved ? "✓ Saved" : "Save Changes"}
-                  </button>
-                  <button
-                    className="btn btn-border"
-                    type="button"
-                    disabled={loading}
-                    onClick={fetchAccount}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </Card>
-            )}
-
-            {/* ════════════════════════════════
-                LANGUAGE
-            ════════════════════════════════ */}
-            {activeTab === "language" && (
-              <Card>
-                <SectionHeader
-                  icon="fi-rr-globe"
-                  title="Language Preference"
-                  subtitle="Set your preferred language for the portal interface and email communications"
-                />
-                <div className={styles.grid2}>
-                  <div className={styles.field}>
-                    <label className={styles.label}>
-                      Primary Language <span className={styles.required}>*</span>
-                    </label>
-                    <select
-                      className={styles.control}
-                      value={language}
-                      onChange={(e) =>
-                        handlePrimaryLanguageChange(e.target.value)
-                      }
-                    >
-                      {LANGUAGES.map((lang) => (
-                        <option key={lang} value={lang}>
-                          {lang}
-                        </option>
-                      ))}
-                    </select>
-                    <p className={styles.hint}>
-                      Used for portal interface and system notifications.
-                    </p>
-                  </div>
-                  <div className={styles.field}>
-                    <label className={styles.label}>
-                      Secondary Language{" "}
-                      <span style={{ fontSize: 11, fontWeight: 400, textTransform: "none" }}>
-                        (Optional)
-                      </span>
-                    </label>
-                    <select
-                      className={styles.control}
-                      value={secondaryLanguage}
-                      onChange={(e) => setSecondaryLanguage(e.target.value)}
-                    >
-                      <option value="">-- None --</option>
-                      {LANGUAGES.filter((l) => l !== language).map((lang) => (
-                        <option key={lang} value={lang}>
-                          {lang}
-                        </option>
-                      ))}
-                    </select>
-                    <p className={styles.hint}>
-                      Shown as alternate in candidate-facing job listings.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Current setting preview */}
-                <div className={styles.inlinePanel} style={{ marginBottom: 24 }}>
-                  <div className={styles.inlinePanelHead}>
-                    <p className={styles.inlinePanelTitle}>
-                      Current Language Setting
-                    </p>
-                  </div>
-                  <p className={styles.inlinePanelText} style={{ margin: 0 }}>
-                    Portal language:{" "}
-                    <strong style={{ color: "#122359" }}>{language}</strong>
-                    {secondaryLanguage && (
-                      <>
-                        {" "}
-                        &nbsp;·&nbsp; Secondary:{" "}
-                        <strong style={{ color: "#122359" }}>
-                          {secondaryLanguage}
-                        </strong>
-                      </>
-                    )}
-                  </p>
-                </div>
-
-                <div
-                  style={{
-                    borderTop: "1px solid var(--border-light)",
-                    paddingTop: 20,
-                    display: "flex",
-                    gap: 10,
-                  }}
-                >
-                  <button
-                    className="btn btn-default"
-                    type="button"
-                    onClick={handleLangSave}
-                    disabled={langSaving || langResetting}
-                    style={{
-                      opacity: langSaving || langResetting ? 0.7 : 1,
-                      cursor:
-                        langSaving || langResetting
-                          ? "not-allowed"
-                          : "pointer",
-                    }}
-                  >
-                    {langSaving
-                      ? "Saving..."
-                      : langSaved
-                        ? "✓ Saved"
-                        : "Save Language"}
-                  </button>
-                  <button
-                    className="btn btn-border"
-                    type="button"
-                    onClick={handleLangReset}
-                    disabled={langSaving || langResetting}
-                    style={{
-                      borderRadius: 12,
-                      fontWeight: 700,
-                      opacity: langSaving || langResetting ? 0.7 : 1,
-                      cursor:
-                        langSaving || langResetting
-                          ? "not-allowed"
-                          : "pointer",
-                    }}
-                  >
-                    {langResetting ? "Resetting..." : "Reset to Default"}
-                  </button>
-                </div>
-              </Card>
-            )}
-
-            {/* ════════════════════════════════
-                SECURITY  (styled like sub-user page)
-            ════════════════════════════════ */}
-            {activeTab === "security" && (
-              <>
-                {/* OTP banner */}
-                <Card>
-                  <SectionHeader
-                    icon="fi-rr-lock"
-                    title="Security"
-                    subtitle="Manage authentication and active sessions"
-                  />
-
-                  {/* OTP info row */}
-                  <div className={styles.inlinePanel} style={{ marginBottom: 24 }}>
-                    <div className={styles.inlinePanelHead}>
-                      <p className={styles.inlinePanelTitle}>
-                        OTP-based Login Active
-                      </p>
-                    </div>
-                    <p className={styles.inlinePanelText} style={{ margin: 0 }}>
-                      Your account uses mobile OTP for authentication. No
-                      password is required.
-                    </p>
-                  </div>
-
-                  {/* 2FA */}
-                  <h6
-                    style={{
-                      color: "#122359",
-                      fontWeight: 800,
-                      marginBottom: 14,
-                    }}
-                  >
-                    Two-Factor Authentication
-                  </h6>
-                  <div
-                    className="candidate-notification-point"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      gap: 14,
-                      padding: "16px 18px",
-                      borderRadius: 14,
-                      border: "1px solid rgba(18,35,89,0.08)",
-                      background: "#ffffff",
-                    }}
-                  >
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 14 }}
-                    >
-                      <div
-                        className={styles.sectionStep}
-                        style={{ color: "#ff9900" }}
-                      >
-                        <i className="fi-rr-mobile" />
-                      </div>
-                      <div>
-                        <p
-                          style={{
-                            margin: "0 0 4px",
-                            fontWeight: 700,
+                            boxShadow: state.isFocused
+                              ? "0 0 0 4px rgba(255,163,0,0.12)"
+                              : "none",
+                            background: "#ffffff",
+                            "&:hover": {
+                              border: state.isFocused
+                                ? "1px solid #ffa300"
+                                : "1px solid rgba(18,35,89,0.12)",
+                            },
+                          }),
+                          valueContainer: (base) => ({
+                            ...base,
+                            padding: "2px 16px",
+                          }),
+                          input: (base) => ({
+                            ...base,
+                            fontSize: "14px",
                             color: "#122359",
-                            fontSize: 14,
-                          }}
-                        >
-                          Mobile OTP
-                        </p>
-                        <p
-                          style={{ margin: 0, color: "#66789c", fontSize: 13 }}
-                        >
-                          OTP sent to +91 98765 43210 on every login
-                        </p>
-                      </div>
+                            margin: 0,
+                            padding: 0,
+                          }),
+                          singleValue: (base) => ({
+                            ...base,
+                            fontSize: "14px",
+                            color: "#122359",
+                          }),
+                          placeholder: (base) => ({
+                            ...base,
+                            fontSize: "14px",
+                            color: "#94a3b8",
+                          }),
+                          indicatorSeparator: (base) => ({
+                            ...base,
+                            display: "none",
+                          }),
+                          dropdownIndicator: (base) => ({
+                            ...base,
+                            color: "#66789c",
+                            padding: "0 12px 0 4px",
+                          }),
+                          menu: (base) => ({
+                            ...base,
+                            zIndex: 9999,
+                            borderRadius: "12px",
+                            overflow: "hidden",
+                            border: "1px solid rgba(18,35,89,0.12)",
+                            boxShadow: "0 12px 28px rgba(18,35,89,0.14)",
+                          }),
+                          menuList: (base) => ({
+                            ...base,
+                            padding: 0,
+                          }),
+                          option: (base, state) => ({
+                            ...base,
+                            fontSize: "14px",
+                            background: state.isSelected
+                              ? "#ffa300"
+                              : state.isFocused
+                                ? "#FFF4E0"
+                                : "#ffffff",
+                            color: state.isSelected ? "#ffffff" : "#122359",
+                            cursor: "pointer",
+                          }),
+                        }}
+                      />
                     </div>
-                    <span className={styles.pillNeutral} style={{
-                      background: "#ecfdf3",
-                      color: "#0BAB7C",
-                    }}>
-                      Enabled
-                    </span>
                   </div>
-                </Card>
-
-                {/* Active Sessions — same card theme as everything else */}
-                <Card>
                   <div
                     style={{
+                      borderTop: "1px solid var(--border-light)",
+                      marginTop: 8,
+                      paddingTop: 20,
                       display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "flex-start",
-                      marginBottom: 20,
-                      flexWrap: "wrap",
                       gap: 10,
                     }}
                   >
-                    <div style={{ display: "flex", gap: 12 }}>
-                      <div className={styles.sectionStep}>
-                        <i className="fi-rr-shield-check" />
-                      </div>
-                      <div>
-                        <h5 className={styles.sectionTitle}>
-                          Active Sessions
-                        </h5>
-                        <p className={styles.sectionSub}>
-                          Devices currently signed in to your account.
-                        </p>
-                      </div>
+                    <button
+                      className="btn btn-default"
+                      type="button"
+                      onClick={handleSave}
+                      disabled={loading}
+                    >
+                      {loading ? "Saving..." : saved ? "✓ Saved" : "Save Changes"}
+                    </button>
+                    <button
+                      className="btn btn-border"
+                      type="button"
+                      disabled={loading}
+                      onClick={fetchAccount}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </Card>
+              )}
+
+              {/* ════════════════════════════════
+                LANGUAGE
+            ════════════════════════════════ */}
+              {activeTab === "language" && (
+                <Card>
+                  <SectionHeader
+                    icon="fi-rr-globe"
+                    title="Language Preference"
+                    subtitle="Set your preferred language for the portal interface and email communications"
+                  />
+                  <div className={styles.grid2}>
+                    <div className={styles.field}>
+                      <label className={styles.label}>
+                        Primary Language <span className={styles.required}>*</span>
+                      </label>
+                      <select
+                        className={styles.control}
+                        value={language}
+                        onChange={(e) =>
+                          handlePrimaryLanguageChange(e.target.value)
+                        }
+                      >
+                        {LANGUAGES.map((lang) => (
+                          <option key={lang} value={lang}>
+                            {lang}
+                          </option>
+                        ))}
+                      </select>
+                      <p className={styles.hint}>
+                        Used for portal interface and system notifications.
+                      </p>
                     </div>
-                    <span className={styles.pillNeutral} style={{
-                      background: "#EAF4FF",
-                      border: "1px solid #B9DCFF",
-                      color: "#1D4ED8",
-                    }}>
-                      {sessions.length} active
-                    </span>
+                    <div className={styles.field}>
+                      <label className={styles.label}>
+                        Secondary Language{" "}
+                        <span style={{ fontSize: 11, fontWeight: 400, textTransform: "none" }}>
+                          (Optional)
+                        </span>
+                      </label>
+                      <select
+                        className={styles.control}
+                        value={secondaryLanguage}
+                        onChange={(e) => setSecondaryLanguage(e.target.value)}
+                      >
+                        <option value="">-- None --</option>
+                        {LANGUAGES.filter((l) => l !== language).map((lang) => (
+                          <option key={lang} value={lang}>
+                            {lang}
+                          </option>
+                        ))}
+                      </select>
+                      <p className={styles.hint}>
+                        Shown as alternate in candidate-facing job listings.
+                      </p>
+                    </div>
                   </div>
 
-                  {sessions.map((session) => (
-                    <div
-                      key={session.sessionId}
+                  {/* Current setting preview */}
+                  <div className={styles.inlinePanel} style={{ marginBottom: 24 }}>
+                    <div className={styles.inlinePanelHead}>
+                      <p className={styles.inlinePanelTitle}>
+                        Current Language Setting
+                      </p>
+                    </div>
+                    <p className={styles.inlinePanelText} style={{ margin: 0 }}>
+                      Portal language:{" "}
+                      <strong style={{ color: "#122359" }}>{language}</strong>
+                      {secondaryLanguage && (
+                        <>
+                          {" "}
+                          &nbsp;·&nbsp; Secondary:{" "}
+                          <strong style={{ color: "#122359" }}>
+                            {secondaryLanguage}
+                          </strong>
+                        </>
+                      )}
+                    </p>
+                  </div>
+
+                  <div
+                    style={{
+                      borderTop: "1px solid var(--border-light)",
+                      paddingTop: 20,
+                      display: "flex",
+                      gap: 10,
+                    }}
+                  >
+                    <button
+                      className="btn btn-default"
+                      type="button"
+                      onClick={handleLangSave}
+                      disabled={langSaving || langResetting}
                       style={{
-                        border: "1px solid rgba(18,35,89,0.08)",
-                        borderRadius: 14,
-                        padding: 18,
-                        marginBottom: 12,
+                        opacity: langSaving || langResetting ? 0.7 : 1,
+                        cursor:
+                          langSaving || langResetting
+                            ? "not-allowed"
+                            : "pointer",
+                      }}
+                    >
+                      {langSaving
+                        ? "Saving..."
+                        : langSaved
+                          ? "✓ Saved"
+                          : "Save Language"}
+                    </button>
+                    <button
+                      className="btn btn-border"
+                      type="button"
+                      onClick={handleLangReset}
+                      disabled={langSaving || langResetting}
+                      style={{
+                        borderRadius: 12,
+                        fontWeight: 700,
+                        opacity: langSaving || langResetting ? 0.7 : 1,
+                        cursor:
+                          langSaving || langResetting
+                            ? "not-allowed"
+                            : "pointer",
+                      }}
+                    >
+                      {langResetting ? "Resetting..." : "Reset to Default"}
+                    </button>
+                  </div>
+                </Card>
+              )}
+
+              {/* ════════════════════════════════
+                SECURITY  (styled like sub-user page)
+            ════════════════════════════════ */}
+              {activeTab === "security" && (
+                <>
+                  {/* OTP banner */}
+                  <Card>
+                    <SectionHeader
+                      icon="fi-rr-lock"
+                      title="Security"
+                      subtitle="Manage authentication and active sessions"
+                    />
+
+                    {/* OTP info row */}
+                    <div className={styles.inlinePanel} style={{ marginBottom: 24 }}>
+                      <div className={styles.inlinePanelHead}>
+                        <p className={styles.inlinePanelTitle}>
+                          OTP-based Login Active
+                        </p>
+                      </div>
+                      <p className={styles.inlinePanelText} style={{ margin: 0 }}>
+                        Your account uses mobile OTP for authentication. No
+                        password is required.
+                      </p>
+                    </div>
+
+                    {/* 2FA */}
+                    <h6
+                      style={{
+                        color: "#122359",
+                        fontWeight: 800,
+                        marginBottom: 14,
+                      }}
+                    >
+                      Two-Factor Authentication
+                    </h6>
+                    <div
+                      className="candidate-notification-point"
+                      style={{
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
-                        gap: 20,
-                        flexWrap: "wrap",
+                        gap: 14,
+                        padding: "16px 18px",
+                        borderRadius: 14,
+                        border: "1px solid rgba(18,35,89,0.08)",
+                        background: "#ffffff",
                       }}
                     >
                       <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 16,
-                          flex: 1,
-                          minWidth: 220,
-                        }}
+                        style={{ display: "flex", alignItems: "center", gap: 14 }}
                       >
                         <div
                           className={styles.sectionStep}
                           style={{ color: "#ff9900" }}
                         >
-                          <i className={session.icon} />
+                          <i className="fi-rr-mobile" />
                         </div>
                         <div>
                           <p
@@ -1454,397 +1363,491 @@ const EmployerSettingsPage = () => {
                               fontSize: 14,
                             }}
                           >
-                            {session.device}
+                            Mobile OTP
                           </p>
                           <p
-                            style={{
-                              margin: 0,
-                              color: "#66789c",
-                              fontSize: 13,
-                            }}
+                            style={{ margin: 0, color: "#66789c", fontSize: 13 }}
                           >
-                            {session.location} &nbsp;·&nbsp; {session.time}
+                            OTP sent to +91 98765 43210 on every login
                           </p>
                         </div>
                       </div>
-                      {session.current ? (
-                        <span className={styles.pillNeutral} style={{
-                          background: "#ecfdf3",
-                          color: "#0BAB7C",
-                        }}>
-                          Current Session
-                        </span>
-                      ) : (
-                        <button
-                          className="btn btn-border btn-sm"
-                          type="button"
-                          onClick={() => handleRevokeSession(session.sessionId)}
-                        >
-                          <i
-                            className="fi-rr-cross-circle"
-                            style={{ marginRight: 5 }}
-                          />
-                          Revoke
-                        </button>
-                      )}
+                      <span className={styles.pillNeutral} style={{
+                        background: "#ecfdf3",
+                        color: "#0BAB7C",
+                      }}>
+                        Enabled
+                      </span>
                     </div>
-                  ))}
-                </Card>
-              </>
-            )}
+                  </Card>
 
-            {/* ════════════════════════════════
-                PREFERENCES  (styled like notifications page)
-            ════════════════════════════════ */}
-            {activeTab === "preferences" && (
-              <>
-                {/* Email Notification Preferences */}
-                <Card>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      justifyContent: "space-between",
-                      marginBottom: 20,
-                      flexWrap: "wrap",
-                      gap: 10,
-                    }}
-                  >
-                    <div style={{ display: "flex", gap: 12 }}>
-                      <div className={styles.sectionStep}>
-                        <i className="fi-rr-bell" />
-                      </div>
-                      <div>
-                        <h5 className={styles.sectionTitle}>
-                          Email Notifications
-                        </h5>
-                        <p className={styles.sectionSub}>
-                          Control which employer alerts you want to receive.
-                        </p>
-                      </div>
-                    </div>
-                    <span className={styles.pillNeutral} style={{
-                      background: "#EAF4FF",
-                      border: "1px solid #B9DCFF",
-                      color: "#1D4ED8",
-                    }}>
-                      {notifPrefs.filter((p) => p.enabled).length} enabled
-                    </span>
-                  </div>
-
-                  {notifPrefs.map((pref, i) => (
+                  {/* Active Sessions — same card theme as everything else */}
+                  <Card>
                     <div
-                      key={pref.label}
-                      className="candidate-notification-point"
                       style={{
                         display: "flex",
-                        alignItems: "center",
                         justifyContent: "space-between",
-                        gap: 14,
-                        padding: "16px 18px",
-                        borderRadius: 14,
-                        border: "1px solid rgba(18,35,89,0.08)",
-                        marginBottom: 12,
-                        background: "#ffffff",
+                        alignItems: "flex-start",
+                        marginBottom: 20,
+                        flexWrap: "wrap",
+                        gap: 10,
                       }}
                     >
-                      <div>
-                        <div
-                          style={{
-                            color: "#122359",
-                            fontWeight: 700,
-                            marginBottom: 4,
-                            fontSize: 14,
-                          }}
-                        >
-                          {pref.label}
+                      <div style={{ display: "flex", gap: 12 }}>
+                        <div className={styles.sectionStep}>
+                          <i className="fi-rr-shield-check" />
                         </div>
-                        <div
-                          style={{
-                            color: "#66789c",
-                            fontSize: 12,
-                            lineHeight: 1.6,
-                          }}
-                        >
-                          {pref.desc}
+                        <div>
+                          <h5 className={styles.sectionTitle}>
+                            Active Sessions
+                          </h5>
+                          <p className={styles.sectionSub}>
+                            Devices currently signed in to your account.
+                          </p>
                         </div>
                       </div>
-                      <Toggle
-                        enabled={pref.enabled}
-                        onToggle={() => toggleNotif(i)}
-                      />
+                      <span className={styles.pillNeutral} style={{
+                        background: "#EAF4FF",
+                        border: "1px solid #B9DCFF",
+                        color: "#1D4ED8",
+                      }}>
+                        {sessions.length} active
+                      </span>
                     </div>
-                  ))}
-                </Card>
 
-                {/* Display Preferences */}
-                <Card>
-                  <SectionHeader
-                    icon="fi-rr-settings"
-                    title="Display"
-                    subtitle="Control how lists and dates appear across the portal"
-                  />
-                  <div className={styles.grid2}>
-                    <div className={styles.field}>
-                      <label className={styles.label}>Items per page</label>
-                      <select
-                        className={styles.control}
-                        defaultValue="10"
+                    {sessions.map((session) => (
+                      <div
+                        key={session.sessionId}
+                        style={{
+                          border: "1px solid rgba(18,35,89,0.08)",
+                          borderRadius: 14,
+                          padding: 18,
+                          marginBottom: 12,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 20,
+                          flexWrap: "wrap",
+                        }}
                       >
-                        <option value="10">10</option>
-                        <option value="25">25</option>
-                        <option value="50">50</option>
-                      </select>
-                    </div>
-                    <div className={styles.field}>
-                      <label className={styles.label}>Date Format</label>
-                      <select
-                        className={styles.control}
-                        defaultValue="dd-mmm-yyyy"
-                      >
-                        <option value="dd-mmm-yyyy">DD MMM YYYY</option>
-                        <option value="dd/mm/yyyy">DD/MM/YYYY</option>
-                        <option value="mm/dd/yyyy">MM/DD/YYYY</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      borderTop: "1px solid var(--border-light)",
-                      paddingTop: 20,
-                      marginTop: 8,
-                    }}
-                  >
-                    <button
-                      className="btn btn-default"
-                      type="button"
-                      onClick={handleSave}
-                    >
-                      {saved ? "✓ Saved" : "Save Preferences"}
-                    </button>
-                  </div>
-                </Card>
-              </>
-            )}
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 16,
+                            flex: 1,
+                            minWidth: 220,
+                          }}
+                        >
+                          <div
+                            className={styles.sectionStep}
+                            style={{ color: "#ff9900" }}
+                          >
+                            <i className={session.icon} />
+                          </div>
+                          <div>
+                            <p
+                              style={{
+                                margin: "0 0 4px",
+                                fontWeight: 700,
+                                color: "#122359",
+                                fontSize: 14,
+                              }}
+                            >
+                              {session.device}
+                            </p>
+                            <p
+                              style={{
+                                margin: 0,
+                                color: "#66789c",
+                                fontSize: 13,
+                              }}
+                            >
+                              {session.location} &nbsp;·&nbsp; {session.time}
+                            </p>
+                          </div>
+                        </div>
+                        {session.current ? (
+                          <span className={styles.pillNeutral} style={{
+                            background: "#ecfdf3",
+                            color: "#0BAB7C",
+                          }}>
+                            Current Session
+                          </span>
+                        ) : (
+                          <button
+                            className="btn btn-border btn-sm"
+                            type="button"
+                            onClick={() => handleRevokeSession(session.sessionId)}
+                          >
+                            <i
+                              className="fi-rr-cross-circle"
+                              style={{ marginRight: 5 }}
+                            />
+                            Revoke
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </Card>
+                </>
+              )}
 
-            {/* ════════════════════════════════
-                DELETE ACCOUNT  (danger zone)
+              {/* ════════════════════════════════
+                PREFERENCES  (styled like notifications page)
             ════════════════════════════════ */}
-            {activeTab === "danger" && (
-              <>
-                {/* Warning card — same as subuser info card */}
-                <div
-                  className="subuser-hover-card"
-                  style={{
-                    background: "#fff8f8",
-                    borderRadius: 18,
-                    boxShadow: "0 4px 14px rgba(160,0,0,0.04)",
-                    padding: "22px 28px",
-                    marginBottom: 24,
-                    border: "1px solid rgba(224,32,32,0.14) !important",
-                  }}
-                >
-                  <SectionHeader
-                    icon="fi-rr-trash"
-                    title="Delete Account"
-                    subtitle="These actions are permanent and cannot be undone. Please proceed with caution."
-                    danger
-                  />
-                  <div
-                    style={{
-                      padding: "14px 18px",
-                      borderRadius: 14,
-                      background: "#fff5f5",
-                      border: "1px solid rgba(224,32,32,0.16)",
-                      color: "#c0392b",
-                      fontSize: 13,
-                      fontWeight: 600,
-                    }}
-                  >
-                    <i className="fi-rr-info" style={{ marginRight: 7 }} />
-                    Deleted accounts cannot be recovered. All jobs, applicants,
-                    and billing data will be permanently removed.
-                  </div>
-                </div>
-
-                {/* Action cards — styled like subuser user cards */}
-                {[
-                  {
-                    id: "deactivate",
-                    icon: "fi-rr-pause",
-                    iconBg: "#fff7ea",
-                    iconColor: "#ff9900",
-                    title: "Deactivate Account",
-                    desc: "Temporarily disable your account. Your jobs and data will be hidden but not deleted. You can reactivate at any time by contacting support.",
-                    tag: "Reversible",
-                    tagBg: "#ecfdf3",
-                    tagColor: "#0BAB7C",
-                    btnLabel: "Deactivate Account",
-                    btnLoadingLabel: "Deactivating...",
-                    btnClass: "btn-border",
-                    onClick: handleDeactivateAccount,
-                  },
-                  {
-                    id: "deleteJobs",
-                    icon: "fi-rr-trash",
-                    iconBg: "#fff5f5",
-                    iconColor: "#e02020",
-                    title: "Delete All Jobs",
-                    desc: "Permanently delete all posted jobs and their applicant data. This action cannot be undone.",
-                    tag: "Irreversible",
-                    tagBg: "#fff0f0",
-                    tagColor: "#e02020",
-                    btnLabel: "Delete All Jobs",
-                    btnLoadingLabel: "Deleting...",
-                    btnClass: "btn-border",
-                    onClick: handleDeleteAllJobs,
-                  },
-                  {
-                    id: "deleteAccount",
-                    icon: "fi-rr-user-delete",
-                    iconBg: "#fff0f0",
-                    iconColor: "#c0392b",
-                    title: "Delete Account",
-                    desc: "Permanently delete your employer account, all jobs, applicants, and billing history. This cannot be reversed.",
-                    tag: "Permanent",
-                    tagBg: "#fff0f0",
-                    tagColor: "#c0392b",
-                    btnLabel: "Delete Account",
-                    btnLoadingLabel: "Deleting...",
-                    btnClass: "btn-danger",
-                    onClick: handleDeleteAccount,
-                  },
-                ].map((action) => (
-                  <div
-                    key={action.title}
-                    className="subuser-hover-card"
-                    style={{
-                      background: "#ffffff",
-                      borderRadius: 18,
-                      boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
-                      padding: 24,
-                      marginBottom: 16,
-                    }}
-                  >
+              {activeTab === "preferences" && (
+                <>
+                  {/* Email Notification Preferences */}
+                  <Card>
                     <div
                       style={{
                         display: "flex",
                         alignItems: "flex-start",
                         justifyContent: "space-between",
-                        gap: 20,
+                        marginBottom: 20,
                         flexWrap: "wrap",
+                        gap: 10,
                       }}
                     >
-                      {/* Left */}
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: 16,
-                          flex: 1,
-                          minWidth: 260,
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 52,
-                            height: 52,
-                            borderRadius: 16,
-                            flexShrink: 0,
-                            background: action.iconBg,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: action.iconColor,
-                            fontSize: 20,
-                          }}
-                        >
-                          <i className={action.icon} />
+                      <div style={{ display: "flex", gap: 12 }}>
+                        <div className={styles.sectionStep}>
+                          <i className="fi-rr-bell" />
                         </div>
-                        <div style={{ flex: 1 }}>
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 10,
-                              flexWrap: "wrap",
-                              marginBottom: 6,
-                            }}
-                          >
-                            <h5
-                              style={{
-                                margin: 0,
-                                color: "#122359",
-                                fontWeight: 700,
-                              }}
-                            >
-                              {action.title}
-                            </h5>
-                            <span
-                              style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                padding: "4px 10px",
-                                borderRadius: 999,
-                                background: action.tagBg,
-                                color: action.tagColor,
-                                fontSize: 11,
-                                fontWeight: 700,
-                              }}
-                            >
-                              {action.tag}
-                            </span>
-                          </div>
-                          <p
-                            style={{
-                              margin: 0,
-                              color: "#66789c",
-                              fontSize: 13,
-                              lineHeight: 1.7,
-                            }}
-                          >
-                            {action.desc}
+                        <div>
+                          <h5 className={styles.sectionTitle}>
+                            Email Notifications
+                          </h5>
+                          <p className={styles.sectionSub}>
+                            Control which employer alerts you want to receive.
                           </p>
                         </div>
                       </div>
-                      {/* Button */}
+                      <span className={styles.pillNeutral} style={{
+                        background: "#EAF4FF",
+                        border: "1px solid #B9DCFF",
+                        color: "#1D4ED8",
+                      }}>
+                        {notifPrefs.filter((p) => p.enabled).length} enabled
+                      </span>
+                    </div>
+
+                    {notifPrefs.map((pref, i) => (
                       <div
+                        key={pref.label}
+                        className="candidate-notification-point"
                         style={{
                           display: "flex",
                           alignItems: "center",
-                          paddingTop: 4,
+                          justifyContent: "space-between",
+                          gap: 14,
+                          padding: "16px 18px",
+                          borderRadius: 14,
+                          border: "1px solid rgba(18,35,89,0.08)",
+                          marginBottom: 12,
+                          background: "#ffffff",
                         }}
                       >
-                        <button
-                          className={`btn ${action.btnClass} btn-sm`}
-                          type="button"
-                          disabled={dangerLoading !== null}
-                          onClick={action.onClick}
-                          style={{
-                            borderRadius: 10,
-                            fontWeight: 700,
-                            fontSize: 12,
-                            whiteSpace: "nowrap",
-                            opacity: dangerLoading !== null ? 0.7 : 1,
-                            cursor:
-                              dangerLoading !== null
-                                ? "not-allowed"
-                                : "pointer",
-                          }}
+                        <div>
+                          <div
+                            style={{
+                              color: "#122359",
+                              fontWeight: 700,
+                              marginBottom: 4,
+                              fontSize: 14,
+                            }}
+                          >
+                            {pref.label}
+                          </div>
+                          <div
+                            style={{
+                              color: "#66789c",
+                              fontSize: 12,
+                              lineHeight: 1.6,
+                            }}
+                          >
+                            {pref.desc}
+                          </div>
+                        </div>
+                        <Toggle
+                          enabled={pref.enabled}
+                          onToggle={() => toggleNotif(i)}
+                        />
+                      </div>
+                    ))}
+                  </Card>
+
+                  {/* Display Preferences */}
+                  <Card>
+                    <SectionHeader
+                      icon="fi-rr-settings"
+                      title="Display"
+                      subtitle="Control how lists and dates appear across the portal"
+                    />
+                    <div className={styles.grid2}>
+                      <div className={styles.field}>
+                        <label className={styles.label}>Items per page</label>
+                        <select
+                          className={styles.control}
+                          defaultValue="10"
                         >
-                          {dangerLoading === action.id
-                            ? action.btnLoadingLabel
-                            : action.btnLabel}
-                        </button>
+                          <option value="10">10</option>
+                          <option value="25">25</option>
+                          <option value="50">50</option>
+                        </select>
+                      </div>
+                      <div className={styles.field}>
+                        <label className={styles.label}>Date Format</label>
+                        <select
+                          className={styles.control}
+                          defaultValue="dd-mmm-yyyy"
+                        >
+                          <option value="dd-mmm-yyyy">DD MMM YYYY</option>
+                          <option value="dd/mm/yyyy">DD/MM/YYYY</option>
+                          <option value="mm/dd/yyyy">MM/DD/YYYY</option>
+                        </select>
                       </div>
                     </div>
+                    <div
+                      style={{
+                        borderTop: "1px solid var(--border-light)",
+                        paddingTop: 20,
+                        marginTop: 8,
+                      }}
+                    >
+                      <button
+                        className="btn btn-default"
+                        type="button"
+                        onClick={handleSave}
+                      >
+                        {saved ? "✓ Saved" : "Save Preferences"}
+                      </button>
+                    </div>
+                  </Card>
+                </>
+              )}
+
+              {/* ════════════════════════════════
+                DELETE ACCOUNT  (danger zone)
+            ════════════════════════════════ */}
+              {activeTab === "danger" && (
+                <>
+                  {/* Warning card — same as subuser info card */}
+                  <div
+                    className="subuser-hover-card"
+                    style={{
+                      background: "#fff8f8",
+                      borderRadius: 18,
+                      boxShadow: "0 4px 14px rgba(160,0,0,0.04)",
+                      padding: "22px 28px",
+                      marginBottom: 24,
+                      border: "1px solid rgba(224,32,32,0.14) !important",
+                    }}
+                  >
+                    <SectionHeader
+                      icon="fi-rr-trash"
+                      title="Delete Account"
+                      subtitle="These actions are permanent and cannot be undone. Please proceed with caution."
+                      danger
+                    />
+                    <div
+                      style={{
+                        padding: "14px 18px",
+                        borderRadius: 14,
+                        background: "#fff5f5",
+                        border: "1px solid rgba(224,32,32,0.16)",
+                        color: "#c0392b",
+                        fontSize: 13,
+                        fontWeight: 600,
+                      }}
+                    >
+                      <i className="fi-rr-info" style={{ marginRight: 7 }} />
+                      Deleted accounts are held for 30 days before permanent
+                      removal. Log back in within that window to automatically
+                      restore your account — after 30 days, all jobs,
+                      applicants, and billing data are permanently erased and
+                      cannot be recovered.
+                    </div>
                   </div>
-                ))}
-              </>
-            )}
+
+                  {/* Action cards — styled like subuser user cards */}
+                  {[
+                    {
+                      id: "deactivate",
+                      icon: "fi-rr-pause",
+                      iconBg: "#fff7ea",
+                      iconColor: "#ff9900",
+                      title: "Deactivate Account",
+                      desc: "Temporarily disable your account. Your jobs and data will be hidden but not deleted. You can reactivate at any time by contacting support.",
+                      tag: "Reversible",
+                      tagBg: "#ecfdf3",
+                      tagColor: "#0BAB7C",
+                      btnLabel: "Deactivate Account",
+                      btnLoadingLabel: "Deactivating...",
+                      btnClass: "btn-border",
+                      onClick: handleDeactivateAccount,
+                    },
+                    {
+                      id: "deleteJobs",
+                      icon: "fi-rr-trash",
+                      iconBg: "#fff5f5",
+                      iconColor: "#e02020",
+                      title: "Delete All Jobs",
+                      desc: "Permanently delete all posted jobs and their applicant data. This action cannot be undone.",
+                      tag: "Irreversible",
+                      tagBg: "#fff0f0",
+                      tagColor: "#e02020",
+                      btnLabel: "Delete All Jobs",
+                      btnLoadingLabel: "Deleting...",
+                      btnClass: "btn-border",
+                      onClick: handleDeleteAllJobs,
+                    },
+                    {
+                      id: "deleteAccount",
+                      icon: "fi-rr-user-delete",
+                      iconBg: "#fff0f0",
+                      iconColor: "#c0392b",
+                      title: "Delete Account",
+                      desc: "Delete your employer account, all jobs, applicants, and billing history. You have 30 days to log back in and recover it — after that, it's permanent.",
+                      tag: "30-day recovery",
+                      tagBg: "#fff0f0",
+                      tagColor: "#c0392b",
+                      btnLabel: "Delete Account",
+                      btnLoadingLabel: "Deleting...",
+                      btnClass: "btn-danger",
+                      onClick: handleDeleteAccount,
+                    },
+                  ].map((action) => (
+                    <div
+                      key={action.title}
+                      className="subuser-hover-card"
+                      style={{
+                        background: "#ffffff",
+                        borderRadius: 18,
+                        boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
+                        padding: 24,
+                        marginBottom: 16,
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "flex-start",
+                          justifyContent: "space-between",
+                          gap: 20,
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        {/* Left */}
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: 16,
+                            flex: 1,
+                            minWidth: 260,
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: 52,
+                              height: 52,
+                              borderRadius: 16,
+                              flexShrink: 0,
+                              background: action.iconBg,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: action.iconColor,
+                              fontSize: 20,
+                            }}
+                          >
+                            <i className={action.icon} />
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 10,
+                                flexWrap: "wrap",
+                                marginBottom: 6,
+                              }}
+                            >
+                              <h5
+                                style={{
+                                  margin: 0,
+                                  color: "#122359",
+                                  fontWeight: 700,
+                                }}
+                              >
+                                {action.title}
+                              </h5>
+                              <span
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  padding: "4px 10px",
+                                  borderRadius: 999,
+                                  background: action.tagBg,
+                                  color: action.tagColor,
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                }}
+                              >
+                                {action.tag}
+                              </span>
+                            </div>
+                            <p
+                              style={{
+                                margin: 0,
+                                color: "#66789c",
+                                fontSize: 13,
+                                lineHeight: 1.7,
+                              }}
+                            >
+                              {action.desc}
+                            </p>
+                          </div>
+                        </div>
+                        {/* Button */}
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            paddingTop: 4,
+                          }}
+                        >
+                          <button
+                            className={`btn ${action.btnClass} btn-sm`}
+                            type="button"
+                            disabled={dangerLoading !== null}
+                            onClick={action.onClick}
+                            style={{
+                              borderRadius: 10,
+                              fontWeight: 700,
+                              fontSize: 12,
+                              whiteSpace: "nowrap",
+                              opacity: dangerLoading !== null ? 0.7 : 1,
+                              cursor:
+                                dangerLoading !== null
+                                  ? "not-allowed"
+                                  : "pointer",
+                            }}
+                          >
+                            {dangerLoading === action.id
+                              ? action.btnLoadingLabel
+                              : action.btnLabel}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
           </div>
-        </div>
-      </section>
-    </main>
+        </section>
+      </main>
     </SubUserViewOnlyGuard>
   );
 };

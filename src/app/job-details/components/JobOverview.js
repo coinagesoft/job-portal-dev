@@ -35,7 +35,7 @@ const JobOverview = ({ job = {} }) => {
   };
 
   const isConfidential =
-  job.companyVisibility === "HideName"
+    job.companyVisibility === "HideName"
 
   // Previously all ~20 fields were dumped into one flat 2-column flex grid.
   // When a label wrapped to two lines ("Employment Mode", "Disability
@@ -48,6 +48,11 @@ const JobOverview = ({ job = {} }) => {
     {
       title: 'Role Overview',
       items: [
+        {
+          icon: 'fa-solid fa-handshake',
+          label: 'Client',
+          value: job.isClientHiring && job.showClientName ? job.clientName : null,
+        },
         { icon: 'fa-solid fa-industry', label: 'Trade Category', value: humanize(job.tradeCategory) },
         { icon: 'fa-solid fa-sitemap', label: 'Department', value: humanize(job.department) },
         { icon: 'fa-solid fa-layer-group', label: 'Industry Type', value: humanize(job.industryType) },

@@ -30,7 +30,12 @@ function Row({ label, value }) {
       }}
     >
       <span style={{ color: "#66789c", fontWeight: 600 }}>{label}</span>
-      <span style={{ color: "#122359", fontWeight: 600, textAlign: "right" }}>
+      <span
+        style={{
+          color: "#122359",
+          textAlign: "right",
+        }}
+      >
         {value}
       </span>
     </div>
@@ -122,10 +127,20 @@ export default function JobPreviewModal({ open, onClose, job, loading }) {
 
   const salaryLine = job
     ? [fmtMoney(job.SalaryMin, job.SalaryCurrency), fmtMoney(job.SalaryMax, job.SalaryCurrency)]
-        .filter(Boolean)
-        .join(" – ") || "Not specified"
+      .filter(Boolean)
+      .join(" – ") || "Not specified"
     : "Not specified";
+  const displayTradeOrClient =
+    job?.IsClientHiring &&
+      job?.ShowClientName &&
+      job?.ClientName
+      ? job.ClientName
+      : humanize(job?.TradeCategory);
 
+  const isClientName =
+    job?.IsClientHiring &&
+    job?.ShowClientName &&
+    !!job?.ClientName;
   return (
     <div
       onMouseDown={(e) => {
@@ -180,10 +195,15 @@ export default function JobPreviewModal({ open, onClose, job, loading }) {
               {loading ? "Loading…" : job?.JobTitle || "Untitled Job"}
             </h4>
             {!loading && job && (
-              <p style={{ color: "#c9d4ee", margin: "4px 0 0", fontSize: 13 }}>
-                {job.TradeCategory?.toLowerCase() === "other" || job.TradeCategory?.toLowerCase() === "othere"
-                  ? (job.Role || "Other / Specialisation")
-                  : `${humanize(job.TradeCategory)}${job.Role ? ` • ${job.Role}` : ""}`}
+              <p
+                style={{
+                  color: "#c9d4ee",
+                  margin: "4px 0 0",
+                  fontSize: 14,
+                  fontWeight: isClientName ? 700 : 400,
+                }}
+              >
+                {`${displayTradeOrClient}${job.Role ? ` • ${job.Role}` : ""}`}
               </p>
             )}
           </div>
@@ -229,7 +249,18 @@ export default function JobPreviewModal({ open, onClose, job, loading }) {
 
               <Section title="Job Details">
                 <Row label="Job Title" value={job.JobTitle} />
-                <Row label="Trade / Role Category" value={humanize(job.TradeCategory)} />
+                <Row
+                  label="Trade / Role Category"
+                  value={
+                    <span
+                      style={{
+                        fontWeight: isClientName ? 700 : 600,
+                      }}
+                    >
+                      {displayTradeOrClient}
+                    </span>
+                  }
+                />
                 <Row label="Role / Specialisation" value={job.Role} />
                 <Row label="Industry Type" value={humanize(job.IndustryType)} />
                 <Row label="Department" value={job.Department} />
@@ -287,7 +318,6 @@ export default function JobPreviewModal({ open, onClose, job, loading }) {
                     ))}
                   </div>
                 )}
-                <Row label="Licence / Docs Required" value={job.LicenceDocsRequired} />
                 <Row label="Language Required" value={job.LanguageRequired} />
                 {job.Benefits?.filter(Boolean).length > 0 && (
                   <div style={{ marginTop: 10 }}>
@@ -324,6 +354,15 @@ export default function JobPreviewModal({ open, onClose, job, loading }) {
                 {job.PassportRequired && (
                   <Row label="Passport Validity" value={job.PassportValidityMonths ? `${job.PassportValidityMonths} months` : null} />
                 )}
+                <Row
+                  label="Personal Documents Required"
+                  value={job.LicenceDocsRequired}
+                />
+
+                <Row
+                  label="Working Documents Required"
+                  value={job.WorkingDocsRequired}
+                />
               </Section>
 
               <Section title="Location">

@@ -121,7 +121,7 @@ const COMPANY_TYPES = [
   { value: "enterprise", label: "Enterprise" },
   { value: "government", label: "Government" },
   { value: "non-profit", label: "Non-profit" },
-   { value: "product-based", label: "Product-based" },
+  { value: "product-based", label: "Product-based" },
   { value: "service-based", label: "Service-based" },
   { value: "consulting", label: "Consulting" },
   { value: "manufacturing", label: "Manufacturing" },
@@ -406,20 +406,20 @@ function Combobox({ value, onChange, options, placeholder, error, disabled }) {
     return () => document.removeEventListener("mousedown", onClickOutside);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, options]);
-const filtered = query
+  const filtered = query
     ? (() => {
-        const q = query.toLowerCase().trim();
-        const starts = [];
-        const contains = [];
-        for (const o of normalized) {
-          const label = o.label.toLowerCase();
-          if (label.startsWith(q)) starts.push(o);
-          else if (label.includes(q)) contains.push(o);
-        }
-        starts.sort((a, b) => a.label.localeCompare(b.label));
-        contains.sort((a, b) => a.label.localeCompare(b.label));
-        return [...starts, ...contains];
-      })()
+      const q = query.toLowerCase().trim();
+      const starts = [];
+      const contains = [];
+      for (const o of normalized) {
+        const label = o.label.toLowerCase();
+        if (label.startsWith(q)) starts.push(o);
+        else if (label.includes(q)) contains.push(o);
+      }
+      starts.sort((a, b) => a.label.localeCompare(b.label));
+      contains.sort((a, b) => a.label.localeCompare(b.label));
+      return [...starts, ...contains];
+    })()
     : normalized;
 
   const selectOption = (opt) => {
@@ -1954,7 +1954,6 @@ function EmployerForm() {
   const isStep4Valid =
     data.contactName &&
     data.designation &&
-    isValidEmail(data.contactPersonEmail) &&
     isValidEmail(data.corpEmail) &&
     isValidMobile(data.mobile, data.countryCode) &&
     data.mobileOtp.verified &&
@@ -2441,7 +2440,7 @@ function EmployerForm() {
             placeholder="Type or select business type (e.g. Private Limited)"
           />
         </Field>
-            {data.hasGst && (
+        {data.hasGst && (
           <Field label="GST Registration Date" hint="Auto-filled for GST users">
             <Input
               type="date"
@@ -2469,7 +2468,7 @@ function EmployerForm() {
         </Field>
 
         {/* GST Registration Date only for GST employers */}
-    
+
 
         <Field label="CIN" hint="Company Identification Number (if applicable)">
           <Input
@@ -2591,21 +2590,21 @@ function EmployerForm() {
             }}
           />
         </Field>
-          <Field
-        label="Full Registered Address"
-        required
-        error={attempt2 && !data.address ? "Full registered address is required" : null}
-      >
-        <Input
-          value={data.address}
-          error={attempt2 && !data.address}
-          onChange={(e) => set("address", e.target.value)}
-          placeholder="Enter your full registered address (e.g. 4th Floor, Business Park, Andheri, Mumbai, MH, 400001)"
-          style={{
-            background: data.hasGst && data.address ? "#ffffff" : undefined,
-          }}
-        />
-      </Field>
+        <Field
+          label="Full Registered Address"
+          required
+          error={attempt2 && !data.address ? "Full registered address is required" : null}
+        >
+          <Input
+            value={data.address}
+            error={attempt2 && !data.address}
+            onChange={(e) => set("address", e.target.value)}
+            placeholder="Enter your full registered address (e.g. 4th Floor, Business Park, Andheri, Mumbai, MH, 400001)"
+            style={{
+              background: data.hasGst && data.address ? "#ffffff" : undefined,
+            }}
+          />
+        </Field>
 
         <Field label="Official Website">
           <Input
@@ -2616,7 +2615,7 @@ function EmployerForm() {
         </Field>
       </div>
 
-    
+
       <Field label="Company Logo">
         <div
           onClick={() => logoRef.current?.click()}
@@ -2720,9 +2719,20 @@ function EmployerForm() {
 
       if (response.data.success) {
         showToast(response.data.message, "success");
+        return true;
       }
+
+      showToast(
+        response.data.message || "Could not save contact details. Please try again.",
+        "error",
+      );
+      return false;
     } catch (err) {
-      showToast(err.response?.data?.message, "error");
+      showToast(
+        err.response?.data?.message || "Could not save contact details. Please try again.",
+        "error",
+      );
+      return false;
     }
   };
 
@@ -2806,15 +2816,15 @@ function EmployerForm() {
         </div>
 
         <Field
-  label="Company Email"
-  required
-  hint="You'll use this email to log in to your account"
-  error={
-    corpEmailTouched && !corpEmailValid
-      ? "Enter a valid company email address"
-      : null
-  }
->
+          label="Company Email"
+          required
+          hint="You'll use this email to log in to your account"
+          error={
+            corpEmailTouched && !corpEmailValid
+              ? "Enter a valid company email address"
+              : null
+          }
+        >
           <Input
             type="email"
             value={data.corpEmail}
@@ -2902,8 +2912,8 @@ function EmployerForm() {
             onClick={async () => {
               setAttempt3(true);
               if (!isStep4Valid) return;
-              await saveStep3();
-              setStep(4);
+              const ok = await saveStep3();
+              if (ok) setStep(4);
             }}
           >
             Continue →
@@ -3609,7 +3619,6 @@ function EmployerForm() {
       <ReviewSection icon="fi fi-rr-user" title="Contact & Verification" editStep={3}>
         <ReviewRow label="Contact person" val={data.contactName} />
         <ReviewRow label="Designation" val={data.designation} />
-        <ReviewRow label="Personal email" val={data.contactPersonEmail} />
         <ReviewRow
           label="Company email"
           val={data.corpEmail ? `${data.corpEmail}${data.corpEmailOtp.verified ? "  ✓ Verified" : ""}` : ""}
@@ -3728,7 +3737,7 @@ function RegisterPageInner() {
         padding: "40px 16px 60px",
         position: "relative",
         overflow: "hidden",
-          "--font-xxs": "11px",
+        "--font-xxs": "11px",
         "--font-xs": "13px",
         "--font-sm": "15px",
         "--font-base": "15px",

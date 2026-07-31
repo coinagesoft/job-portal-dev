@@ -248,10 +248,10 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [
-  resendCooldown,
-  startResendCooldown,
-  resetResendCooldown,
-] = useResendCooldown(30);
+    resendCooldown,
+    startResendCooldown,
+    resetResendCooldown,
+  ] = useResendCooldown(30);
 
   const dispatch = useDispatch();
   const router = useRouter();
@@ -357,21 +357,21 @@ export default function LoginPage() {
     setError("");
   };
 
-// ─────────────────────────────────────────────
-// CHANGE EMAIL / MOBILE
-// ─────────────────────────────────────────────
-const handleChangeIdentifier = () => {
-  setOtpSent(false);
-  setOtp("");
-  setError("");
-  resetResendCooldown();
-};
+  // ─────────────────────────────────────────────
+  // CHANGE EMAIL / MOBILE
+  // ─────────────────────────────────────────────
+  const handleChangeIdentifier = () => {
+    setOtpSent(false);
+    setOtp("");
+    setError("");
+    resetResendCooldown();
+  };
 
   // Send OTP
   const handleSendOtp = async () => {
     try {
 
-      
+
       setLoading(true);
       setError("");
 
@@ -457,7 +457,7 @@ const handleChangeIdentifier = () => {
 
       showToast(
         response.data.message || "Login successful!",
-        "success"
+        response.data.accountRecovered ? "info" : "success"
       );
 
       const params = new URLSearchParams(window.location.search);
@@ -571,7 +571,7 @@ const handleChangeIdentifier = () => {
       `&redirect_uri=${redirectUri}` +
       `&scope=${scope}`;
   };
-  
+
   return (
     <main
       className="main content-page"
@@ -939,47 +939,47 @@ const handleChangeIdentifier = () => {
                   Enter OTP
                 </label>
                 <div
-  style={{
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-    marginTop: -2,
-    marginBottom: 12,
-  }}
->
-  <p
-    style={{
-      fontSize: 13,
-      color: "var(--color-text-tertiary)",
-      margin: 0,
-    }}
-  >
-    Sent to{" "}
-    <strong>
-      {isMobile
-        ? `${countryCode} ${input}`
-        : input}
-    </strong>
-  </p>
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    marginTop: -2,
+                    marginBottom: 12,
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: 13,
+                      color: "var(--color-text-tertiary)",
+                      margin: 0,
+                    }}
+                  >
+                    Sent to{" "}
+                    <strong>
+                      {isMobile
+                        ? `${countryCode} ${input}`
+                        : input}
+                    </strong>
+                  </p>
 
-  <button
-    type="button"
-    onClick={handleChangeIdentifier}
-    style={{
-      border: "none",
-      background: "transparent",
-      padding: 0,
-      fontSize: 13,
-      fontWeight: 600,
-      color: "#ff9900",
-      cursor: "pointer",
-      whiteSpace: "nowrap",
-    }}
-  >
-    {isMobile ? "Change number" : "Change email"}
-  </button>
-</div>
+                  <button
+                    type="button"
+                    onClick={handleChangeIdentifier}
+                    style={{
+                      border: "none",
+                      background: "transparent",
+                      padding: 0,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: "#ff9900",
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {isMobile ? "Change number" : "Change email"}
+                  </button>
+                </div>
 
                 <OtpDigitsInput value={otp} onChange={setOtp} autoFocus />
               </div>

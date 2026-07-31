@@ -13,10 +13,35 @@ export const saveJobDetails = async (payload) => {
   formData.append("TradeCategory", payload.TradeCategory ?? "");
   formData.append("Role", payload.Role ?? "");
   formData.append("IndustryType", payload.IndustryType ?? "");
+  formData.append("IsClientHiring", String(payload.IsClientHiring ?? false));
+  formData.append("ClientName", payload.ClientName ?? "");
+  formData.append("ShowClientName", String(payload.ShowClientName ?? false));
   formData.append("JobType", payload.JobType ?? "");
-  formData.append("EmploymentType", payload.EmploymentType ?? "Full_Time");
+  formData.append("EmploymentType", payload.EmploymentType ?? "Full Time");
+  if (
+    payload.EmploymentType === "Contract" &&
+    payload.ContractPeriod !== null &&
+    payload.ContractPeriod !== undefined &&
+    payload.ContractPeriod !== ""
+  ) {
+    formData.append("ContractPeriod", payload.ContractPeriod);
+  }
   formData.append("EmploymentMode", payload.EmploymentMode ?? "Onsite");
   formData.append("Department", payload.Department ?? "");
+  formData.append(
+    "IsClientHiring",
+    String(payload.IsClientHiring ?? false)
+  );
+
+  formData.append(
+    "ClientName",
+    payload.ClientName ?? ""
+  );
+
+  formData.append(
+    "ShowClientName",
+    String(payload.ShowClientName ?? false)
+  );
   formData.append("JobDescription", payload.JobDescription ?? "");
 
   if (payload.ExperienceMinYears !== null && payload.ExperienceMinYears !== undefined && payload.ExperienceMinYears !== "") {
@@ -32,8 +57,8 @@ export const saveJobDetails = async (payload) => {
     formData.append("PaidOvertime", String(payload.PaidOvertime));
   }
   if (payload.IsOilField !== undefined && payload.IsOilField !== null) {
-  formData.append("IsOilField", String(payload.IsOilField));
-}
+    formData.append("IsOilField", String(payload.IsOilField));
+  }
 
   // array field
   (payload.KeyResponsibilities ?? []).forEach((r) =>
@@ -87,7 +112,6 @@ export const saveSkills = async (jobId, payload) => {
 
   // scalars
   formData.append("AdditionalJobDescription", payload.AdditionalJobDescription ?? "");
-  formData.append("LicenceDocsRequired", payload.LicenceDocsRequired ?? "");
   formData.append("LanguageRequired", payload.LanguageRequired ?? "");
 
   const response = await api.patch(
@@ -129,6 +153,11 @@ export const saveEligibility = async (jobId, payload) => {
     formData.append("PassportValidityMonths", Number(payload.PassportValidityMonths));
   }
 
+  formData.append("LicenceDocsRequired", payload.LicenceDocsRequired ?? "");
+  formData.append(
+    "WorkingDocsRequired",
+    payload.WorkingDocsRequired ?? ""
+  );
   const response = await api.patch(
     `/api/recruiter/jobs/${jobId}/step4-eligibility`,
     formData

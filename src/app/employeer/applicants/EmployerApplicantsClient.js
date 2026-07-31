@@ -13,6 +13,9 @@ import {
   shortlistApplicant,
   rejectApplicant,
   hireApplicant,
+  tableInterviewApplicant,
+  cvSelectionApplicant,
+  locationInterviewApplicant,
   getScreeningAnswers,
   addNote,
   getNotes,
@@ -39,6 +42,9 @@ const STATUS_BADGE = {
   Applied: { label: "Applied", bg: "#EAF4FF", color: "#1D4ED8" },
   InReview: { label: "In Review", bg: "#FEF3C7", color: "#92400E" },
   Shortlisted: { label: "Shortlisted", bg: "#DCFCE7", color: "#166534" },
+  CvSelection: { label: "CV Selection", bg: "#E0E7FF", color: "#3730A3" },
+  TableInterview: { label: "Table Interview", bg: "#FCE7F3", color: "#9D174D" },
+  LocationInterview: { label: "Location Interview", bg: "#DBEAFE", color: "#1E40AF" },
   Hired: { label: "Hired", bg: "#CCFBF1", color: "#0F766E" },
   Rejected: { label: "Rejected", bg: "#FEE2E2", color: "#B91C1C" },
   Withdrawn: { label: "Withdrawn", bg: "#E5E7EB", color: "#374151" },
@@ -47,6 +53,9 @@ const STATUS_BADGE = {
 const STATUS_OPTIONS = [
   { value: "InReview", label: "In Review" },
   { value: "Shortlisted", label: "Shortlisted" },
+  { value: "CvSelection", label: "CV Selection" },
+  { value: "TableInterview", label: "Table Interview" },
+  { value: "LocationInterview", label: "Location Interview" },
   { value: "Hired", label: "Hired" },
   { value: "Rejected", label: "Rejected" },
 ];
@@ -292,6 +301,9 @@ const EmployerApplicantsClient = () => {
           Applied: 0,
           InReview: 0,
           Shortlisted: 0,
+          CvSelection: 0,
+          TableInterview: 0,
+          LocationInterview: 0,
           Hired: 0,
           Rejected: 0,
           Withdrawn: 0,
@@ -373,6 +385,21 @@ const EmployerApplicantsClient = () => {
         count: counts.shortlisted ?? counts.Shortlisted,
         value: "Shortlisted",
       },
+      {
+        label: "CV Selection",
+        count: counts.cvSelection ?? counts.CvSelection,
+        value: "CvSelection",
+      },
+      {
+        label: "Table Interview",
+        count: counts.tableInterview ?? counts.TableInterview,
+        value: "TableInterview",
+      },
+      {
+        label: "Location Interview",
+        count: counts.locationInterview ?? counts.LocationInterview,
+        value: "LocationInterview",
+      },
       { label: "Hired", count: counts.hired ?? counts.Hired, value: "Hired" },
       {
         label: "Rejected",
@@ -396,6 +423,12 @@ const EmployerApplicantsClient = () => {
         await moveToReview(statusPopup.applicationId, statusNote.trim());
       else if (selectedStatus === "Shortlisted")
         await shortlistApplicant(statusPopup.applicationId, statusNote.trim());
+      else if (selectedStatus === "CvSelection")
+        await cvSelectionApplicant(statusPopup.applicationId, statusNote.trim());
+      else if (selectedStatus === "TableInterview")
+        await tableInterviewApplicant(statusPopup.applicationId, statusNote.trim());
+      else if (selectedStatus === "LocationInterview")
+        await locationInterviewApplicant(statusPopup.applicationId, statusNote.trim());
       else if (selectedStatus === "Rejected")
         await rejectApplicant(
           statusPopup.applicationId,

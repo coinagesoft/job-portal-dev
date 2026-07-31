@@ -1,15 +1,38 @@
-
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { useSelector } from "react-redux";
-import { EMPLOYER_HEADER_TABS } from "@/constants/panelConfig";
+import {
+  EMPLOYER_HEADER_TABS,
+  ROUTE_PERMISSION_RULES,
+  HR_MANAGER_ROLE,
+} from "@/constants/panelConfig";
 import styles from "./EmployerSectionSidebar.module.css";
 
 const isPathActive = (pathname, href) => {
   if (!pathname || !href) return false;
   return pathname === href || pathname.startsWith(`${href}/`);
+};
+
+// Same rule matching AuthRouteGuard uses to decide whether a sub-user gets
+// redirected off a page — reused here so a restricted page's link never
+// even shows up in the sidebar for a sub-user who can't open it anyway
+// (e.g. Buy Credits / Invoices, which are owner-only billing pages).
+const isLinkVisibleToUser = (href, user) => {
+  const isSubUser = user?.isSubUser === true;
+  if (!isSubUser) return true;
+
+  const rule = ROUTE_PERMISSION_RULES.find(
+    (r) => href === r.prefix || href.startsWith(`${r.prefix}/`)
+  );
+  if (!rule) return true;
+
+  if (rule.ownerOnly) return false;
+  if (rule.hrManagerViewOnly) return user?.subUserRole === HR_MANAGER_ROLE;
+  if (rule.permission) return user?.[rule.permission] !== false;
+
+  return true;
 };
 
 const TAB_ICONS = {
@@ -39,7 +62,8 @@ const TAB_ICONS = {
 
 const EmployerSectionSidebar = () => {
   const pathname = usePathname();
-  const role = useSelector((state) => state.auth.user?.role);
+  const user = useSelector((state) => state.auth.user);
+  const role = user?.role;
   const isCvSearchOrShortlistRoute =
     isPathActive(pathname, "/employeer/cv-search") ||
     isPathActive(pathname, "/employeer/cvsearch") ||
@@ -65,6 +89,10 @@ const EmployerSectionSidebar = () => {
 
   const tabIcons = TAB_ICONS[activeTab.key] || {};
 
+  const visibleLinks = activeTab.links.filter((link) =>
+    isLinkVisibleToUser(link.href, user)
+  );
+
   return (
     <aside className={styles.sidebarShell} aria-label="Employer section links">
       <div className={styles.sidebarCard}>
@@ -72,7 +100,7 @@ const EmployerSectionSidebar = () => {
         <h5 className={styles.sidebarTitle}>{activeTab.label}</h5>
         <p className={styles.sidebarSubTitle}>Subsections</p>
         <ul className={styles.sidebarList}>
-          {activeTab.links.map((link) => {
+          {visibleLinks.map((link) => {
             const isActive = isPathActive(pathname, link.href);
             const icon = tabIcons[link.label];
             return (
