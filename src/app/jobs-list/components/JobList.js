@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { getAllJobs } from '@/services/candidate/allJobsService';
 import { getCandidateId } from '@/utils/authHelper';
+import { getProfileSummary } from '@/services/candidate/profileSummaryService';
 import JobCardList from './JobCardList';
 import ApplyJobModal from '@/app/Homepage/components/ApplyJobModal';
 import Pagination from './Pagination';
@@ -26,6 +27,10 @@ const JobList = ({ filters = {} }) => {
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [activeJob, setActiveJob] = useState(null);
   const [appliedJobIds, setAppliedJobIds] = useState(() => new Set());
+  // Candidate's own trade category / preferred role — drives the "your
+  // trade first" priority ordering below, independent of sortBy/filters.
+  const [candidateTrade, setCandidateTrade] = useState(null);
+  const [candidateRole, setCandidateRole] = useState(null);
 
   const requestIdRef = useRef(0);
 
@@ -81,6 +86,21 @@ const JobList = ({ filters = {} }) => {
       loadAppliedJobs();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const loadCandidateTradeRole = async () => {
+      if (!getCandidateId()) return;
+      try {
+        const response = await getProfileSummary();
+        const data = response?.data?.data;
+        setCandidateTrade(data?.primaryTrade || data?.role || null);
+        setCandidateRole(data?.role || null);
+      } catch (error) {
+        console.log("candidate trade/role load skipped", error?.message || error);
+      }
+    };
+    loadCandidateTradeRole();
   }, []);
 
   const openApplyModal = async (job) => {
@@ -267,6 +287,22 @@ const JobList = ({ filters = {} }) => {
     return Number(matchScore) || 0;
   };
 
+  // Candidate's trade category always wins first: every job in the
+  // candidate's own trade (role-matches ranked above trade-only matches)
+  // comes before any other trade — regardless of which Sort option or
+  // filters are active. Works with an empty filters object too, so the
+  // default (unfiltered) feed already reflects this.
+  const getTradeMatchTier = (job) => {
+    if (!candidateTrade) return 0;
+    const jobTrade = normalizeString(job.tradeCategory);
+    const jobRole = normalizeString(job.role || job.jobTitle);
+    const tradeMatches = jobTrade === normalizeString(candidateTrade);
+    if (!tradeMatches) return 0;
+    const roleMatches =
+      !!candidateRole && jobRole === normalizeString(candidateRole);
+    return roleMatches ? 2 : 1;
+  };
+
   // All filtering + sorting happens here, in memory, against the single
   // `allJobs` array fetched once above — no API round-trip per filter change.
   const sortedFilteredJobs = useMemo(() => {
@@ -289,6 +325,9 @@ const JobList = ({ filters = {} }) => {
     );
 
     return [...filtered].sort((a, b) => {
+      const tradeDiff = getTradeMatchTier(b) - getTradeMatchTier(a);
+      if (tradeDiff !== 0) return tradeDiff;
+
       if (sortBy === 'Newest Post') return getJobTime(b) - getJobTime(a);
       if (sortBy === 'Oldest Post') return getJobTime(a) - getJobTime(b);
       if (sortBy === 'Best Match') {
@@ -299,7 +338,7 @@ const JobList = ({ filters = {} }) => {
       return 0;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allJobs, filters, sortBy]);
+  }, [allJobs, filters, sortBy, candidateTrade, candidateRole]);
 
   const totalFilteredCount = sortedFilteredJobs.length;
   const totalPages = Math.max(1, Math.ceil(totalFilteredCount / showPerPage));
@@ -412,13 +451,13 @@ const JobList = ({ filters = {} }) => {
         </div>
       )}
       {totalPages > 1 ? (
-  <Pagination
-    currentPage={currentPage}
-    totalPages={totalPages}
-    onPageChange={setCurrentPage}
-    loading={loading}
-  />
-) : null}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          loading={loading}
+        />
+      ) : null}
       <ApplyJobModal
         showModal={showApplyModal}
         setShowModal={(v) => { setShowApplyModal(v); if (!v) loadAppliedJobs(); }}
