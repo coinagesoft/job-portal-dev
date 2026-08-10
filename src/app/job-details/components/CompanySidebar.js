@@ -41,37 +41,37 @@ const CompanySidebar = ({ job = {} }) => {
     }
   }, [job.employerId]);
 
+  // Similar jobs now come straight from the job-details API response
+  // (`job.similarJobs`), which the backend already matches by job-title
+  // keywords + trade category/role. No client-side filtering here — if
+  // the backend found nothing genuinely similar, the list is empty and
+  // the section below hides itself instead of showing random jobs.
   useEffect(() => {
-    const loadData = async () => {
+    setSimilarJobs(Array.isArray(job.similarJobs) ? job.similarJobs : []);
+  }, [job.similarJobs, job.jobId]);
+
+  // Only used as a fallback to resolve companyId/employerId when the
+  // job-details response doesn't already include one — not for similar jobs.
+  useEffect(() => {
+    if (job.employerId) return;
+
+    const loadCompanyFallback = async () => {
       try {
         const response = await getAllJobs();
         const jobs = response.data || [];
-
-        // Find the current job
-        const currentJob = jobs.find(
-          (item) => item.jobId === job.jobId
-        );
+        const currentJob = jobs.find((item) => item.jobId === job.jobId);
 
         if (currentJob) {
           setCompanyId(currentJob.companyId);
-          if (!job.employerId) {
-            setEmployerId(currentJob.employerId || null);
-          }
+          setEmployerId(currentJob.employerId || null);
         }
-
-        // Similar jobs
-        const filteredJobs = jobs
-          .filter((item) => item.jobId !== job.jobId)
-          .slice(0, 5);
-
-        setSimilarJobs(filteredJobs);
       } catch (error) {
         console.error(error);
       }
     };
 
-    loadData();
-  }, [job.jobId]);
+    loadCompanyFallback();
+  }, [job.jobId, job.employerId]);
 
   return (
     <>
@@ -214,104 +214,106 @@ const CompanySidebar = ({ job = {} }) => {
       </div>
 
       {/* ── Similar Jobs ──────────────────────────────────── */}
-      <div className="sidebar-border employer-cv-surface-card">
-        <h6 className="f-18" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <i className="fa-solid fa-clone" style={{ color: 'var(--color-brand-1)', fontSize: '15px' }}></i>
-          Similar Jobs
-        </h6>
-        <div className="sidebar-list-job">
-          <ul>
-            {similarJobs.map((item) => (
-              <li key={item.jobId}>
-                <div
-                  className="card-list-4 hover-up"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '12px',
-                  }}
-                >
+      {similarJobs.length > 0 && (
+        <div className="sidebar-border employer-cv-surface-card">
+          <h6 className="f-18" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <i className="fa-solid fa-clone" style={{ color: 'var(--color-brand-1)', fontSize: '15px' }}></i>
+            Similar Jobs
+          </h6>
+          <div className="sidebar-list-job">
+            <ul>
+              {similarJobs.map((item) => (
+                <li key={item.jobId}>
                   <div
-                    className="image"
+                    className="card-list-4 hover-up"
                     style={{
-                      flex: '0 0 auto',
-                      width: '48px',
-                      height: '48px',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '12px',
                     }}
                   >
-                    <Link href={`/job-details?jobId=${item.jobId}`}>
-                      <img
-                        src={
-                          item.companyLogoUrl ||
-                          "/assets/imgs/page/homepage1/img1.png"
-                        }
-                        alt="jobBox"
-                        style={{
-                          width: '48px',
-                          height: '48px',
-                          objectFit: 'cover',
-                          borderRadius: '8px',
-                          border: '1px solid rgba(18, 35, 89, 0.08)',
-                        }}
-                      />
-                    </Link>
-                  </div>
-
-                  <div className="info-text" style={{ flex: '1 1 auto', minWidth: 0 }}>
-                    {/* Job Title + Time Ago */}
                     <div
+                      className="image"
                       style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        gap: '10px',
+                        flex: '0 0 auto',
+                        width: '48px',
+                        height: '48px',
                       }}
                     >
-                      <h5
-                        className="font-md font-bold color-brand-1"
+                      <Link href={`/job-details?jobId=${item.jobId}`}>
+                        <img
+                          src={
+                            item.companyLogoUrl ||
+                            "/assets/imgs/page/homepage1/img1.png"
+                          }
+                          alt="jobBox"
+                          style={{
+                            width: '48px',
+                            height: '48px',
+                            objectFit: 'cover',
+                            borderRadius: '8px',
+                            border: '1px solid rgba(18, 35, 89, 0.08)',
+                          }}
+                        />
+                      </Link>
+                    </div>
+
+                    <div className="info-text" style={{ flex: '1 1 auto', minWidth: 0 }}>
+                      {/* Job Title + Time Ago */}
+                      <div
                         style={{
-                          marginBottom: 0,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          flex: 1,
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          gap: '10px',
                         }}
                       >
-                        <Link href={`/job-details?jobId=${item.jobId}`}>
-                          {item.jobTitle}
-                        </Link>
-                      </h5>
+                        <h5
+                          className="font-md font-bold color-brand-1"
+                          style={{
+                            marginBottom: 0,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            flex: 1,
+                          }}
+                        >
+                          <Link href={`/job-details?jobId=${item.jobId}`}>
+                            {item.jobTitle}
+                          </Link>
+                        </h5>
 
-                      <span
-                        className="card-time"
-                        style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
-                      >
-                        {item.timeAgo || 'Recently'}
-                      </span>
-                    </div>
-
-                    {/* Location */}
-                    <div className="mt-5">
-                      <span className="card-briefcase">
-                        {item.companyLocation}
-                      </span>
-                    </div>
-
-                    {/* Salary */}
-                    {!(item.salaryVisibility === "Hide Salary" || item.salaryVisibility === "Hide_Salary" || item.salaryDisplayOption === "Hide Salary" || item.salaryDisplayOption === "Hide_Salary") && (
-                      <div className="mt-5">
-                        <h6 className="card-price mb-0">
-                          {item.salaryRange || 'Confidential'}
-                        </h6>
+                        <span
+                          className="card-time"
+                          style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+                        >
+                          {item.timeAgo || 'Recently'}
+                        </span>
                       </div>
-                    )}
+
+                      {/* Location */}
+                      <div className="mt-5">
+                        <span className="card-briefcase">
+                          {item.companyLocation}
+                        </span>
+                      </div>
+
+                      {/* Salary */}
+                      {!(item.salaryVisibility === "Hide Salary" || item.salaryVisibility === "Hide_Salary" || item.salaryDisplayOption === "Hide Salary" || item.salaryDisplayOption === "Hide_Salary") && (
+                        <div className="mt-5">
+                          <h6 className="card-price mb-0">
+                            {item.salaryRange || 'Confidential'}
+                          </h6>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </li>
-            ))}
-          </ul>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
-      </div>
+      )}
     </>
   );
 };
