@@ -66,18 +66,6 @@ const normalizeReply = (reply) => {
 };
 
 const normalizeTicket = (ticket, audience) => {
-  const initialMessage = ticket.description
-    ? [
-      {
-        id: `${ticket.ticketId}-description`,
-        sender: audience,
-        senderLabel: "You",
-        createdOn: ticket.createdAt,
-        text: ticket.description,
-      },
-    ]
-    : [];
-
   return {
     id: ticket.ticketId,
     audience,
@@ -87,12 +75,9 @@ const normalizeTicket = (ticket, audience) => {
     status: ticket.status || "Open",
     createdOn: ticket.createdAt,
     updatedOn: ticket.resolvedAt || ticket.createdAt,
-    messages: [
-      ...initialMessage,
-      ...(Array.isArray(ticket.replies)
-        ? ticket.replies.map(normalizeReply)
-        : []),
-    ],
+    messages: Array.isArray(ticket.replies)
+      ? ticket.replies.map(normalizeReply)
+      : [],
   };
 };
 
