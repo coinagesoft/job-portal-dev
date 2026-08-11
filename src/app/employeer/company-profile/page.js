@@ -17,6 +17,10 @@ import {
   reactivateSubUser,
   resendInvite,
 } from "@/services/recruiter/recruiterSubUserService";
+import {
+  getVerification,
+  uploadDocument,
+} from "@/services/recruiter/recruiterVerificationService";
 import styles from "./company-profile.module.css";
 
 // Same option set used in the employer registration wizard (src/app/register/page.js)
@@ -126,6 +130,36 @@ const getTimeAgo = (dateString) => {
   if (diffInHours < 1) return "Just now";
   if (diffInHours < 24) return `${diffInHours} hour${diffInHours === 1 ? "" : "s"} ago`;
   return `${diffInDays} day${diffInDays === 1 ? "" : "s"} ago`;
+};
+
+const formatDate = (value) => {
+  if (!value) return "—";
+  try {
+    return new Date(value).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  } catch {
+    return "—";
+  }
+};
+
+const prettyDocName = (type) => {
+  switch (type) {
+    case "GST":
+      return "GST Certificate";
+    case "PAN":
+      return "PAN Card";
+    case "POE":
+      return "POE Licence";
+    case "RPSL":
+      return "RPSL Licence";
+    case "BUSINESS_REGISTRATION":
+      return "Business Registration";
+    default:
+      return type;
+  }
 };
 
 const formatSalary = (job) => {
@@ -450,6 +484,199 @@ const SectionCard = ({
     </div>
   );
 };
+
+const RequiredDocumentsSection = ({
+  documents,
+  loading,
+  error,
+  onUpload,
+  uploading,
+}) => {
+  if (loading) {
+    return (
+      <div style={{ marginTop: "24px", color: "#66789c", fontSize: "14px" }}>
+        Loading required documents…
+      </div>
+    );
+  }
+
+  const compulsoryTypes = ["GST", "PAN", "BUSINESS_REGISTRATION"];
+
+  const requiredDocs = compulsoryTypes.map((type) => {
+    const existing = (documents || []).find((d) => d.documentType === type);
+    return (
+      existing || {
+        documentType: type,
+        status: "Not Uploaded",
+        uploadedAt: null,
+        fileUrl: null,
+      }
+    );
+  });
+
+  return (
+    <>
+      <h4
+        className="mt-30"
+        style={{ color: "#122359", fontWeight: 700, marginBottom: "20px" }}
+      >
+        Required Documents
+      </h4>
+      {error && (
+        <div
+          style={{
+            background: "#fef2f2",
+            border: "1px solid #fca5a5",
+            color: "#b91c1c",
+            borderRadius: "14px",
+            padding: "14px 18px",
+            marginBottom: "20px",
+            fontSize: "13px",
+            fontWeight: 600,
+          }}
+        >
+          {error}
+        </div>
+      )}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "14px",
+          marginBottom: "28px",
+        }}
+      >
+        {requiredDocs.map((doc) => {
+          const positive = ["Approved", "Uploaded", "Available", "Verified"].includes(
+            doc.status
+          );
+          const hasFile = !!doc.fileUrl;
+
+          return (
+            <div
+              key={doc.documentType}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: "14px",
+                padding: "18px 22px",
+                borderRadius: "18px",
+                border: "1px solid rgba(18,35,89,0.08)",
+                background: "#ffffff",
+                boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
+                transition: "all .35s ease",
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    fontWeight: 700,
+                    color: "#122359",
+                    marginBottom: "4px",
+                  }}
+                >
+                  {prettyDocName(doc.documentType)}
+                  <span
+                    style={{
+                      marginLeft: "8px",
+                      fontSize: "9px",
+                      color: "#b91c1c",
+                      background: "#fef2f2",
+                      border: "1px solid #fca5a5",
+                      padding: "2px 6px",
+                      borderRadius: "6px",
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    Required
+                  </span>
+                </div>
+                <div style={{ fontSize: "13px", color: "#66789c" }}>
+                  {doc.uploadedAt
+                    ? `Updated: ${formatDate(doc.uploadedAt)}`
+                    : "Not uploaded yet"}
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                }}
+              >
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    padding: "6px 12px",
+                    borderRadius: "999px",
+                    background: positive ? "#ecfdf3" : "#fff7ea",
+                    color: positive ? "#0BAB7C" : "#ff9900",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                  }}
+                >
+                  {doc.status || "Not Uploaded"}
+                </span>
+
+                {hasFile ? (
+                  <button
+                    className="btn btn-border btn-sm"
+                    style={{
+                      borderRadius: "10px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      padding: "8px 14px",
+                    }}
+                    type="button"
+                    onClick={() => {
+                      if (doc.fileUrl) {
+                        window.open(doc.fileUrl, "_blank", "noopener,noreferrer");
+                      }
+                    }}
+                  >
+                    <i
+                      className="fi fi-rr-eye"
+                      style={{ marginRight: "5px" }}
+                    />
+                    View
+                  </button>
+                ) : (
+                  <button
+                    className="btn btn-default btn-sm"
+                    style={{
+                      borderRadius: "10px",
+                      fontWeight: 700,
+                      cursor: uploading ? "wait" : "pointer",
+                      background: "#ff9900",
+                      borderColor: "#ff9900",
+                      color: "#ffffff",
+                      padding: "8px 14px",
+                    }}
+                    type="button"
+                    disabled={uploading}
+                    onClick={() => onUpload(doc.documentType)}
+                  >
+                    <i
+                      className="fi fi-rr-upload"
+                      style={{ marginRight: "5px" }}
+                    />
+                    {uploading ? "Uploading…" : "Upload"}
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+};
+
 export default function EmployerCompanyProfilePage() {
   const showToast = useToast();
   const [activeTab, setActiveTab] = useState("about");
@@ -480,10 +707,19 @@ export default function EmployerCompanyProfilePage() {
   const [people, setPeople] = useState([]);
   const [peopleLoading, setPeopleLoading] = useState(true);
 
+  // Verification documents
+  const [documents, setDocuments] = useState([]);
+  const [verificationLoading, setVerificationLoading] = useState(true);
+  const [verificationError, setVerificationError] = useState(null);
+  const [uploadType, setUploadType] = useState("POE");
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+  const fileInputRef = useRef(null);
+
   useEffect(() => {
     loadCompanyProfile();
     loadJobs();
     loadPeople();
+    loadVerification();
   }, []);
 
   // Combine the registered-address fields above into one display string,
@@ -581,6 +817,77 @@ export default function EmployerCompanyProfilePage() {
         error?.response?.data?.message || "Unable to update team member",
         "error",
       );
+    }
+  };
+
+  const loadVerification = async () => {
+    try {
+      setVerificationLoading(true);
+      setVerificationError(null);
+      const data = await getVerification();
+      setDocuments(data?.documents ?? []);
+    } catch (err) {
+      console.error("getVerification error:", err);
+      setVerificationError("Could not load verification details.");
+    } finally {
+      setVerificationLoading(false);
+    }
+  };
+
+  const handleDirectUpload = (docType) => {
+    setUploadType(docType);
+    setVerificationError(null);
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelected = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Basic client-side guard (max 5 MB, pdf/jpg/png)
+    const maxBytes = 5 * 1024 * 1024;
+    const okTypes = ["application/pdf", "image/jpeg", "image/png"];
+    if (file.size > maxBytes) {
+      showToast("File exceeds 5 MB limit.", "error");
+      e.target.value = "";
+      return;
+    }
+    if (!okTypes.includes(file.type)) {
+      showToast("Only PDF, JPG, or PNG allowed.", "error");
+      e.target.value = "";
+      return;
+    }
+
+    try {
+      setUploadingDoc(true);
+      await uploadDocument(uploadType, file);
+      showToast("Document uploaded successfully.", "success");
+
+      // Update documents locally immediately to improve responsiveness
+      setDocuments((prev) => {
+        const index = prev.findIndex((doc) => doc.documentType === uploadType);
+        const updatedDoc = {
+          documentType: uploadType,
+          status: "Uploaded",
+          uploadedAt: new Date().toISOString(),
+          fileUrl: null,
+        };
+        if (index > -1) {
+          const next = [...prev];
+          next[index] = { ...next[index], ...updatedDoc };
+          return next;
+        } else {
+          return [...prev, updatedDoc];
+        }
+      });
+
+      await loadVerification();
+    } catch (err) {
+      console.error("uploadDocument error:", err);
+      showToast("Upload failed. Please try again.", "error");
+    } finally {
+      setUploadingDoc(false);
+      e.target.value = "";
     }
   };
 
@@ -1604,6 +1911,14 @@ export default function EmployerCompanyProfilePage() {
                     rows={verificationRows}
                     company={company}
                   />
+
+                  <RequiredDocumentsSection
+                    documents={documents}
+                    loading={verificationLoading}
+                    error={verificationError}
+                    onUpload={handleDirectUpload}
+                    uploading={uploadingDoc}
+                  />
                 </div>
               )}
 
@@ -2110,6 +2425,13 @@ export default function EmployerCompanyProfilePage() {
           </div>
         </div>
       </section>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,.jpg,.jpeg,.png"
+        style={{ display: "none" }}
+        onChange={handleFileSelected}
+      />
     </main>
     </SubUserViewOnlyGuard>
   );
