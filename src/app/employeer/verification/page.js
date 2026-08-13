@@ -22,6 +22,7 @@ const UPLOADABLE_TYPES = [
   { value: "BUSINESS_REGISTRATION", label: "Business Registration" },
   { value: "GST", label: "GST Certificate" },
   { value: "PAN", label: "PAN Card" },
+  { value: "OTHER", label: "Other" },
 ];
 
 /* Statuses the backend treats as "positive/done" */
@@ -31,6 +32,17 @@ const COMPULSORY_DOCS = [
   { docType: "GST Registration Certificate", uploadType: "GST" },
   { docType: "Trade License", uploadType: "BUSINESS_REGISTRATION" },
   { docType: "PAN Card", uploadType: "PAN" },
+];
+
+const STATIC_REQUESTED_DOCS = [
+  {
+    documentName: "Chartered Accountant Certificate",
+    description: "Please upload the CA certificate verifying your company turnover.",
+  },
+  {
+    documentName: "Company Utility Bill",
+    description: "Upload a recent utility bill displaying the registered company address.",
+  }
 ];
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
@@ -77,10 +89,19 @@ const prettyDocName = (type) => {
 const EmployerVerificationPage = () => {
   const [badges, setBadges] = useState([]);
   const [documents, setDocuments] = useState([]);
+  const [requestedDocuments, setRequestedDocuments] = useState(
+    STATIC_REQUESTED_DOCS.map((item) => ({
+      ...item,
+      status: "Not Uploaded",
+      fileUrl: null,
+      uploadedAt: null,
+    }))
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const [uploadType, setUploadType] = useState("POE");
+  const [customDocName, setCustomDocName] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState(null);
   const fileInputRef = useRef(null);
@@ -92,7 +113,24 @@ const EmployerVerificationPage = () => {
       setError(null);
       const data = await getVerification();
       setBadges(data?.badges ?? []);
-      setDocuments(data?.documents ?? []);
+      const apiDocs = data?.documents ?? [];
+      setDocuments(apiDocs);
+
+      // Merge apiDocs status with static requested documents
+      const mergedRequested = STATIC_REQUESTED_DOCS.map((item) => {
+        const uploadedDoc = apiDocs.find(
+          (d) =>
+            d.documentType === item.documentName ||
+            d.documentType === item.documentName.toUpperCase()
+        );
+        return {
+          ...item,
+          status: uploadedDoc ? uploadedDoc.status : "Not Uploaded",
+          fileUrl: uploadedDoc ? uploadedDoc.fileUrl : null,
+          uploadedAt: uploadedDoc ? uploadedDoc.uploadedAt : null,
+        };
+      });
+      setRequestedDocuments(mergedRequested);
     } catch (err) {
       console.error("getVerification error:", err);
       setError("Could not load verification details. Please try again.");
@@ -138,21 +176,24 @@ const EmployerVerificationPage = () => {
     try {
       setUploading(true);
       setUploadMsg(null);
-      await uploadDocument(uploadType, file);
+      
+      const finalUploadType = uploadType === "OTHER" ? (customDocName.trim() || "Other Document") : uploadType;
+      
+      await uploadDocument(finalUploadType, file);
       setUploadMsg({ type: "success", text: "Document uploaded successfully." });
 
       // Reflect the upload immediately rather than waiting on the refetch
       setDocuments((prev) => {
         const index = prev.findIndex((doc) =>
-          doc.documentType === uploadType ||
-          (uploadType === "GST" && doc.documentType === "GST Registration Certificate") ||
-          (uploadType === "BUSINESS_REGISTRATION" && doc.documentType === "Trade License") ||
-          (uploadType === "PAN" && doc.documentType === "PAN Card")
+          doc.documentType === finalUploadType ||
+          (finalUploadType === "GST" && doc.documentType === "GST Registration Certificate") ||
+          (finalUploadType === "BUSINESS_REGISTRATION" && doc.documentType === "Trade License") ||
+          (finalUploadType === "PAN" && doc.documentType === "PAN Card")
         );
         const targetDocType = index > -1 ? prev[index].documentType : (
-          uploadType === "GST" ? "GST Registration Certificate" :
-          uploadType === "BUSINESS_REGISTRATION" ? "Trade License" :
-          uploadType === "PAN" ? "PAN Card" : uploadType
+          finalUploadType === "GST" ? "GST Registration Certificate" :
+          finalUploadType === "BUSINESS_REGISTRATION" ? "Trade License" :
+          finalUploadType === "PAN" ? "PAN Card" : finalUploadType
         );
         const updatedDoc = {
           documentType: targetDocType,
@@ -168,6 +209,23 @@ const EmployerVerificationPage = () => {
           return [...prev, updatedDoc];
         }
       });
+
+      setRequestedDocuments((prev) => {
+        return prev.map((doc) => {
+          if (doc.documentName === finalUploadType) {
+            return {
+              ...doc,
+              status: "Uploaded",
+              uploadedAt: new Date().toISOString(),
+            };
+          }
+          return doc;
+        });
+      });
+
+      if (uploadType === "OTHER") {
+        setCustomDocName("");
+      }
 
       await loadVerification();
     } catch (err) {
@@ -543,6 +601,154 @@ const EmployerVerificationPage = () => {
                       </div>
                     </div>
 
+                    {/* Additional Requested Documents */}
+                    {requestedDocuments.length > 0 && (
+                      <div style={{ marginBottom: "24px", marginTop: "24px" }}>
+                        <h6
+                          style={{
+                            color: "#122359",
+                            fontWeight: 700,
+                            marginBottom: "14px",
+                            fontSize: "15px",
+                          }}
+                        >
+                          Additional Requested Documents
+                        </h6>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "14px",
+                          }}
+                        >
+                          {requestedDocuments.map((doc) => {
+                            const positive = isPositive(doc.status);
+                            const hasFile = !!doc.fileUrl;
+
+                            return (
+                              <div
+                                key={doc.documentName}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  flexWrap: "wrap",
+                                  gap: "14px",
+                                  padding: "18px 22px",
+                                  borderRadius: "18px",
+                                  border: "1px solid rgba(18,35,89,0.08)",
+                                  background: "#ffffff",
+                                  transition: "all .35s ease",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.transform = "translateY(-4px)";
+                                  e.currentTarget.style.borderColor = "rgba(255,153,0,0.32)";
+                                  e.currentTarget.style.boxShadow = "0 12px 28px rgba(255,163,0,0.10)";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.transform = "translateY(0px)";
+                                  e.currentTarget.style.borderColor = "rgba(18,35,89,0.08)";
+                                  e.currentTarget.style.boxShadow = "none";
+                                }}
+                              >
+                                <div>
+                                  <div
+                                    style={{
+                                      fontWeight: 700,
+                                      color: "#122359",
+                                      marginBottom: "4px",
+                                    }}
+                                  >
+                                    {doc.documentName}
+                                  </div>
+                                  {doc.description && (
+                                    <div
+                                      style={{
+                                        fontSize: "13px",
+                                        color: "#66789c",
+                                        marginBottom: "6px",
+                                      }}
+                                    >
+                                      {doc.description}
+                                    </div>
+                                  )}
+                                  {/* <div style={{ fontSize: "12px", color: "#8c9fb8" }}>
+                                    {doc.uploadedAt
+                                      ? `Updated: ${formatDate(doc.uploadedAt)}`
+                                      : "Not uploaded yet"}
+                                  </div> */}
+                                </div>
+
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "10px",
+                                  }}
+                                >
+                                  <span
+                                    style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      padding: "6px 12px",
+                                      borderRadius: "999px",
+                                      background: positive ? "#ecfdf3" : "#fff7ea",
+                                      color: positive ? "#0BAB7C" : "#ff9900",
+                                      fontSize: "11px",
+                                      fontWeight: 700,
+                                    }}
+                                  >
+                                    {doc.status}
+                                  </span>
+
+                                  {hasFile ? (
+                                    <button
+                                      className="btn btn-border btn-sm"
+                                      style={{
+                                        borderRadius: "10px",
+                                        fontWeight: 700,
+                                        cursor: "pointer",
+                                      }}
+                                      type="button"
+                                      onClick={() => handleView(doc)}
+                                    >
+                                      <i
+                                        className="fi fi-rr-eye"
+                                        style={{ marginRight: "5px" }}
+                                      />
+                                      View
+                                    </button>
+                                  ) : (
+                                    <button
+                                      className="btn btn-default btn-sm"
+                                      style={{
+                                        borderRadius: "10px",
+                                        fontWeight: 700,
+                                        cursor: uploading ? "wait" : "pointer",
+                                        background: "#ff9900",
+                                        borderColor: "#ff9900",
+                                        color: "#ffffff",
+                                        padding: "8px 14px",
+                                      }}
+                                      type="button"
+                                      disabled={uploading}
+                                      onClick={() => handleDirectUpload(doc.documentName)}
+                                    >
+                                      <i
+                                        className="fi fi-rr-upload"
+                                        style={{ marginRight: "5px" }}
+                                      />
+                                      {uploading && uploadType === doc.documentName ? "Uploading…" : "Upload"}
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Optional/Additional Documents */}
                     {documents.filter(
                       (d) =>
@@ -648,24 +854,46 @@ const EmployerVerificationPage = () => {
                                       {doc.status}
                                     </span>
 
-                                    <button
-                                      className="btn btn-border btn-sm"
-                                      style={{
-                                        borderRadius: "10px",
-                                        fontWeight: 700,
-                                        opacity: doc.fileUrl ? 1 : 0.5,
-                                        cursor: doc.fileUrl ? "pointer" : "not-allowed",
-                                      }}
-                                      type="button"
-                                      disabled={!doc.fileUrl}
-                                      onClick={() => handleView(doc)}
-                                    >
-                                      <i
-                                        className="fi fi-rr-eye"
-                                        style={{ marginRight: "5px" }}
-                                      />
-                                      View
-                                    </button>
+                                    {doc.fileUrl ? (
+                                      <button
+                                        className="btn btn-border btn-sm"
+                                        style={{
+                                          borderRadius: "10px",
+                                          fontWeight: 700,
+                                          cursor: "pointer",
+                                        }}
+                                        type="button"
+                                        onClick={() => handleView(doc)}
+                                      >
+                                        <i
+                                          className="fi fi-rr-eye"
+                                          style={{ marginRight: "5px" }}
+                                        />
+                                        View
+                                      </button>
+                                    ) : (
+                                      <button
+                                        className="btn btn-default btn-sm"
+                                        style={{
+                                          borderRadius: "10px",
+                                          fontWeight: 700,
+                                          cursor: uploading ? "wait" : "pointer",
+                                          background: "#ff9900",
+                                          borderColor: "#ff9900",
+                                          color: "#ffffff",
+                                          padding: "8px 14px",
+                                        }}
+                                        type="button"
+                                        disabled={uploading}
+                                        onClick={() => handleDirectUpload(doc.documentType)}
+                                      >
+                                        <i
+                                          className="fi fi-rr-upload"
+                                          style={{ marginRight: "5px" }}
+                                        />
+                                        {uploading && uploadType === doc.documentType ? "Uploading…" : "Upload"}
+                                      </button>
+                                    )}
                                   </div>
                                 </div>
                               );
@@ -743,6 +971,38 @@ const EmployerVerificationPage = () => {
                     />
                   </div>
                 </div>
+
+                {/* Conditional Document Name Input */}
+                {uploadType === "OTHER" && (
+                  <div style={{ marginBottom: "18px", maxWidth: "320px" }}>
+                    <label
+                      style={{
+                        display: "block",
+                        fontSize: "13px",
+                        fontWeight: 700,
+                        color: "#122359",
+                        marginBottom: "8px",
+                      }}
+                    >
+                      Document name
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Enter document name"
+                      value={customDocName}
+                      onChange={(e) => setCustomDocName(e.target.value)}
+                      style={{
+                        borderRadius: "12px",
+                        border: "1px solid rgba(18,35,89,0.15)",
+                        padding: "10px 14px",
+                        fontWeight: 600,
+                        color: "#122359",
+                        width: "100%",
+                      }}
+                    />
+                  </div>
+                )}
 
                 {/* Hidden file input */}
                 <input
