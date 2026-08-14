@@ -152,7 +152,7 @@ const CustomDropdown = ({ options, value, onChange, placeholder, loading }) => {
   );
 };
 
-export default function HeroSection() {
+export default function HeroSection({ heroData }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -265,23 +265,47 @@ export default function HeroSection() {
   return (
     <div>
       <section className="section-box">
-        <div className="banner-hero hero-2">
+        <div 
+          className="banner-hero hero-2"
+          style={heroData?.bannerImageUrl ? { backgroundImage: `url(${heroData.bannerImageUrl})` } : {}}
+        >
           <div className="banner-inner" style={{ maxWidth: "900px" }}>
             <div className="block-banner">
               <div style={{ maxWidth: "725px", margin: "0 auto" }}>
                 <h1 className="text-42 color-white wow animate__animated animate__fadeInUp">
-                  India’s #1 <span className="color-orange">Global</span>
-                  <br className="d-none d-lg-block" />
-                  Job Portal for Skilled Workers
+                  {heroData?.headline ? (
+                    heroData.headline.split("\n").map((line, idx) => {
+                      const parts = line.split(/(global)/i);
+                      return (
+                        <React.Fragment key={idx}>
+                          {idx > 0 && <br className="d-none d-lg-block" />}
+                          {parts.map((part, pIdx) => {
+                            if (part.toLowerCase() === "global") {
+                              return <span key={pIdx} className="color-orange">{part}</span>;
+                            }
+                            return part;
+                          })}
+                        </React.Fragment>
+                      );
+                    })
+                  ) : (
+                    <>
+                      India’s #1 <span className="color-orange">Global</span>
+                      <br className="d-none d-lg-block" />
+                      Job Portal for Skilled Workers
+                    </>
+                  )}
                 </h1>
 
                 <div
                   className="font-lg font-regular color-white mt-20 wow animate__animated animate__fadeInUp"
                   data-wow-delay=".1s"
                 >
-                  Find verified opportunities across India, UAE, Saudi Arabia,
-                  Qatar, and Singapore for technicians, engineers, drivers,
-                  construction professionals, marine staff, and skilled workers.
+                  {heroData?.subheadline || (
+                    `Find verified opportunities across India, UAE, Saudi Arabia,
+                    Qatar, and Singapore for technicians, engineers, drivers,
+                    construction professionals, marine staff, and skilled workers.`
+                  )}
                 </div>
               </div>
 
@@ -315,7 +339,7 @@ export default function HeroSection() {
                   <input
                     className="form-input input-keysearch mr-10 dashboard-search-text"
                     type="text"
-                    placeholder="Role, skill, or company"
+                    placeholder={heroData?.searchPlaceholder || "Role, skill, or company"}
                     value={keyword}
                     onChange={(event) => setKeyword(event.target.value)}
                   />

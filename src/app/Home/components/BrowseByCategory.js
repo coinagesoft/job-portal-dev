@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { usePathname } from "next/navigation";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
 import Link from "next/link";
@@ -36,15 +37,11 @@ const iconMap = {
   "Other": "fa-briefcase",
 };
 
-// Normalized (lowercase, trimmed) lookup so small casing/spacing differences
-// coming from the API ("IT & technology ", " Shipping") still resolve.
 const normalizedIconMap = Object.keys(iconMap).reduce((acc, key) => {
   acc[key.trim().toLowerCase()] = iconMap[key];
   return acc;
 }, {});
 
-// Unmatched categories cycle through these instead of all collapsing to the
-// same briefcase icon, so new/unmapped industryTypes still look distinct.
 const fallbackIcons = [
   "fa-briefcase",
   "fa-layer-group",
@@ -68,53 +65,85 @@ function getCategoryIcon(name) {
   return fallbackIcons[hashString(key) % fallbackIcons.length];
 }
 
-export default function BrowseByCategory() {
+const CategoryIcon = ({ cat }) => {
+  const [hasError, setHasError] = React.useState(false);
+  if (cat.iconUrl && !hasError) {
+    return (
+      <img
+        src={cat.iconUrl}
+        alt={cat.name}
+        style={{ width: "40px", height: "40px", objectFit: "contain" }}
+        onError={() => setHasError(true)}
+      />
+    );
+  }
+  return <i className={`fa-solid ${getCategoryIcon(cat.name)}`}></i>;
+};
+
+export default function BrowseByCategory({ industriesData }) {
   const [categories, setCategories] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
+  const pathname = usePathname();
 
   React.useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await getAllJobs();
-        const jobs = response.data || [];
+    setLoading(true);
 
-        // Group and count jobs by industryType
-        const counts = {};
-        jobs.forEach((job) => {
-          const industry = job.industryType || "Other";
-          counts[industry] = (counts[industry] || 0) + 1;
-        });
+    if (industriesData && industriesData.length > 0) {
+      const categoryList = industriesData.map((ind) => ({
+        name: ind.name,
+        count: ind.jobCount || 0,
+        iconUrl: ind.iconUrl,
+        displayOrder: ind.displayOrder || 0,
+      }));
+      categoryList.sort((a, b) => a.displayOrder - b.displayOrder);
+      setCategories(categoryList);
+      setLoading(false);
+    } else {
+      const fetchCategories = async () => {
+        try {
+          // Cache-busting param so a stale browser/HTTP cache entry
+          // can't be replayed for this call.
+          const response = await getAllJobs({ _t: Date.now() });
+          const jobs = response.data || [];
 
-        // Convert counts object to array of objects
-        const categoryList = Object.keys(counts).map((industry) => ({
-          name: industry,
-          count: counts[industry],
-        }));
+          const counts = {};
+          jobs.forEach((job) => {
+            const industry = job.industryType || "Other";
+            counts[industry] = (counts[industry] || 0) + 1;
+          });
 
-        const otherCategory = categoryList.find(
-          (cat) => cat.name.trim().toLowerCase() === "other"
-        );
+          const categoryList = Object.keys(counts).map((industry) => ({
+            name: industry,
+            count: counts[industry],
+          }));
 
-        const filteredCategories = categoryList.filter(
-          (cat) => cat.name.trim().toLowerCase() !== "other"
-        );
+          const otherCategory = categoryList.find(
+            (cat) => cat.name.trim().toLowerCase() === "other"
+          );
 
-        if (otherCategory) {
-          filteredCategories.push(otherCategory);
+          const filteredCategories = categoryList.filter(
+            (cat) => cat.name.trim().toLowerCase() !== "other"
+          );
+
+          if (otherCategory) {
+            filteredCategories.push(otherCategory);
+          }
+
+          setCategories(filteredCategories);
+        } catch (error) {
+          console.error("Error loading categories:", error);
+        } finally {
+          setLoading(false);
         }
+      };
 
-        setCategories(filteredCategories);
-      } catch (error) {
-        console.error("Error loading categories:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+      fetchCategories();
+    }
+    // Re-run whenever the prop changes OR the user navigates back to
+    // this route, so a cached page segment doesn't leave stale data
+    // sitting in state.
+  }, [industriesData, pathname]);
 
-    fetchCategories();
-  }, []);
-
-  // Pair items horizontally: group by page of 10 items (5 top, 5 bottom) to fill the top row first
   const chunkedCategories = [];
   const itemsPerPage = 10;
   for (let i = 0; i < categories.length; i += itemsPerPage) {
@@ -177,8 +206,8 @@ export default function BrowseByCategory() {
                       {pair.map((cat) => (
                         <Link key={cat.name} href={`/jobs-list?industry=${encodeURIComponent(cat.name)}`}>
                           <div className="item-logo">
-                            <div className="image-left">
-                              <i className={`fa-solid ${getCategoryIcon(cat.name)}`}></i>
+                            <div className="image-left" style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                              <CategoryIcon cat={cat} />
                             </div>
 
                             <div className="text-info-right">

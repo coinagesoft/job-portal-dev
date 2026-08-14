@@ -6,7 +6,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation } from "swiper/modules";
 import { getAllJobs } from "@/services/candidate/allJobsService";
 
-export default function JobsByRole() {
+export default function JobsByRole({ rolesData }) {
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -27,19 +27,35 @@ export default function JobsByRole() {
           categoryMap[category] += 1;
         });
 
-        const activeRoles = Object.keys(categoryMap).map((catName) => {
-          return {
-            title: catName,
-            jobs: categoryMap[catName],
-            bg: "/assets/imgs/page/homepage2/img-big1.png",
-            industry: catName,
-          };
-        });
+        if (rolesData && rolesData.length > 0) {
+          const activeRoles = rolesData.map((role) => {
+            const liveJobs = categoryMap[role.name] || role.jobCount || 0;
+            return {
+              ...role,
+              title: role.name,
+              jobs: liveJobs,
+              bg: role.iconUrl || "/assets/imgs/page/homepage2/img-big1.png",
+              industry: role.name,
+            };
+          });
 
-        // Sort by number of vacancies descending
-        activeRoles.sort((a, b) => b.jobs - a.jobs);
+          // Sort by displayOrder ascending
+          activeRoles.sort((a, b) => a.displayOrder - b.displayOrder);
+          setRoles(activeRoles);
+        } else {
+          const activeRoles = Object.keys(categoryMap).map((catName) => {
+            return {
+              title: catName,
+              jobs: categoryMap[catName],
+              bg: "/assets/imgs/page/homepage2/img-big1.png",
+              industry: catName,
+            };
+          });
 
-        setRoles(activeRoles);
+          // Sort by number of vacancies descending
+          activeRoles.sort((a, b) => b.jobs - a.jobs);
+          setRoles(activeRoles);
+        }
       } catch (error) {
         console.error("Error loading jobs by role:", error);
       } finally {
@@ -47,20 +63,14 @@ export default function JobsByRole() {
       }
     };
     loadData();
-  }, []);
+  }, [rolesData]);
 
   const showNav = roles.length > 4;
   const loopMode = roles.length > 4;
-  const slidesCount = Math.min(roles.length, 4);
 
   return (
     <section className="section-box mt-50">
       <style dangerouslySetInnerHTML={{ __html: `
-        /* Same fix as JobsByLocation: the theme's default arrow positioning
-           floats 65px outside the container, which pushes it off-viewport
-           or overlaps the card image. Buttons now straddle the container
-           edge instead (half in, half out), scoped to this component's
-           swiper only. */
         .swiper-role-next::after,
         .swiper-role-prev::after {
           content: "" !important;
@@ -120,6 +130,13 @@ export default function JobsByRole() {
           opacity: 0.35 !important;
           cursor: default;
         }
+
+        /* Fixed card width so a single (or few) role card(s) never
+           stretch to fill the whole row. */
+        .swiper-group-role .swiper-slide {
+          width: 300px !important;
+          flex-shrink: 0;
+        }
       `}} />
       <div className="section-box wow animate__animated animate__fadeIn">
         <div className="container">
@@ -143,16 +160,10 @@ export default function JobsByRole() {
                 <Swiper
                   modules={[Navigation, Autoplay]}
                   spaceBetween={24}
-                  slidesPerView={slidesCount}
+                  slidesPerView="auto"
                   loop={loopMode}
                   autoplay={loopMode ? { delay: 3500, disableOnInteraction: false } : false}
                   navigation={{ nextEl: ".swiper-role-next", prevEl: ".swiper-role-prev" }}
-                  breakpoints={{
-                    320: { slidesPerView: 1 },
-                    576: { slidesPerView: Math.min(roles.length, 2) },
-                    768: { slidesPerView: Math.min(roles.length, 3) },
-                    1200: { slidesPerView: slidesCount },
-                  }}
                   className="swiper-group-role mh-none swiper"
                   style={{ paddingBottom: "70px", paddingTop: "5px" }}
                 >
