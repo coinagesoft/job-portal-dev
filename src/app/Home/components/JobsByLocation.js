@@ -58,34 +58,18 @@ export default function JobsByLocation({ locationsData }) {
               vacancies: liveData.vacancies,
               companies: liveData.companies instanceof Set ? liveData.companies.size : (liveData.companies || 0),
               badge: liveData.vacancies > 10 ? "Hot" : liveData.vacancies > 5 ? "Trending" : "",
-               img:
-        loc.imageUrl ||
-        mappedImg ||
-        `/assets/imgs/page/homepage1/location${randomImgIndex}.png`,
-      displayOrder: loc.displayOrder || 0,
+              img:
+                loc.imageUrl ||
+                mappedImg ||
+                `/assets/imgs/page/homepage1/location${randomImgIndex}.png`,
+              displayOrder: loc.displayOrder || 0,
             };
           });
 
           activeLocations.sort((a, b) => a.displayOrder - b.displayOrder);
           setLocations(activeLocations);
         } else {
-          const activeLocations = Object.values(countryMap).map((loc) => {
-            const mappedImg = COUNTRY_IMAGE_MAP[loc.country];
-            const randomImgIndex = Math.floor(Math.random() * 6) + 1;
-
-            return {
-              country: loc.country,
-              vacancies: loc.vacancies,
-              companies: loc.companies.size,
-              badge: loc.vacancies > 10 ? "Hot" : loc.vacancies > 5 ? "Trending" : "",
-              img:
-                mappedImg ||
-                `/assets/imgs/page/homepage1/location${randomImgIndex}.png`,
-            };
-          });
-
-          activeLocations.sort((a, b) => b.vacancies - a.vacancies);
-          setLocations(activeLocations);
+          setLocations([]);
         }
       } catch (error) {
         console.error("Error loading jobs for location counts:", error);
@@ -96,8 +80,19 @@ export default function JobsByLocation({ locationsData }) {
     loadData();
   }, [locationsData]);
 
-  const showNav = locations.length > 4;
+  const showNav = locations.length > 1;
   const loopMode = locations.length > 4;
+
+  const centerClasses = [];
+  if (locations.length <= 4) centerClasses.push("swiper-center-desktop");
+  if (locations.length <= 3) centerClasses.push("swiper-center-tablet");
+  if (locations.length <= 2) centerClasses.push("swiper-center-mobile");
+  if (locations.length <= 1) centerClasses.push("swiper-center-sm-mobile");
+  const centerClassName = centerClasses.join(" ");
+
+  if (!loading && locations.length === 0) {
+    return null;
+  }
 
   return (
     <section className="section-box mt-50 mb-20">
@@ -158,16 +153,35 @@ export default function JobsByLocation({ locationsData }) {
         }
         .swiper-location-next.swiper-button-disabled,
         .swiper-location-prev.swiper-button-disabled {
-          opacity: 0.35 !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
           cursor: default;
         }
 
-        /* Fixed card width so a single (or few) card(s) never stretch
-           to fill the whole row — cards stay the same size whether
-           there's 1 location or 10. */
-        .swiper-group-location .swiper-slide {
-          width: 300px !important;
-          flex-shrink: 0;
+        .card-image-top {
+          width: 100% !important;
+        }
+
+        /* Center swiper wrapper only when the slides don't overflow at each breakpoint */
+        @media (min-width: 1200px) {
+          .swiper-group-location.swiper-center-desktop .swiper-wrapper {
+            justify-content: center;
+          }
+        }
+        @media (min-width: 768px) and (max-width: 1199.98px) {
+          .swiper-group-location.swiper-center-tablet .swiper-wrapper {
+            justify-content: center;
+          }
+        }
+        @media (min-width: 576px) and (max-width: 767.98px) {
+          .swiper-group-location.swiper-center-mobile .swiper-wrapper {
+            justify-content: center;
+          }
+        }
+        @media (max-width: 575.98px) {
+          .swiper-group-location.swiper-center-sm-mobile .swiper-wrapper {
+            justify-content: center;
+          }
         }
       `}} />
       <div className="container">
@@ -191,14 +205,19 @@ export default function JobsByLocation({ locationsData }) {
               <Swiper
                 modules={[Navigation, Autoplay]}
                 spaceBetween={24}
-                slidesPerView="auto"
+                slidesPerView={1}
                 loop={loopMode}
                 autoplay={loopMode ? { delay: 3000, disableOnInteraction: false } : false}
                 navigation={{
                   nextEl: ".swiper-location-next",
                   prevEl: ".swiper-location-prev"
                 }}
-                className="swiper-group-location swiper"
+                breakpoints={{
+                  576: { slidesPerView: 2 },
+                  768: { slidesPerView: 3 },
+                  1200: { slidesPerView: 4 }
+                }}
+                className={`swiper-group-location swiper ${centerClassName}`}
                 style={{ paddingBottom: "10px", paddingTop: "5px" }}
               >
                 {locations.map((loc) => (
