@@ -12,6 +12,7 @@ import JobPreviewModal from "@/components/JobPreviewModal";
 import { mapResumeToForm } from "@/utils/jobFormMapper";
 import { Country, State } from "country-state-city";
 import { resolveCountry } from "@/utils/locationResolver";
+import { getHomepageData } from "@/services/candidate/homepageService";
 
 const ALL_CSC_COUNTRIES = Country.getAllCountries();
 
@@ -953,7 +954,7 @@ function StepCard({ stepNum, title, subtitle, children, onBack, onContinue, isLa
 }
 
 /* ─── STEP 1 – Job Details ────────────────────────────────────────────────── */
-function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI, jdSuggestions, ghostSuggestion, handleJDTab }) {
+function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI, jdSuggestions, ghostSuggestion, handleJDTab, roleCategoriesList = roleCategories, departmentOptionsList = departmentOptions, industryOptionsList = industryOptions }) {
   return (
     <StepCard
       stepNum={1}
@@ -978,7 +979,7 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
           <Combobox
             value={jobForm.TradeCategory}
             onChange={(v) => setJobForm((p) => ({ ...p, TradeCategory: v }))}
-            options={roleCategories}
+            options={roleCategoriesList}
             placeholder="e.g. Welding, Electrician, Plumber"
           />
         </Field>
@@ -1014,7 +1015,7 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
           <Combobox
             value={jobForm.IndustryType}
             onChange={(v) => setJobForm((p) => ({ ...p, IndustryType: v }))}
-            options={industryOptions}
+            options={industryOptionsList}
             placeholder="e.g. Oil & Gas"
           />
         </Field>
@@ -1204,7 +1205,7 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
           <Combobox
             value={jobForm.Department}
             onChange={(v) => setJobForm((p) => ({ ...p, Department: v }))}
-            options={departmentOptions}
+            options={departmentOptionsList}
             placeholder="e.g. Operations"
           />
         </Field>
@@ -2318,6 +2319,35 @@ export default function DashboardPostJobPage() {
   const router = useRouter();
   const showToast = useToast();
   const [editJobId, setEditJobId] = useState(null);
+  const [roleCategoriesList, setRoleCategoriesList] = useState(roleCategories);
+  const [departmentOptionsList, setDepartmentOptionsList] = useState([]);
+  const [industryOptionsList, setIndustryOptionsList] = useState([]);
+
+  useEffect(() => {
+    const fetchDropdownOptions = async () => {
+      try {
+        const res = await getHomepageData();
+        if (res.data?.success) {
+          if (res.data.tradeCategories) {
+            const apiTrades = res.data.tradeCategories.map((t) => t.name).filter(Boolean);
+            const mergedTrades = Array.from(new Set([...apiTrades, ...roleCategories]));
+            setRoleCategoriesList(mergedTrades);
+          }
+          if (res.data.departments) {
+            const apiDepts = res.data.departments.map((d) => d.name).filter(Boolean);
+            setDepartmentOptionsList(apiDepts);
+          }
+          if (res.data.industries) {
+            const apiIndustries = res.data.industries.map((ind) => ind.name).filter(Boolean);
+            setIndustryOptionsList(apiIndustries);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load post-job dropdown options from homepage API:", err);
+      }
+    };
+    fetchDropdownOptions();
+  }, []);
   const [activeStep, setActiveStep] = useState(1);
   const [jdSuggestions, setJdSuggestions] = useState([]);
   const [additionalJdSuggestions, setAdditionalJdSuggestions] = useState([]);
@@ -2968,6 +2998,9 @@ export default function DashboardPostJobPage() {
                   handleSuggestSkills={handleSuggestSkills}
                   skillsLoading={skillsLoading}
                   preflightIssues={preflightIssues}
+                  roleCategoriesList={roleCategoriesList}
+                  departmentOptionsList={departmentOptionsList}
+                  industryOptionsList={industryOptionsList}
                 />
 
                 <div className={styles.bottomLink}>

@@ -43,6 +43,7 @@ import {
   getRecruiterPlan,
 } from "@/services/recruiter/recruiterRegistrationService";
 import { sendOtp as sendLoginOtp } from "@/services/recruiter/authService";
+import { getHomepageData } from "@/services/candidate/homepageService";
 // ─────────────────────────────────────────────
 // Shared helpers
 // ─────────────────────────────────────────────
@@ -1792,6 +1793,7 @@ function EmployerForm() {
   const router = useRouter();
   const showToast = useToast();
   const [step, setStep] = useState(1);
+  const [industriesList, setIndustriesList] = useState([]);
 
   const [data, setData] = useState({
     hasGst: null,
@@ -1875,6 +1877,21 @@ function EmployerForm() {
   useEffect(() => {
     fetchRecruiterPlan(data.countryCode);
   }, [data.countryCode]);
+
+  useEffect(() => {
+    const fetchIndustries = async () => {
+      try {
+        const res = await getHomepageData();
+        if (res.data?.success && res.data.industries) {
+          const apiIndustries = res.data.industries.map((ind) => ind.name).filter(Boolean);
+          setIndustriesList(apiIndustries);
+        }
+      } catch (err) {
+        console.error("Failed to load industries from homepage API:", err);
+      }
+    };
+    fetchIndustries();
+  }, []);
 
   const set = (k, v) => setData((p) => ({ ...p, [k]: v }));
 
@@ -2574,7 +2591,7 @@ setAdditionalDocuments(
         <Combobox
           value={data.industry}
           onChange={(v) => set("industry", v)}
-          options={INDUSTRIES}
+          options={industriesList}
           placeholder="Type or select your industry (e.g. IT Services, Manufacturing)"
           error={attempt1 && !data.industry}
         />
@@ -4028,7 +4045,7 @@ function RegisterPageInner() {
                 ? "Candidate Registration"
                 : "Create your account"}
           </h1>
-          <p
+          <p 
             style={{
               fontSize: "var(--font-sm)",
               color: "var(--color-text-secondary)",
