@@ -42,6 +42,7 @@ import {
   resumeRegistration,
   getRecruiterPlan,
 } from "@/services/recruiter/recruiterRegistrationService";
+import { sendOtp as sendLoginOtp } from "@/services/recruiter/authService";
 // ─────────────────────────────────────────────
 // Shared helpers
 // ─────────────────────────────────────────────
@@ -1906,6 +1907,25 @@ function EmployerForm() {
     try {
       const sessionId = localStorage.getItem("registrationSessionId");
 
+      // Verify mobile number is not already registered using login OTP endpoint
+      try {
+        await sendLoginOtp({
+          identifier: data.mobile.replace(/\D/g, ""),
+          countryCode: data.countryCode,
+        });
+
+        // If the above call succeeds (200), the mobile number is already registered!
+        showToast("Mobile number already registered.", "error");
+        return;
+      } catch (checkErr) {
+        // If it throws a 404 (No account found), the mobile is unique and we can proceed.
+        // If it throws any other error (like Twilio unverified error: 400), it means the user exists in database but Twilio failed!
+        if (checkErr.response?.status !== 404) {
+          showToast("Mobile number already registered.", "error");
+          return;
+        }
+      }
+
       await saveStep3();
 
       const response = await sendMobileOtp(
@@ -1926,7 +1946,7 @@ function EmployerForm() {
 
       showToast(response.data.message, "success");
     } catch (err) {
-      showToast(err.response?.data?.message, "error");
+      showToast(err.response?.data?.message || "Mobile OTP verification failed.", "error");
     }
   };
   const handleVerifyMobileOtp = async () => {
