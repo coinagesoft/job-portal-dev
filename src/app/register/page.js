@@ -36,7 +36,8 @@ import {
   sendEmailOtp,
   verifyEmailOtp,
   resendEmailOtp,
-  uploadLicences,
+  getDocumentTypes,
+  uploadDocuments,
   submitRegistration,
   resumeRegistration,
   getRecruiterPlan,
@@ -1790,6 +1791,7 @@ function EmployerForm() {
   const router = useRouter();
   const showToast = useToast();
   const [step, setStep] = useState(1);
+
   const [data, setData] = useState({
     hasGst: null,
     industry: "",
@@ -1828,6 +1830,7 @@ function EmployerForm() {
   const [attempt1, setAttempt1] = useState(false);
   const [attempt2, setAttempt2] = useState(false);
   const [attempt3, setAttempt3] = useState(false);
+  
   const logoRef = useRef();
   const licRef = useRef();
 
@@ -2042,6 +2045,12 @@ function EmployerForm() {
   const canSubmit = EMPLOYER_UI_PREVIEW_MODE || step === 5;
 
   useEffect(() => {
+    if (step === 4) {
+      loadDocumentTypes();
+    }
+  }, [step]);
+
+  useEffect(() => {
     const resume = async () => {
       const sessionId = localStorage.getItem("registrationSessionId");
 
@@ -2061,93 +2070,99 @@ function EmployerForm() {
           const step3 = session.step3Data || {};
           const step4 = session.step4Data || {};
 
-          setData((p) => ({
-            ...p,
+         setData((p) => ({
+  ...p,
 
-            // STEP 1
-            hasGst: step1.gstRegistered,
-            industry: step1.industryType,
+  // STEP 1
+  hasGst: step1.gstRegistered,
+  industry: step1.industryType,
 
-            // STEP 2
-            legalName: step2.legalName || "",
-            tradeName: step2.tradeName || "",
+  // STEP 2
+  legalName: step2.legalName || "",
+  tradeName: step2.tradeName || "",
 
-            businessType: step2.businessType || "",
-            companySize: step2.companySize || "",
+  businessType: step2.businessType || "",
+  companySize: step2.companySize || "",
 
-            gstn: step2.gstn || "",
-            pan: step2.pan || "",
-            cin: step2.cin || "",
+  gstn: step2.gstn || "",
+  pan: step2.pan || "",
+  cin: step2.cin || "",
 
-            state: step2.state || "",
-            stateIso: getStateIso(
-              getCountryIso(step2.country || ""),
-              step2.state || "",
-            ),
-            city: step2.city || "",
-            country: step2.country || "",
-            countryIso: getCountryIso(step2.country || ""),
-            pincode: step2.pincode || "",
-            address: step2.addressLine1 || "",
+  state: step2.state || "",
+  stateIso: getStateIso(
+    getCountryIso(step2.country || ""),
+    step2.state || ""
+  ),
+  city: step2.city || "",
+  country: step2.country || "",
+  countryIso: getCountryIso(step2.country || ""),
+  pincode: step2.pincode || "",
+  address: step2.addressLine1 || "",
 
-            officialWebsite: step2.websiteUrl || "",
+  officialWebsite: step2.websiteUrl || "",
 
-            companyLogo: step2.companyLogoUrl
-              ? {
-                name: step2.companyLogoUrl.split("/").pop(),
-                url: step2.companyLogoUrl,
-              }
-              : null,
+  companyLogo: step2.companyLogoUrl
+    ? {
+        name: step2.companyLogoUrl.split("/").pop(),
+        url: step2.companyLogoUrl,
+      }
+    : null,
 
-            // STEP 3
-            contactName: step3.contactPersonName || "",
-            designation: step3.designation || "",
+  // STEP 3
+  contactName: step3.contactPersonName || "",
+  designation: step3.designation || "",
 
-            contactPersonEmail: step3.contactPersonEmail || "",
+  contactPersonEmail: step3.contactPersonEmail || "",
 
-            corpEmail: step3.companyEmail || "",
+  corpEmail: step3.companyEmail || "",
 
-            mobile: step3.mobileNumber || "",
+  mobile: step3.mobileNumber || "",
 
-            countryCode: step3.countryCode || "+91",
+  countryCode: step3.countryCode || "+91",
 
-            profileSummary: step3.companyDescription || "",
+  profileSummary: step3.companyDescription || "",
 
-            mobileOtp: {
-              ...p.mobileOtp,
-              sent: !!step3.mobileNumber,
-              verified: step3.mobileVerified || false,
-            },
+  mobileOtp: {
+    ...p.mobileOtp,
+    sent: !!step3.mobileNumber,
+    verified: step3.mobileVerified || false,
+  },
 
-            corpEmailOtp: {
-              ...p.corpEmailOtp,
-              sent: !!step3.companyEmail,
-              verified: step3.companyEmailVerified || false,
-            },
+  corpEmailOtp: {
+    ...p.corpEmailOtp,
+    sent: !!step3.companyEmail,
+    verified: step3.companyEmailVerified || false,
+  },
+}));
+// Restore uploaded mandatory & optional documents
+setSelectedDocuments(
+  (step4.documents || [])
+    .filter((d) => d.documentTypeId)
+    .map((d) => ({
+      documentTypeId: d.documentTypeId,
+      file: {
+        name: d.documentName,
+        url: d.fileUrl,
+      },
+      fileUrl: d.fileUrl,
+      status: d.status,
+    }))
+);
 
-            // STEP 4
-            licDocs: [
-              ...(step4.poeLicenceUrl
-                ? [
-                  {
-                    id: "poe",
-                    name: step4.poeLicenceUrl.split("/").pop(),
-                    url: step4.poeLicenceUrl,
-                  },
-                ]
-                : []),
-
-              ...(step4.rpslLicenceUrl
-                ? [
-                  {
-                    id: "rpsl",
-                    name: step4.rpslLicenceUrl.split("/").pop(),
-                    url: step4.rpslLicenceUrl,
-                  },
-                ]
-                : []),
-            ],
-          }));
+// Restore uploaded additional documents
+setAdditionalDocuments(
+  (step4.documents || [])
+    .filter((d) => !d.documentTypeId)
+    .map((d) => ({
+      file: {
+        name: d.documentName,
+        url: d.fileUrl,
+      },
+      fileUrl: d.fileUrl,
+      status: d.status,
+      documentName: d.documentName,
+    }))
+);
           console.log("hasGst being set to", session.gstRegistered);
           // move to next step
           setStep(Math.min(session.stepStatus.lastCompletedStep + 1, 5));
@@ -2162,6 +2177,11 @@ function EmployerForm() {
     resume();
   }, []);
   const [attempt5, setAttempt5] = useState(false);
+  const [mandatoryDocuments, setMandatoryDocuments] = useState([]);
+  const [optionalDocuments, setOptionalDocuments] = useState([]);
+  const [loadingDocuments, setLoadingDocuments] = useState(false);
+  const [selectedDocuments, setSelectedDocuments] = useState([]);
+  const [additionalDocuments, setAdditionalDocuments] = useState([]);
   const handleEmployerSubmit = async () => {
     setAttempt5(true);
     if (!termsAccepted) {
@@ -2178,6 +2198,7 @@ function EmployerForm() {
       const response = await submitRegistration({
         sessionId,
         consentGiven: termsAccepted,
+        consentVersion: "1.0",
       });
 
       if (response.data.success) {
@@ -2187,6 +2208,30 @@ function EmployerForm() {
       }
     } catch (err) {
       showToast(err.response?.data?.message, "error");
+    }
+  };
+  const loadDocumentTypes = async () => {
+    try {
+      setLoadingDocuments(true);
+
+      const response = await getDocumentTypes();
+
+      setMandatoryDocuments(
+        response.data.mandatoryDocuments || []
+      );
+
+      setOptionalDocuments(
+        response.data.optionalDocuments || []
+      );
+
+    } catch (err) {
+      console.error(err);
+      showToast(
+        err?.response?.data?.message || "Failed to load document types",
+        "error"
+      );
+    } finally {
+      setLoadingDocuments(false);
     }
   };
 
@@ -2294,6 +2339,7 @@ function EmployerForm() {
       const response = await submitRegistration({
         sessionId,
         consentGiven: true,
+        consentVersion: "1.0",
       });
 
       if (response.data.success) {
@@ -2305,6 +2351,60 @@ function EmployerForm() {
     }
   };
 
+  const handleDocumentSelect = (documentTypeId, file) => {
+    if (!file) return;
+
+    setSelectedDocuments((prev) => {
+      const existing = prev.find(
+        (x) => x.documentTypeId === documentTypeId
+      );
+
+      if (existing) {
+        return prev.map((x) =>
+          x.documentTypeId === documentTypeId
+            ? { ...x, file }
+            : x
+        );
+      }
+
+      return [
+        ...prev,
+        {
+          documentTypeId,
+          file,
+        },
+      ];
+    });
+  };
+  const handleAdditionalDocument = (index, file) => {
+    if (!file) return;
+
+    setAdditionalDocuments((prev) =>
+      prev.map((doc, i) =>
+        i === index
+          ? {
+            ...doc,
+            file,
+          }
+          : doc
+      )
+    );
+  };
+
+  const addAdditionalDocument = () => {
+    setAdditionalDocuments((prev) => [
+      ...prev,
+      {
+        file: null,
+      },
+    ]);
+  };
+
+  const removeAdditionalDocument = (index) => {
+    setAdditionalDocuments((prev) =>
+      prev.filter((_, i) => i !== index)
+    );
+  };
   const InfoRow = ({ label, val, mono }) => (
     <div
       style={{
@@ -2897,6 +2997,7 @@ function EmployerForm() {
       </div>
     </div>
   );
+
   const saveStep3 = async () => {
     try {
       const sessionId = localStorage.getItem("registrationSessionId");
@@ -3081,6 +3182,7 @@ function EmployerForm() {
           label="Company Profile Summary"
           hint="Brief description of your company and hiring focus (shown on job listings)"
         >
+          
           <textarea
             className="form-control"
             value={data.profileSummary}
@@ -3119,249 +3221,40 @@ function EmployerForm() {
       </div>
     );
   };
+
+
   const handleStep4 = async () => {
     try {
       const sessionId = localStorage.getItem("registrationSessionId");
 
-      const formData = new FormData();
-      formData.append("SessionId", sessionId);
+      const documents = [
+        ...selectedDocuments.filter((x) => x.file instanceof File),
 
-      // Find files
-      const poeDoc = data.licDocs.find((x) => x.id === "poe");
-      const rpslDoc = data.licDocs.find((x) => x.id === "rpsl");
+        ...additionalDocuments
+          .filter((x) => x.file instanceof File)
+          .map((x) => ({
+            documentTypeId: null,
+            category: "Additional",
+            file: x.file,
+          })),
+      ];
 
-      if (!poeDoc || !rpslDoc) {
-        showToast("Both POE and RPSL licences are required.", "error");
-        return;
-      }
-
-      formData.append("Documents[0].documentName", "POE Licence");
-      formData.append("Documents[0].category", "Licence");
-      formData.append("Documents[0].file", poeDoc.file);
-
-      formData.append("Documents[1].documentName", "RPSL Licence");
-      formData.append("Documents[1].category", "Licence");
-      formData.append("Documents[1].file", rpslDoc.file);
-
-      const response = await uploadLicences(formData, sessionId);
+      const response = await uploadDocuments(
+        documents,
+        sessionId
+      );
 
       if (response.data.success) {
         showToast(response.data.message, "success");
-
         setStep(5);
       }
     } catch (err) {
       showToast(
-        err.response?.data?.message || "Licence upload failed.",
-        "error",
+        err?.response?.data?.message || "Document upload failed.",
+        "error"
       );
     }
   };
-  // ── Step 4: Licence Upload ────────────────
-  // const renderStep4 = () => (
-  //   <div>
-  //     <h3
-  //       style={{
-  //         fontSize: "var(--font-md)",
-  //         fontWeight: 600,
-  //         marginBottom: 4,
-  //         color: "var(--color-text-primary)",
-  //       }}
-  //     >
-  //       Licence & document upload
-  //       <span
-  //         style={{
-  //           fontSize: "var(--font-xs)",
-  //           fontWeight: 400,
-  //           color: "var(--color-text-tertiary)",
-  //           marginLeft: 10,
-  //           background: "var(--color-background-secondary)",
-  //           padding: "2px 8px",
-  //           borderRadius: 6,
-  //         }}
-  //       >
-  //         Optional
-  //       </span>
-  //     </h3>
-  //     <p
-  //       style={{
-  //         fontSize: "var(--font-sm)",
-  //         color: "var(--color-text-secondary)",
-  //         marginBottom: 20,
-  //         lineHeight: 1.5,
-  //       }}
-  //     >
-  //       Upload recruitment licences to earn trust badges displayed on all job
-  //       listings.
-  //     </p>
-  //     <Alert type="info">
-  //       <strong>Blue Tick</strong> requires: GST Verified + one active licence +
-  //       corporate domain email — all simultaneously.
-  //     </Alert>
-  //     <div
-  //       style={{
-  //         marginTop: 12,
-  //         marginBottom: 14,
-  //         display: "inline-flex",
-  //         alignItems: "center",
-  //         gap: 8,
-  //         padding: "8px 12px",
-  //         borderRadius: 8,
-  //         border: "1px solid rgba(255, 163, 0, 0.32)",
-  //         background: "#fff8ee",
-  //         color: "#8a5a00",
-  //         fontSize: "var(--font-xs)",
-  //         fontWeight: 600,
-  //       }}
-  //     >
-  //       <i className="fi fi-rr-lock" />
-  //       Documents uploaded for verification are private and are not shared with
-  //       candidates.
-  //     </div>
-  //     <div
-  //       style={{
-  //         display: "grid",
-  //         gridTemplateColumns: "1fr 1fr",
-  //         gap: 14,
-  //         marginBottom: 14,
-  //       }}
-  //     >
-  //       {[
-  //         {
-  //           id: "poe",
-  //           label: "Recruitment Licence",
-  //           badge: "Recruitment Licensed",
-
-  //           color: "#3B6D11",
-  //           bg: "#EAF3DE",
-  //           desc: "Recruitment licence for overseas placement",
-  //         },
-  //         {
-  //           id: "rpsl",
-  //           label: "RPSL Licence",
-  //           badge: "RPSL Licensed",
-  //           color: "#0F6E56",
-  //           bg: "#E1F5EE",
-  //           desc: "Shipping recruitment licence for vessel placements",
-  //         },
-  //       ].map((lic) => {
-  //         const file = data.licDocs.find((d) => d.id === lic.id);
-  //         return (
-  //           <div key={lic.id}>
-  //             <p
-  //               style={{
-  //                 fontSize: "var(--font-xs)",
-  //                 fontWeight: 600,
-  //                 color: "var(--color-text-secondary)",
-  //                 marginBottom: 8,
-  //               }}
-  //             >
-  //               {lic.label}
-  //             </p>
-  //             <div
-  //               onClick={() => licRef.current?.click()}
-  //               style={{
-  //                 border: "1px dashed var(--color-border-secondary, #ffc151)",
-  //                 borderRadius: 8,
-  //                 padding: "24px 16px",
-  //                 textAlign: "center",
-  //                 cursor: "pointer",
-  //                 background: file
-  //                   ? "#EAF3DE"
-  //                   : "var(--color-background-secondary)",
-  //               }}
-  //             >
-  //               {file ? (
-  //                 <p
-  //                   style={{
-  //                     fontSize: "var(--font-xs)",
-  //                     color: "#3B6D11",
-  //                     fontWeight: 600,
-  //                   }}
-  //                 >
-  //                   ✓ {file.name}
-  //                 </p>
-  //               ) : (
-  //                 <>
-  //                   <p style={{ fontSize: "var(--font-xl)", opacity: 0.3 }}>
-  //                     ↑
-  //                   </p>
-  //                   <p
-  //                     style={{
-  //                       fontSize: "var(--font-xs)",
-  //                       color: "var(--color-text-secondary)",
-  //                     }}
-  //                   >
-  //                     Upload {lic.label}
-  //                   </p>
-  //                   <p
-  //                     style={{
-  //                       fontSize: "var(--font-xs)",
-  //                       color: "var(--color-text-tertiary)",
-  //                       marginTop: 3,
-  //                     }}
-  //                   >
-  //                     PDF / JPG / PNG · Max 5 MB
-  //                   </p>
-  //                 </>
-  //               )}
-  //             </div>
-  //             <input
-  //               type="file"
-  //               accept=".pdf,.jpg,.jpeg,.png"
-  //               style={{ display: "none" }}
-  //               onChange={(e) => {
-  //                 const f = e.target.files?.[0];
-  //                 if (f)
-  //                   setData((p) => ({
-  //                     ...p,
-  //                     licDocs: [
-  //                       ...p.licDocs.filter((d) => d.id !== lic.id),
-  //                       { id: lic.id, name: f.name, file: f },
-  //                     ],
-  //                   }));
-  //               }}
-  //             />
-  //             <div
-  //               style={{
-  //                 marginTop: 8,
-  //                 padding: "8px 10px",
-  //                 background: lic.bg,
-  //                 borderRadius: 6,
-  //                 fontSize: "var(--font-xs)",
-  //                 color: lic.color,
-  //               }}
-  //             >
-  //               Awards: <strong>{lic.badge}</strong> badge
-  //             </div>
-  //           </div>
-  //         );
-  //       })}
-  //     </div>
-  //     <div
-  //       style={{
-  //         display: "flex",
-  //         justifyContent: "space-between",
-  //         marginTop: 8,
-  //       }}
-  //     >
-  //       <Btn variant="outline" onClick={() => setStep(3)}>
-  //         ← Back
-  //       </Btn>
-  //       <div style={{ display: "flex", gap: 10 }}>
-  //         <Btn
-  //           variant="ghost"
-  //           onClick={() => setStep(5)}
-  //         >
-  //           Skip for now
-  //         </Btn>
-  //         <Btn variant="primary" onClick={handleStep4}>
-  //           Continue →
-  //         </Btn>
-  //       </div>
-  //     </div>
-  //   </div>
-  // );
 
   const [attempt4, setAttempt4] = useState(false);
   const renderStep4 = () => (
@@ -3375,9 +3268,7 @@ function EmployerForm() {
         }}
       >
         Licence & document upload
-        <span style={{ color: "#E24B4A", marginLeft: 6 }}>*</span>
       </h3>
-
       <p
         style={{
           fontSize: "var(--font-sm)",
@@ -3386,8 +3277,8 @@ function EmployerForm() {
           lineHeight: 1.5,
         }}
       >
-        Both licences below are required to complete your registration and
-        also earn trust badges displayed on all job listings.
+        Upload all mandatory company documents to complete your registration.
+        You may also upload optional documents to strengthen your company profile.
       </p>
 
       <Alert type="info">
@@ -3395,12 +3286,7 @@ function EmployerForm() {
         corporate domain email — all simultaneously.
       </Alert>
 
-      {attempt4 && (!data.licDocs.find((d) => d.id === "poe") || !data.licDocs.find((d) => d.id === "rpsl")) && (
-        <Alert type="error">
-          Both the Recruitment Licence and RPSL Licence are required — please
-          upload both files to continue.
-        </Alert>
-      )}
+
 
       <div
         style={{
@@ -3426,176 +3312,202 @@ function EmployerForm() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: 14,
-          marginBottom: 14,
-          width: "100%",
+          gap: 20,
+          marginBottom: 20,
         }}
       >
-        {[
-          {
-            id: "poe",
-            label: "Recruitment Licence",
-            badge: "Recruitment Licensed",
-            color: "#3B6D11",
-            bg: "#EAF3DE",
-          },
-          {
-            id: "rpsl",
-            label: "RPSL Licence",
-            badge: "RPSL Licensed",
-            color: "#0F6E56",
-            bg: "#E1F5EE",
-          },
-        ].map((lic) => {
-          const file = data.licDocs.find((d) => d.id === lic.id);
+        {loadingDocuments ? (
+          <p>Loading documents...</p>
+        ) : (
+          <>
+            <div>
+              <h5 style={{ marginBottom: 15 }}>
+                Mandatory Documents
+              </h5>
 
-          return (
-            <div key={lic.id}>
-              <p
-                style={{
-                  fontSize: "var(--font-xs)",
-                  fontWeight: 600,
-                  color: "var(--color-text-secondary)",
-                  marginBottom: 8,
-                }}
-              >
-                {lic.label}
-              </p>
+              {mandatoryDocuments.map((doc) => {
+                const selected = selectedDocuments.find(
+                  (x) => x.documentTypeId === doc.documentTypeId
+                );
 
-              {/* Hidden Input */}
-              <input
-                id={`file-${lic.id}`}
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
-                style={{ display: "none" }}
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-
-                  if (!f) return;
-
-                  setData((prev) => ({
-                    ...prev,
-                    licDocs: [
-                      ...prev.licDocs.filter((d) => d.id !== lic.id),
-                      {
-                        id: lic.id,
-                        name: f.name,
-                        file: f,
-                      },
-                    ],
-                  }));
-                }}
-              />
-
-              {/* Upload Box */}
-              <div
-                onClick={() =>
-                  document.getElementById(`file-${lic.id}`)?.click()
-                }
-                style={{
-                  border: attempt4 && !file
-                    ? "1px dashed #E24B4A"
-                    : "1px dashed var(--color-border-secondary,#ffc151)",
-                  borderRadius: 8,
-                  padding: "16px",
-                  textAlign: "center",
-                  cursor: "pointer",
-                  background: file
-                    ? "#EAF3DE"
-                    : "var(--color-background-secondary)",
-                  transition: ".2s",
-
-                  minHeight: "95px",      // Makes both boxes same height
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  alignItems: "center",
-
-                  width: "100%",
-                  boxSizing: "border-box",
-                  overflow: "hidden",
-                }}
-              >
-                {file ? (
-                  <>
-                    <p
+                return (
+                  <div
+                    key={doc.documentTypeId}
+                    style={{ marginBottom: 18 }}
+                  >
+                    <label
                       style={{
-                        fontSize: "var(--font-xs)",
-                        color: "#3B6D11",
+                        display: "block",
+                        marginBottom: 8,
                         fontWeight: 600,
-
-                        width: "100%",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-
-                        lineHeight: "18px",
-                        minHeight: "18px",
-                      }}
-                      title={file.name}
-                    >
-                      ✓ {file.name}
-                    </p>
-
-                    <p
-                      style={{
-                        marginTop: 8,
-                        fontSize: "var(--font-xs)",
-                        color: "#666",
                       }}
                     >
-                      Click to change file
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <p
-                      style={{
-                        fontSize: "var(--font-xl)",
-                        opacity: 0.3,
-                      }}
-                    >
-                      ↑
-                    </p>
+                      {doc.documentName}
+                    </label>
 
-                    <p
-                      style={{
-                        fontSize: "var(--font-xs)",
-                        color: "var(--color-text-secondary)",
-                      }}
-                    >
-                      Upload {lic.label}
-                    </p>
+                    <input
+                      type="file"
+                      className="form-control"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) =>
+                        handleDocumentSelect(
+                          doc.documentTypeId,
+                          e.target.files?.[0]
+                        )
+                      }
+                    />
 
-                    <p
-                      style={{
-                        fontSize: "var(--font-xs)",
-                        color: "var(--color-text-tertiary)",
-                        marginTop: 3,
-                      }}
-                    >
-                      PDF / JPG / PNG · Max 5 MB
-                    </p>
-                  </>
-                )}
-              </div>
-
-              <div
-                style={{
-                  marginTop: 8,
-                  padding: "8px 10px",
-                  background: lic.bg,
-                  borderRadius: 6,
-                  fontSize: "var(--font-xs)",
-                  color: lic.color,
-                }}
-              >
-                Awards: <strong>{lic.badge}</strong> badge
-              </div>
+                    {selected && (
+                      <small
+                        style={{
+                          color: "#3B6D11",
+                          display: "block",
+                          marginTop: 6,
+                        }}
+                      >
+                        ✓ {selected.file.name}
+                      </small>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
+
+            {optionalDocuments.length > 0 && (
+              <div>
+                <hr />
+
+                <h5 style={{ marginBottom: 15 }}>
+                  Optional Documents
+                </h5>
+
+                {optionalDocuments.map((doc) => {
+                  const selected = selectedDocuments.find(
+                    (x) => x.documentTypeId === doc.documentTypeId
+                  );
+
+                  return (
+                    <div
+                      key={doc.documentTypeId}
+                      style={{ marginBottom: 18 }}
+                    >
+                      <label
+                        style={{
+                          display: "block",
+                          marginBottom: 8,
+                          fontWeight: 600,
+                        }}
+                      >
+                        {doc.documentName}
+                      </label>
+
+                      <input
+                        type="file"
+                        className="form-control"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={(e) =>
+                          handleDocumentSelect(
+                            doc.documentTypeId,
+                            e.target.files?.[0]
+                          )
+                        }
+                      />
+
+                      {selected && (
+                        <small
+                          style={{
+                            color: "#3B6D11",
+                            display: "block",
+                            marginTop: 6,
+                          }}
+                        >
+                          ✓ {selected.file.name}
+                        </small>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <hr />
+<div>
+  <h5 style={{ marginBottom: 15 }}>Additional Documents</h5>
+
+  {additionalDocuments.map((doc, index) => (
+    <div key={index} style={{ marginBottom: 18 }}>
+      <div
+        style={{
+          position: "relative",
+          display: "flex",
+          alignItems: "center",
+        }}
+      >
+        <input
+          type="file"
+          className="form-control"
+          accept=".pdf,.jpg,.jpeg,.png"
+          onChange={(e) =>
+            handleAdditionalDocument(index, e.target.files?.[0])
+          }
+          style={{
+            flex: 1,
+            paddingRight: additionalDocuments.length > 1 ? 36 : undefined,
+          }}
+        />
+
+        {additionalDocuments.length > 0 && (
+          <button
+            type="button"
+            onClick={() => removeAdditionalDocument(index)}
+            aria-label={`Remove document ${index + 1}`}
+            style={{
+              position: "absolute",
+              right: 8,
+              top: "50%",
+              transform: "translateY(-50%)",
+              zIndex: 10,
+
+              width: 22,
+              height: 22,
+              border: "none",
+              background: "transparent",
+              color: "#888",
+              fontSize: 16,
+              fontWeight: 700,
+              cursor: "pointer",
+
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+         
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = "#888";
+            }}
+          >
+            ×
+          </button>
+        )}
+      </div>
+
+      {doc.file && (
+        <div style={{ marginTop: 6 }}>
+          <span style={{ fontSize: 13, color: "#555" }}>
+            {doc.file.name}
+          </span>
+        </div>
+      )}
+    </div>
+  ))}
+
+  <Btn variant="outline" onClick={addAdditionalDocument}>
+    + Add Additional Document
+  </Btn>
+</div>
+          </>
+        )}
       </div>
 
       <div
@@ -3785,10 +3697,7 @@ function EmployerForm() {
         <VerifyPill ok={!!data.hasGst} label={data.hasGst ? "GST Verified" : "Non-GST entity"} />
         <VerifyPill ok={data.mobileOtp.verified} label={data.mobileOtp.verified ? "Mobile Verified" : "Mobile Pending"} />
         <VerifyPill ok={data.corpEmailOtp.verified} label={data.corpEmailOtp.verified ? "Email Verified" : "Email Pending"} />
-        <VerifyPill
-          ok={data.licDocs.length === 2}
-          label={data.licDocs.length === 2 ? "Licences Uploaded" : "Licences Pending"}
-        />
+
       </div>
 
       <ReviewSection icon="fi fi-rr-briefcase" title="Company Details" editStep={2}>
@@ -3834,14 +3743,16 @@ function EmployerForm() {
           label="Company logo"
           val={data.companyLogo ? `✓ ${data.companyLogo.name}` : ""}
         />
-        <ReviewRow
-          label="Licences"
-          val={
-            data.licDocs.length > 0
-              ? data.licDocs.map((d) => d.id.toUpperCase()).join(", ")
-              : ""
-          }
-        />
+      <ReviewRow
+  label="Licences"
+  val={
+    [...selectedDocuments, ...additionalDocuments].length > 0
+      ? [...selectedDocuments, ...additionalDocuments]
+          .map((d) => d.file?.name || d.documentName)
+          .join(", ")
+      : ""
+  }
+/>
         <ReviewRow label="GST registered" val={data.hasGst ? "Yes" : "No"} />
       </ReviewSection>
 

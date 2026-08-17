@@ -41,10 +41,11 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) 
       : job.companyName;
   console.log(job.companyVisibility);
   console.log(job);
-  const companyTags =
-    companyTagsFromData.length > 0
-      ? companyTagsFromData
-      : [
+ const companyTags =
+  companyTagsFromData.length > 0
+    ? companyTagsFromData
+    : [
+        ...(job.companyVerified ? ["Verified"] : []),
         ...tags.filter((tag) => COMPANY_RELATED_TAGS.has(tag)),
         ...(derivedCompanyBadge && !tags.includes(derivedCompanyBadge)
           ? [derivedCompanyBadge]
@@ -109,18 +110,19 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) 
             router.push(getJobDetailsHref(job.jobId));
           }
         }}
-        style={{
-          border: "1px solid rgba(18, 35, 89, 0.08)",
-          borderRadius: "24px",
-          overflow: "hidden",
-          transition: "all 0.35s ease",
-          background: "#ffffff",
-          cursor: "pointer",
-          boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
-          ...(viewMode === "grid"
+    style={{
+        position: "relative",
+        border: "1px solid rgba(18,35,89,0.08)",
+        borderRadius: "24px",
+        overflow: "hidden",
+        transition: "all 0.35s ease",
+        background: "#fff",
+        cursor: "pointer",
+        boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
+        ...(viewMode === "grid"
             ? { height: "100%", display: "flex", flexDirection: "column", width: "100%" }
             : {}),
-        }}
+    }}
         onMouseEnter={(e) => {
           e.currentTarget.style.transform =
             "translateY(-8px)";
@@ -142,6 +144,32 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) 
             "0 4px 14px rgba(18,35,89,0.04)";
         }}
       >
+        {job.companyVerified && (
+    <div
+        style={{
+            position: "absolute",
+            top: "18px",
+            right: "18px",
+            zIndex: 20,
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            padding: "6px 14px",
+            borderRadius: "999px",
+            background: "linear-gradient(135deg,#22C55E,#16A34A)",
+            color: "#fff",
+            fontSize: "12px",
+            fontWeight: 700,
+            boxShadow: "0 8px 18px rgba(34,197,94,.25)"
+        }}
+    >
+        <i
+            className="fa-solid fa-circle-check"
+            style={{ fontSize: "12px" }}
+        />
+        Verified
+    </div>
+)}
         <div className="row">
           <div className={viewMode === "grid" ? "col-12" : "col-lg-6 col-md-6 col-sm-12"}>
             <div className="card-grid-2-image-left">

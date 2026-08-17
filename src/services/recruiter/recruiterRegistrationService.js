@@ -126,22 +126,72 @@ export const resendEmailOtp = (
     }
   );
 
-
 // STEP 4
-export const uploadLicences = (
-  formData,
-  sessionId
-) =>
-  api.post(
+export const getDocumentTypes = () =>
+  api.get("/api/recruiter/registration/document-types");
+
+export const uploadDocuments = (documents, sessionId) => {
+  const formData = new FormData();
+
+  formData.append("SessionId", sessionId);
+
+  let uploadIndex = 0;
+
+  documents.forEach((doc) => {
+    // Skip already uploaded documents
+    if (!(doc.file instanceof File)) {
+      return;
+    }
+
+    if (doc.documentTypeId) {
+      formData.append(
+        `Documents[${uploadIndex}].DocumentTypeId`,
+        doc.documentTypeId
+      );
+    }
+
+    if (doc.documentName) {
+      formData.append(
+        `Documents[${uploadIndex}].DocumentName`,
+        doc.documentName
+      );
+    }
+
+    if (doc.category) {
+      formData.append(
+        `Documents[${uploadIndex}].Category`,
+        doc.category
+      );
+    }
+
+    formData.append(
+      `Documents[${uploadIndex}].File`,
+      doc.file
+    );
+
+    uploadIndex++;
+  });
+
+  // Nothing new to upload
+  if (uploadIndex === 0) {
+    return Promise.resolve({
+      data: {
+        success: true,
+        message: "No new documents to upload."
+      }
+    });
+  }
+
+  return api.post(
     "/api/recruiter/registration/upload-documents",
     formData,
     {
       headers: {
-        "X-Session-Id": sessionId,
         "Content-Type": "multipart/form-data",
       },
     }
   );
+};
 
 
 // STEP 5
