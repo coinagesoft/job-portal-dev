@@ -5,8 +5,8 @@ import SubUserViewOnlyGuard from "@/components/SubUserViewOnlyGuard.js";
 import {
   getVerification,
   uploadDocument,
-  getDocumentTypes,
 } from "@/services/recruiter/recruiterVerificationService";
+
 /* ── Icon mapping (backend does not send icons) ───────────────────────────── */
 const BADGE_ICONS = {
   GST: "fi fi-rr-check",
@@ -15,10 +15,35 @@ const BADGE_ICONS = {
   "RPSL Licensed": "fi fi-rr-diploma",
 };
 
-
+/* Document types that can actually be uploaded (matches backend enum) */
+const UPLOADABLE_TYPES = [
+  { value: "POE", label: "POE Licence" },
+  { value: "RPSL", label: "RPSL Licence" },
+  { value: "BUSINESS_REGISTRATION", label: "Business Registration" },
+  { value: "GST", label: "GST Certificate" },
+  { value: "PAN", label: "PAN Card" },
+  { value: "OTHER", label: "Other" },
+];
 
 /* Statuses the backend treats as "positive/done" */
 const POSITIVE_STATUSES = ["Approved", "Uploaded", "Available", "Verified"];
+
+const COMPULSORY_DOCS = [
+  { docType: "GST Registration Certificate", uploadType: "GST" },
+  { docType: "Trade License", uploadType: "BUSINESS_REGISTRATION" },
+  { docType: "PAN Card", uploadType: "PAN" },
+];
+
+const STATIC_REQUESTED_DOCS = [
+  {
+    documentName: "Chartered Accountant Certificate",
+    description: "Please upload the CA certificate verifying your company turnover.",
+  },
+  {
+    documentName: "Company Utility Bill",
+    description: "Upload a recent utility bill displaying the registered company address.",
+  }
+];
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
 const isPositive = (status) => POSITIVE_STATUSES.includes(status);
@@ -44,43 +69,43 @@ const formatDate = (value) => {
   }
 };
 
-
-
+const prettyDocName = (type) => {
+  switch (type) {
+    case "GST":
+      return "GST Certificate";
+    case "PAN":
+      return "PAN Card";
+    case "POE":
+      return "POE Licence";
+    case "RPSL":
+      return "RPSL Licence";
+    case "BUSINESS_REGISTRATION":
+      return "Business Registration";
+    default:
+      return type;
+  }
+};
 
 const EmployerVerificationPage = () => {
   const [badges, setBadges] = useState([]);
   const [documents, setDocuments] = useState([]);
+  const [requestedDocuments, setRequestedDocuments] = useState(
+    STATIC_REQUESTED_DOCS.map((item) => ({
+      ...item,
+      status: "Not Uploaded",
+      fileUrl: null,
+      uploadedAt: null,
+    }))
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-const [documentTypes, setDocumentTypes] = useState([]);
-const [uploadType, setUploadType] = useState("");
-const [customDocumentName, setCustomDocumentName] = useState("");
+  const [uploadType, setUploadType] = useState("POE");
+  const [customDocName, setCustomDocName] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState(null);
   const fileInputRef = useRef(null);
-const loadDocumentTypes = async () => {
-  try {
-    const response = await getDocumentTypes();
 
-    const docs = response.data ?? [];
-setDocumentTypes([
-    ...docs,
-    {
-        documentTypeId: null,
-        documentName: "Other Document",
-        isOther: true
-    }
-]);
-
-if (docs.length > 0)
-    setUploadType(docs[0].documentTypeId);
-
-  
-  } catch (err) {
-    console.error(err);
-  }
-};
   /* ── Load dashboard ─────────────────────────────────────────────────────── */
   const loadVerification = async () => {
     try {
@@ -88,7 +113,24 @@ if (docs.length > 0)
       setError(null);
       const data = await getVerification();
       setBadges(data?.badges ?? []);
-      setDocuments(data?.documents ?? []);
+      const apiDocs = data?.documents ?? [];
+      setDocuments(apiDocs);
+
+      // Merge apiDocs status with static requested documents
+      const mergedRequested = STATIC_REQUESTED_DOCS.map((item) => {
+        const uploadedDoc = apiDocs.find(
+          (d) =>
+            d.documentType === item.documentName ||
+            d.documentType === item.documentName.toUpperCase()
+        );
+        return {
+          ...item,
+          status: uploadedDoc ? uploadedDoc.status : "Not Uploaded",
+          fileUrl: uploadedDoc ? uploadedDoc.fileUrl : null,
+          uploadedAt: uploadedDoc ? uploadedDoc.uploadedAt : null,
+        };
+      });
+      setRequestedDocuments(mergedRequested);
     } catch (err) {
       console.error("getVerification error:", err);
       setError("Could not load verification details. Please try again.");
@@ -98,11 +140,16 @@ if (docs.length > 0)
   };
 
   useEffect(() => {
-      loadVerification();
-  loadDocumentTypes();
+    loadVerification();
   }, []);
 
   /* ── Upload flow ────────────────────────────────────────────────────────── */
+  const handleDirectUpload = (uploadTypeVal) => {
+    setUploadType(uploadTypeVal);
+    setUploadMsg(null);
+    fileInputRef.current?.click();
+  };
+
   const handleBrowseClick = () => {
     setUploadMsg(null);
     fileInputRef.current?.click();
@@ -129,11 +176,57 @@ if (docs.length > 0)
     try {
       setUploading(true);
       setUploadMsg(null);
-await uploadDocument(
-    uploadType,
-    customDocumentName,
-    file
-);      setUploadMsg({ type: "success", text: "Document uploaded successfully." });
+      
+      const finalUploadType = uploadType === "OTHER" ? (customDocName.trim() || "Other Document") : uploadType;
+      
+      await uploadDocument(finalUploadType, file);
+      setUploadMsg({ type: "success", text: "Document uploaded successfully." });
+
+      // Reflect the upload immediately rather than waiting on the refetch
+      setDocuments((prev) => {
+        const index = prev.findIndex((doc) =>
+          doc.documentType === finalUploadType ||
+          (finalUploadType === "GST" && doc.documentType === "GST Registration Certificate") ||
+          (finalUploadType === "BUSINESS_REGISTRATION" && doc.documentType === "Trade License") ||
+          (finalUploadType === "PAN" && doc.documentType === "PAN Card")
+        );
+        const targetDocType = index > -1 ? prev[index].documentType : (
+          finalUploadType === "GST" ? "GST Registration Certificate" :
+          finalUploadType === "BUSINESS_REGISTRATION" ? "Trade License" :
+          finalUploadType === "PAN" ? "PAN Card" : finalUploadType
+        );
+        const updatedDoc = {
+          documentType: targetDocType,
+          status: "Uploaded",
+          uploadedAt: new Date().toISOString(),
+          fileUrl: null,
+        };
+        if (index > -1) {
+          const next = [...prev];
+          next[index] = { ...next[index], ...updatedDoc };
+          return next;
+        } else {
+          return [...prev, updatedDoc];
+        }
+      });
+
+      setRequestedDocuments((prev) => {
+        return prev.map((doc) => {
+          if (doc.documentName === finalUploadType) {
+            return {
+              ...doc,
+              status: "Uploaded",
+              uploadedAt: new Date().toISOString(),
+            };
+          }
+          return doc;
+        });
+      });
+
+      if (uploadType === "OTHER") {
+        setCustomDocName("");
+      }
+
       await loadVerification();
     } catch (err) {
       console.error("uploadDocument error:", err);
@@ -339,115 +432,475 @@ await uploadDocument(
                     fontWeight: 800,
                   }}
                 >
-                  Uploaded Documents
+                  Verification Documents
                 </h5>
 
                 {loading ? (
                   <p style={{ color: "#66789c", margin: 0 }}>Loading documents…</p>
-                ) : documents.length === 0 ? (
-                  <p style={{ color: "#66789c", margin: 0 }}>
-                    No documents found.
-                  </p>
                 ) : (
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "14px",
-                    }}
-                  >
-                    {documents.map((doc) => {
-                      const positive = isPositive(doc.status);
-                      return (
-                        <div
-                          key={doc.documentType}
+                  <div>
+                    {/* Required Documents */}
+                    <div style={{ marginBottom: "24px" }}>
+                      <h6
+                        style={{
+                          color: "#122359",
+                          fontWeight: 700,
+                          marginBottom: "14px",
+                          fontSize: "15px",
+                        }}
+                      >
+                        Required Documents
+                      </h6>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "14px",
+                        }}
+                      >
+                        {COMPULSORY_DOCS.map((item) => {
+                          const doc = documents.find(
+                            (d) =>
+                              d.documentType === item.docType ||
+                              d.documentType === item.uploadType ||
+                              (item.docType === "PAN Card" && d.documentType === "PAN")
+                          ) || {
+                            documentType: item.docType,
+                            status: "Not Uploaded",
+                            uploadedAt: null,
+                            fileUrl: null,
+                          };
+
+                          const positive = isPositive(doc.status);
+                          const hasFile = !!doc.fileUrl;
+
+                          return (
+                            <div
+                              key={item.docType}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                flexWrap: "wrap",
+                                gap: "14px",
+                                padding: "18px 22px",
+                                borderRadius: "18px",
+                                border: "1px solid rgba(18,35,89,0.08)",
+                                background: "#ffffff",
+                                transition: "all .35s ease",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = "translateY(-4px)";
+                                e.currentTarget.style.borderColor = "rgba(255,153,0,0.32)";
+                                e.currentTarget.style.boxShadow = "0 12px 28px rgba(255,163,0,0.10)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = "translateY(0px)";
+                                e.currentTarget.style.borderColor = "rgba(18,35,89,0.08)";
+                                e.currentTarget.style.boxShadow = "none";
+                              }}
+                            >
+                              <div>
+                                <div
+                                  style={{
+                                    fontWeight: 700,
+                                    color: "#122359",
+                                    marginBottom: "4px",
+                                  }}
+                                >
+                                  {prettyDocName(doc.documentType)}
+                                  <span
+                                    style={{
+                                      marginLeft: "8px",
+                                      fontSize: "9px",
+                                      color: "#b91c1c",
+                                      background: "#fef2f2",
+                                      border: "1px solid #fca5a5",
+                                      padding: "2px 6px",
+                                      borderRadius: "6px",
+                                      fontWeight: 700,
+                                      textTransform: "uppercase",
+                                    }}
+                                  >
+                                    Required
+                                  </span>
+                                </div>
+                                <div style={{ fontSize: "13px", color: "#66789c" }}>
+                                  {doc.uploadedAt
+                                    ? `Updated: ${formatDate(doc.uploadedAt)}`
+                                    : "Not uploaded yet"}
+                                </div>
+                              </div>
+
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "10px",
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    padding: "6px 12px",
+                                    borderRadius: "999px",
+                                    background: positive ? "#ecfdf3" : "#fff7ea",
+                                    color: positive ? "#0BAB7C" : "#ff9900",
+                                    fontSize: "11px",
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  {doc.status}
+                                </span>
+
+                                {hasFile ? (
+                                  <button
+                                    className="btn btn-border btn-sm"
+                                    style={{
+                                      borderRadius: "10px",
+                                      fontWeight: 700,
+                                      cursor: "pointer",
+                                    }}
+                                    type="button"
+                                    onClick={() => handleView(doc)}
+                                  >
+                                    <i
+                                      className="fi fi-rr-eye"
+                                      style={{ marginRight: "5px" }}
+                                    />
+                                    View
+                                  </button>
+                                ) : (
+                                  <button
+                                    className="btn btn-default btn-sm"
+                                    style={{
+                                      borderRadius: "10px",
+                                      fontWeight: 700,
+                                      cursor: uploading ? "wait" : "pointer",
+                                      background: "#ff9900",
+                                      borderColor: "#ff9900",
+                                      color: "#ffffff",
+                                      padding: "8px 14px",
+                                    }}
+                                    type="button"
+                                    disabled={uploading}
+                                    onClick={() => handleDirectUpload(item.uploadType)}
+                                  >
+                                    <i
+                                      className="fi fi-rr-upload"
+                                      style={{ marginRight: "5px" }}
+                                    />
+                                    {uploading && uploadType === item.uploadType ? "Uploading…" : "Upload"}
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Additional Requested Documents */}
+                    {requestedDocuments.length > 0 && (
+                      <div style={{ marginBottom: "24px", marginTop: "24px" }}>
+                        <h6
                           style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            flexWrap: "wrap",
-                            gap: "14px",
-                            padding: "18px 22px",
-                            borderRadius: "18px",
-                            border: "1px solid rgba(18,35,89,0.08)",
-                            background: "#ffffff",
-                            transition: "all .35s ease",
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = "translateY(-4px)";
-                            e.currentTarget.style.borderColor =
-                              "rgba(255,153,0,0.32)";
-                            e.currentTarget.style.boxShadow =
-                              "0 12px 28px rgba(255,163,0,0.10)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = "translateY(0px)";
-                            e.currentTarget.style.borderColor =
-                              "rgba(18,35,89,0.08)";
-                            e.currentTarget.style.boxShadow = "none";
+                            color: "#122359",
+                            fontWeight: 700,
+                            marginBottom: "14px",
+                            fontSize: "15px",
                           }}
                         >
-                          <div>
-                            <div
-                              style={{
-                                fontWeight: 700,
-                                color: "#122359",
-                                marginBottom: "4px",
-                              }}
-                            >
-                             {doc.documentType}
-                            </div>
-                            <div style={{ fontSize: "13px", color: "#66789c" }}>
-                              {doc.uploadedAt
-                                ? `Updated: ${formatDate(doc.uploadedAt)}`
-                                : "Not uploaded yet"}
-                            </div>
-                          </div>
+                          Additional Requested Documents
+                        </h6>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "14px",
+                          }}
+                        >
+                          {requestedDocuments.map((doc) => {
+                            const positive = isPositive(doc.status);
+                            const hasFile = !!doc.fileUrl;
 
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "10px",
-                            }}
-                          >
-                            <span
-                              style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                padding: "6px 12px",
-                                borderRadius: "999px",
-                                background: positive ? "#ecfdf3" : "#fff7ea",
-                                color: positive ? "#0BAB7C" : "#ff9900",
-                                fontSize: "11px",
-                                fontWeight: 700,
-                              }}
-                            >
-                              {doc.status}
-                            </span>
+                            return (
+                              <div
+                                key={doc.documentName}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  flexWrap: "wrap",
+                                  gap: "14px",
+                                  padding: "18px 22px",
+                                  borderRadius: "18px",
+                                  border: "1px solid rgba(18,35,89,0.08)",
+                                  background: "#ffffff",
+                                  transition: "all .35s ease",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.transform = "translateY(-4px)";
+                                  e.currentTarget.style.borderColor = "rgba(255,153,0,0.32)";
+                                  e.currentTarget.style.boxShadow = "0 12px 28px rgba(255,163,0,0.10)";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.transform = "translateY(0px)";
+                                  e.currentTarget.style.borderColor = "rgba(18,35,89,0.08)";
+                                  e.currentTarget.style.boxShadow = "none";
+                                }}
+                              >
+                                <div>
+                                  <div
+                                    style={{
+                                      fontWeight: 700,
+                                      color: "#122359",
+                                      marginBottom: "4px",
+                                    }}
+                                  >
+                                    {doc.documentName}
+                                  </div>
+                                  {doc.description && (
+                                    <div
+                                      style={{
+                                        fontSize: "13px",
+                                        color: "#66789c",
+                                        marginBottom: "6px",
+                                      }}
+                                    >
+                                      {doc.description}
+                                    </div>
+                                  )}
+                                  {/* <div style={{ fontSize: "12px", color: "#8c9fb8" }}>
+                                    {doc.uploadedAt
+                                      ? `Updated: ${formatDate(doc.uploadedAt)}`
+                                      : "Not uploaded yet"}
+                                  </div> */}
+                                </div>
 
-                            <button
-                              className="btn btn-border btn-sm"
-                              style={{
-                                borderRadius: "10px",
-                                fontWeight: 700,
-                                opacity: doc.fileUrl ? 1 : 0.5,
-                                cursor: doc.fileUrl ? "pointer" : "not-allowed",
-                              }}
-                              type="button"
-                              disabled={!doc.fileUrl}
-                              onClick={() => handleView(doc)}
-                            >
-                              <i
-                                className="fi fi-rr-eye"
-                                style={{ marginRight: "5px" }}
-                              />
-                              View
-                            </button>
-                          </div>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "10px",
+                                  }}
+                                >
+                                  <span
+                                    style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      padding: "6px 12px",
+                                      borderRadius: "999px",
+                                      background: positive ? "#ecfdf3" : "#fff7ea",
+                                      color: positive ? "#0BAB7C" : "#ff9900",
+                                      fontSize: "11px",
+                                      fontWeight: 700,
+                                    }}
+                                  >
+                                    {doc.status}
+                                  </span>
+
+                                  {hasFile ? (
+                                    <button
+                                      className="btn btn-border btn-sm"
+                                      style={{
+                                        borderRadius: "10px",
+                                        fontWeight: 700,
+                                        cursor: "pointer",
+                                      }}
+                                      type="button"
+                                      onClick={() => handleView(doc)}
+                                    >
+                                      <i
+                                        className="fi fi-rr-eye"
+                                        style={{ marginRight: "5px" }}
+                                      />
+                                      View
+                                    </button>
+                                  ) : (
+                                    <button
+                                      className="btn btn-default btn-sm"
+                                      style={{
+                                        borderRadius: "10px",
+                                        fontWeight: 700,
+                                        cursor: uploading ? "wait" : "pointer",
+                                        background: "#ff9900",
+                                        borderColor: "#ff9900",
+                                        color: "#ffffff",
+                                        padding: "8px 14px",
+                                      }}
+                                      type="button"
+                                      disabled={uploading}
+                                      onClick={() => handleDirectUpload(doc.documentName)}
+                                    >
+                                      <i
+                                        className="fi fi-rr-upload"
+                                        style={{ marginRight: "5px" }}
+                                      />
+                                      {uploading && uploadType === doc.documentName ? "Uploading…" : "Upload"}
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
-                      );
-                    })}
+                      </div>
+                    )}
+
+                    {/* Optional/Additional Documents */}
+                    {documents.filter(
+                      (d) =>
+                        !COMPULSORY_DOCS.some(
+                          (item) =>
+                            d.documentType === item.docType ||
+                            d.documentType === item.uploadType ||
+                            (item.docType === "PAN Card" && d.documentType === "PAN")
+                        )
+                    ).length > 0 && (
+                      <div style={{ marginTop: "24px" }}>
+                        <h6
+                          style={{
+                            color: "#122359",
+                            fontWeight: 700,
+                            marginBottom: "14px",
+                            fontSize: "15px",
+                          }}
+                        >
+                          Additional Documents
+                        </h6>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "14px",
+                          }}
+                        >
+                          {documents
+                            .filter(
+                              (d) =>
+                                !COMPULSORY_DOCS.some(
+                                  (item) =>
+                                    d.documentType === item.docType ||
+                                    d.documentType === item.uploadType ||
+                                    (item.docType === "PAN Card" && d.documentType === "PAN")
+                                )
+                            )
+                            .map((doc) => {
+                              const positive = isPositive(doc.status);
+                              return (
+                                <div
+                                  key={doc.documentType}
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    flexWrap: "wrap",
+                                    gap: "14px",
+                                    padding: "18px 22px",
+                                    borderRadius: "18px",
+                                    border: "1px solid rgba(18,35,89,0.08)",
+                                    background: "#ffffff",
+                                    transition: "all .35s ease",
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = "translateY(-4px)";
+                                    e.currentTarget.style.borderColor = "rgba(255,153,0,0.32)";
+                                    e.currentTarget.style.boxShadow = "0 12px 28px rgba(255,163,0,0.10)";
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = "translateY(0px)";
+                                    e.currentTarget.style.borderColor = "rgba(18,35,89,0.08)";
+                                    e.currentTarget.style.boxShadow = "none";
+                                  }}
+                                >
+                                  <div>
+                                    <div
+                                      style={{
+                                        fontWeight: 700,
+                                        color: "#122359",
+                                        marginBottom: "4px",
+                                      }}
+                                    >
+                                      {prettyDocName(doc.documentType)}
+                                    </div>
+                                    <div style={{ fontSize: "13px", color: "#66789c" }}>
+                                      {doc.uploadedAt
+                                        ? `Updated: ${formatDate(doc.uploadedAt)}`
+                                        : "Not uploaded yet"}
+                                    </div>
+                                  </div>
+
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "10px",
+                                    }}
+                                  >
+                                    <span
+                                      style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        padding: "6px 12px",
+                                        borderRadius: "999px",
+                                        background: positive ? "#ecfdf3" : "#fff7ea",
+                                        color: positive ? "#0BAB7C" : "#ff9900",
+                                        fontSize: "11px",
+                                        fontWeight: 700,
+                                      }}
+                                    >
+                                      {doc.status}
+                                    </span>
+
+                                    {doc.fileUrl ? (
+                                      <button
+                                        className="btn btn-border btn-sm"
+                                        style={{
+                                          borderRadius: "10px",
+                                          fontWeight: 700,
+                                          cursor: "pointer",
+                                        }}
+                                        type="button"
+                                        onClick={() => handleView(doc)}
+                                      >
+                                        <i
+                                          className="fi fi-rr-eye"
+                                          style={{ marginRight: "5px" }}
+                                        />
+                                        View
+                                      </button>
+                                    ) : (
+                                      <button
+                                        className="btn btn-default btn-sm"
+                                        style={{
+                                          borderRadius: "10px",
+                                          fontWeight: 700,
+                                          cursor: uploading ? "wait" : "pointer",
+                                          background: "#ff9900",
+                                          borderColor: "#ff9900",
+                                          color: "#ffffff",
+                                          padding: "8px 14px",
+                                        }}
+                                        type="button"
+                                        disabled={uploading}
+                                        onClick={() => handleDirectUpload(doc.documentType)}
+                                      >
+                                        <i
+                                          className="fi fi-rr-upload"
+                                          style={{ marginRight: "5px" }}
+                                        />
+                                        {uploading && uploadType === doc.documentType ? "Uploading…" : "Upload"}
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -498,14 +951,11 @@ await uploadDocument(
                         MozAppearance: "none",
                       }}
                     >
-                    {documentTypes.map((doc) => (
-   <option
-     key={doc.isOther ? "OTHER" : doc.documentTypeId}
-    value={doc.isOther ? "OTHER" : doc.documentTypeId}
->
-    {doc.documentName}
-</option>
-))}
+                      {UPLOADABLE_TYPES.map((t) => (
+                        <option key={t.value} value={t.value}>
+                          {t.label}
+                        </option>
+                      ))}
                     </select>
                     <i
                       className="fi-rr-angle-small-down"
@@ -521,11 +971,39 @@ await uploadDocument(
                     />
                   </div>
                 </div>
-{uploadType === "OTHER" && (
-  <div style={{ marginBottom: "18px", maxWidth: "320px" }}>
-  
-  </div>
-)}
+
+                {/* Conditional Document Name Input */}
+                {uploadType === "OTHER" && (
+                  <div style={{ marginBottom: "18px", maxWidth: "320px" }}>
+                    <label
+                      style={{
+                        display: "block",
+                        fontSize: "13px",
+                        fontWeight: 700,
+                        color: "#122359",
+                        marginBottom: "8px",
+                      }}
+                    >
+                      Document name
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Enter document name"
+                      value={customDocName}
+                      onChange={(e) => setCustomDocName(e.target.value)}
+                      style={{
+                        borderRadius: "12px",
+                        border: "1px solid rgba(18,35,89,0.15)",
+                        padding: "10px 14px",
+                        fontWeight: 600,
+                        color: "#122359",
+                        width: "100%",
+                      }}
+                    />
+                  </div>
+                )}
+
                 {/* Hidden file input */}
                 <input
                   ref={fileInputRef}

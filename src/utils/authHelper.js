@@ -27,6 +27,11 @@ const getDecodedToken = () => {
 export const getCandidateId = () => {
   if (typeof window === "undefined") return null;
 
+  const token = getStoredValue("token");
+  if (!token) {
+    return null;
+  }
+
   const decoded = getDecodedToken();
 
   console.log("Decoded JWT:", decoded);
@@ -53,6 +58,11 @@ export const getCandidateId = () => {
 
 export const getEmployerId = () => {
   if (typeof window === "undefined") return null;
+
+  const token = getStoredValue("token");
+  if (!token) {
+    return null;
+  }
 
   const decoded = getDecodedToken();
 

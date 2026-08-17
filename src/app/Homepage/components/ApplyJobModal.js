@@ -115,6 +115,12 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
   const requiredLanguages = applyDetails?.languagesRequired ?? [];
   const requiredCertificates = applyDetails?.certificatesRequired ?? [];
   const passportRequired = applyDetails?.passportRequired ?? false;
+  // Whether the candidate actually has a passport on file (server-verified,
+  // not self-attested). When the job requires a passport and the candidate
+  // doesn't have one, applying is blocked with a clear message instead of
+  // just showing a checkbox the candidate could tick without proof.
+  const candidateHasPassport = applyDetails?.candidateHasPassport ?? false;
+  const passportBlocksApplication = passportRequired && !candidateHasPassport;
 
   useEffect(() => {
     if (showModal && !isCandidateLoggedIn) {
@@ -134,6 +140,24 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
         setLoadingDetails(true);
         const response = await getApplyQuestions(job.jobId);
         setApplyDetails(response.data);
+
+        // Candidates may only apply to jobs in their own trade category.
+        // The backend already rejects a mismatched apply, but we check
+        // here too so the candidate never even sees the application form
+        // for a job they're not eligible for — just a clear toast.
+        if (response.data?.tradeCategoryMismatch) {
+          const candidateTrade = response.data.candidateTradeCategory;
+          const jobTrade = response.data.jobTradeCategory;
+          showToast(
+            candidateTrade && jobTrade
+              ? `You can only apply to jobs in your trade category (${candidateTrade}). This job is listed under ${jobTrade}.`
+              : "This job is outside your trade category, so you can't apply to it.",
+            "error"
+          );
+          if (typeof setShowModal === "function") {
+            setShowModal(false);
+          }
+        }
       } catch (err) {
         console.error("Failed to load apply questions", err);
         setApplyDetails(null);
@@ -294,6 +318,13 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
   };
 
   const checkRequiredGates = () => {
+    if (applyDetails?.tradeCategoryMismatch) {
+      setError(
+        "This job is outside your trade category, so you can't apply to it."
+      );
+      return false;
+    }
+
     for (const question of employerQuestions) {
       if (!question.required) continue;
       const answer = String(answers[question.id] || "").trim();
@@ -301,6 +332,13 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
         setError("Please answer all required employer screening questions.");
         return false;
       }
+    }
+
+    if (passportBlocksApplication) {
+      setError(
+        "You don't have a passport on file. This job requires a valid passport — please add it to your profile before applying."
+      );
+      return false;
     }
 
     if (passportRequired && !confirmations.passport) {
@@ -367,7 +405,7 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
       }
 
       const payload = {
-        passportGatePassed: passportRequired ? confirmations.passport : true,
+        passportGatePassed: passportRequired ? candidateHasPassport : true,
         ageConfirmed: true,
 
         motivationMessage: answers.motivation || "",
@@ -608,17 +646,45 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
                               <h6 className="mb-10">Requirements to confirm</h6>
 
                               {passportRequired && (
-                                <label className="mb-8" style={{ display: "flex", gap: "8px" }}>
-                                  <input
-                                    type="checkbox"
-                                    checked={confirmations.passport}
-                                    onChange={(e) => togglePassport(e.target.checked)}
-                                    style={{ accentColor: "#F7941D", cursor: "pointer" }}
-                                  />
-                                  <span className="font-sm">
-                                    I have a valid passport (required for this job) *
-                                  </span>
-                                </label>
+                                passportBlocksApplication ? (
+                                  <div
+                                    className="mb-8"
+                                    style={{
+                                      display: "flex",
+                                      flexDirection: "column",
+                                      gap: 6,
+                                      padding: "10px 12px",
+                                      borderRadius: 8,
+                                      background: "#FFF4F4",
+                                      border: "1px solid rgba(163,45,45,0.25)",
+                                    }}
+                                  >
+                                    <span className="font-sm" style={{ color: "#a32d2d" }}>
+                                      You don&apos;t have a passport on file. This job requires a
+                                      valid passport to apply.
+                                    </span>
+                                    <Link
+                                      href="/candidate-profile#documents"
+                                      onClick={closeModal}
+                                      className="font-xs fw-600"
+                                      style={{ color: "#1D4ED8" }}
+                                    >
+                                      Add your passport in your profile →
+                                    </Link>
+                                  </div>
+                                ) : (
+                                  <label className="mb-8" style={{ display: "flex", gap: "8px" }}>
+                                    <input
+                                      type="checkbox"
+                                      checked={confirmations.passport}
+                                      onChange={(e) => togglePassport(e.target.checked)}
+                                      style={{ accentColor: "#F7941D", cursor: "pointer" }}
+                                    />
+                                    <span className="font-sm">
+                                      I confirm the passport on my profile is valid for this job *
+                                    </span>
+                                  </label>
+                                )
                               )}
 
                               {requiredLanguages.map((lang) => (
@@ -666,7 +732,17 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
                         <Link className="btn btn-border hover-up" href="/candidate-profile#cv" onClick={closeModal}>
                           Update CV
                         </Link>
-                        <button type="button" className="btn btn-default hover-up" onClick={goToCvPreview}>
+                        <button
+                          type="button"
+                          className="btn btn-default hover-up"
+                          onClick={goToCvPreview}
+                          disabled={passportBlocksApplication}
+                          title={
+                            passportBlocksApplication
+                              ? "Add a passport to your profile to continue"
+                              : undefined
+                          }
+                        >
                           Next: Review CV
                         </button>
                       </div>

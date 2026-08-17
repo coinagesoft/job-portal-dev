@@ -7,7 +7,7 @@ import { Autoplay, Navigation } from "swiper/modules";
 import { getAllJobs } from "@/services/candidate/allJobsService";
 import { resolveCountry } from "@/utils/locationResolver";
 
-export default function JobsByLocation() {
+export default function JobsByLocation({ locationsData }) {
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -17,9 +17,6 @@ export default function JobsByLocation() {
         const response = await getAllJobs();
         const allJobs = response.data || [];
 
-        // Group by resolved country — every state/city rolls up into one
-        // card per country (e.g. all Indian jobs across every state become
-        // a single "India" card), now resolved dynamically for any country.
         const countryMap = {};
         allJobs.forEach((job) => {
           const country = resolveCountry(job.jobLocation);
@@ -39,16 +36,6 @@ export default function JobsByLocation() {
           }
         });
 
-        // Countries with a dedicated, purpose-made image use that image
-        // directly. Any other country falls back to a random pick from
-        // the 6 generic stock location images (so it doesn't always
-        // land on the same one for the same position in the list).
-        //
-        // Multiple keys can point at the same image — resolveCountry()
-        // may return "UAE" or the spelled-out "United Arab Emirates"
-        // depending on the source string, and offshore jobs can resolve
-        // to either "Offshore" or "Arabian Sea", so both variants are
-        // mapped here to keep the dedicated image showing either way.
         const COUNTRY_IMAGE_MAP = {
           India: "/assets/imgs/page/homepage1/India.webp",
           Qatar: "/assets/imgs/page/homepage1/Qatar.webp",
@@ -58,26 +45,32 @@ export default function JobsByLocation() {
           "Arabian Sea": "/assets/imgs/page/homepage1/Offshore.webp",
         };
 
-        const activeLocations = Object.values(countryMap).map((loc) => {
-          const mappedImg = COUNTRY_IMAGE_MAP[loc.country];
-          const randomImgIndex = Math.floor(Math.random() * 6) + 1;
+        if (locationsData && locationsData.length > 0) {
+          const activeLocations = locationsData.map((loc) => {
+            const countryName = loc.country;
+            const liveData = countryMap[countryName] || { vacancies: 0, companies: 0 };
 
-          return {
-            country: loc.country,
-            vacancies: loc.vacancies,
-            companies: loc.companies.size,
-            badge: loc.vacancies > 10 ? "Hot" : loc.vacancies > 5 ? "Trending" : "",
-            img:
-              mappedImg ||
-              `/assets/imgs/page/homepage1/location${randomImgIndex}.png`,
-          };
-        });
-        
+            const mappedImg = COUNTRY_IMAGE_MAP[countryName];
+            const randomImgIndex = Math.floor(Math.random() * 6) + 1;
 
-        // Sort locations by number of vacancies descending
-        activeLocations.sort((a, b) => b.vacancies - a.vacancies);
+            return {
+              country: countryName,
+              vacancies: liveData.vacancies,
+              companies: liveData.companies instanceof Set ? liveData.companies.size : (liveData.companies || 0),
+              badge: liveData.vacancies > 10 ? "Hot" : liveData.vacancies > 5 ? "Trending" : "",
+              img:
+                loc.imageUrl ||
+                mappedImg ||
+                `/assets/imgs/page/homepage1/location${randomImgIndex}.png`,
+              displayOrder: loc.displayOrder || 0,
+            };
+          });
 
-        setLocations(activeLocations);
+          activeLocations.sort((a, b) => a.displayOrder - b.displayOrder);
+          setLocations(activeLocations);
+        } else {
+          setLocations([]);
+        }
       } catch (error) {
         console.error("Error loading jobs for location counts:", error);
       } finally {
@@ -85,23 +78,25 @@ export default function JobsByLocation() {
       }
     };
     loadData();
-  }, []);
+  }, [locationsData]);
 
-  const showNav = locations.length > 4;
+  const showNav = locations.length > 1;
   const loopMode = locations.length > 4;
-  const slidesCount = Math.min(locations.length, 4);
+
+  const centerClasses = [];
+  if (locations.length <= 4) centerClasses.push("swiper-center-desktop");
+  if (locations.length <= 3) centerClasses.push("swiper-center-tablet");
+  if (locations.length <= 2) centerClasses.push("swiper-center-mobile");
+  if (locations.length <= 1) centerClasses.push("swiper-center-sm-mobile");
+  const centerClassName = centerClasses.join(" ");
+
+  if (!loading && locations.length === 0) {
+    return null;
+  }
 
   return (
     <section className="section-box mt-50 mb-20">
       <style dangerouslySetInnerHTML={{ __html: `
-        /* The theme's default .box-swiper arrow positioning floats the
-           buttons 65px outside the container on each side, which only
-           looks right when there's enough page whitespace around the
-           section — here it pushes them past the edge of the viewport
-           (or lets them collide with neighboring content). Overriding
-           with a self-contained circular button that sits just inside
-           the card row instead, so it never depends on outer page
-           spacing. Scoped to this component's swiper only. */
         .swiper-location-next::after,
         .swiper-location-prev::after {
           content: "" !important;
@@ -158,8 +153,35 @@ export default function JobsByLocation() {
         }
         .swiper-location-next.swiper-button-disabled,
         .swiper-location-prev.swiper-button-disabled {
-          opacity: 0.35 !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
           cursor: default;
+        }
+
+        .card-image-top {
+          width: 100% !important;
+        }
+
+        /* Center swiper wrapper only when the slides don't overflow at each breakpoint */
+        @media (min-width: 1200px) {
+          .swiper-group-location.swiper-center-desktop .swiper-wrapper {
+            justify-content: center;
+          }
+        }
+        @media (min-width: 768px) and (max-width: 1199.98px) {
+          .swiper-group-location.swiper-center-tablet .swiper-wrapper {
+            justify-content: center;
+          }
+        }
+        @media (min-width: 576px) and (max-width: 767.98px) {
+          .swiper-group-location.swiper-center-mobile .swiper-wrapper {
+            justify-content: center;
+          }
+        }
+        @media (max-width: 575.98px) {
+          .swiper-group-location.swiper-center-sm-mobile .swiper-wrapper {
+            justify-content: center;
+          }
         }
       `}} />
       <div className="container">
@@ -183,7 +205,7 @@ export default function JobsByLocation() {
               <Swiper
                 modules={[Navigation, Autoplay]}
                 spaceBetween={24}
-                slidesPerView={slidesCount}
+                slidesPerView={1}
                 loop={loopMode}
                 autoplay={loopMode ? { delay: 3000, disableOnInteraction: false } : false}
                 navigation={{
@@ -191,12 +213,11 @@ export default function JobsByLocation() {
                   prevEl: ".swiper-location-prev"
                 }}
                 breakpoints={{
-                  320: { slidesPerView: 1 },
-                  576: { slidesPerView: Math.min(locations.length, 2) },
-                  768: { slidesPerView: Math.min(locations.length, 3) },
-                  1200: { slidesPerView: slidesCount },
+                  576: { slidesPerView: 2 },
+                  768: { slidesPerView: 3 },
+                  1200: { slidesPerView: 4 }
                 }}
-                className="swiper-group-location swiper"
+                className={`swiper-group-location swiper ${centerClassName}`}
                 style={{ paddingBottom: "10px", paddingTop: "5px" }}
               >
                 {locations.map((loc) => (
