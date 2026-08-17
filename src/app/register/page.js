@@ -1793,7 +1793,7 @@ function EmployerForm() {
   const router = useRouter();
   const showToast = useToast();
   const [step, setStep] = useState(1);
-  const [industriesList, setIndustriesList] = useState([]);
+  const [industriesList, setIndustriesList] = useState(INDUSTRIES);
 
   const [data, setData] = useState({
     hasGst: null,
@@ -1884,7 +1884,8 @@ function EmployerForm() {
         const res = await getHomepageData();
         if (res.data?.success && res.data.industries) {
           const apiIndustries = res.data.industries.map((ind) => ind.name).filter(Boolean);
-          setIndustriesList(apiIndustries);
+          const merged = Array.from(new Set([...apiIndustries, ...INDUSTRIES]));
+          setIndustriesList(merged);
         }
       } catch (err) {
         console.error("Failed to load industries from homepage API:", err);
@@ -4045,7 +4046,7 @@ function RegisterPageInner() {
                 ? "Candidate Registration"
                 : "Create your account"}
           </h1>
-          <p 
+          <p  
             style={{
               fontSize: "var(--font-sm)",
               color: "var(--color-text-secondary)",
