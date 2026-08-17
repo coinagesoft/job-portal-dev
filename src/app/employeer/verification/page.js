@@ -5,8 +5,8 @@ import SubUserViewOnlyGuard from "@/components/SubUserViewOnlyGuard.js";
 import {
   getVerification,
   uploadDocument,
+  getDocumentTypes,
 } from "@/services/recruiter/recruiterVerificationService";
-
 /* ── Icon mapping (backend does not send icons) ───────────────────────────── */
 const BADGE_ICONS = {
   GST: "fi fi-rr-check",
@@ -15,14 +15,7 @@ const BADGE_ICONS = {
   "RPSL Licensed": "fi fi-rr-diploma",
 };
 
-/* Document types that can actually be uploaded (matches backend enum) */
-const UPLOADABLE_TYPES = [
-  { value: "POE", label: "POE Licence" },
-  { value: "RPSL", label: "RPSL Licence" },
-  { value: "BUSINESS_REGISTRATION", label: "Business Registration" },
-  { value: "GST", label: "GST Certificate" },
-  { value: "PAN", label: "PAN Card" },
-];
+
 
 /* Statuses the backend treats as "positive/done" */
 const POSITIVE_STATUSES = ["Approved", "Uploaded", "Available", "Verified"];
@@ -51,22 +44,8 @@ const formatDate = (value) => {
   }
 };
 
-const prettyDocName = (type) => {
-  switch (type) {
-    case "GST":
-      return "GST Certificate";
-    case "PAN":
-      return "PAN Card";
-    case "POE":
-      return "POE Licence";
-    case "RPSL":
-      return "RPSL Licence";
-    case "BUSINESS_REGISTRATION":
-      return "Business Registration";
-    default:
-      return type;
-  }
-};
+
+
 
 const EmployerVerificationPage = () => {
   const [badges, setBadges] = useState([]);
@@ -74,11 +53,34 @@ const EmployerVerificationPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [uploadType, setUploadType] = useState("POE");
+const [documentTypes, setDocumentTypes] = useState([]);
+const [uploadType, setUploadType] = useState("");
+const [customDocumentName, setCustomDocumentName] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState(null);
   const fileInputRef = useRef(null);
+const loadDocumentTypes = async () => {
+  try {
+    const response = await getDocumentTypes();
 
+    const docs = response.data ?? [];
+setDocumentTypes([
+    ...docs,
+    {
+        documentTypeId: null,
+        documentName: "Other Document",
+        isOther: true
+    }
+]);
+
+if (docs.length > 0)
+    setUploadType(docs[0].documentTypeId);
+
+  
+  } catch (err) {
+    console.error(err);
+  }
+};
   /* ── Load dashboard ─────────────────────────────────────────────────────── */
   const loadVerification = async () => {
     try {
@@ -96,7 +98,8 @@ const EmployerVerificationPage = () => {
   };
 
   useEffect(() => {
-    loadVerification();
+      loadVerification();
+  loadDocumentTypes();
   }, []);
 
   /* ── Upload flow ────────────────────────────────────────────────────────── */
@@ -126,21 +129,11 @@ const EmployerVerificationPage = () => {
     try {
       setUploading(true);
       setUploadMsg(null);
-      await uploadDocument(uploadType, file);
-      setUploadMsg({ type: "success", text: "Document uploaded successfully." });
-
-      // Reflect the upload immediately rather than waiting on the refetch
-      // below — if that GET is ever slow, or briefly returns a cached
-      // response, the user would otherwise see the success message with
-      // no visible change in the list underneath it.
-      setDocuments((prev) =>
-        prev.map((doc) =>
-          doc.documentType === uploadType
-            ? { ...doc, status: "Uploaded", uploadedAt: new Date().toISOString() }
-            : doc
-        )
-      );
-
+await uploadDocument(
+    uploadType,
+    customDocumentName,
+    file
+);      setUploadMsg({ type: "success", text: "Document uploaded successfully." });
       await loadVerification();
     } catch (err) {
       console.error("uploadDocument error:", err);
@@ -402,7 +395,7 @@ const EmployerVerificationPage = () => {
                                 marginBottom: "4px",
                               }}
                             >
-                              {prettyDocName(doc.documentType)}
+                             {doc.documentType}
                             </div>
                             <div style={{ fontSize: "13px", color: "#66789c" }}>
                               {doc.uploadedAt
@@ -505,11 +498,14 @@ const EmployerVerificationPage = () => {
                         MozAppearance: "none",
                       }}
                     >
-                      {UPLOADABLE_TYPES.map((t) => (
-                        <option key={t.value} value={t.value}>
-                          {t.label}
-                        </option>
-                      ))}
+                    {documentTypes.map((doc) => (
+   <option
+     key={doc.isOther ? "OTHER" : doc.documentTypeId}
+    value={doc.isOther ? "OTHER" : doc.documentTypeId}
+>
+    {doc.documentName}
+</option>
+))}
                     </select>
                     <i
                       className="fi-rr-angle-small-down"
@@ -525,7 +521,11 @@ const EmployerVerificationPage = () => {
                     />
                   </div>
                 </div>
-
+{uploadType === "OTHER" && (
+  <div style={{ marginBottom: "18px", maxWidth: "320px" }}>
+  
+  </div>
+)}
                 {/* Hidden file input */}
                 <input
                   ref={fileInputRef}

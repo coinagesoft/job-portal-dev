@@ -136,33 +136,52 @@ export const uploadDocuments = (documents, sessionId) => {
 
   formData.append("SessionId", sessionId);
 
-  documents.forEach((doc, index) => {
+  let uploadIndex = 0;
+
+  documents.forEach((doc) => {
+    // Skip already uploaded documents
+    if (!(doc.file instanceof File)) {
+      return;
+    }
+
     if (doc.documentTypeId) {
       formData.append(
-        `Documents[${index}].DocumentTypeId`,
+        `Documents[${uploadIndex}].DocumentTypeId`,
         doc.documentTypeId
       );
     }
 
     if (doc.documentName) {
       formData.append(
-        `Documents[${index}].DocumentName`,
+        `Documents[${uploadIndex}].DocumentName`,
         doc.documentName
       );
     }
 
     if (doc.category) {
       formData.append(
-        `Documents[${index}].Category`,
+        `Documents[${uploadIndex}].Category`,
         doc.category
       );
     }
 
     formData.append(
-      `Documents[${index}].File`,
+      `Documents[${uploadIndex}].File`,
       doc.file
     );
+
+    uploadIndex++;
   });
+
+  // Nothing new to upload
+  if (uploadIndex === 0) {
+    return Promise.resolve({
+      data: {
+        success: true,
+        message: "No new documents to upload."
+      }
+    });
+  }
 
   return api.post(
     "/api/recruiter/registration/upload-documents",

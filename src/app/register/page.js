@@ -1990,93 +1990,99 @@ function EmployerForm() {
           const step3 = session.step3Data || {};
           const step4 = session.step4Data || {};
 
-          setData((p) => ({
-            ...p,
+         setData((p) => ({
+  ...p,
 
-            // STEP 1
-            hasGst: step1.gstRegistered,
-            industry: step1.industryType,
+  // STEP 1
+  hasGst: step1.gstRegistered,
+  industry: step1.industryType,
 
-            // STEP 2
-            legalName: step2.legalName || "",
-            tradeName: step2.tradeName || "",
+  // STEP 2
+  legalName: step2.legalName || "",
+  tradeName: step2.tradeName || "",
 
-            businessType: step2.businessType || "",
-            companySize: step2.companySize || "",
+  businessType: step2.businessType || "",
+  companySize: step2.companySize || "",
 
-            gstn: step2.gstn || "",
-            pan: step2.pan || "",
-            cin: step2.cin || "",
+  gstn: step2.gstn || "",
+  pan: step2.pan || "",
+  cin: step2.cin || "",
 
-            state: step2.state || "",
-            stateIso: getStateIso(
-              getCountryIso(step2.country || ""),
-              step2.state || "",
-            ),
-            city: step2.city || "",
-            country: step2.country || "",
-            countryIso: getCountryIso(step2.country || ""),
-            pincode: step2.pincode || "",
-            address: step2.addressLine1 || "",
+  state: step2.state || "",
+  stateIso: getStateIso(
+    getCountryIso(step2.country || ""),
+    step2.state || ""
+  ),
+  city: step2.city || "",
+  country: step2.country || "",
+  countryIso: getCountryIso(step2.country || ""),
+  pincode: step2.pincode || "",
+  address: step2.addressLine1 || "",
 
-            officialWebsite: step2.websiteUrl || "",
+  officialWebsite: step2.websiteUrl || "",
 
-            companyLogo: step2.companyLogoUrl
-              ? {
-                name: step2.companyLogoUrl.split("/").pop(),
-                url: step2.companyLogoUrl,
-              }
-              : null,
+  companyLogo: step2.companyLogoUrl
+    ? {
+        name: step2.companyLogoUrl.split("/").pop(),
+        url: step2.companyLogoUrl,
+      }
+    : null,
 
-            // STEP 3
-            contactName: step3.contactPersonName || "",
-            designation: step3.designation || "",
+  // STEP 3
+  contactName: step3.contactPersonName || "",
+  designation: step3.designation || "",
 
-            contactPersonEmail: step3.contactPersonEmail || "",
+  contactPersonEmail: step3.contactPersonEmail || "",
 
-            corpEmail: step3.companyEmail || "",
+  corpEmail: step3.companyEmail || "",
 
-            mobile: step3.mobileNumber || "",
+  mobile: step3.mobileNumber || "",
 
-            countryCode: step3.countryCode || "+91",
+  countryCode: step3.countryCode || "+91",
 
-            profileSummary: step3.companyDescription || "",
+  profileSummary: step3.companyDescription || "",
 
-            mobileOtp: {
-              ...p.mobileOtp,
-              sent: !!step3.mobileNumber,
-              verified: step3.mobileVerified || false,
-            },
+  mobileOtp: {
+    ...p.mobileOtp,
+    sent: !!step3.mobileNumber,
+    verified: step3.mobileVerified || false,
+  },
 
-            corpEmailOtp: {
-              ...p.corpEmailOtp,
-              sent: !!step3.companyEmail,
-              verified: step3.companyEmailVerified || false,
-            },
+  corpEmailOtp: {
+    ...p.corpEmailOtp,
+    sent: !!step3.companyEmail,
+    verified: step3.companyEmailVerified || false,
+  },
+}));
+// Restore uploaded mandatory & optional documents
+setSelectedDocuments(
+  (step4.documents || [])
+    .filter((d) => d.documentTypeId)
+    .map((d) => ({
+      documentTypeId: d.documentTypeId,
+      file: {
+        name: d.documentName,
+        url: d.fileUrl,
+      },
+      fileUrl: d.fileUrl,
+      status: d.status,
+    }))
+);
 
-            // STEP 4
-            licDocs: [
-              ...(step4.poeLicenceUrl
-                ? [
-                  {
-                    id: "poe",
-                    name: step4.poeLicenceUrl.split("/").pop(),
-                    url: step4.poeLicenceUrl,
-                  },
-                ]
-                : []),
-
-              ...(step4.rpslLicenceUrl
-                ? [
-                  {
-                    id: "rpsl",
-                    name: step4.rpslLicenceUrl.split("/").pop(),
-                    url: step4.rpslLicenceUrl,
-                  },
-                ]
-                : []),
-            ],
-          }));
+// Restore uploaded additional documents
+setAdditionalDocuments(
+  (step4.documents || [])
+    .filter((d) => !d.documentTypeId)
+    .map((d) => ({
+      file: {
+        name: d.documentName,
+        url: d.fileUrl,
+      },
+      fileUrl: d.fileUrl,
+      status: d.status,
+      documentName: d.documentName,
+    }))
+);
           console.log("hasGst being set to", session.gstRegistered);
           // move to next step
           setStep(Math.min(session.stepStatus.lastCompletedStep + 1, 5));
@@ -2971,7 +2977,7 @@ function EmployerForm() {
         </Field>
 
         <Field
-          label="Company Profile Summary" required
+          label="Company Profile Summary"
           hint="Brief description of your company and hiring focus (shown on job listings)"
         >
           
@@ -3038,16 +3044,17 @@ function EmployerForm() {
 
       const sessionId = localStorage.getItem("registrationSessionId");
 
-      const documents = [
-        ...selectedDocuments,
-        ...additionalDocuments
-          .filter((x) => x.file)
-          .map((x) => ({
-            documentTypeId: null,
-            category: "Additional",
-            file: x.file,
-          })),
-      ];
+  const documents = [
+  ...selectedDocuments.filter((x) => x.file instanceof File),
+
+  ...additionalDocuments
+    .filter((x) => x.file instanceof File)
+    .map((x) => ({
+      documentTypeId: null,
+      category: "Additional",
+      file: x.file,
+    })),
+];
 
       const response = await uploadDocuments(
         documents,
@@ -3560,14 +3567,16 @@ function EmployerForm() {
           label="Company logo"
           val={data.companyLogo ? `✓ ${data.companyLogo.name}` : ""}
         />
-        <ReviewRow
-          label="Licences"
-          val={
-            data.licDocs.length > 0
-              ? data.licDocs.map((d) => d.id.toUpperCase()).join(", ")
-              : ""
-          }
-        />
+      <ReviewRow
+  label="Licences"
+  val={
+    [...selectedDocuments, ...additionalDocuments].length > 0
+      ? [...selectedDocuments, ...additionalDocuments]
+          .map((d) => d.file?.name || d.documentName)
+          .join(", ")
+      : ""
+  }
+/>
         <ReviewRow label="GST registered" val={data.hasGst ? "Yes" : "No"} />
       </ReviewSection>
 
