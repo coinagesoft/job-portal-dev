@@ -133,7 +133,7 @@ export const uploadLicences = (
   sessionId
 ) =>
   api.post(
-    "/api/recruiter/registration/upload-licences",
+    "/api/recruiter/registration/upload-documents",
     formData,
     {
       headers: {
@@ -168,3 +168,6 @@ export const getEnumOptions = () =>
   api.get(
     "/api/recruiter/registration/enum-options"
   );
+
+export const getRecruiterPlan = (region) =>
+  api.get(`/api/plans/recruiter?region=${region}`);

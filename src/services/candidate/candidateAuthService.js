@@ -17,3 +17,7 @@ api.post("/api/candidate/auth/google", payload);
 
 export const linkedInLogin = (payload) =>
 api.post("/api/candidate/auth/linkedin", payload);
+
+export const getCandidatePlan = (region) =>
+api.get(`/api/plans/candidate?region=${region}`);
+

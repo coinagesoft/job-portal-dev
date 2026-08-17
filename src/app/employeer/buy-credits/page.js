@@ -9,7 +9,44 @@ import {
   createCreditPlanOrder,
   verifyCreditPlanPayment,
 } from "@/services/recruiter/recruiterCreditWalletService";
+import companyProfileService from "@/services/recruiter/companyProfileService";
 import SubUserViewOnlyGuard from "@/components/SubUserViewOnlyGuard.js";
+
+const filterPlansByCountry = (plansList, countryName) => {
+  const activePlans = (plansList || []).filter((plan) => plan.isActive === true);
+
+  if (!countryName) return activePlans;
+
+  const cLower = countryName.toLowerCase().trim();
+  const isIndian = cLower === "india" || cLower === "in";
+
+  if (isIndian) {
+    return activePlans.filter((plan) => {
+      const rLower = plan.region?.toLowerCase().trim() || "";
+      return rLower === "india" || rLower === "in";
+    });
+  }
+
+  const isUsa =
+    cLower === "usa" ||
+    cLower === "us" ||
+    cLower === "united states" ||
+    cLower === "united states of america";
+  if (isUsa) {
+    return activePlans.filter((plan) => {
+      const rLower = plan.region?.toLowerCase().trim() || "";
+      return rLower === "usa" || rLower === "us" || rLower === "united states";
+    });
+  }
+
+  // Otherwise, match region exactly
+  const filtered = activePlans.filter((plan) => {
+    const rLower = plan.region?.toLowerCase().trim() || "";
+    return rLower === cLower;
+  });
+
+  return filtered.length > 0 ? filtered : activePlans;
+};
 
 const EmployerBuyCreditsPage = () => {
   // const [selected, setSelected] = useState(CREDIT_PACKS[1]);
@@ -21,12 +58,14 @@ const EmployerBuyCreditsPage = () => {
   const [selected, setSelected] = useState(null);
   const [plansLoading, setPlansLoading] = useState(true);
   const [plansError, setPlansError] = useState(null);
+  const [recruiterCountry, setRecruiterCountry] = useState("");
 
   const gst = selected ? selected.price * 0.18 : 0;
 
   const total = selected ? selected.price + gst : 0;
 
-  const loadPlans = () => {
+  const loadPlans = (country) => {
+    const activeCountry = typeof country === "string" ? country : recruiterCountry;
     setPlansLoading(true);
     setPlansError(null);
 
@@ -34,8 +73,9 @@ const EmployerBuyCreditsPage = () => {
       .then((data) => {
         // Some backends wrap the array as { plans: [...] } — support both shapes.
         const list = Array.isArray(data) ? data : data?.plans || [];
-        setPlans(list);
-        if (list.length > 0) setSelected(list[0]);
+        const filteredList = filterPlansByCountry(list, activeCountry);
+        setPlans(filteredList);
+        if (filteredList.length > 0) setSelected(filteredList[0]);
       })
       .catch((err) => {
         console.error(err);
@@ -55,7 +95,17 @@ const EmployerBuyCreditsPage = () => {
         setWallet(null);
       });
 
-    loadPlans();
+    companyProfileService.getCompanyProfile()
+      .then((profileData) => {
+        const country = profileData?.country || "";
+        setRecruiterCountry(country);
+        loadPlans(country);
+      })
+      .catch((err) => {
+        console.error("Failed to load recruiter company profile:", err);
+        loadPlans("");
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (plansLoading) {

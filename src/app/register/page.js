@@ -18,7 +18,7 @@ import {
   createCandidateOrder,
   googleLogin,
   linkedInLogin,
-
+  getCandidatePlan,
 } from "@/services/candidate/candidateAuthService";
 import {
   registerWithGoogle,
@@ -39,6 +39,7 @@ import {
   uploadLicences,
   submitRegistration,
   resumeRegistration,
+  getRecruiterPlan,
 } from "@/services/recruiter/recruiterRegistrationService";
 // ─────────────────────────────────────────────
 // Shared helpers
@@ -1046,6 +1047,39 @@ function CandidateForm() {
   const [registering, setRegistering] = useState(false);
   const isSocialVerified = !!socialAuth;
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+
+  const [candidatePlan, setCandidatePlan] = useState(null);
+  const [planLoading, setPlanLoading] = useState(false);
+
+  const fetchPlan = async (code) => {
+    try {
+      setPlanLoading(true);
+      const meta = getCountryMeta(code);
+      const region = meta?.name ? meta.name.toLowerCase() : "india";
+      let response = await getCandidatePlan(region);
+      let list = response.data || [];
+      if (list.length === 0) {
+        response = await getCandidatePlan("");
+        list = response.data || [];
+      }
+      if (list.length > 0) {
+        const activePlan = list.find((p) => p.isActive) || list[0];
+        setCandidatePlan(activePlan);
+      } else {
+        setCandidatePlan(null);
+      }
+    } catch (err) {
+      console.error("Failed to fetch candidate plan:", err);
+      setCandidatePlan(null);
+    } finally {
+      setPlanLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPlan(form.countryCode);
+  }, [form.countryCode]);
+
   useEffect(() => {
     const pending = sessionStorage.getItem("linkedinVerifiedState");
     if (pending) {
@@ -1170,11 +1204,11 @@ function CandidateForm() {
         return;
       }
 
-      if (!window.Razorpay || !key) {
+      if (!window.Razorpay) {
         setLoading(false);
 
         setPaymentMessage(
-          "Razorpay SDK or key missing."
+          "Razorpay SDK missing."
         );
 
         return;
@@ -1183,7 +1217,7 @@ function CandidateForm() {
       // Create order from backend
       const orderResponse =
         await createCandidateOrder({
-          amount: 100,
+          amount: candidatePlan?.price || 100,
         });
 
       const order = orderResponse.data;
@@ -1198,8 +1232,15 @@ function CandidateForm() {
         return;
       }
 
+      const activeKey = order.razorpayKeyId || key;
+      if (!activeKey) {
+        setLoading(false);
+        setPaymentMessage("Razorpay key missing.");
+        return;
+      }
+
       const options = {
-        key,
+        key: activeKey,
 
         amount: order.amount * 100,
 
@@ -1432,10 +1473,6 @@ function CandidateForm() {
         Smart AI note: after CV upload, profile fields are auto-filled from AI
         parsing. You only verify and save.
       </Alert>
-      <Script
-        src="https://checkout.razorpay.com/v1/checkout.js"
-        strategy="lazyOnload"
-      />
 
       <Field
         label="Full Name"
@@ -1539,7 +1576,7 @@ function CandidateForm() {
             <Alert type="success">
               {registering
                 ? "Payment successful — creating your account..."
-                : "Payment successful for INR 100. Your receipt will be sent to your registered email."}
+                : `Payment successful for INR ${candidatePlan?.price || 100}. Your receipt will be sent to your registered email.`}
             </Alert>
           ) : (
             <>
@@ -1553,7 +1590,7 @@ function CandidateForm() {
                   fontSize: "var(--font-sm)",
                 }}
               >
-                {loading ? "Processing..." : "Pay INR 100 via Razorpay"}
+                {loading ? "Processing..." : `Pay INR ${candidatePlan?.price || 100} via Razorpay`}
               </Btn>
               {!terms && (
                 <p
@@ -1793,6 +1830,47 @@ function EmployerForm() {
   const [attempt3, setAttempt3] = useState(false);
   const logoRef = useRef();
   const licRef = useRef();
+
+  const [recruiterPlan, setRecruiterPlan] = useState(null);
+  const [planLoading, setPlanLoading] = useState(false);
+  const [payStatus, setPayStatus] = useState("");
+  const [paymentData, setPaymentData] = useState({
+    razorpayOrderId: "",
+    razorpayPaymentId: "",
+    razorpaySignature: "",
+  });
+  const [paymentMessage, setPaymentMessage] = useState("");
+  const [paying, setPaying] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+
+  const fetchRecruiterPlan = async (code) => {
+    try {
+      setPlanLoading(true);
+      const meta = getCountryMeta(code);
+      const region = meta?.name ? meta.name.toLowerCase() : "india";
+      let response = await getRecruiterPlan(region);
+      let list = response.data || [];
+      if (list.length === 0) {
+        response = await getRecruiterPlan("");
+        list = response.data || [];
+      }
+      if (list.length > 0) {
+        const activePlan = list.find((p) => p.isActive) || list[0];
+        setRecruiterPlan(activePlan);
+      } else {
+        setRecruiterPlan(null);
+      }
+    } catch (err) {
+      console.error("Failed to fetch recruiter plan:", err);
+      setRecruiterPlan(null);
+    } finally {
+      setPlanLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRecruiterPlan(data.countryCode);
+  }, [data.countryCode]);
 
   const set = (k, v) => setData((p) => ({ ...p, [k]: v }));
 
@@ -2090,6 +2168,10 @@ function EmployerForm() {
       showToast("Please accept the Terms of Service to continue.", "warning");
       return;
     }
+    if (payStatus !== "success") {
+      showToast("Please complete the registration fee payment first.", "error");
+      return;
+    }
     try {
       const sessionId = localStorage.getItem("registrationSessionId");
 
@@ -2105,6 +2187,121 @@ function EmployerForm() {
       }
     } catch (err) {
       showToast(err.response?.data?.message, "error");
+    }
+  };
+
+  const handleEmployerPay = async () => {
+    try {
+      setPaying(true);
+
+      const key =
+        process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "";
+
+      if (typeof window === "undefined") {
+        setPaying(false);
+        return;
+      }
+
+      if (!window.Razorpay) {
+        setPaying(false);
+        setPaymentMessage(
+          "Razorpay SDK missing."
+        );
+        return;
+      }
+
+      const meta = getCountryMeta(data.countryCode);
+      const region = meta?.name ? meta.name.toLowerCase() : "india";
+
+      const orderResponse = await createCandidateOrder({
+        region: region,
+      });
+
+      const order = orderResponse.data;
+
+      if (!order.success) {
+        setPaying(false);
+        setPaymentMessage(
+          "Unable to create payment order."
+        );
+        return;
+      }
+
+      const activeKey = order.razorpayKeyId || key;
+      if (!activeKey) {
+        setPaying(false);
+        setPaymentMessage("Razorpay key missing.");
+        return;
+      }
+
+      const options = {
+        key: activeKey,
+        amount: (recruiterPlan?.price || 150) * 100,
+        currency: order.currency || "INR",
+        name: "Job Box",
+        description: "Employer Registration Fee",
+        handler: function (response) {
+          console.log("RAZORPAY RESPONSE", response);
+
+          const paymentInfo = {
+            razorpayOrderId: response.razorpay_order_id || "",
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpaySignature: response.razorpay_signature || "",
+          };
+
+          setPaymentData(paymentInfo);
+          setPayStatus("success");
+          setPaymentMessage(
+            `Payment successful. Reference: ${response.razorpay_payment_id}`
+          );
+          setPaying(false);
+
+          // Payment succeeded — complete registration right away
+          submitEmployerAfterPay();
+        },
+        prefill: {
+          name: data.contactName,
+          contact: data.mobile,
+          email: data.corpEmail,
+        },
+        theme: {
+          color: "#ff9900",
+        },
+        modal: {
+          ondismiss: () => {
+            setPaying(false);
+            setPaymentMessage(
+              "Payment window closed before completion."
+            );
+          },
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+
+    } catch (error) {
+      console.error("Razorpay initialization error", error);
+      setPaying(false);
+      setPaymentMessage("Payment initialization failed.");
+    }
+  };
+
+  const submitEmployerAfterPay = async () => {
+    try {
+      const sessionId = localStorage.getItem("registrationSessionId");
+
+      const response = await submitRegistration({
+        sessionId,
+        consentGiven: true,
+      });
+
+      if (response.data.success) {
+        showToast("Registration completed", "success");
+        router.push("/Login");
+      }
+    } catch (err) {
+      showToast(err.response?.data?.message || "Registration failed", "error");
     }
   };
 
@@ -2927,10 +3124,10 @@ function EmployerForm() {
       const sessionId = localStorage.getItem("registrationSessionId");
 
       const formData = new FormData();
+      formData.append("SessionId", sessionId);
 
       // Find files
       const poeDoc = data.licDocs.find((x) => x.id === "poe");
-
       const rpslDoc = data.licDocs.find((x) => x.id === "rpsl");
 
       if (!poeDoc || !rpslDoc) {
@@ -2938,9 +3135,13 @@ function EmployerForm() {
         return;
       }
 
-      formData.append("PoeLicence", poeDoc.file);
+      formData.append("Documents[0].documentName", "POE Licence");
+      formData.append("Documents[0].category", "Licence");
+      formData.append("Documents[0].file", poeDoc.file);
 
-      formData.append("RpslLicence", rpslDoc.file);
+      formData.append("Documents[1].documentName", "RPSL Licence");
+      formData.append("Documents[1].category", "Licence");
+      formData.append("Documents[1].file", rpslDoc.file);
 
       const response = await uploadLicences(formData, sessionId);
 
@@ -3163,7 +3364,6 @@ function EmployerForm() {
   // );
 
   const [attempt4, setAttempt4] = useState(false);
-  const [termsAccepted, setTermsAccepted] = useState(false);
   const renderStep4 = () => (
     <div>
       <h3
@@ -3674,13 +3874,64 @@ function EmployerForm() {
         </p>
       )}
 
-      <Btn
-        variant="primary"
-        style={{ width: "100%", padding: "13px 0", fontSize: "var(--font-md)", marginTop: 6 }}
-        onClick={handleEmployerSubmit}
-      >
-        Create Account
-      </Btn>
+      <div style={{ marginTop: 14, marginBottom: 14 }}>
+        <Field label="Registration Fee">
+          {payStatus === "success" ? (
+            <Alert type="success">
+              {paying
+                ? "Payment successful — creating your account..."
+                : `Payment successful for INR ${recruiterPlan?.price || 150}. Your receipt will be sent to your registered email.`}
+            </Alert>
+          ) : (
+            <>
+              <Btn
+                variant="primary"
+                onClick={handleEmployerPay}
+                disabled={paying || !termsAccepted}
+                style={{
+                  width: "100%",
+                  padding: "11px 0",
+                  fontSize: "var(--font-sm)",
+                }}
+              >
+                {paying ? "Processing..." : `Pay INR ${recruiterPlan?.price || 150} via Razorpay`}
+              </Btn>
+              {!termsAccepted && (
+                <p
+                  style={{
+                    fontSize: "var(--font-xs)",
+                    marginTop: 8,
+                    color: "var(--color-text-tertiary)",
+                  }}
+                >
+                  Please accept the Terms of Service above to continue to payment.
+                </p>
+              )}
+            </>
+          )}
+          {paymentMessage && (
+            <p
+              style={{
+                fontSize: "var(--font-xs)",
+                marginTop: 8,
+                color: "var(--color-text-tertiary)",
+              }}
+            >
+              {paymentMessage}
+            </p>
+          )}
+        </Field>
+      </div>
+
+      {payStatus === "success" && (
+        <Btn
+          variant="primary"
+          style={{ width: "100%", padding: "13px 0", fontSize: "var(--font-md)", marginTop: 6 }}
+          onClick={handleEmployerSubmit}
+        >
+          Create Account
+        </Btn>
+      )}
       <div
         style={{ display: "flex", justifyContent: "flex-start", marginTop: 12 }}
       >
@@ -3746,6 +3997,10 @@ function RegisterPageInner() {
         "--font-xl": "21px",
       }}
     >
+      <Script
+        src="https://checkout.razorpay.com/v1/checkout.js"
+        strategy="lazyOnload"
+      />
       <img
         src="/assets/imgs/page/login-register/img-3.svg"
         alt=""
