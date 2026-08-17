@@ -1754,6 +1754,7 @@ function EmployerForm() {
   const router = useRouter();
   const showToast = useToast();
   const [step, setStep] = useState(1);
+
   const [data, setData] = useState({
     hasGst: null,
     industry: "",
@@ -1792,6 +1793,7 @@ function EmployerForm() {
   const [attempt1, setAttempt1] = useState(false);
   const [attempt2, setAttempt2] = useState(false);
   const [attempt3, setAttempt3] = useState(false);
+  
   const logoRef = useRef();
   const licRef = useRef();
 
@@ -3023,24 +3025,7 @@ setAdditionalDocuments(
 
   const handleStep4 = async () => {
     try {
-      // Validate mandatory documents
-      const missingDocuments = mandatoryDocuments.filter(
-        (doc) =>
-          !selectedDocuments.some(
-            (selected) =>
-              selected.documentTypeId === doc.documentTypeId
-          )
-      );
-
-      if (missingDocuments.length > 0) {
-        showToast(
-          `Please upload: ${missingDocuments
-            .map((d) => d.documentName)
-            .join(", ")}`,
-          "error"
-        );
-        return;
-      }
+    
 
       const sessionId = localStorage.getItem("registrationSessionId");
 
@@ -3090,7 +3075,6 @@ setAdditionalDocuments(
         }}
       >
         Licence & document upload
-        <span style={{ color: "#E24B4A", marginLeft: 6 }}>*</span>
       </h3>
       <p
         style={{
@@ -3166,7 +3150,6 @@ setAdditionalDocuments(
                       }}
                     >
                       {doc.documentName}
-                       <span style={{ color: "#f04438", marginLeft: 4 }}>*</span>
                     </label>
 
                     <input
