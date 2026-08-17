@@ -3,9 +3,12 @@
 import React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { getJobFilterOptions } from "@/services/candidate/jobFilterService";
-import { getAllJobs } from "@/services/candidate/allJobsService";
-import { resolveCountry } from "@/utils/locationResolver";
+import api from "@/services/api";
+
+// GET /api/public/homepage/data
+const getHomepageData = () => {
+  return api.get("/api/public/homepage/data");
+};
 
 // Custom dropdown that always renders BELOW the field (never flips upward,
 // unlike native <select> which the browser can position based on viewport space).
@@ -158,14 +161,13 @@ export default function HeroSection({ heroData }) {
 
   const [keyword, setKeyword] = React.useState("");
   const [location, setLocation] = React.useState("");
-  // const [industries, setIndustries] = React.useState("");
   const [tradeCategory, setTradeCategory] = React.useState("");
 
   const [popularSearches, setPopularSearches] = React.useState([]);
 
-  // Real Trade Category list, sourced from the same endpoint the sidebar uses.
-  // Location options are derived from that same state/city list, but
-  // collapsed down to country only (e.g. every Indian state -> "India").
+  // Trade Category and Location options — both sourced from
+  // GET /api/public/homepage/data (tradeCategories[] and locations[]),
+  // via getHomepageData().
   const [tradeCategoryOptions, setTradeCategoryOptions] = React.useState([]);
   const [countryOptions, setCountryOptions] = React.useState([]);
   const [optionsLoading, setOptionsLoading] = React.useState(true);
@@ -173,39 +175,23 @@ export default function HeroSection({ heroData }) {
   React.useEffect(() => {
     const loadOptions = async () => {
       try {
-        const [filterRes, jobsRes] = await Promise.all([
-          getJobFilterOptions(),
-          getAllJobs()
-        ]);
+        const res = await getHomepageData();
 
-        if (filterRes.data.success) {
-          const trades = filterRes.data.tradeCategories || [];
-          const states = filterRes.data.states || [];
-          const jobs = jobsRes.data || [];
+        if (res.data?.success) {
+          const trades = res.data.tradeCategories || [];
+          const locations = res.data.locations || [];
 
-          // Extract unique active locations directly from jobs in case
-          // any specific locations (like "Arabian Sea") are missing from states
-          const statesFromJobs = jobs
-            .map((job) => job.jobLocation || job.city || job.state)
-            .filter(Boolean);
+          const tradeNames = trades.map((t) => t.name).filter(Boolean);
+          setTradeCategoryOptions(tradeNames);
+          setPopularSearches(tradeNames.slice(0, 7));
 
-          const combinedStates = Array.from(
-            new Set([...states, ...statesFromJobs])
-          );
-
-          setTradeCategoryOptions(trades);
-          setPopularSearches(trades.slice(0, 7));
-
-          // Collapse every state/city returned by the API down to its
-          // country, then dedupe — so the Location dropdown mostly shows
-          // countries. If a value can't be resolved to a real country
-          // (e.g. "Arabian Sea", an offshore/regional listing that isn't
-          // an actual state/city/country), keep the raw value instead of
-          // silently dropping it from the dropdown.
+          // "locations" from this endpoint is already at country
+          // granularity, so just dedupe on country (falling back to
+          // name if country is ever missing).
           const countries = Array.from(
             new Set(
-              combinedStates
-                .map((loc) => resolveCountry(loc) || loc)
+              locations
+                .map((loc) => loc.country || loc.name)
                 .filter(Boolean)
             )
           ).sort();
@@ -325,7 +311,7 @@ export default function HeroSection({ heroData }) {
                     />
                   </div>
 
-                  {/* LOCATION (country only) */}
+                  {/* LOCATION (country) */}
                   <div style={{ minWidth: "200px", flex: "0 0 200px", marginRight: "10px", position: "relative" }}>
                     <CustomDropdown
                       placeholder="Location"
