@@ -1,68 +1,116 @@
- 'use client';
-import React, { useEffect } from 'react';
+'use client';
+import React, { useEffect, useState } from 'react';
+import { getHomepageData } from '@/services/api';
 
 const StatsSection = () => {
+  const [statistics, setStatistics] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchStats = async () => {
+      try {
+        const response = await getHomepageData();
+
+        // Works whether getHomepageData() resolves to a raw axios
+        // response (response.data = body) OR to the body itself
+        // (if your api.js interceptor already unwraps response.data).
+        const payload = response?.data ?? response;
+
+        console.log('Homepage API payload:', payload);
+
+        if (!payload?.success) {
+          throw new Error('API responded but success was falsy');
+        }
+
+        if (isMounted) {
+          const sortedStats = [...(payload.statistics || [])].sort(
+            (a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0)
+          );
+          setStatistics(sortedStats);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err);
+          console.error('Failed to load homepage statistics:', err);
+        }
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    fetchStats();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!loading && statistics.length > 0 && typeof window !== 'undefined') {
+      if (window.initCounters) {
+        window.initCounters();
+      }
+    }
+  }, [loading, statistics]);
+
+  if (loading) {
+    return (
+      <section className="section-box overflow-visible mt-50 mb-50">
+        <div className="container">
+          <div className="row">
+            <div className="col-12 text-center">
+              <p>Loading statistics...</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    console.error('StatsSection error state:', error);
+    return null;
+  }
+
+  if (statistics.length === 0) {
+    return null;
+  }
 
   return (
     <section className="section-box overflow-visible mt-50 mb-50">
       <div className="container">
         <div className="row">
-          <div className="col-xl-3 col-lg-3 col-md-6 col-sm-6 col-12">
-            <div className="text-center">
-              <h1 className="color-brand-2">
-                <span className="count" data-target="25">25</span>
-                <span> K+</span>
-              </h1>
-              <h5>Candidates Placed</h5>
-              <p className="font-sm color-text-paragraph mt-10">
-                Skilled candidates successfully <br className="d-none d-lg-block" />
-                placed in domestic and overseas <br className="d-none d-lg-block" />
-                blue-collar opportunities
-              </p>
-            </div>
-          </div>
-          <div className="col-xl-3 col-lg-3 col-md-6 col-sm-6 col-12">
-            <div className="text-center">
-              <h1 className="color-brand-2">
-                <span className="count" data-target="22">22</span>
-                <span> +</span>
-              </h1>
-              <h5>Countries Overseas</h5>
-              <p className="font-sm color-text-paragraph mt-10">
-                Active overseas hiring network <br className="d-none d-lg-block" />
-                supporting international manpower <br className="d-none d-lg-block" />
-                deployment programs
-              </p>
-            </div>
-          </div>
-          <div className="col-xl-3 col-lg-3 col-md-6 col-sm-6 col-12">
-            <div className="text-center">
-              <h1 className="color-brand-2">
-                <span className="count" data-target="10">10</span>
-                <span> K+</span>
-              </h1>
-              <h5>Skilled People</h5>
-              <p className="font-sm color-text-paragraph mt-10">
-                Verified trade professionals <br className="d-none d-lg-block" />
-                across maintenance, fabrication, <br className="d-none d-lg-block" />
-                logistics, marine and construction
-              </p>
-            </div>
-          </div>
-          <div className="col-xl-3 col-lg-3 col-md-6 col-sm-6 col-12">
-            <div className="text-center">
-              <h1 className="color-brand-2">
-                <span className="count" data-target="65">65</span>
-                <span> +</span>
-              </h1>
-              <h5>Happy Clients</h5>
-              <p className="font-sm color-text-paragraph mt-10">
-                Trusted employers and recruitment <br className="d-none d-lg-block" />
-                partners with repeat hiring demand <br className="d-none d-lg-block" />
-                across project cycles
-              </p>
-            </div>
-          </div>
+          {statistics.map((stat, index) => {
+            const numericValue = parseInt(
+              String(stat.value).replace(/[^0-9]/g, ''),
+              10
+            ) || 0;
+
+            return (
+              <div
+                key={stat.id || `${stat.label}-${index}`}
+                className="col-xl-3 col-lg-3 col-md-6 col-sm-6 col-12"
+              >
+                <div className="text-center">
+                  <h1 className="color-brand-2">
+                    <span className="count" data-target={numericValue}>
+                      {numericValue}
+                    </span>
+                    {stat.suffix && <span> {stat.suffix}</span>}
+                  </h1>
+                  <h5>{stat.label}</h5>
+                  {stat.iconSlug && (
+                    <p className="font-sm color-text-paragraph mt-10">
+                      {stat.iconSlug}
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>
@@ -70,4 +118,3 @@ const StatsSection = () => {
 };
 
 export default StatsSection;
-

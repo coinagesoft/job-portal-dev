@@ -36,32 +36,18 @@ export default function JobsByLocation({ locationsData }) {
           }
         });
 
-        const COUNTRY_IMAGE_MAP = {
-          India: "/assets/imgs/page/homepage1/India.webp",
-          Qatar: "/assets/imgs/page/homepage1/Qatar.webp",
-          UAE: "/assets/imgs/page/homepage1/UAE.jpg",
-          "United Arab Emirates": "/assets/imgs/page/homepage1/UAE.jpg",
-          Offshore: "/assets/imgs/page/homepage1/Offshore.webp",
-          "Arabian Sea": "/assets/imgs/page/homepage1/Offshore.webp",
-        };
-
         if (locationsData && locationsData.length > 0) {
           const activeLocations = locationsData.map((loc) => {
             const countryName = loc.country;
             const liveData = countryMap[countryName] || { vacancies: 0, companies: 0 };
-
-            const mappedImg = COUNTRY_IMAGE_MAP[countryName];
-            const randomImgIndex = Math.floor(Math.random() * 6) + 1;
 
             return {
               country: countryName,
               vacancies: liveData.vacancies,
               companies: liveData.companies instanceof Set ? liveData.companies.size : (liveData.companies || 0),
               badge: liveData.vacancies > 10 ? "Hot" : liveData.vacancies > 5 ? "Trending" : "",
-              img:
-                loc.imageUrl ||
-                mappedImg ||
-                `/assets/imgs/page/homepage1/location${randomImgIndex}.png`,
+              // Only ever comes from the admin-managed API field now — no hardcoded/random fallback
+              img: loc.imageUrl || null,
               displayOrder: loc.displayOrder || 0,
             };
           });
@@ -162,6 +148,11 @@ export default function JobsByLocation({ locationsData }) {
           width: 100% !important;
         }
 
+        /* Keep the same card height even when there's no admin image */
+        .card-image-top .image.no-image {
+          background-color: #f4f6fb;
+        }
+
         /* Center swiper wrapper only when the slides don't overflow at each breakpoint */
         @media (min-width: 1200px) {
           .swiper-group-location.swiper-center-desktop .swiper-wrapper {
@@ -228,7 +219,10 @@ export default function JobsByLocation({ locationsData }) {
                         className="d-block w-100 h-100"
                         style={{ textDecoration: "none", color: "inherit" }}
                       >
-                        <div className="image" style={{ backgroundImage: `url(${loc.img})` }}>
+                        <div
+                          className={`image${loc.img ? "" : " no-image"}`}
+                          style={loc.img ? { backgroundImage: `url(${loc.img})` } : undefined}
+                        >
                           {loc.badge ? <span className="lbl-hot">{loc.badge}</span> : null}
                         </div>
                         <div className="informations">
