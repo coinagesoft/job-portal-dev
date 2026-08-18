@@ -50,6 +50,7 @@ export default function JobsOfTheDay() {
   const [tabs, setTabs] = useState([]);
   const [jobsData, setJobsData] = useState({});
   const [loading, setLoading] = useState(true);
+  const [hasTodaysJobs, setHasTodaysJobs] = useState(true);
 
   useEffect(() => {
     const loadJobs = async () => {
@@ -101,8 +102,10 @@ export default function JobsOfTheDay() {
 
         setTabs(activeTabs);
         setJobsData({ ...grouped, [ALL_TAB_LABEL]: allJobs });
+        setHasTodaysJobs(todaysTotalCount > 0);
       } catch (error) {
         console.error("Error loading Jobs of the Day:", error);
+        setHasTodaysJobs(false);
       } finally {
         setLoading(false);
       }
@@ -110,6 +113,12 @@ export default function JobsOfTheDay() {
 
     loadJobs();
   }, []);
+
+  // Nothing posted today (or the categories/tabs otherwise ended up empty) —
+  // don't render the section at all once we know that for sure.
+  if (!loading && (!hasTodaysJobs || tabs.length === 0)) {
+    return null;
+  }
 
   return (
     <section className="section-box mt-70">
@@ -126,10 +135,6 @@ export default function JobsOfTheDay() {
           {loading ? (
             <div className="text-center mt-40">
               <p className="font-lg color-text-paragraph-2">Loading categories...</p>
-            </div>
-          ) : tabs.length === 0 ? (
-            <div className="text-center mt-40 pb-50">
-              <p className="font-lg color-text-paragraph-2">No categories found.</p>
             </div>
           ) : (
             <div className="list-tabs mt-40">

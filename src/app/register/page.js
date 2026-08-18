@@ -1903,6 +1903,7 @@ function EmployerForm() {
       showToast("Enter a valid 15-character GSTN", "error");
       return;
     }
+    // For demo purposes, we simulate an API call to fetch company details based on GSTN.
     setOcrLoading(true);
     setTimeout(() => {
       setData((p) => ({
