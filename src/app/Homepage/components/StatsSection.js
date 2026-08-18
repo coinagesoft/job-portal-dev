@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { getHomepageData } from '@/services/api';
+import { getHomepageData } from '@/services/candidate/homepageService';
 
 const StatsSection = () => {
   const [statistics, setStatistics] = useState([]);
