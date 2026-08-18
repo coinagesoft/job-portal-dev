@@ -329,29 +329,47 @@ const SupportTicketCenter = ({
               Share your issue clearly. Admin replies will appear in your ticket
               timeline.
             </p>
-
-            <div className="input-style-1 mb-15">
-              <label className="font-sm color-text-mutted mb-10">
-                Subject *
-              </label>
-              <input
-                className="form-control"
-                type="text"
-                placeholder="e.g. Unable to upload certificate PDF"
-                value={form.subject}
-                onChange={(event) => {
-                  setForm((prev) => ({ ...prev, subject: event.target.value }));
-                  if (errors.subject)
-                    setErrors((prev) => ({ ...prev, subject: undefined }));
-                }}
-                style={{ height: "44px", fontSize: "13px" }}
-              />
-              {errors.subject ? (
-                <p className="font-xs mt-5 mb-0" style={{ color: "#c0392b" }}>
-                  {errors.subject}
-                </p>
-              ) : null}
-            </div>
+<div className="input-style-1 mb-15">
+  <label className="font-sm color-text-mutted mb-10">
+    Subject *
+  </label>
+  <input
+    className="form-control"
+    type="text"
+    maxLength={70}
+    placeholder="e.g. Unable to upload certificate PDF"
+    value={form.subject}
+    onChange={(event) => {
+      const value = event.target.value.slice(0, 70);
+      setForm((prev) => ({ ...prev, subject: value }));
+      if (errors.subject)
+        setErrors((prev) => ({ ...prev, subject: undefined }));
+    }}
+    style={{ height: "44px", fontSize: "13px" }}
+  />
+  <div
+    className="d-flex justify-content-between align-items-start"
+    style={{ marginTop: 5 }}
+  >
+    {errors.subject ? (
+      <p className="font-xs mb-0" style={{ color: "#c0392b" }}>
+        {errors.subject}
+      </p>
+    ) : (
+      <span />
+    )}
+    <span
+      className="font-xs"
+      style={{
+        color: form.subject.length >= 70 ? "#c0392b" : "#8c9ab4",
+        whiteSpace: "nowrap",
+        marginLeft: 8,
+      }}
+    >
+      {form.subject.length}/70
+    </span>
+  </div>
+</div>
 
             <div className="input-style-1 mb-15">
               <label className="font-sm color-text-mutted mb-10">
@@ -384,31 +402,50 @@ const SupportTicketCenter = ({
               ) : null}
             </div>
 
-            <div className="input-style-1 mb-20">
-              <label className="font-sm color-text-mutted mb-10">
-                Description *
-              </label>
-              <textarea
-                className="form-control"
-                rows={5}
-                placeholder="Describe your issue with steps and expected result."
-                value={form.description}
-                onChange={(event) => {
-                  setForm((prev) => ({
-                    ...prev,
-                    description: event.target.value,
-                  }));
-                  if (errors.description)
-                    setErrors((prev) => ({ ...prev, description: undefined }));
-                }}
-                style={{ fontSize: "13px", resize: "vertical" }}
-              />
-              {errors.description ? (
-                <p className="font-xs mt-5 mb-0" style={{ color: "#c0392b" }}>
-                  {errors.description}
-                </p>
-              ) : null}
-            </div>
+           <div className="input-style-1 mb-20">
+  <label className="font-sm color-text-mutted mb-10">
+    Description *
+  </label>
+  <textarea
+    className="form-control"
+    rows={5}
+    maxLength={500}
+    placeholder="Describe your issue with steps and expected result."
+    value={form.description}
+    onChange={(event) => {
+      const value = event.target.value.slice(0, 500);
+      setForm((prev) => ({
+        ...prev,
+        description: value,
+      }));
+      if (errors.description)
+        setErrors((prev) => ({ ...prev, description: undefined }));
+    }}
+    style={{ fontSize: "13px", resize: "vertical" }}
+  />
+  <div
+    className="d-flex justify-content-between align-items-start"
+    style={{ marginTop: 5 }}
+  >
+    {errors.description ? (
+      <p className="font-xs mb-0" style={{ color: "#c0392b" }}>
+        {errors.description}
+      </p>
+    ) : (
+      <span />
+    )}
+    <span
+      className="font-xs"
+      style={{
+        color: form.description.length >= 500 ? "#c0392b" : "#8c9ab4",
+        whiteSpace: "nowrap",
+        marginLeft: 8,
+      }}
+    >
+      {form.description.length}/500
+    </span>
+  </div>
+</div>
 
             <div className="candidate-settings-actions">
               <button
@@ -623,56 +660,75 @@ const SupportTicketCenter = ({
                               need further help.
                             </div>
                           ) : (
-                            <div
-                              style={{
-                                marginTop: "8px",
-                                display: "flex",
-                                gap: "8px",
-                              }}
-                            >
-                              <input
-                                className="form-control"
-                                type="text"
-                                placeholder="Write a reply..."
-                                value={newReplyTextByTicket[ticket.id] || ""}
-                                onChange={(event) =>
-                                  setNewReplyTextByTicket((prev) => ({
-                                    ...prev,
-                                    [ticket.id]: event.target.value,
-                                  }))
-                                }
-                                required
-                              />
-                              <button
-                                type="button"
-                                className="btn btn-brand-1 btn-small"
-                                disabled={!newReplyTextByTicket[ticket.id]?.trim()}
-                                onClick={() => addReply(ticket.id)}
-                                style={
-                                  audience === "candidate"
-                                    ? {
-                                        background: !newReplyTextByTicket[ticket.id]?.trim()
-                                          ? "#ffd499"
-                                          : "linear-gradient(180deg, #ffac1a 0%, #ff9900 100%)",
-                                        borderColor: "#ff9900",
-                                        color: "#ffffff",
-                                        fontWeight: 700,
-                                        padding: "8px 20px",
-                                        borderRadius: "10px",
-                                        boxShadow: newReplyTextByTicket[ticket.id]?.trim()
-                                          ? "0 4px 14px rgba(255, 153, 0, 0.25)"
-                                          : "none",
-                                        cursor: !newReplyTextByTicket[ticket.id]?.trim()
-                                          ? "not-allowed"
-                                          : "pointer",
-                                        transition: "all 0.2s ease",
-                                      }
-                                    : undefined
-                                }
-                              >
-                                Send
-                              </button>
-                            </div>
+                           <div
+  style={{
+    marginTop: "8px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "6px",
+  }}
+>
+  <div style={{ display: "flex", gap: "8px" }}>
+    <input
+      className="form-control"
+      type="text"
+      maxLength={200}
+      placeholder="Write a reply..."
+      value={newReplyTextByTicket[ticket.id] || ""}
+      onChange={(event) =>
+        setNewReplyTextByTicket((prev) => ({
+          ...prev,
+          [ticket.id]: event.target.value.slice(0, 200),
+        }))
+      }
+      required
+    />
+    <button
+      type="button"
+      className="btn btn-brand-1 btn-small"
+      disabled={
+        !newReplyTextByTicket[ticket.id]?.trim() ||
+        newReplyTextByTicket[ticket.id]?.trim().length > 200
+      }
+      onClick={() => addReply(ticket.id)}
+      style={
+        audience === "candidate"
+          ? {
+              background: !newReplyTextByTicket[ticket.id]?.trim()
+                ? "#ffd499"
+                : "linear-gradient(180deg, #ffac1a 0%, #ff9900 100%)",
+              borderColor: "#ff9900",
+              color: "#ffffff",
+              fontWeight: 700,
+              padding: "8px 20px",
+              borderRadius: "10px",
+              boxShadow: newReplyTextByTicket[ticket.id]?.trim()
+                ? "0 4px 14px rgba(255, 153, 0, 0.25)"
+                : "none",
+              cursor: !newReplyTextByTicket[ticket.id]?.trim()
+                ? "not-allowed"
+                : "pointer",
+              transition: "all 0.2s ease",
+            }
+          : undefined
+      }
+    >
+      Send
+    </button>
+  </div>
+  <span
+    className="font-xs"
+    style={{
+      alignSelf: "flex-end",
+      color:
+        (newReplyTextByTicket[ticket.id]?.length || 0) >= 200
+          ? "#c0392b"
+          : "#8c9ab4",
+    }}
+  >
+    {newReplyTextByTicket[ticket.id]?.length || 0}/200
+  </span>
+</div>
                           )}
                         </div>
                       ) : null}
