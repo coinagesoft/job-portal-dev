@@ -15,7 +15,7 @@ import SubUserViewOnlyGuard from "@/components/SubUserViewOnlyGuard.js";
 const filterPlansByCountry = (plansList, countryName) => {
   const activePlans = (plansList || []).filter((plan) => plan.isActive === true);
 
-  if (!countryName) return activePlans;
+  if (!countryName) return [];
 
   const cLower = countryName.toLowerCase().trim();
   const isIndian = cLower === "india" || cLower === "in";
@@ -45,7 +45,7 @@ const filterPlansByCountry = (plansList, countryName) => {
     return rLower === cLower;
   });
 
-  return filtered.length > 0 ? filtered : activePlans;
+  return filtered;
 };
 
 const EmployerBuyCreditsPage = () => {
@@ -138,21 +138,7 @@ const EmployerBuyCreditsPage = () => {
     );
   }
 
-  if (!selected) {
-    return (
-      <main className="main">
-        <section className="section-box mt-50">
-          <div className="container text-center">
-            <h4 className="mb-15">No credit plans available</h4>
-            <p className="font-md color-text-paragraph-2">
-              There are no active credit plans right now. Please check back
-              later.
-            </p>
-          </div>
-        </section>
-      </main>
-    );
-  }
+
   const handlePayment = async () => {
     if (typeof window === "undefined" || !window.Razorpay) {
       alert("Payment gateway is loading. Please try again.");
@@ -439,158 +425,178 @@ const EmployerBuyCreditsPage = () => {
               </div>
             )}
 
-            <div className="text-center mt-20 mb-10">
-              <h2 className="mb-15">Select A Credit Pack</h2>
-              <p className="font-lg color-text-paragraph-2">
-                Longer packs offer a lower per-credit rate. Top-ups inherit your
-                active package expiry date.
-              </p>
-            </div>
-
-            {/* Pricing cards */}
-            <div className="max-width-price">
-              <div className="block-pricing mt-30">
-                <div className="row justify-content-center align-items-stretch">
-                  {plans.map((pack) => (
-                    <div
-                      className="col-xl-4 col-lg-4 col-md-6 col-sm-10 d-flex"
-                      key={pack.planId}
-                    >
-                      <div
-                        className={`box-pricing-item employer-cv-surface-card${selected.planId === pack.planId ? " active" : ""} d-flex flex-column h-100`}
-                        onClick={() => setSelected(pack)}
-                        style={{ cursor: "pointer" }}
-                      >
-                        {pack.popular && (
-                          <div
-                            style={{
-                              position: "absolute",
-                              top: "-12px",
-                              left: "50%",
-                              transform: "translateX(-50%)",
-                              background: "#ff9900",
-                              color: "#fff",
-                              fontSize: "11px",
-                              fontWeight: 700,
-                              padding: "3px 14px",
-                              borderRadius: "20px",
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            Most Popular
-                          </div>
-                        )}
-                        <h3>{pack.planName}</h3>
-                        <div className="box-info-price">
-                          <span className="text-price color-brand-2">
-                            {pack.credits}
-                          </span>
-                          <span className="text-month">credits</span>
-                        </div>
-                        <div className="border-bottom mb-30">
-                          <p className="text-desc-package font-sm color-text-paragraph mb-30">
-                            ₹{pack.price.toLocaleString("en-IN")} + GST
-                          </p>
-                        </div>
-                        <ul className="list-package-feature flex-grow-1 mb-30">
-                          {/* <li>{pack.rateLabel}</li> */}
-                          <li>GST - compliant invoice generated</li>
-                          <li>Shared wallet with sub-users</li>
-                          <li>Unlock profiles across bands</li>
-                          <li>Package expiry auto-tracked</li>
-                        </ul>
-                        <div className="mt-auto">
-                          <button
-                            className={`btn ${selected.planId === pack.planId ? "btn-default" : "btn-border"}`}
-                            type="button"
-                            onClick={() => setSelected(pack)}
-                          >
-                            {selected.planId === pack.planId
-                              ? "✓ Selected"
-                              : "Choose Pack"}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+            {plans.length === 0 ? (
+              <div className="card-grid-2 hover-up cv-search-candidate-card text-center mt-30 p-40">
+                <h4 className="mb-15">No credit plans available</h4>
+                <p className="font-md color-text-paragraph-2 mb-20">
+                  {recruiterCountry
+                    ? `There are no active credit plans available for your country/region (${recruiterCountry}).`
+                    : "No country is configured in your company profile. Please update your profile settings to view available plans."}
+                </p>
+                {!recruiterCountry && (
+                  <div>
+                    <Link href="/employeer/company-profile" className="btn btn-default">
+                      Go to Company Profile
+                    </Link>
+                  </div>
+                )}
               </div>
-            </div>
+            ) : (
+              <>
+                <div className="text-center mt-20 mb-10">
+                  <h2 className="mb-15">Select A Credit Pack</h2>
+                  <p className="font-lg color-text-paragraph-2">
+                    Longer packs offer a lower per-credit rate. Top-ups inherit your
+                    active package expiry date.
+                  </p>
+                </div>
 
-            {/* Order summary + pay */}
-            <div className="row justify-content-center mt-20">
-              <div className="col-lg-6 col-md-10 col-sm-12">
-                <div className="card-grid-2 hover-up cv-search-candidate-card">
-                  <div className="card-block-info pt-20">
-                    <h5 className="mb-15">Order Summary</h5>
-                    <div className="d-flex justify-content-between mb-10">
-                      <span className="font-sm color-text-paragraph">Pack</span>
-                      <strong>
-                        {selected?.planName ?? ""} — {selected?.credits ?? 0}{" "}
-                        credits
-                      </strong>
+                {/* Pricing cards */}
+                <div className="max-width-price">
+                  <div className="block-pricing mt-30">
+                    <div className="row justify-content-center align-items-stretch">
+                      {plans.map((pack) => (
+                        <div
+                          className="col-xl-4 col-lg-4 col-md-6 col-sm-10 d-flex"
+                          key={pack.planId}
+                        >
+                          <div
+                            className={`box-pricing-item employer-cv-surface-card${selected?.planId === pack.planId ? " active" : ""} d-flex flex-column h-100`}
+                            onClick={() => setSelected(pack)}
+                            style={{ cursor: "pointer" }}
+                          >
+                            {pack.popular && (
+                              <div
+                                style={{
+                                  position: "absolute",
+                                  top: "-12px",
+                                  left: "50%",
+                                  transform: "translateX(-50%)",
+                                  background: "#ff9900",
+                                  color: "#fff",
+                                  fontSize: "11px",
+                                  fontWeight: 700,
+                                  padding: "3px 14px",
+                                  borderRadius: "20px",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                Most Popular
+                              </div>
+                            )}
+                            <h3>{pack.planName}</h3>
+                            <div className="box-info-price">
+                              <span className="text-price color-brand-2">
+                                {pack.credits}
+                              </span>
+                              <span className="text-month">credits</span>
+                            </div>
+                            <div className="border-bottom mb-30">
+                              <p className="text-desc-package font-sm color-text-paragraph mb-30">
+                                ₹{pack.price.toLocaleString("en-IN")} + GST
+                              </p>
+                            </div>
+                            <ul className="list-package-feature flex-grow-1 mb-30">
+                              {/* <li>{pack.rateLabel}</li> */}
+                              <li>GST - compliant invoice generated</li>
+                              <li>Shared wallet with sub-users</li>
+                              <li>Unlock profiles across bands</li>
+                              <li>Package expiry auto-tracked</li>
+                            </ul>
+                            <div className="mt-auto">
+                              <button
+                                className={`btn ${selected?.planId === pack.planId ? "btn-default" : "btn-border"}`}
+                                type="button"
+                                onClick={() => setSelected(pack)}
+                              >
+                                {selected?.planId === pack.planId
+                                  ? "✓ Selected"
+                                  : "Choose Pack"}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <div className="d-flex justify-content-between mb-10">
-                      <span className="font-sm color-text-paragraph">
-                        Price
-                      </span>
-                      <strong>₹{selected.price.toLocaleString("en-IN")}</strong>
-                    </div>
-                    <div className="d-flex justify-content-between mb-10">
-                      <span className="font-sm color-text-paragraph">
-                        GST (18%)
-                      </span>
-                      <strong>₹{gst.toLocaleString("en-IN")}</strong>
-                    </div>
-                    <div
-                      className="d-flex justify-content-between mb-20 pt-10"
-                      style={{ borderTop: "1px solid #eee" }}
-                    >
-                      <span className="font-md color-text-paragraph">
-                        Total Payable
-                      </span>
-                      <strong
-                        className="color-brand-1"
-                        style={{ fontSize: "18px" }}
-                      >
-                        ₹{total.toLocaleString("en-IN")}
-                      </strong>
-                    </div>
-
-                    {/* Test mode notice */}
-                    <div
-                      className="mb-15 p-10"
-                      style={{
-                        background: "#fff8e1",
-                        border: "1px solid #ffe082",
-                        borderRadius: "8px",
-                      }}
-                    >
-                      <p className="font-xs mb-0" style={{ color: "#856404" }}>
-                        🧪 <strong>Test Mode:</strong> Use Razorpay test card{" "}
-                        <code>4111 1111 1111 1111</code>, any future expiry, CVV{" "}
-                        <code>123</code>. No real money is charged.
-                      </p>
-                    </div>
-
-                    <button
-                      className="btn btn-default w-100 mt-5"
-                      type="button"
-                      onClick={handlePayment}
-                      disabled={paying}
-                    >
-                      {paying
-                        ? "Opening Payment..."
-                        : `Pay ₹${total.toLocaleString("en-IN")} via Razorpay`}
-                    </button>
-                    <p className="font-xs color-text-paragraph-2 text-center mt-10 mb-0">
-                      Secured by Razorpay. Invoice generated instantly after
-                      payment.
-                    </p>
                   </div>
                 </div>
-              </div>
-            </div>
+
+                {/* Order summary + pay */}
+                <div className="row justify-content-center mt-20">
+                  <div className="col-lg-6 col-md-10 col-sm-12">
+                    <div className="card-grid-2 hover-up cv-search-candidate-card">
+                      <div className="card-block-info pt-20">
+                        <h5 className="mb-15">Order Summary</h5>
+                        <div className="d-flex justify-content-between mb-10">
+                          <span className="font-sm color-text-paragraph">Pack</span>
+                          <strong>
+                            {selected?.planName ?? ""} — {selected?.credits ?? 0}{" "}
+                            credits
+                          </strong>
+                        </div>
+                        <div className="d-flex justify-content-between mb-10">
+                          <span className="font-sm color-text-paragraph">
+                            Price
+                          </span>
+                          <strong>₹{selected?.price ? selected.price.toLocaleString("en-IN") : "0"}</strong>
+                        </div>
+                        <div className="d-flex justify-content-between mb-10">
+                          <span className="font-sm color-text-paragraph">
+                            GST (18%)
+                          </span>
+                          <strong>₹{gst.toLocaleString("en-IN")}</strong>
+                        </div>
+                        <div
+                          className="d-flex justify-content-between mb-20 pt-10"
+                          style={{ borderTop: "1px solid #eee" }}
+                        >
+                          <span className="font-md color-text-paragraph">
+                            Total Payable
+                          </span>
+                          <strong
+                            className="color-brand-1"
+                            style={{ fontSize: "18px" }}
+                          >
+                            ₹{total.toLocaleString("en-IN")}
+                          </strong>
+                        </div>
+
+                        {/* Test mode notice */}
+                        <div
+                          className="mb-15 p-10"
+                          style={{
+                            background: "#fff8e1",
+                            border: "1px solid #ffe082",
+                            borderRadius: "8px",
+                          }}
+                        >
+                          <p className="font-xs mb-0" style={{ color: "#856404" }}>
+                            🧪 <strong>Test Mode:</strong> Use Razorpay test card{" "}
+                            <code>4111 1111 1111 1111</code>, any future expiry, CVV{" "}
+                            <code>123</code>. No real money is charged.
+                          </p>
+                        </div>
+
+                        <button
+                          className="btn btn-default w-100 mt-5"
+                          type="button"
+                          onClick={handlePayment}
+                          disabled={paying}
+                        >
+                          {paying
+                            ? "Opening Payment..."
+                            : `Pay ₹${total.toLocaleString("en-IN")} via Razorpay`}
+                        </button>
+                        <p className="font-xs color-text-paragraph-2 text-center mt-10 mb-0">
+                          Secured by Razorpay. Invoice generated instantly after
+                          payment.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </section>

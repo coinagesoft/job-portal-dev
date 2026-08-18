@@ -1793,7 +1793,7 @@ function EmployerForm() {
   const router = useRouter();
   const showToast = useToast();
   const [step, setStep] = useState(1);
-  const [industriesList, setIndustriesList] = useState(INDUSTRIES);
+  const [industriesList, setIndustriesList] = useState([]);
 
   const [data, setData] = useState({
     hasGst: null,
@@ -1880,17 +1880,19 @@ function EmployerForm() {
 
   useEffect(() => {
     const fetchIndustries = async () => {
-      try {
-        const res = await getHomepageData();
-        if (res.data?.success && res.data.industries) {
-          const apiIndustries = res.data.industries.map((ind) => ind.name).filter(Boolean);
-          const merged = Array.from(new Set([...apiIndustries, ...INDUSTRIES]));
-          setIndustriesList(merged);
-        }
-      } catch (err) {
-        console.error("Failed to load industries from homepage API:", err);
-      }
-    };
+  try {
+    const res = await getHomepageData();
+    if (res.data?.success && res.data.industries) {
+      const apiIndustries = res.data.industries.map((ind) => ind.name).filter(Boolean);
+      setIndustriesList(apiIndustries);
+    } else {
+      setIndustriesList([]);
+    }
+  } catch (err) {
+    console.error("Failed to load industries from homepage API:", err);
+    setIndustriesList([]);
+  }
+};
     fetchIndustries();
   }, []);
 
