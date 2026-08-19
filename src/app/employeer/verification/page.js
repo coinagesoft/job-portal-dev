@@ -186,34 +186,56 @@ const EmployerVerificationPage = () => {
     }
   };
 
-  const getUploadedDocForType = (docType) => {
-    return documents.find(
-      (d) => d.documentTypeId === docType.documentTypeId || d.documentType === docType.documentName
-    );
+  const handleUploadClick = (doc) => {
+    setUploadType(doc.documentTypeId || "OTHER");
+    setUploadRequestId(doc.requestId || null);
+    setUploadMsg(null);
+    fileInputRef.current?.click();
   };
 
-  // Filter requested docs (requested by admin explicitly, having a requestId or category RequestedAdditional)
-  const requestedDocs = documents.filter(
-    (d) => d.category === "RequestedAdditional" || d.requestId
-  );
+  // Grouping the documents dynamically based on the category attribute returned in verification API.
+  const requiredDocsList = [];
+  const requestedDocsList = [];
+  const optionalDocsList = [];
+  const otherDocsList = [];
 
-  // Filter out any document types that are currently requested explicitly (to prevent duplication in required/optional lists)
-  const mandatoryTypes = allDocumentTypes.filter(
-    (t) => t.isMandatory && !requestedDocs.some((r) => r.documentTypeId === t.documentTypeId)
-  );
-  
-  const optionalTypes = allDocumentTypes.filter(
-    (t) => !t.isMandatory && !requestedDocs.some((r) => r.documentTypeId === t.documentTypeId)
-  );
+  // Group existing documents from verification response
+  documents.forEach((d) => {
+    if (d.category === "Mandatory") {
+      requiredDocsList.push(d);
+    } else if (d.category === "RequestedAdditional" || d.requestId) {
+      requestedDocsList.push(d);
+    } else if (d.category === "Optional") {
+      optionalDocsList.push(d);
+    } else {
+      otherDocsList.push(d);
+    }
+  });
 
-  // Other uploaded documents that are not in standard types and not requested
-  const otherUploadedDocs = documents.filter(
-    (d) =>
-      !requestedDocs.some((r) => r.requestId === d.requestId) &&
-      !allDocumentTypes.some(
-        (t) => t.documentTypeId === d.documentTypeId || t.documentName === d.documentType
-      )
-  );
+  // Supplement with placeholders from getDocumentTypes() for document types not yet represented
+  allDocumentTypes.forEach((t) => {
+    const isRepresented =
+      requiredDocsList.some((d) => d.documentTypeId === t.documentTypeId || d.documentName === t.documentName) ||
+      requestedDocsList.some((d) => d.documentTypeId === t.documentTypeId || d.documentName === t.documentName) ||
+      optionalDocsList.some((d) => d.documentTypeId === t.documentTypeId || d.documentName === t.documentName);
+
+    if (!isRepresented) {
+      const placeholder = {
+        documentTypeId: t.documentTypeId,
+        documentName: t.documentName,
+        category: t.isMandatory ? "Mandatory" : "Optional",
+        status: "Not Uploaded",
+        fileUrl: null,
+        uploadedAt: null,
+        requestId: null,
+      };
+      if (t.isMandatory) {
+        requiredDocsList.push(placeholder);
+      } else {
+        optionalDocsList.push(placeholder);
+      }
+    }
+  });
 
   return (
     <SubUserViewOnlyGuard>
@@ -412,7 +434,7 @@ const EmployerVerificationPage = () => {
                 ) : (
                   <div>
                     {/* Required Documents */}
-                    {mandatoryTypes.length > 0 && (
+                    {requiredDocsList.length > 0 && (
                       <div style={{ marginBottom: "24px" }}>
                         <h6
                           style={{
@@ -431,20 +453,13 @@ const EmployerVerificationPage = () => {
                             gap: "14px",
                           }}
                         >
-                          {mandatoryTypes.map((typeItem) => {
-                            const doc = getUploadedDocForType(typeItem) || {
-                              documentType: typeItem.documentName,
-                              status: "Not Uploaded",
-                              uploadedAt: null,
-                              fileUrl: null,
-                            };
-
+                          {requiredDocsList.map((doc) => {
                             const positive = isPositive(doc.status);
                             const hasFile = !!doc.fileUrl;
 
                             return (
                               <div
-                                key={typeItem.documentTypeId}
+                                key={doc.documentTypeId || doc.documentName}
                                 style={{
                                   display: "flex",
                                   alignItems: "center",
@@ -476,7 +491,7 @@ const EmployerVerificationPage = () => {
                                       marginBottom: "4px",
                                     }}
                                   >
-                                    {typeItem.documentName}
+                                    {doc.documentName}
                                     <span
                                       style={{
                                         marginLeft: "8px",
@@ -553,13 +568,13 @@ const EmployerVerificationPage = () => {
                                       }}
                                       type="button"
                                       disabled={uploading}
-                                      onClick={() => handleDirectUpload(typeItem.documentTypeId)}
+                                      onClick={() => handleUploadClick(doc)}
                                     >
                                       <i
                                         className="fi fi-rr-upload"
                                         style={{ marginRight: "5px" }}
                                       />
-                                      {uploading && uploadType === typeItem.documentTypeId ? "Uploading…" : "Upload"}
+                                      {uploading && uploadType === doc.documentTypeId && uploadRequestId === doc.requestId ? "Uploading…" : "Upload"}
                                     </button>
                                   )}
                                 </div>
@@ -571,7 +586,7 @@ const EmployerVerificationPage = () => {
                     )}
 
                     {/* Additional Requested Documents */}
-                    {requestedDocs.length > 0 && (
+                    {requestedDocsList.length > 0 && (
                       <div style={{ marginBottom: "24px", marginTop: "24px" }}>
                         <h6
                           style={{
@@ -590,13 +605,13 @@ const EmployerVerificationPage = () => {
                             gap: "14px",
                           }}
                         >
-                          {requestedDocs.map((doc) => {
+                          {requestedDocsList.map((doc) => {
                             const positive = isPositive(doc.status);
                             const hasFile = !!doc.fileUrl;
 
                             return (
                               <div
-                                key={doc.requestId || doc.documentTypeId}
+                                key={doc.requestId || doc.documentTypeId || doc.documentName}
                                 style={{
                                   display: "flex",
                                   alignItems: "center",
@@ -701,7 +716,7 @@ const EmployerVerificationPage = () => {
                                       }}
                                       type="button"
                                       disabled={uploading}
-                                      onClick={() => handleRequestUpload(doc.documentTypeId, doc.requestId)}
+                                      onClick={() => handleUploadClick(doc)}
                                     >
                                       <i
                                         className="fi fi-rr-upload"
@@ -719,7 +734,7 @@ const EmployerVerificationPage = () => {
                     )}
 
                     {/* Optional Documents */}
-                    {optionalTypes.length > 0 && (
+                    {optionalDocsList.length > 0 && (
                       <div style={{ marginBottom: "24px", marginTop: "24px" }}>
                         <h6
                           style={{
@@ -738,20 +753,13 @@ const EmployerVerificationPage = () => {
                             gap: "14px",
                           }}
                         >
-                          {optionalTypes.map((typeItem) => {
-                            const doc = getUploadedDocForType(typeItem) || {
-                              documentType: typeItem.documentName,
-                              status: "Not Uploaded",
-                              uploadedAt: null,
-                              fileUrl: null,
-                            };
-
+                          {optionalDocsList.map((doc) => {
                             const positive = isPositive(doc.status);
                             const hasFile = !!doc.fileUrl;
 
                             return (
                               <div
-                                key={typeItem.documentTypeId}
+                                key={doc.documentTypeId || doc.documentName}
                                 style={{
                                   display: "flex",
                                   alignItems: "center",
@@ -783,7 +791,7 @@ const EmployerVerificationPage = () => {
                                       marginBottom: "4px",
                                     }}
                                   >
-                                    {typeItem.documentName}
+                                    {doc.documentName}
                                   </div>
                                   <div style={{ fontSize: "13px", color: "#66789c" }}>
                                     {doc.uploadedAt
@@ -845,13 +853,13 @@ const EmployerVerificationPage = () => {
                                       }}
                                       type="button"
                                       disabled={uploading}
-                                      onClick={() => handleDirectUpload(typeItem.documentTypeId)}
+                                      onClick={() => handleUploadClick(doc)}
                                     >
                                       <i
                                         className="fi fi-rr-upload"
                                         style={{ marginRight: "5px" }}
                                       />
-                                      {uploading && uploadType === typeItem.documentTypeId ? "Uploading…" : "Upload"}
+                                      {uploading && uploadType === doc.documentTypeId && uploadRequestId === doc.requestId ? "Uploading…" : "Upload"}
                                     </button>
                                   )}
                                 </div>
@@ -863,7 +871,7 @@ const EmployerVerificationPage = () => {
                     )}
 
                     {/* Other Uploaded Documents */}
-                    {otherUploadedDocs.length > 0 && (
+                    {otherDocsList.length > 0 && (
                       <div style={{ marginTop: "24px" }}>
                         <h6
                           style={{
@@ -882,7 +890,7 @@ const EmployerVerificationPage = () => {
                             gap: "14px",
                           }}
                         >
-                          {otherUploadedDocs.map((doc) => {
+                          {otherDocsList.map((doc) => {
                             const positive = isPositive(doc.status);
                             return (
                               <div
@@ -918,7 +926,7 @@ const EmployerVerificationPage = () => {
                                       marginBottom: "4px",
                                     }}
                                   >
-                                    {doc.documentType}
+                                    {doc.documentType || doc.documentName}
                                   </div>
                                   <div style={{ fontSize: "13px", color: "#66789c" }}>
                                     {doc.uploadedAt
