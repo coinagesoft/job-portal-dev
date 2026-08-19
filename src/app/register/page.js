@@ -1049,7 +1049,7 @@ function CandidateForm() {
   const [paymentMessage, setPaymentMessage] = useState("");
   const [registering, setRegistering] = useState(false);
   const isSocialVerified = !!socialAuth;
-  const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+    const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
   const [candidatePlan, setCandidatePlan] = useState(null);
   const [planLoading, setPlanLoading] = useState(false);
@@ -1798,6 +1798,7 @@ function EmployerForm() {
   const [data, setData] = useState({
     hasGst: null,
     industry: "",
+      customIndustry: "", 
     gstn: "",
     legalName: "",
     tradeName: "",
@@ -1896,7 +1897,12 @@ function EmployerForm() {
     fetchIndustries();
   }, []);
 
-  const set = (k, v) => setData((p) => ({ ...p, [k]: v }));
+    const set = (k, v) => setData((p) => ({ ...p, [k]: v }));
+
+  // Ensure "Other" is always selectable even if the API list doesn't include it
+  const industryOptions = industriesList.includes("Other")
+    ? industriesList
+    : [...industriesList, "Other"];
 
   const autoFillGst = () => {
     if (data.gstn.length < 15) {
@@ -2064,7 +2070,10 @@ function EmployerForm() {
   };
 
   const isGstnValid = !data.hasGst || data.gstn.trim().length === 15;
-  const isStep2Valid = data.hasGst !== null && !!data.industry;
+    const isStep2Valid =
+    data.hasGst !== null &&
+    !!data.industry &&
+    (data.industry !== "Other" || !!data.customIndustry.trim());
   const isStep3Valid =
     !!data.legalName &&
     !!data.state &&
@@ -2470,11 +2479,12 @@ setAdditionalDocuments(
     </div>
   );
 
-  const handleStep1 = async () => {
+   const handleStep1 = async () => {
     try {
       const response = await gstCheck({
         gstRegistered: data.hasGst,
-        industryType: data.industry,
+        industryType:
+          data.industry === "Other" ? data.customIndustry.trim() : data.industry,
       });
 
       if (response.data.success) {
@@ -2586,7 +2596,7 @@ setAdditionalDocuments(
         </p>
       )}
 
-      <Field
+            <Field
         label="Industry Type"
         required
         hint="Start typing to search, or pick from the list — you can also enter your own industry."
@@ -2595,20 +2605,40 @@ setAdditionalDocuments(
         <Combobox
           value={data.industry}
           onChange={(v) => set("industry", v)}
-          options={industriesList}
+          options={industryOptions}
           placeholder="Type or select your industry (e.g. IT Services, Manufacturing)"
           error={attempt1 && !data.industry}
         />
       </Field>
 
+      {data.industry === "Other" && (
+        <Field
+          label="Please specify your industry"
+          required
+          error={
+            attempt1 && !data.customIndustry.trim()
+              ? "Please specify your industry"
+              : null
+          }
+        >
+          <Input
+            value={data.customIndustry}
+            error={attempt1 && !data.customIndustry.trim()}
+            onChange={(e) => set("customIndustry", e.target.value)}
+            placeholder="Enter your industry (e.g. Aerospace, Textile)"
+          />
+        </Field>
+      )}
+
       <div
         style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}
       >
-        <Btn
+                <Btn
           variant="primary"
           onClick={() => {
             setAttempt1(true);
             if (data.hasGst === null || !data.industry.trim()) return;
+            if (data.industry === "Other" && !data.customIndustry.trim()) return;
             handleStep1();
           }}
         >
@@ -2642,7 +2672,10 @@ setAdditionalDocuments(
 
       formData.append("addressLine2", "");
 
-      formData.append("industryType", data.industry);
+            formData.append(
+        "industryType",
+        data.industry === "Other" ? data.customIndustry.trim() : data.industry
+      );
 
       formData.append("gstnRegistrationDate", data.gstRegDate);
 
@@ -3749,7 +3782,10 @@ setAdditionalDocuments(
         <ReviewRow label="Business type" val={labelFor(BUSINESS_TYPES, data.businessType)} />
         <ReviewRow label="Company size" val={labelFor(COMPANY_SIZES, data.companySize)} />
         <ReviewRow label="Company type" val={labelFor(COMPANY_TYPES, data.companyType)} />
-        <ReviewRow label="Industry" val={data.industry} />
+                <ReviewRow
+          label="Industry"
+          val={data.industry === "Other" ? data.customIndustry : data.industry}
+        />
         {data.hasGst && <ReviewRow label="GST reg. date" val={data.gstRegDate} />}
         <ReviewRow label="CIN" val={data.cin} mono />
         <ReviewRow label="Website" val={data.officialWebsite} />

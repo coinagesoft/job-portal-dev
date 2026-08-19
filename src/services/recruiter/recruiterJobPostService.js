@@ -293,3 +293,8 @@ export const suggestSkills = async (payload) => {
   );
   return response.data;
 };
+
+
+export const getJobPostDropdownData = () => {
+  return api.get("/api/public/homepage/data");
+};

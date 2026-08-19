@@ -12,7 +12,6 @@ import JobPreviewModal from "@/components/JobPreviewModal";
 import { mapResumeToForm } from "@/utils/jobFormMapper";
 import { Country, State } from "country-state-city";
 import { resolveCountry } from "@/utils/locationResolver";
-import { getHomepageData } from "@/services/candidate/homepageService";
 
 const ALL_CSC_COUNTRIES = Country.getAllCountries();
 
@@ -70,9 +69,30 @@ import {
   getInlineSuggestion,
   searchRoles,
   suggestSkills,
+  getJobPostDropdownData,
 } from "@/services/recruiter/recruiterJobPostService";
 
 const COMBOBOX_SEARCH_THRESHOLD = 8;
+
+/* ─── constant used to mark the "type your own" option on API-driven dropdowns ─── */
+const OTHER_OPTION = "Other";
+
+/** Case-insensitive check for whether a dropdown value is the "Other" sentinel */
+const isOtherValue = (value) => (value || "").trim().toLowerCase() === "other";
+
+/**
+ * Normalizes a list of API names into Combobox-ready options and guarantees
+ * an "Other" entry is always present at the end (API lists don't include it,
+ * static fallback lists already do — Set-based unique keeps either case safe).
+ */
+const withOtherOption = (names) => {
+  const cleaned = (names || []).filter(Boolean);
+  const deduped = Array.from(new Set(cleaned));
+  if (!deduped.some((n) => isOtherValue(n))) {
+    deduped.push(OTHER_OPTION);
+  }
+  return deduped;
+};
 
 /* ─── static data ─────────────────────────────────────────────────────────── */
 const roleCategories = [
@@ -318,8 +338,14 @@ function validateAllSteps(jobForm) {
     issues.push({ stepNum: 1, title: "Job Details", message: "Job Title is required" });
   if (!jobForm.TradeCategory)
     issues.push({ stepNum: 1, title: "Job Details", message: "Trade / Role Category is required" });
+  if (isOtherValue(jobForm.TradeCategory) && !jobForm.Role?.trim())
+    issues.push({ stepNum: 1, title: "Job Details", message: "Please specify the Role / Specialisation for 'Other' trade category" });
   if (!jobForm.IndustryType)
     issues.push({ stepNum: 1, title: "Job Details", message: "Industry Type is required" });
+  if (isOtherValue(jobForm.IndustryType) && !jobForm.IndustryTypeOther?.trim())
+    issues.push({ stepNum: 1, title: "Job Details", message: "Please specify the Industry Type for 'Other'" });
+  if (isOtherValue(jobForm.Department) && !jobForm.DepartmentOther?.trim())
+    issues.push({ stepNum: 1, title: "Job Details", message: "Please specify the Department for 'Other'" });
   if (!jobForm.JobType)
     issues.push({ stepNum: 1, title: "Job Details", message: "Job Type is required" });
   if (!jobForm.JobDescription?.trim())
@@ -955,6 +981,11 @@ function StepCard({ stepNum, title, subtitle, children, onBack, onContinue, isLa
 
 /* ─── STEP 1 – Job Details ────────────────────────────────────────────────── */
 function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI, jdSuggestions, ghostSuggestion, handleJDTab, roleCategoriesList = roleCategories, departmentOptionsList = departmentOptions, industryOptionsList = industryOptions }) {
+  // Single source of truth for "is this dropdown's value the 'Other' sentinel?"
+  const isTradeOther = isOtherValue(jobForm.TradeCategory);
+  const isIndustryOther = isOtherValue(jobForm.IndustryType);
+  const isDeptOther = isOtherValue(jobForm.Department);
+
   return (
     <StepCard
       stepNum={1}
@@ -975,7 +1006,7 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
 
       <div className={styles.grid2}>
         {/* Trade Category */}
-        <Field label="Trade / Role Category" required hint="Pick from the list, or type your own">
+        <Field label="Trade / Role Category" required hint="Pick from the list — select 'Other' to specify manually">
           <Combobox
             value={jobForm.TradeCategory}
             onChange={(v) => setJobForm((p) => ({ ...p, TradeCategory: v }))}
@@ -984,26 +1015,19 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
           />
         </Field>
 
-        {/* Role (optional free-text specialisation) */}
+        {/* Role (optional free-text specialisation; required + doubles as the
+            "Other" specify field when Trade Category is Other) */}
         <Field
-          label={
-            jobForm.TradeCategory?.toLowerCase() === "other" || jobForm.TradeCategory?.toLowerCase() === "othere"
-              ? "Role / Specialisation *"
-              : "Role / Specialisation"
-          }
-          hint={
-            jobForm.TradeCategory?.toLowerCase() === "other" || jobForm.TradeCategory?.toLowerCase() === "othere"
-              ? "Please specify your trade, role, or specialisation"
-              : undefined
-          }
-          required={jobForm.TradeCategory?.toLowerCase() === "other" || jobForm.TradeCategory?.toLowerCase() === "othere"}
+          label={isTradeOther ? "Role / Specialisation *" : "Role / Specialisation"}
+          hint={isTradeOther ? "Please specify your trade, role, or specialisation" : undefined}
+          required={isTradeOther}
         >
           <input
             value={jobForm.Role}
             onChange={(e) => setJobForm((p) => ({ ...p, Role: e.target.value }))}
             className={styles.control}
             placeholder={
-              jobForm.TradeCategory?.toLowerCase() === "other" || jobForm.TradeCategory?.toLowerCase() === "othere"
+              isTradeOther
                 ? "e.g. Solar Technician, Scaffolding Inspector"
                 : "e.g. Pipe Welder"
             }
@@ -1011,14 +1035,35 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
         </Field>
 
         {/* Industry Type */}
-        <Field label="Industry Type" required hint="Pick from the list, or type your own">
+        <Field label="Industry Type" required hint="Pick from the list — select 'Other' to specify manually">
           <Combobox
             value={jobForm.IndustryType}
-            onChange={(v) => setJobForm((p) => ({ ...p, IndustryType: v }))}
+            onChange={(v) =>
+              setJobForm((p) => ({
+                ...p,
+                IndustryType: v,
+                IndustryTypeOther: isOtherValue(v) ? p.IndustryTypeOther : "",
+              }))
+            }
             options={industryOptionsList}
             placeholder="e.g. Oil & Gas"
           />
         </Field>
+
+        {/* Specify Industry Type — only shown when "Other" is selected */}
+        {isIndustryOther && (
+          <Field label="Specify Industry Type" required hint="Tell us the industry that isn't in the list">
+            <input
+              className={styles.control}
+              value={jobForm.IndustryTypeOther}
+              onChange={(e) =>
+                setJobForm((p) => ({ ...p, IndustryTypeOther: e.target.value }))
+              }
+              placeholder="e.g. Renewable Energy"
+            />
+          </Field>
+        )}
+
         <Field label="Hiring for Client">
           <label
             style={{
@@ -1201,14 +1246,34 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
         </Field>
 
         {/* Department */}
-        <Field label="Department">
+        <Field label="Department" hint="Pick from the list — select 'Other' to specify manually">
           <Combobox
             value={jobForm.Department}
-            onChange={(v) => setJobForm((p) => ({ ...p, Department: v }))}
+            onChange={(v) =>
+              setJobForm((p) => ({
+                ...p,
+                Department: v,
+                DepartmentOther: isOtherValue(v) ? p.DepartmentOther : "",
+              }))
+            }
             options={departmentOptionsList}
             placeholder="e.g. Operations"
           />
         </Field>
+
+        {/* Specify Department — only shown when "Other" is selected */}
+        {isDeptOther && (
+          <Field label="Specify Department" required hint="Tell us the department that isn't in the list">
+            <input
+              className={styles.control}
+              value={jobForm.DepartmentOther}
+              onChange={(e) =>
+                setJobForm((p) => ({ ...p, DepartmentOther: e.target.value }))
+              }
+              placeholder="e.g. Research & Development"
+            />
+          </Field>
+        )}
 
         {/* Duty Hours Per Day */}
         <div
@@ -1574,70 +1639,6 @@ function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, han
           </div>
         )}
       </Field>
-
-      {/* Key Responsibilities (step-3 copy — separate from step-1) */}
-      {/* <Field 
-        label="Key Responsibilities" 
-        hint="One per line" 
-      > 
-        <textarea 
-          className={styles.textarea} 
-          rows={4} 
-          placeholder={"• Perform quality checks\n• Coordinate with team leads"} 
-          value={jobForm.Step3KeyResponsibilities.join("\n")} 
-          onChange={(e) => 
-            setJobForm((p) => ({ 
-              ...p, 
-              Step3KeyResponsibilities: e.target.value 
-                .split("\n") 
-                .map((s) => s.trim()) 
-                .filter(Boolean), 
-            })) 
-          } 
-        /> 
-      </Field> */}
-
-      {/* Additional Job Description */}
-      {/* <Field label="Additional Job Description"> 
-        <button 
-          type="button" 
-          className="btn btn-sm btn-default mb-10" 
-          onClick={handleGenerateAdditionalJD} 
-          disabled={loadingAI} 
-        > 
-          {loadingAI ? "Generating…" : "✨ Generate with AI"} 
-        </button> 
-        <textarea 
-          className={styles.textarea} 
-          rows={5} 
-          value={jobForm.AdditionalJobDescription} 
-          onChange={(e) => 
-            setJobForm((p) => ({ 
-              ...p, 
-              AdditionalJobDescription: e.target.value, 
-            })) 
-          } 
-        /> 
-        {additionalJdSuggestions.length > 0 && ( 
-          <div className={styles.aiSuggestions}> 
-            {additionalJdSuggestions.map((suggestion, index) => ( 
-              <div 
-                key={index} 
-                className={styles.aiSuggestion} 
-                onClick={() => 
-                  setJobForm((p) => ({ 
-                    ...p, 
-                    AdditionalJobDescription: 
-                      p.AdditionalJobDescription + " " + suggestion, 
-                  })) 
-                } 
-              > 
-                {suggestion} 
-              </div> 
-            ))} 
-          </div> 
-        )} 
-      </Field> */}
 
       {/* Language Required — select from suggestions, or type your own */}
       <Field label="Language Required" hint="Select all that apply, or type your own and press Enter / click Add">
@@ -2290,23 +2291,6 @@ function Step7({ go, jobForm, setJobForm, onSubmit, preflightIssues = [] }) {
             placeholder="e.g. Show Company Name"
           />
         </Field>
-
-        {/* Job Type (for publishing context — maps to API JobType) */}
-        {/* <Field label="Job Post Type"> 
-          <select 
-            className={`${styles.control} ${styles.selectControl}`} 
-            value={jobForm.JobType} 
-            onChange={(e) => 
-              setJobForm((p) => ({ ...p, JobType: e.target.value })) 
-            } 
-          > 
-            {jobPostTypes.map((v) => ( 
-              <option key={v.value} value={v.value}> 
-                {v.label} 
-              </option> 
-            ))} 
-          </select> 
-        </Field> */}
       </div>
     </StepCard>
   );
@@ -2319,31 +2303,46 @@ export default function DashboardPostJobPage() {
   const router = useRouter();
   const showToast = useToast();
   const [editJobId, setEditJobId] = useState(null);
+
+  // These three start out with the static fallback lists (which already
+  // include "Other") so the form isn't empty while the homepage API call
+  // is in flight; the API load below replaces them with live data + "Other".
   const [roleCategoriesList, setRoleCategoriesList] = useState(roleCategories);
-  const [departmentOptionsList, setDepartmentOptionsList] = useState([]);
-  const [industryOptionsList, setIndustryOptionsList] = useState([]);
+  const [departmentOptionsList, setDepartmentOptionsList] = useState(departmentOptions);
+  const [industryOptionsList, setIndustryOptionsList] = useState(industryOptions);
 
   useEffect(() => {
     const fetchDropdownOptions = async () => {
       try {
-        const res = await getHomepageData();
+        const res = await getJobPostDropdownData();
         if (res.data?.success) {
-          if (res.data.tradeCategories) {
-            const apiTrades = res.data.tradeCategories.map((t) => t.name).filter(Boolean);
-            const mergedTrades = Array.from(new Set([...apiTrades, ...roleCategories]));
-            setRoleCategoriesList(mergedTrades);
+          // Trade / Role Category ← tradeCategories
+          const apiTrades = (res.data.tradeCategories || [])
+            .map((t) => t.name)
+            .filter(Boolean);
+          if (apiTrades.length > 0) {
+            setRoleCategoriesList(withOtherOption(apiTrades));
           }
-          if (res.data.departments) {
-            const apiDepts = res.data.departments.map((d) => d.name).filter(Boolean);
-            setDepartmentOptionsList(apiDepts);
+
+          // Department ← departments
+          const apiDepts = (res.data.departments || [])
+            .map((d) => d.name)
+            .filter(Boolean);
+          if (apiDepts.length > 0) {
+            setDepartmentOptionsList(withOtherOption(apiDepts));
           }
-          if (res.data.industries) {
-            const apiIndustries = res.data.industries.map((ind) => ind.name).filter(Boolean);
-            setIndustryOptionsList(apiIndustries);
+
+          // Industry Type ← industries
+          const apiIndustries = (res.data.industries || [])
+            .map((ind) => ind.name)
+            .filter(Boolean);
+          if (apiIndustries.length > 0) {
+            setIndustryOptionsList(withOtherOption(apiIndustries));
           }
         }
       } catch (err) {
-        console.error("Failed to load post-job dropdown options from homepage API:", err);
+        console.error("Failed to load post-job dropdown options via getJobPostDropdownData:", err);
+        // Keep the static fallback lists already set in state above.
       }
     };
     fetchDropdownOptions();
@@ -2367,6 +2366,7 @@ export default function DashboardPostJobPage() {
     TradeCategory: "",
     Role: "",
     IndustryType: "",
+    IndustryTypeOther: "", // free-text value when IndustryType === "Other"
     ExperienceMinYears: "",
     ExperienceMaxYears: "",
     JobType: "",
@@ -2374,6 +2374,7 @@ export default function DashboardPostJobPage() {
     ContractPeriod: "",
     EmploymentMode: "",
     Department: "",
+    DepartmentOther: "", // free-text value when Department === "Other"
     DutyHoursPerDay: "",
     IsOilField: false,
     PaidOvertime: false,
@@ -2396,9 +2397,7 @@ export default function DashboardPostJobPage() {
     BenefitsText: "",
     Step3KeyResponsibilities: [],  // step-3 separate field 
     AdditionalJobDescription: "",
-    LicenceDocsRequired: "",
 
-    // Benefits: [], 
     Tags: [],
 
     // Step 4 
@@ -2659,13 +2658,16 @@ export default function DashboardPostJobPage() {
   const handleStep1 = async () => {
     if (!jobForm.JobTitle.trim()) return showToast("Job Title is required", "error");
     if (!jobForm.TradeCategory) return showToast("Trade Category is required", "error");
-    if (
-      (jobForm.TradeCategory?.toLowerCase() === "other" || jobForm.TradeCategory?.toLowerCase() === "othere") &&
-      !jobForm.Role.trim()
-    ) {
+    if (isOtherValue(jobForm.TradeCategory) && !jobForm.Role.trim()) {
       return showToast("Please specify your Role / Specialisation when 'Other' trade category is selected", "error");
     }
     if (!jobForm.IndustryType) return showToast("Industry Type is required", "error");
+    if (isOtherValue(jobForm.IndustryType) && !jobForm.IndustryTypeOther.trim()) {
+      return showToast("Please specify the Industry Type when 'Other' is selected", "error");
+    }
+    if (isOtherValue(jobForm.Department) && !jobForm.DepartmentOther.trim()) {
+      return showToast("Please specify the Department when 'Other' is selected", "error");
+    }
     if (!jobForm.JobType) return showToast("Job Type is required", "error");
     if (!jobForm.JobDescription.trim()) return showToast("Job Description is required", "error");
     if (!jobForm.EmploymentType) return showToast("Employment Type is required", "error");
@@ -2676,13 +2678,22 @@ export default function DashboardPostJobPage() {
     console.log("jobForm.ContractPeriod =", jobForm.ContractPeriod);
     setLoading(true);
     try {
+      // When "Other" is selected, send the free-text value the employer
+      // typed instead of the literal word "Other" so the backend/DB stores
+      // a meaningful value.
+      const resolvedIndustryType = isOtherValue(jobForm.IndustryType)
+        ? jobForm.IndustryTypeOther.trim()
+        : jobForm.IndustryType;
+      const resolvedDepartment = isOtherValue(jobForm.Department)
+        ? jobForm.DepartmentOther.trim()
+        : jobForm.Department;
 
       const response = await saveJobDetails({
         JobId: jobId ?? "",
         JobTitle: jobForm.JobTitle,
         TradeCategory: jobForm.TradeCategory,
         Role: jobForm.Role,
-        IndustryType: jobForm.IndustryType,
+        IndustryType: resolvedIndustryType,
 
         IsClientHiring: jobForm.IsClientHiring,
         ClientName: jobForm.ClientName,
@@ -2693,7 +2704,7 @@ export default function DashboardPostJobPage() {
         JobType: jobForm.JobType,
         EmploymentType: jobForm.EmploymentType,
         EmploymentMode: jobForm.EmploymentMode,
-        Department: jobForm.Department,
+        Department: resolvedDepartment,
         DutyHoursPerDay: jobForm.DutyHoursPerDay,
         IsOilField: jobForm.IsOilField,
         PaidOvertime: jobForm.PaidOvertime,
