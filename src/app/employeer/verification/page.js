@@ -199,8 +199,41 @@ const EmployerVerificationPage = () => {
   const optionalDocsList = [];
   const otherDocsList = [];
 
-  // Group existing documents from verification response
+  // Deduplicate and merge documents having the same requestId (admin request vs uploaded file)
+  const uniqueDocsMap = new Map();
   documents.forEach((d) => {
+    if (d.requestId) {
+      if (uniqueDocsMap.has(d.requestId)) {
+        const existing = uniqueDocsMap.get(d.requestId);
+        uniqueDocsMap.set(d.requestId, {
+          ...existing,
+          ...d,
+          category: (existing.category === "RequestedAdditional" || d.category === "RequestedAdditional") ? "RequestedAdditional" : existing.category,
+          message: existing.message || d.message || "",
+          fileUrl: existing.fileUrl || d.fileUrl,
+          uploadedAt: existing.uploadedAt || d.uploadedAt,
+          status: (existing.status && existing.status !== "Not Uploaded") ? existing.status : d.status,
+        });
+      } else {
+        uniqueDocsMap.set(d.requestId, { ...d });
+      }
+    }
+  });
+
+  const processedDocs = [];
+  documents.forEach((d) => {
+    if (d.requestId) {
+      if (uniqueDocsMap.has(d.requestId)) {
+        processedDocs.push(uniqueDocsMap.get(d.requestId));
+        uniqueDocsMap.delete(d.requestId); // add only once
+      }
+    } else {
+      processedDocs.push(d);
+    }
+  });
+
+  // Group existing documents from verification response
+  processedDocs.forEach((d) => {
     if (d.category === "Mandatory") {
       requiredDocsList.push(d);
     } else if (d.category === "RequestedAdditional" || d.requestId) {
