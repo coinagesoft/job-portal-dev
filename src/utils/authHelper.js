@@ -9,7 +9,7 @@ const getStoredValue = (key) => {
   return localStorage.getItem(key);
 };
 
-const getDecodedToken = () => {
+export const getDecodedToken = () => {
   const token = getStoredValue("token");
 
   if (!token) {

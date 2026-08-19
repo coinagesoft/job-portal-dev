@@ -42,6 +42,8 @@ import {
   resumeRegistration,
   getRecruiterPlan,
   createMembershipOrder,
+  getIndustries,
+  submitIndustrySuggestion,
 } from "@/services/recruiter/recruiterRegistrationService";
 import { sendOtp as sendLoginOtp } from "@/services/recruiter/authService";
 import { getHomepageData } from "@/services/candidate/homepageService";
@@ -1883,19 +1885,19 @@ function EmployerForm() {
 
   useEffect(() => {
     const fetchIndustries = async () => {
-  try {
-    const res = await getHomepageData();
-    if (res.data?.success && res.data.industries) {
-      const apiIndustries = res.data.industries.map((ind) => ind.name).filter(Boolean);
-      setIndustriesList(apiIndustries);
-    } else {
-      setIndustriesList([]);
-    }
-  } catch (err) {
-    console.error("Failed to load industries from homepage API:", err);
-    setIndustriesList([]);
-  }
-};
+      try {
+        const res = await getIndustries();
+        if (res?.success && res.industries) {
+          const apiIndustries = res.industries.map((ind) => ind.name).filter(Boolean);
+          setIndustriesList(apiIndustries);
+        } else {
+          setIndustriesList([]);
+        }
+      } catch (err) {
+        console.error("Failed to load industries from registration API:", err);
+        setIndustriesList([]);
+      }
+    };
     fetchIndustries();
   }, []);
 
@@ -2718,6 +2720,19 @@ setAdditionalDocuments(
       const response = await saveCompanyDetails(formData, sessionId);
 
       if (response.data.success) {
+        if (data.industry === "Other" && data.customIndustry.trim()) {
+          try {
+            await submitIndustrySuggestion({
+              field: "industry",
+              suggestedName: data.customIndustry.trim(),
+              note: "Suggested other Industry Type during registration",
+              submittedByName: data.contactName || "Recruiter",
+              submittedByEmail: data.contactPersonEmail || data.corpEmail || "",
+            });
+          } catch (suggestionErr) {
+            console.error("Failed to submit industry suggestion:", suggestionErr);
+          }
+        }
         setStep(3);
       }
     } catch (err) {

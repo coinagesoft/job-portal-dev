@@ -70,7 +70,11 @@ import {
   searchRoles,
   suggestSkills,
   getJobPostDropdownData,
+  getJobDropdowns,
+  submitJobSuggestion,
 } from "@/services/recruiter/recruiterJobPostService";
+import { getIndustries } from "@/services/recruiter/recruiterRegistrationService";
+import { getDecodedToken } from "@/utils/authHelper";
 
 const COMBOBOX_SEARCH_THRESHOLD = 8;
 
@@ -2314,10 +2318,10 @@ export default function DashboardPostJobPage() {
   useEffect(() => {
     const fetchDropdownOptions = async () => {
       try {
-        const res = await getJobPostDropdownData();
-        if (res.data?.success) {
-          // Trade / Role Category ← tradeCategories
-          const apiTrades = (res.data.tradeCategories || [])
+        const res = await getJobDropdowns();
+        if (res?.success) {
+          // Trade / Role Category ← tradeRoles
+          const apiTrades = (res.tradeRoles || [])
             .map((t) => t.name)
             .filter(Boolean);
           if (apiTrades.length > 0) {
@@ -2325,15 +2329,22 @@ export default function DashboardPostJobPage() {
           }
 
           // Department ← departments
-          const apiDepts = (res.data.departments || [])
+          const apiDepts = (res.departments || [])
             .map((d) => d.name)
             .filter(Boolean);
           if (apiDepts.length > 0) {
             setDepartmentOptionsList(withOtherOption(apiDepts));
           }
+        }
+      } catch (err) {
+        console.error("Failed to load post-job dropdown options via getJobDropdowns:", err);
+      }
 
+      try {
+        const res = await getIndustries();
+        if (res?.success && res.industries) {
           // Industry Type ← industries
-          const apiIndustries = (res.data.industries || [])
+          const apiIndustries = res.industries
             .map((ind) => ind.name)
             .filter(Boolean);
           if (apiIndustries.length > 0) {
@@ -2341,8 +2352,7 @@ export default function DashboardPostJobPage() {
           }
         }
       } catch (err) {
-        console.error("Failed to load post-job dropdown options via getJobPostDropdownData:", err);
-        // Keep the static fallback lists already set in state above.
+        console.error("Failed to load industries via getIndustries:", err);
       }
     };
     fetchDropdownOptions();
@@ -2714,6 +2724,56 @@ export default function DashboardPostJobPage() {
       
       setJobId(response.jobId);
       updateDraft(response);
+
+      try {
+        const decoded = getDecodedToken();
+        const userEmail = decoded?.email || decoded?.sub || "";
+        const userName = decoded?.name || decoded?.unique_name || "";
+
+        if (isOtherValue(jobForm.TradeCategory) && jobForm.Role.trim()) {
+          try {
+            await submitJobSuggestion({
+              field: "tradeRoles",
+              suggestedName: jobForm.Role.trim(),
+              note: "Suggested other Trade / Role Category during job posting",
+              submittedByName: userName,
+              submittedByEmail: userEmail,
+            });
+          } catch (suggestionErr) {
+            console.error("Failed to submit trade suggestion:", suggestionErr);
+          }
+        }
+
+        if (isOtherValue(jobForm.IndustryType) && jobForm.IndustryTypeOther.trim()) {
+          try {
+            await submitJobSuggestion({
+              field: "industry",
+              suggestedName: jobForm.IndustryTypeOther.trim(),
+              note: "Suggested other Industry Type during job posting",
+              submittedByName: userName,
+              submittedByEmail: userEmail,
+            });
+          } catch (suggestionErr) {
+            console.error("Failed to submit industry suggestion:", suggestionErr);
+          }
+        }
+
+        if (isOtherValue(jobForm.Department) && jobForm.DepartmentOther.trim()) {
+          try {
+            await submitJobSuggestion({
+              field: "departments",
+              suggestedName: jobForm.DepartmentOther.trim(),
+              note: "Suggested other Department during job posting",
+              submittedByName: userName,
+              submittedByEmail: userEmail,
+            });
+          } catch (suggestionErr) {
+            console.error("Failed to submit department suggestion:", suggestionErr);
+          }
+        }
+      } catch (tokenErr) {
+        console.error("Failed to decode token or submit suggestions:", tokenErr);
+      }
 
       go(2);
     } catch (error) {

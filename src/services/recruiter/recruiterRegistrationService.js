@@ -232,3 +232,13 @@ export const createMembershipOrder = (payload) =>
     "/api/recruiter/registration/create-plan-order",
     payload
   );
+
+export const getIndustries = async () => {
+  const response = await api.get("/api/recruiter/registration/industries");
+  return response.data;
+};
+
+export const submitIndustrySuggestion = async (payload) => {
+  const response = await api.post("/api/recruiter/registration/industry-suggestions", payload);
+  return response.data;
+};

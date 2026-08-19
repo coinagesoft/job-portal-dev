@@ -298,3 +298,13 @@ export const suggestSkills = async (payload) => {
 export const getJobPostDropdownData = () => {
   return api.get("/api/public/homepage/data");
 };
+
+export const getJobDropdowns = async () => {
+  const response = await api.get("/api/recruiter/jobs/dropdowns");
+  return response.data;
+};
+
+export const submitJobSuggestion = async (payload) => {
+  const response = await api.post("/api/recruiter/jobs/suggestions", payload);
+  return response.data;
+};

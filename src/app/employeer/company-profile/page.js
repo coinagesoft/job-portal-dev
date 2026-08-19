@@ -21,6 +21,7 @@ import {
   getVerification,
   uploadDocument,
 } from "@/services/recruiter/recruiterVerificationService";
+import { getIndustries } from "@/services/recruiter/recruiterRegistrationService";
 import styles from "./company-profile.module.css";
 
 // Same option set used in the employer registration wizard (src/app/register/page.js)
@@ -685,6 +686,7 @@ export default function EmployerCompanyProfilePage() {
   const [description, setDescription] = useState("");
   const [officeSameAsAddress, setOfficeSameAsAddress] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [industriesList, setIndustriesList] = useState(INDUSTRIES);
 
   // Derived (not stored) — recomputed whenever the saved country/state
   // text changes, so the City/State cascade always matches loaded data
@@ -720,6 +722,23 @@ export default function EmployerCompanyProfilePage() {
     loadJobs();
     loadPeople();
     loadVerification();
+
+    const fetchIndustries = async () => {
+      try {
+        const res = await getIndustries();
+        if (res?.success && res.industries) {
+          const apiIndustries = res.industries.map((ind) => ind.name).filter(Boolean);
+          if (apiIndustries.length > 0) {
+            setIndustriesList(
+              apiIndustries.includes("Other") ? apiIndustries : [...apiIndustries, "Other"]
+            );
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load industries from API:", err);
+      }
+    };
+    fetchIndustries();
   }, []);
 
   // Combine the registered-address fields above into one display string,
@@ -1504,7 +1523,7 @@ export default function EmployerCompanyProfilePage() {
                         <Combobox
                           value={company.industry || ""}
                           onChange={(v) => handleInputChange("industry", v)}
-                          options={INDUSTRIES}
+                          options={industriesList}
                           placeholder="Type or select industry…"
                         />
                       </Field>
