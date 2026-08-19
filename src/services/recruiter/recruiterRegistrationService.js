@@ -221,3 +221,14 @@ export const getEnumOptions = () =>
 
 export const getRecruiterPlan = (region) =>
   api.get(`/api/plans/recruiter?region=${region}`);
+
+// Creates the Razorpay order for the Employer Registration fee, resolved
+// server-side from the active, admin-managed Recruiter MembershipPlan
+// (never trust a client-supplied amount). Returns { orderId, amount,
+// amountPaise, currency, razorpayKeyId, planId, planName }. planId must be
+// echoed back on submitRegistration so the amount can be re-verified there.
+export const createMembershipOrder = (payload) =>
+  api.post(
+    "/api/recruiter/registration/create-plan-order",
+    payload
+  );

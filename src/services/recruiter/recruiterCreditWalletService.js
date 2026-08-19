@@ -116,19 +116,8 @@ export const createCreditPlanOrder = async (planId) => {
 /**
  * POST /api/recruiter/plans/verify-payment
  */
-export const verifyCreditPlanPayment = async ({
-  transactionId,
-  razorpayOrderId,
-  razorpayPaymentId,
-  razorpaySignature,
-}) => {
-  const { data } = await api.post("/api/recruiter/plans/verify-payment", {
-    transactionId,
-    razorpayOrderId,
-    razorpayPaymentId,
-    razorpaySignature,
-  });
-
+export const verifyCreditPlanPayment = async (payload) => {
+  const { data } = await api.post("/api/recruiter/plans/verify-payment", payload);
   return data;
 };
 

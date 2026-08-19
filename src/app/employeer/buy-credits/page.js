@@ -171,31 +171,38 @@ const EmployerBuyCreditsPage = () => {
         name: "Job Portal",
         description: `${selected.planName} - ${selected.credits} Credits`,
 
-        handler: async function (response) {
-          try {
-            const verify = await verifyCreditPlanPayment({
-              transactionId: order.transactionId,
-              razorpayOrderId: response.razorpay_order_id,
-              razorpayPaymentId: response.razorpay_payment_id,
-              razorpaySignature: response.razorpay_signature,
-            });
+      handler: async function (response) {
+  try {
+    const verify = await verifyCreditPlanPayment({
+      transactionId: order.transactionId,
+      razorpayOrderId: response.razorpay_order_id,
+      razorpayPaymentId: response.razorpay_payment_id,
+      razorpaySignature: response.razorpay_signature,
+    });
 
-            if (verify.success) {
-              setPaidPack(selected);
-              setPaid(true);
+    if (verify.success) {
+      setPaidPack(selected);
+      setPaid(true);
 
-              const wallet = await getWallet();
-              setWallet(wallet);
-            } else {
-              alert(verify.message || "Payment verification failed.");
-            }
-          } catch (err) {
-            console.error(err);
-            alert("Payment verification failed.");
-          } finally {
-            setPaying(false);
-          }
-        },
+      const wallet = await getWallet();
+      setWallet(wallet);
+    } else {
+      console.error("Payment verification failed:", verify);
+      alert(verify.message || "Payment verification failed.");
+    }
+  } catch (err) {
+    console.error("Payment verification exception:", err);
+
+    const serverMsg =
+      err.response?.data?.message ||
+      err.response?.data ||
+      "";
+
+    alert(`Payment verification failed: ${serverMsg || err.message}`);
+  } finally {
+    setPaying(false);
+  }
+},
 
         prefill: {
           name: "Recruiter",

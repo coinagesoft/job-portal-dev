@@ -41,6 +41,7 @@ import {
   submitRegistration,
   resumeRegistration,
   getRecruiterPlan,
+  createMembershipOrder,
 } from "@/services/recruiter/recruiterRegistrationService";
 import { sendOtp as sendLoginOtp } from "@/services/recruiter/authService";
 import { getHomepageData } from "@/services/candidate/homepageService";
@@ -1842,6 +1843,7 @@ function EmployerForm() {
   const [planLoading, setPlanLoading] = useState(false);
   const [payStatus, setPayStatus] = useState("");
   const [paymentData, setPaymentData] = useState({
+    planId: null,
     razorpayOrderId: "",
     razorpayPaymentId: "",
     razorpaySignature: "",
@@ -2249,15 +2251,24 @@ setAdditionalDocuments(
         sessionId,
         consentGiven: termsAccepted,
         consentVersion: "1.0",
+        // Required whenever the resolved plan has a price > 0 — omitting
+        // these is what causes the backend to reject with "Payment
+        // verification failed.", even though Razorpay itself succeeded.
+        planId: paymentData.planId,
+        razorpayOrderId: paymentData.razorpayOrderId,
+        razorpayPaymentId: paymentData.razorpayPaymentId,
+        razorpaySignature: paymentData.razorpaySignature,
       });
 
       if (response.data.success) {
         showToast("Registration completed", "success");
 
         router.push("/Login");
+      } else {
+        showToast(response.data.message || "Registration failed", "error");
       }
     } catch (err) {
-      showToast(err.response?.data?.message, "error");
+      showToast(err.response?.data?.message || "Registration failed", "error");
     }
   };
   const loadDocumentTypes = async () => {
@@ -2307,9 +2318,15 @@ setAdditionalDocuments(
 
       const meta = getCountryMeta(data.countryCode);
       const region = meta?.name ? meta.name.toLowerCase() : "india";
+      const sessionId = localStorage.getItem("registrationSessionId");
 
-      const orderResponse = await createCandidateOrder({
-        region: region,
+      // Uses the recruiter-specific order endpoint (resolves the active,
+      // admin-configured Recruiter MembershipPlan server-side) — NOT
+      // createCandidateOrder, which was creating an order for the
+      // candidate plan/price instead of the employer registration fee.
+      const orderResponse = await createMembershipOrder({
+        sessionId,
+        region,
       });
 
       const order = orderResponse.data;
@@ -2317,7 +2334,7 @@ setAdditionalDocuments(
       if (!order.success) {
         setPaying(false);
         setPaymentMessage(
-          "Unable to create payment order."
+          order.message || "Unable to create payment order."
         );
         return;
       }
@@ -2331,14 +2348,18 @@ setAdditionalDocuments(
 
       const options = {
         key: activeKey,
-        amount: (recruiterPlan?.price || 150) * 100,
+        amount: order.amountPaise || (recruiterPlan?.price || 150) * 100,
         currency: order.currency || "INR",
         name: "Job Box",
         description: "Employer Registration Fee",
+        order_id: order.orderId,
         handler: function (response) {
           console.log("RAZORPAY RESPONSE", response);
 
           const paymentInfo = {
+            // Echoed back on submit-registration so the amount can be
+            // re-verified server-side against this exact plan.
+            planId: order.planId,
             razorpayOrderId: response.razorpay_order_id || "",
             razorpayPaymentId: response.razorpay_payment_id,
             razorpaySignature: response.razorpay_signature || "",
@@ -2351,8 +2372,10 @@ setAdditionalDocuments(
           );
           setPaying(false);
 
-          // Payment succeeded — complete registration right away
-          submitEmployerAfterPay();
+          // Payment succeeded — complete registration right away, passing
+          // the payment fields straight through (React state set above
+          // hasn't re-rendered yet at this point in the callback).
+          submitEmployerAfterPay(paymentInfo);
         },
         prefill: {
           name: data.contactName,
@@ -2382,19 +2405,30 @@ setAdditionalDocuments(
     }
   };
 
-  const submitEmployerAfterPay = async () => {
+  // paymentOverride lets the Razorpay success handler pass the
+  // just-received planId/razorpayOrderId/PaymentId/Signature straight
+  // through, since React state (paymentData) hasn't re-rendered yet at
+  // that point in the callback — same pattern used on the candidate side.
+  const submitEmployerAfterPay = async (paymentOverride) => {
     try {
       const sessionId = localStorage.getItem("registrationSessionId");
+      const payInfo = paymentOverride || paymentData;
 
       const response = await submitRegistration({
         sessionId,
         consentGiven: true,
         consentVersion: "1.0",
+        planId: payInfo.planId,
+        razorpayOrderId: payInfo.razorpayOrderId,
+        razorpayPaymentId: payInfo.razorpayPaymentId,
+        razorpaySignature: payInfo.razorpaySignature,
       });
 
       if (response.data.success) {
         showToast("Registration completed", "success");
         router.push("/Login");
+      } else {
+        showToast(response.data.message || "Registration failed", "error");
       }
     } catch (err) {
       showToast(err.response?.data?.message || "Registration failed", "error");

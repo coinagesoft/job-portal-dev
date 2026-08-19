@@ -5,6 +5,7 @@ import SubUserViewOnlyGuard from "@/components/SubUserViewOnlyGuard.js";
 import {
   getVerification,
   uploadDocument,
+  getDocumentTypes,
 } from "@/services/recruiter/recruiterVerificationService";
 
 /* ── Icon mapping (backend does not send icons) ───────────────────────────── */
@@ -15,35 +16,8 @@ const BADGE_ICONS = {
   "RPSL Licensed": "fi fi-rr-diploma",
 };
 
-/* Document types that can actually be uploaded (matches backend enum) */
-const UPLOADABLE_TYPES = [
-  { value: "POE", label: "POE Licence" },
-  { value: "RPSL", label: "RPSL Licence" },
-  { value: "BUSINESS_REGISTRATION", label: "Business Registration" },
-  { value: "GST", label: "GST Certificate" },
-  { value: "PAN", label: "PAN Card" },
-  { value: "OTHER", label: "Other" },
-];
-
 /* Statuses the backend treats as "positive/done" */
 const POSITIVE_STATUSES = ["Approved", "Uploaded", "Available", "Verified"];
-
-const COMPULSORY_DOCS = [
-  { docType: "GST Registration Certificate", uploadType: "GST" },
-  { docType: "Trade License", uploadType: "BUSINESS_REGISTRATION" },
-  { docType: "PAN Card", uploadType: "PAN" },
-];
-
-const STATIC_REQUESTED_DOCS = [
-  {
-    documentName: "Chartered Accountant Certificate",
-    description: "Please upload the CA certificate verifying your company turnover.",
-  },
-  {
-    documentName: "Company Utility Bill",
-    description: "Upload a recent utility bill displaying the registered company address.",
-  }
-];
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
 const isPositive = (status) => POSITIVE_STATUSES.includes(status);
@@ -69,38 +43,15 @@ const formatDate = (value) => {
   }
 };
 
-const prettyDocName = (type) => {
-  switch (type) {
-    case "GST":
-      return "GST Certificate";
-    case "PAN":
-      return "PAN Card";
-    case "POE":
-      return "POE Licence";
-    case "RPSL":
-      return "RPSL Licence";
-    case "BUSINESS_REGISTRATION":
-      return "Business Registration";
-    default:
-      return type;
-  }
-};
-
 const EmployerVerificationPage = () => {
   const [badges, setBadges] = useState([]);
   const [documents, setDocuments] = useState([]);
-  const [requestedDocuments, setRequestedDocuments] = useState(
-    STATIC_REQUESTED_DOCS.map((item) => ({
-      ...item,
-      status: "Not Uploaded",
-      fileUrl: null,
-      uploadedAt: null,
-    }))
-  );
+  const [allDocumentTypes, setAllDocumentTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [uploadType, setUploadType] = useState("POE");
+  const [uploadType, setUploadType] = useState("");
+  const [uploadRequestId, setUploadRequestId] = useState(null);
   const [customDocName, setCustomDocName] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState(null);
@@ -111,28 +62,24 @@ const EmployerVerificationPage = () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await getVerification();
-      setBadges(data?.badges ?? []);
-      const apiDocs = data?.documents ?? [];
+      const [verificationData, docTypesData] = await Promise.all([
+        getVerification(),
+        getDocumentTypes()
+      ]);
+      setBadges(verificationData?.badges ?? []);
+      const apiDocs = verificationData?.documents ?? [];
       setDocuments(apiDocs);
 
-      // Merge apiDocs status with static requested documents
-      const mergedRequested = STATIC_REQUESTED_DOCS.map((item) => {
-        const uploadedDoc = apiDocs.find(
-          (d) =>
-            d.documentType === item.documentName ||
-            d.documentType === item.documentName.toUpperCase()
-        );
-        return {
-          ...item,
-          status: uploadedDoc ? uploadedDoc.status : "Not Uploaded",
-          fileUrl: uploadedDoc ? uploadedDoc.fileUrl : null,
-          uploadedAt: uploadedDoc ? uploadedDoc.uploadedAt : null,
-        };
-      });
-      setRequestedDocuments(mergedRequested);
+      const fetchedTypes = docTypesData?.data ?? [];
+      setAllDocumentTypes(fetchedTypes);
+
+      if (fetchedTypes.length > 0) {
+        setUploadType((prev) => prev && (fetchedTypes.some(t => t.documentTypeId === prev) || prev === "OTHER") ? prev : fetchedTypes[0].documentTypeId);
+      } else {
+        setUploadType("OTHER");
+      }
     } catch (err) {
-      console.error("getVerification error:", err);
+      console.error("loadVerification error:", err);
       setError("Could not load verification details. Please try again.");
     } finally {
       setLoading(false);
@@ -146,6 +93,14 @@ const EmployerVerificationPage = () => {
   /* ── Upload flow ────────────────────────────────────────────────────────── */
   const handleDirectUpload = (uploadTypeVal) => {
     setUploadType(uploadTypeVal);
+    setUploadRequestId(null);
+    setUploadMsg(null);
+    fileInputRef.current?.click();
+  };
+
+  const handleRequestUpload = (uploadTypeVal, requestId) => {
+    setUploadType(uploadTypeVal || "OTHER");
+    setUploadRequestId(requestId);
     setUploadMsg(null);
     fileInputRef.current?.click();
   };
@@ -177,55 +132,43 @@ const EmployerVerificationPage = () => {
       setUploading(true);
       setUploadMsg(null);
       
-      const finalUploadType = uploadType === "OTHER" ? (customDocName.trim() || "Other Document") : uploadType;
-      
-      await uploadDocument(finalUploadType, file);
+      if (uploadType === "OTHER") {
+        await uploadDocument("OTHER", customDocName.trim() || "Other Document", file, uploadRequestId);
+      } else {
+        await uploadDocument(uploadType, "", file, uploadRequestId);
+      }
       setUploadMsg({ type: "success", text: "Document uploaded successfully." });
 
       // Reflect the upload immediately rather than waiting on the refetch
+      const matchedType = allDocumentTypes.find(t => t.documentTypeId === uploadType);
+      const docName = uploadType === "OTHER" ? (customDocName.trim() || "Other Document") : (matchedType ? matchedType.documentName : "");
+      
+      const newDoc = {
+        documentTypeId: uploadType !== "OTHER" ? uploadType : null,
+        documentType: docName,
+        status: "Uploaded",
+        uploadedAt: new Date().toISOString(),
+        fileUrl: null,
+      };
+
       setDocuments((prev) => {
-        const index = prev.findIndex((doc) =>
-          doc.documentType === finalUploadType ||
-          (finalUploadType === "GST" && doc.documentType === "GST Registration Certificate") ||
-          (finalUploadType === "BUSINESS_REGISTRATION" && doc.documentType === "Trade License") ||
-          (finalUploadType === "PAN" && doc.documentType === "PAN Card")
+        const index = prev.findIndex((d) => 
+          (uploadType !== "OTHER" && d.documentTypeId === uploadType) ||
+          d.documentType === docName
         );
-        const targetDocType = index > -1 ? prev[index].documentType : (
-          finalUploadType === "GST" ? "GST Registration Certificate" :
-          finalUploadType === "BUSINESS_REGISTRATION" ? "Trade License" :
-          finalUploadType === "PAN" ? "PAN Card" : finalUploadType
-        );
-        const updatedDoc = {
-          documentType: targetDocType,
-          status: "Uploaded",
-          uploadedAt: new Date().toISOString(),
-          fileUrl: null,
-        };
         if (index > -1) {
           const next = [...prev];
-          next[index] = { ...next[index], ...updatedDoc };
+          next[index] = { ...next[index], ...newDoc };
           return next;
         } else {
-          return [...prev, updatedDoc];
+          return [...prev, newDoc];
         }
-      });
-
-      setRequestedDocuments((prev) => {
-        return prev.map((doc) => {
-          if (doc.documentName === finalUploadType) {
-            return {
-              ...doc,
-              status: "Uploaded",
-              uploadedAt: new Date().toISOString(),
-            };
-          }
-          return doc;
-        });
       });
 
       if (uploadType === "OTHER") {
         setCustomDocName("");
       }
+      setUploadRequestId(null);
 
       await loadVerification();
     } catch (err) {
@@ -242,6 +185,35 @@ const EmployerVerificationPage = () => {
       window.open(doc.fileUrl, "_blank", "noopener,noreferrer");
     }
   };
+
+  const getUploadedDocForType = (docType) => {
+    return documents.find(
+      (d) => d.documentTypeId === docType.documentTypeId || d.documentType === docType.documentName
+    );
+  };
+
+  // Filter requested docs (requested by admin explicitly, having a requestId or category RequestedAdditional)
+  const requestedDocs = documents.filter(
+    (d) => d.category === "RequestedAdditional" || d.requestId
+  );
+
+  // Filter out any document types that are currently requested explicitly (to prevent duplication in required/optional lists)
+  const mandatoryTypes = allDocumentTypes.filter(
+    (t) => t.isMandatory && !requestedDocs.some((r) => r.documentTypeId === t.documentTypeId)
+  );
+  
+  const optionalTypes = allDocumentTypes.filter(
+    (t) => !t.isMandatory && !requestedDocs.some((r) => r.documentTypeId === t.documentTypeId)
+  );
+
+  // Other uploaded documents that are not in standard types and not requested
+  const otherUploadedDocs = documents.filter(
+    (d) =>
+      !requestedDocs.some((r) => r.requestId === d.requestId) &&
+      !allDocumentTypes.some(
+        (t) => t.documentTypeId === d.documentTypeId || t.documentName === d.documentType
+      )
+  );
 
   return (
     <SubUserViewOnlyGuard>
@@ -440,170 +412,8 @@ const EmployerVerificationPage = () => {
                 ) : (
                   <div>
                     {/* Required Documents */}
-                    <div style={{ marginBottom: "24px" }}>
-                      <h6
-                        style={{
-                          color: "#122359",
-                          fontWeight: 700,
-                          marginBottom: "14px",
-                          fontSize: "15px",
-                        }}
-                      >
-                        Required Documents
-                      </h6>
-                      <div
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: "14px",
-                        }}
-                      >
-                        {COMPULSORY_DOCS.map((item) => {
-                          const doc = documents.find(
-                            (d) =>
-                              d.documentType === item.docType ||
-                              d.documentType === item.uploadType ||
-                              (item.docType === "PAN Card" && d.documentType === "PAN")
-                          ) || {
-                            documentType: item.docType,
-                            status: "Not Uploaded",
-                            uploadedAt: null,
-                            fileUrl: null,
-                          };
-
-                          const positive = isPositive(doc.status);
-                          const hasFile = !!doc.fileUrl;
-
-                          return (
-                            <div
-                              key={item.docType}
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                                flexWrap: "wrap",
-                                gap: "14px",
-                                padding: "18px 22px",
-                                borderRadius: "18px",
-                                border: "1px solid rgba(18,35,89,0.08)",
-                                background: "#ffffff",
-                                transition: "all .35s ease",
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.transform = "translateY(-4px)";
-                                e.currentTarget.style.borderColor = "rgba(255,153,0,0.32)";
-                                e.currentTarget.style.boxShadow = "0 12px 28px rgba(255,163,0,0.10)";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = "translateY(0px)";
-                                e.currentTarget.style.borderColor = "rgba(18,35,89,0.08)";
-                                e.currentTarget.style.boxShadow = "none";
-                              }}
-                            >
-                              <div>
-                                <div
-                                  style={{
-                                    fontWeight: 700,
-                                    color: "#122359",
-                                    marginBottom: "4px",
-                                  }}
-                                >
-                                  {prettyDocName(doc.documentType)}
-                                  <span
-                                    style={{
-                                      marginLeft: "8px",
-                                      fontSize: "9px",
-                                      color: "#b91c1c",
-                                      background: "#fef2f2",
-                                      border: "1px solid #fca5a5",
-                                      padding: "2px 6px",
-                                      borderRadius: "6px",
-                                      fontWeight: 700,
-                                      textTransform: "uppercase",
-                                    }}
-                                  >
-                                    Required
-                                  </span>
-                                </div>
-                                <div style={{ fontSize: "13px", color: "#66789c" }}>
-                                  {doc.uploadedAt
-                                    ? `Updated: ${formatDate(doc.uploadedAt)}`
-                                    : "Not uploaded yet"}
-                                </div>
-                              </div>
-
-                              <div
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "10px",
-                                }}
-                              >
-                                <span
-                                  style={{
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    padding: "6px 12px",
-                                    borderRadius: "999px",
-                                    background: positive ? "#ecfdf3" : "#fff7ea",
-                                    color: positive ? "#0BAB7C" : "#ff9900",
-                                    fontSize: "11px",
-                                    fontWeight: 700,
-                                  }}
-                                >
-                                  {doc.status}
-                                </span>
-
-                                {hasFile ? (
-                                  <button
-                                    className="btn btn-border btn-sm"
-                                    style={{
-                                      borderRadius: "10px",
-                                      fontWeight: 700,
-                                      cursor: "pointer",
-                                    }}
-                                    type="button"
-                                    onClick={() => handleView(doc)}
-                                  >
-                                    <i
-                                      className="fi fi-rr-eye"
-                                      style={{ marginRight: "5px" }}
-                                    />
-                                    View
-                                  </button>
-                                ) : (
-                                  <button
-                                    className="btn btn-default btn-sm"
-                                    style={{
-                                      borderRadius: "10px",
-                                      fontWeight: 700,
-                                      cursor: uploading ? "wait" : "pointer",
-                                      background: "#ff9900",
-                                      borderColor: "#ff9900",
-                                      color: "#ffffff",
-                                      padding: "8px 14px",
-                                    }}
-                                    type="button"
-                                    disabled={uploading}
-                                    onClick={() => handleDirectUpload(item.uploadType)}
-                                  >
-                                    <i
-                                      className="fi fi-rr-upload"
-                                      style={{ marginRight: "5px" }}
-                                    />
-                                    {uploading && uploadType === item.uploadType ? "Uploading…" : "Upload"}
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Additional Requested Documents */}
-                    {requestedDocuments.length > 0 && (
-                      <div style={{ marginBottom: "24px", marginTop: "24px" }}>
+                    {mandatoryTypes.length > 0 && (
+                      <div style={{ marginBottom: "24px" }}>
                         <h6
                           style={{
                             color: "#122359",
@@ -612,7 +422,7 @@ const EmployerVerificationPage = () => {
                             fontSize: "15px",
                           }}
                         >
-                          Additional Requested Documents
+                          Required Documents
                         </h6>
                         <div
                           style={{
@@ -621,13 +431,20 @@ const EmployerVerificationPage = () => {
                             gap: "14px",
                           }}
                         >
-                          {requestedDocuments.map((doc) => {
+                          {mandatoryTypes.map((typeItem) => {
+                            const doc = getUploadedDocForType(typeItem) || {
+                              documentType: typeItem.documentName,
+                              status: "Not Uploaded",
+                              uploadedAt: null,
+                              fileUrl: null,
+                            };
+
                             const positive = isPositive(doc.status);
                             const hasFile = !!doc.fileUrl;
 
                             return (
                               <div
-                                key={doc.documentName}
+                                key={typeItem.documentTypeId}
                                 style={{
                                   display: "flex",
                                   alignItems: "center",
@@ -659,24 +476,28 @@ const EmployerVerificationPage = () => {
                                       marginBottom: "4px",
                                     }}
                                   >
-                                    {doc.documentName}
-                                  </div>
-                                  {doc.description && (
-                                    <div
+                                    {typeItem.documentName}
+                                    <span
                                       style={{
-                                        fontSize: "13px",
-                                        color: "#66789c",
-                                        marginBottom: "6px",
+                                        marginLeft: "8px",
+                                        fontSize: "9px",
+                                        color: "#b91c1c",
+                                        background: "#fef2f2",
+                                        border: "1px solid #fca5a5",
+                                        padding: "2px 6px",
+                                        borderRadius: "6px",
+                                        fontWeight: 700,
+                                        textTransform: "uppercase",
                                       }}
                                     >
-                                      {doc.description}
-                                    </div>
-                                  )}
-                                  {/* <div style={{ fontSize: "12px", color: "#8c9fb8" }}>
+                                      Required
+                                    </span>
+                                  </div>
+                                  <div style={{ fontSize: "13px", color: "#66789c" }}>
                                     {doc.uploadedAt
                                       ? `Updated: ${formatDate(doc.uploadedAt)}`
                                       : "Not uploaded yet"}
-                                  </div> */}
+                                  </div>
                                 </div>
 
                                 <div
@@ -732,13 +553,13 @@ const EmployerVerificationPage = () => {
                                       }}
                                       type="button"
                                       disabled={uploading}
-                                      onClick={() => handleDirectUpload(doc.documentName)}
+                                      onClick={() => handleDirectUpload(typeItem.documentTypeId)}
                                     >
                                       <i
                                         className="fi fi-rr-upload"
                                         style={{ marginRight: "5px" }}
                                       />
-                                      {uploading && uploadType === doc.documentName ? "Uploading…" : "Upload"}
+                                      {uploading && uploadType === typeItem.documentTypeId ? "Uploading…" : "Upload"}
                                     </button>
                                   )}
                                 </div>
@@ -749,16 +570,300 @@ const EmployerVerificationPage = () => {
                       </div>
                     )}
 
-                    {/* Optional/Additional Documents */}
-                    {documents.filter(
-                      (d) =>
-                        !COMPULSORY_DOCS.some(
-                          (item) =>
-                            d.documentType === item.docType ||
-                            d.documentType === item.uploadType ||
-                            (item.docType === "PAN Card" && d.documentType === "PAN")
-                        )
-                    ).length > 0 && (
+                    {/* Additional Requested Documents */}
+                    {requestedDocs.length > 0 && (
+                      <div style={{ marginBottom: "24px", marginTop: "24px" }}>
+                        <h6
+                          style={{
+                            color: "#122359",
+                            fontWeight: 700,
+                            marginBottom: "14px",
+                            fontSize: "15px",
+                          }}
+                        >
+                          Additional Requested Documents
+                        </h6>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "14px",
+                          }}
+                        >
+                          {requestedDocs.map((doc) => {
+                            const positive = isPositive(doc.status);
+                            const hasFile = !!doc.fileUrl;
+
+                            return (
+                              <div
+                                key={doc.requestId || doc.documentTypeId}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  flexWrap: "wrap",
+                                  gap: "14px",
+                                  padding: "18px 22px",
+                                  borderRadius: "18px",
+                                  border: "1px solid rgba(18,35,89,0.08)",
+                                  background: "#ffffff",
+                                  transition: "all .35s ease",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.transform = "translateY(-4px)";
+                                  e.currentTarget.style.borderColor = "rgba(255,153,0,0.32)";
+                                  e.currentTarget.style.boxShadow = "0 12px 28px rgba(255,163,0,0.10)";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.transform = "translateY(0px)";
+                                  e.currentTarget.style.borderColor = "rgba(18,35,89,0.08)";
+                                  e.currentTarget.style.boxShadow = "none";
+                                }}
+                              >
+                                <div>
+                                  <div
+                                    style={{
+                                      fontWeight: 700,
+                                      color: "#122359",
+                                      marginBottom: "4px",
+                                    }}
+                                  >
+                                    {doc.documentName || doc.documentType}
+                                  </div>
+                                  {doc.message && (
+                                    <div
+                                      style={{
+                                        fontSize: "13px",
+                                        color: "#66789c",
+                                        marginBottom: "6px",
+                                      }}
+                                    >
+                                      {doc.message}
+                                    </div>
+                                  )}
+                                  <div style={{ fontSize: "13px", color: "#66789c" }}>
+                                    {doc.uploadedAt
+                                      ? `Updated: ${formatDate(doc.uploadedAt)}`
+                                      : "Requested by Admin"}
+                                  </div>
+                                </div>
+
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "10px",
+                                  }}
+                                >
+                                  <span
+                                    style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      padding: "6px 12px",
+                                      borderRadius: "999px",
+                                      background: positive ? "#ecfdf3" : "#fff7ea",
+                                      color: positive ? "#0BAB7C" : "#ff9900",
+                                      fontSize: "11px",
+                                      fontWeight: 700,
+                                    }}
+                                  >
+                                    {doc.status}
+                                  </span>
+
+                                  {hasFile ? (
+                                    <button
+                                      className="btn btn-border btn-sm"
+                                      style={{
+                                        borderRadius: "10px",
+                                        fontWeight: 700,
+                                        cursor: "pointer",
+                                      }}
+                                      type="button"
+                                      onClick={() => handleView(doc)}
+                                    >
+                                      <i
+                                        className="fi fi-rr-eye"
+                                        style={{ marginRight: "5px" }}
+                                      />
+                                      View
+                                    </button>
+                                  ) : (
+                                    <button
+                                      className="btn btn-default btn-sm"
+                                      style={{
+                                        borderRadius: "10px",
+                                        fontWeight: 700,
+                                        cursor: uploading ? "wait" : "pointer",
+                                        background: "#ff9900",
+                                        borderColor: "#ff9900",
+                                        color: "#ffffff",
+                                        padding: "8px 14px",
+                                      }}
+                                      type="button"
+                                      disabled={uploading}
+                                      onClick={() => handleRequestUpload(doc.documentTypeId, doc.requestId)}
+                                    >
+                                      <i
+                                        className="fi fi-rr-upload"
+                                        style={{ marginRight: "5px" }}
+                                      />
+                                      {uploading && uploadType === doc.documentTypeId && uploadRequestId === doc.requestId ? "Uploading…" : "Upload"}
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Optional Documents */}
+                    {optionalTypes.length > 0 && (
+                      <div style={{ marginBottom: "24px", marginTop: "24px" }}>
+                        <h6
+                          style={{
+                            color: "#122359",
+                            fontWeight: 700,
+                            marginBottom: "14px",
+                            fontSize: "15px",
+                          }}
+                        >
+                          Optional Documents
+                        </h6>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "14px",
+                          }}
+                        >
+                          {optionalTypes.map((typeItem) => {
+                            const doc = getUploadedDocForType(typeItem) || {
+                              documentType: typeItem.documentName,
+                              status: "Not Uploaded",
+                              uploadedAt: null,
+                              fileUrl: null,
+                            };
+
+                            const positive = isPositive(doc.status);
+                            const hasFile = !!doc.fileUrl;
+
+                            return (
+                              <div
+                                key={typeItem.documentTypeId}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  flexWrap: "wrap",
+                                  gap: "14px",
+                                  padding: "18px 22px",
+                                  borderRadius: "18px",
+                                  border: "1px solid rgba(18,35,89,0.08)",
+                                  background: "#ffffff",
+                                  transition: "all .35s ease",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.transform = "translateY(-4px)";
+                                  e.currentTarget.style.borderColor = "rgba(255,153,0,0.32)";
+                                  e.currentTarget.style.boxShadow = "0 12px 28px rgba(255,163,0,0.10)";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.transform = "translateY(0px)";
+                                  e.currentTarget.style.borderColor = "rgba(18,35,89,0.08)";
+                                  e.currentTarget.style.boxShadow = "none";
+                                }}
+                              >
+                                <div>
+                                  <div
+                                    style={{
+                                      fontWeight: 700,
+                                      color: "#122359",
+                                      marginBottom: "4px",
+                                    }}
+                                  >
+                                    {typeItem.documentName}
+                                  </div>
+                                  <div style={{ fontSize: "13px", color: "#66789c" }}>
+                                    {doc.uploadedAt
+                                      ? `Updated: ${formatDate(doc.uploadedAt)}`
+                                      : "Not uploaded yet"}
+                                  </div>
+                                </div>
+
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "10px",
+                                  }}
+                                >
+                                  <span
+                                    style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      padding: "6px 12px",
+                                      borderRadius: "999px",
+                                      background: positive ? "#ecfdf3" : "#fff7ea",
+                                      color: positive ? "#0BAB7C" : "#ff9900",
+                                      fontSize: "11px",
+                                      fontWeight: 700,
+                                    }}
+                                  >
+                                    {doc.status}
+                                  </span>
+
+                                  {hasFile ? (
+                                    <button
+                                      className="btn btn-border btn-sm"
+                                      style={{
+                                        borderRadius: "10px",
+                                        fontWeight: 700,
+                                        cursor: "pointer",
+                                      }}
+                                      type="button"
+                                      onClick={() => handleView(doc)}
+                                    >
+                                      <i
+                                        className="fi fi-rr-eye"
+                                        style={{ marginRight: "5px" }}
+                                      />
+                                      View
+                                    </button>
+                                  ) : (
+                                    <button
+                                      className="btn btn-default btn-sm"
+                                      style={{
+                                        borderRadius: "10px",
+                                        fontWeight: 700,
+                                        cursor: uploading ? "wait" : "pointer",
+                                        background: "#ff9900",
+                                        borderColor: "#ff9900",
+                                        color: "#ffffff",
+                                        padding: "8px 14px",
+                                      }}
+                                      type="button"
+                                      disabled={uploading}
+                                      onClick={() => handleDirectUpload(typeItem.documentTypeId)}
+                                    >
+                                      <i
+                                        className="fi fi-rr-upload"
+                                        style={{ marginRight: "5px" }}
+                                      />
+                                      {uploading && uploadType === typeItem.documentTypeId ? "Uploading…" : "Upload"}
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Other Uploaded Documents */}
+                    {otherUploadedDocs.length > 0 && (
                       <div style={{ marginTop: "24px" }}>
                         <h6
                           style={{
@@ -768,7 +873,7 @@ const EmployerVerificationPage = () => {
                             fontSize: "15px",
                           }}
                         >
-                          Additional Documents
+                          Other Uploaded Documents
                         </h6>
                         <div
                           style={{
@@ -777,127 +882,95 @@ const EmployerVerificationPage = () => {
                             gap: "14px",
                           }}
                         >
-                          {documents
-                            .filter(
-                              (d) =>
-                                !COMPULSORY_DOCS.some(
-                                  (item) =>
-                                    d.documentType === item.docType ||
-                                    d.documentType === item.uploadType ||
-                                    (item.docType === "PAN Card" && d.documentType === "PAN")
-                                )
-                            )
-                            .map((doc) => {
-                              const positive = isPositive(doc.status);
-                              return (
+                          {otherUploadedDocs.map((doc) => {
+                            const positive = isPositive(doc.status);
+                            return (
+                              <div
+                                key={doc.documentTypeId || doc.documentType}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  flexWrap: "wrap",
+                                  gap: "14px",
+                                  padding: "18px 22px",
+                                  borderRadius: "18px",
+                                  border: "1px solid rgba(18,35,89,0.08)",
+                                  background: "#ffffff",
+                                  transition: "all .35s ease",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.transform = "translateY(-4px)";
+                                  e.currentTarget.style.borderColor = "rgba(255,153,0,0.32)";
+                                  e.currentTarget.style.boxShadow = "0 12px 28px rgba(255,163,0,0.10)";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.transform = "translateY(0px)";
+                                  e.currentTarget.style.borderColor = "rgba(18,35,89,0.08)";
+                                  e.currentTarget.style.boxShadow = "none";
+                                }}
+                              >
+                                <div>
+                                  <div
+                                    style={{
+                                      fontWeight: 700,
+                                      color: "#122359",
+                                      marginBottom: "4px",
+                                    }}
+                                  >
+                                    {doc.documentType}
+                                  </div>
+                                  <div style={{ fontSize: "13px", color: "#66789c" }}>
+                                    {doc.uploadedAt
+                                      ? `Updated: ${formatDate(doc.uploadedAt)}`
+                                      : "Not uploaded yet"}
+                                  </div>
+                                </div>
+
                                 <div
-                                  key={doc.documentType}
                                   style={{
                                     display: "flex",
                                     alignItems: "center",
-                                    justifyContent: "space-between",
-                                    flexWrap: "wrap",
-                                    gap: "14px",
-                                    padding: "18px 22px",
-                                    borderRadius: "18px",
-                                    border: "1px solid rgba(18,35,89,0.08)",
-                                    background: "#ffffff",
-                                    transition: "all .35s ease",
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform = "translateY(-4px)";
-                                    e.currentTarget.style.borderColor = "rgba(255,153,0,0.32)";
-                                    e.currentTarget.style.boxShadow = "0 12px 28px rgba(255,163,0,0.10)";
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.transform = "translateY(0px)";
-                                    e.currentTarget.style.borderColor = "rgba(18,35,89,0.08)";
-                                    e.currentTarget.style.boxShadow = "none";
+                                    gap: "10px",
                                   }}
                                 >
-                                  <div>
-                                    <div
-                                      style={{
-                                        fontWeight: 700,
-                                        color: "#122359",
-                                        marginBottom: "4px",
-                                      }}
-                                    >
-                                      {prettyDocName(doc.documentType)}
-                                    </div>
-                                    <div style={{ fontSize: "13px", color: "#66789c" }}>
-                                      {doc.uploadedAt
-                                        ? `Updated: ${formatDate(doc.uploadedAt)}`
-                                        : "Not uploaded yet"}
-                                    </div>
-                                  </div>
-
-                                  <div
+                                  <span
                                     style={{
-                                      display: "flex",
+                                      display: "inline-flex",
                                       alignItems: "center",
-                                      gap: "10px",
+                                      padding: "6px 12px",
+                                      borderRadius: "999px",
+                                      background: positive ? "#ecfdf3" : "#fff7ea",
+                                      color: positive ? "#0BAB7C" : "#ff9900",
+                                      fontSize: "11px",
+                                      fontWeight: 700,
                                     }}
                                   >
-                                    <span
-                                      style={{
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        padding: "6px 12px",
-                                        borderRadius: "999px",
-                                        background: positive ? "#ecfdf3" : "#fff7ea",
-                                        color: positive ? "#0BAB7C" : "#ff9900",
-                                        fontSize: "11px",
-                                        fontWeight: 700,
-                                      }}
-                                    >
-                                      {doc.status}
-                                    </span>
+                                    {doc.status}
+                                  </span>
 
-                                    {doc.fileUrl ? (
-                                      <button
-                                        className="btn btn-border btn-sm"
-                                        style={{
-                                          borderRadius: "10px",
-                                          fontWeight: 700,
-                                          cursor: "pointer",
-                                        }}
-                                        type="button"
-                                        onClick={() => handleView(doc)}
-                                      >
-                                        <i
-                                          className="fi fi-rr-eye"
-                                          style={{ marginRight: "5px" }}
-                                        />
-                                        View
-                                      </button>
-                                    ) : (
-                                      <button
-                                        className="btn btn-default btn-sm"
-                                        style={{
-                                          borderRadius: "10px",
-                                          fontWeight: 700,
-                                          cursor: uploading ? "wait" : "pointer",
-                                          background: "#ff9900",
-                                          borderColor: "#ff9900",
-                                          color: "#ffffff",
-                                          padding: "8px 14px",
-                                        }}
-                                        type="button"
-                                        disabled={uploading}
-                                        onClick={() => handleDirectUpload(doc.documentType)}
-                                      >
-                                        <i
-                                          className="fi fi-rr-upload"
-                                          style={{ marginRight: "5px" }}
-                                        />
-                                        {uploading && uploadType === doc.documentType ? "Uploading…" : "Upload"}
-                                      </button>
-                                    )}
-                                  </div>
+                                  {doc.fileUrl && (
+                                    <button
+                                      className="btn btn-border btn-sm"
+                                      style={{
+                                        borderRadius: "10px",
+                                        fontWeight: 700,
+                                        cursor: "pointer",
+                                      }}
+                                      type="button"
+                                      onClick={() => handleView(doc)}
+                                    >
+                                      <i
+                                        className="fi fi-rr-eye"
+                                        style={{ marginRight: "5px" }}
+                                      />
+                                      View
+                                    </button>
+                                  )}
                                 </div>
-                              );
-                            })}
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
@@ -951,11 +1024,12 @@ const EmployerVerificationPage = () => {
                         MozAppearance: "none",
                       }}
                     >
-                      {UPLOADABLE_TYPES.map((t) => (
-                        <option key={t.value} value={t.value}>
-                          {t.label}
+                      {allDocumentTypes.map((t) => (
+                        <option key={t.documentTypeId} value={t.documentTypeId}>
+                          {t.documentName}
                         </option>
                       ))}
+                      <option value="OTHER">Other</option>
                     </select>
                     <i
                       className="fi-rr-angle-small-down"

@@ -33,16 +33,23 @@ export const getDocumentTypes = async () => {
 export const uploadDocument = async (
     documentTypeId,
     customDocumentName,
-    file
+    file,
+    requestId = null
 ) => {
     const employerId = getEmployerId();
 
     const formData = new FormData();
 
-    if (documentTypeId !== "OTHER") {
+    if (documentTypeId && documentTypeId !== "OTHER") {
         formData.append("DocumentTypeId", documentTypeId);
-    } else {
+    }
+    
+    if (customDocumentName) {
         formData.append("CustomDocumentName", customDocumentName);
+    }
+
+    if (requestId) {
+        formData.append("RequestId", requestId);
     }
 
     formData.append("File", file);
