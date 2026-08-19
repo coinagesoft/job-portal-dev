@@ -1042,6 +1042,7 @@ function CandidateForm() {
     userVal: "",
   });
   const [paymentData, setPaymentData] = useState({
+    planId: null,
     razorpayOrderId: "",
     razorpayPaymentId: "",
     razorpaySignature: ""
@@ -1263,6 +1264,11 @@ function CandidateForm() {
           console.log("RAZORPAY RESPONSE", response);
 
           const paymentInfo = {
+            // The backend re-validates this PlanId on submit-registration
+            // (see CandidateAuthService.RegisterAsync) — without it, PlanId
+            // defaults to an empty Guid and the plan lookup fails with
+            // "Selected membership plan is no longer available."
+            planId: order.planId,
             razorpayOrderId: response.razorpay_order_id,
             razorpayPaymentId: response.razorpay_payment_id,
             razorpaySignature: response.razorpay_signature,
@@ -1376,6 +1382,7 @@ function CandidateForm() {
           mobileNumber: form.mobile ? form.mobile.replace(/\D/g, "") : null,
           countryCode: form.mobile ? form.countryCode : null,
           termsAccepted: terms,
+          planId: payInfo.planId,
           razorpayOrderId: payInfo.razorpayOrderId,
           razorpayPaymentId: payInfo.razorpayPaymentId,
           razorpaySignature: payInfo.razorpaySignature,
@@ -1398,6 +1405,7 @@ function CandidateForm() {
         countryCode: form.countryCode,
         email: form.email,
         otpToken,
+        planId: payInfo.planId,
         razorpayOrderId: payInfo.razorpayOrderId,
         razorpayPaymentId: payInfo.razorpayPaymentId,
         razorpaySignature: payInfo.razorpaySignature,
