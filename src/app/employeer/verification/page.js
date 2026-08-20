@@ -27,6 +27,8 @@ const badgeColors = (status) => {
     return { bg: "#ecfdf3", color: "#0BAB7C" };
   if (status === "Uploaded")
     return { bg: "#eaf4ff", color: "#1d4ed8" };
+  if (status === "Rejected")
+    return { bg: "#fef2f2", color: "#b91c1c" };
   return { bg: "#f4f5f7", color: "#66789c" };
 };
 
@@ -213,6 +215,7 @@ const EmployerVerificationPage = () => {
           fileUrl: existing.fileUrl || d.fileUrl,
           uploadedAt: existing.uploadedAt || d.uploadedAt,
           status: (existing.status && existing.status !== "Not Uploaded") ? existing.status : d.status,
+          reason: existing.reason || d.reason || null,
         });
       } else {
         uniqueDocsMap.set(d.requestId, { ...d });
@@ -541,6 +544,17 @@ const EmployerVerificationPage = () => {
                                       Required
                                     </span>
                                   </div>
+                                  {doc.status === "Rejected" && doc.reason && (
+                                    <div
+                                      style={{
+                                        fontSize: "13px",
+                                        color: "#66789c",
+                                        marginBottom: "6px",
+                                      }}
+                                    >
+                                      Reason: {doc.reason}
+                                    </div>
+                                  )}
                                   <div style={{ fontSize: "13px", color: "#66789c" }}>
                                     {doc.uploadedAt
                                       ? `Updated: ${formatDate(doc.uploadedAt)}`
@@ -561,8 +575,8 @@ const EmployerVerificationPage = () => {
                                       alignItems: "center",
                                       padding: "6px 12px",
                                       borderRadius: "999px",
-                                      background: positive ? "#ecfdf3" : "#fff7ea",
-                                      color: positive ? "#0BAB7C" : "#ff9900",
+                                      background: doc.status === "Rejected" ? "#fef2f2" : positive ? "#ecfdf3" : "#fff7ea",
+                                      color: doc.status === "Rejected" ? "#b91c1c" : positive ? "#0BAB7C" : "#ff9900",
                                       fontSize: "11px",
                                       fontWeight: 700,
                                     }}
@@ -689,6 +703,17 @@ const EmployerVerificationPage = () => {
                                       {doc.message}
                                     </div>
                                   )}
+                                  {doc.status === "Rejected" && doc.reason && (
+                                    <div
+                                      style={{
+                                        fontSize: "13px",
+                                        color: "#66789c",
+                                        marginBottom: "6px",
+                                      }}
+                                    >
+                                      Reason: {doc.reason}
+                                    </div>
+                                  )}
                                   <div style={{ fontSize: "13px", color: "#66789c" }}>
                                     {doc.uploadedAt
                                       ? `Updated: ${formatDate(doc.uploadedAt)}`
@@ -709,8 +734,8 @@ const EmployerVerificationPage = () => {
                                       alignItems: "center",
                                       padding: "6px 12px",
                                       borderRadius: "999px",
-                                      background: positive ? "#ecfdf3" : "#fff7ea",
-                                      color: positive ? "#0BAB7C" : "#ff9900",
+                                      background: doc.status === "Rejected" ? "#fef2f2" : positive ? "#ecfdf3" : "#fff7ea",
+                                      color: doc.status === "Rejected" ? "#b91c1c" : positive ? "#0BAB7C" : "#ff9900",
                                       fontSize: "11px",
                                       fontWeight: 700,
                                     }}
@@ -826,6 +851,17 @@ const EmployerVerificationPage = () => {
                                   >
                                     {doc.documentName}
                                   </div>
+                                  {doc.status === "Rejected" && doc.reason && (
+                                    <div
+                                      style={{
+                                        fontSize: "13px",
+                                        color: "#66789c",
+                                        marginBottom: "6px",
+                                      }}
+                                    >
+                                      Reason: {doc.reason}
+                                    </div>
+                                  )}
                                   <div style={{ fontSize: "13px", color: "#66789c" }}>
                                     {doc.uploadedAt
                                       ? `Updated: ${formatDate(doc.uploadedAt)}`
@@ -846,8 +882,8 @@ const EmployerVerificationPage = () => {
                                       alignItems: "center",
                                       padding: "6px 12px",
                                       borderRadius: "999px",
-                                      background: positive ? "#ecfdf3" : "#fff7ea",
-                                      color: positive ? "#0BAB7C" : "#ff9900",
+                                      background: doc.status === "Rejected" ? "#fef2f2" : positive ? "#ecfdf3" : "#fff7ea",
+                                      color: doc.status === "Rejected" ? "#b91c1c" : positive ? "#0BAB7C" : "#ff9900",
                                       fontSize: "11px",
                                       fontWeight: 700,
                                     }}
@@ -961,6 +997,17 @@ const EmployerVerificationPage = () => {
                                   >
                                     {doc.documentType || doc.documentName}
                                   </div>
+                                  {doc.status === "Rejected" && doc.reason && (
+                                    <div
+                                      style={{
+                                        fontSize: "13px",
+                                        color: "#66789c",
+                                        marginBottom: "6px",
+                                      }}
+                                    >
+                                      Reason: {doc.reason}
+                                    </div>
+                                  )}
                                   <div style={{ fontSize: "13px", color: "#66789c" }}>
                                     {doc.uploadedAt
                                       ? `Updated: ${formatDate(doc.uploadedAt)}`
@@ -981,8 +1028,8 @@ const EmployerVerificationPage = () => {
                                       alignItems: "center",
                                       padding: "6px 12px",
                                       borderRadius: "999px",
-                                      background: positive ? "#ecfdf3" : "#fff7ea",
-                                      color: positive ? "#0BAB7C" : "#ff9900",
+                                      background: doc.status === "Rejected" ? "#fef2f2" : positive ? "#ecfdf3" : "#fff7ea",
+                                      color: doc.status === "Rejected" ? "#b91c1c" : positive ? "#0BAB7C" : "#ff9900",
                                       fontSize: "11px",
                                       fontWeight: 700,
                                     }}
