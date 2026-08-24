@@ -20,6 +20,7 @@ import {
 import {
   getVerification,
   uploadDocument,
+  getDocumentTypes,
 } from "@/services/recruiter/recruiterVerificationService";
 import { getIndustries } from "@/services/recruiter/recruiterRegistrationService";
 import styles from "./company-profile.module.css";
@@ -488,6 +489,7 @@ const SectionCard = ({
 
 const RequiredDocumentsSection = ({
   documents,
+  allDocumentTypes,
   loading,
   error,
   onUpload,
@@ -501,19 +503,43 @@ const RequiredDocumentsSection = ({
     );
   }
 
-  const compulsoryTypes = ["GST", "PAN", "BUSINESS_REGISTRATION"];
+  const requiredDocs = (() => {
+    const mandatoryTypes = (allDocumentTypes || []).filter((t) => t.isMandatory);
 
-  const requiredDocs = compulsoryTypes.map((type) => {
-    const existing = (documents || []).find((d) => d.documentType === type);
-    return (
-      existing || {
-        documentType: type,
-        status: "Not Uploaded",
-        uploadedAt: null,
-        fileUrl: null,
-      }
-    );
-  });
+    if (mandatoryTypes.length > 0) {
+      return mandatoryTypes.map((t) => {
+        const existing = (documents || []).find(
+          (d) => d.documentTypeId === t.documentTypeId || d.documentType === t.documentName || d.documentName === t.documentName
+        );
+        return (
+          existing || {
+            documentTypeId: t.documentTypeId,
+            documentType: t.documentName,
+            documentName: t.documentName,
+            status: "Not Uploaded",
+            uploadedAt: null,
+            fileUrl: null,
+          }
+        );
+      });
+    }
+
+    // Fallback if allDocumentTypes is not loaded or empty
+    const compulsoryTypes = ["GST", "PAN", "BUSINESS_REGISTRATION"];
+    return compulsoryTypes.map((type) => {
+      const existing = (documents || []).find((d) => d.documentType === type);
+      return (
+        existing || {
+          documentTypeId: type,
+          documentType: type,
+          documentName: type,
+          status: "Not Uploaded",
+          uploadedAt: null,
+          fileUrl: null,
+        }
+      );
+    });
+  })();
 
   return (
     <>
@@ -555,7 +581,7 @@ const RequiredDocumentsSection = ({
 
           return (
             <div
-              key={doc.documentType}
+              key={doc.documentTypeId || doc.documentType}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -578,7 +604,7 @@ const RequiredDocumentsSection = ({
                     marginBottom: "4px",
                   }}
                 >
-                  {prettyDocName(doc.documentType)}
+                  {prettyDocName(doc.documentName || doc.documentType)}
                   <span
                     style={{
                       marginLeft: "8px",
@@ -660,7 +686,7 @@ const RequiredDocumentsSection = ({
                     }}
                     type="button"
                     disabled={uploading}
-                    onClick={() => onUpload(doc.documentType)}
+                    onClick={() => onUpload(doc.documentTypeId || doc.documentType)}
                   >
                     <i
                       className="fi fi-rr-upload"
@@ -711,6 +737,7 @@ export default function EmployerCompanyProfilePage() {
 
   // Verification documents
   const [documents, setDocuments] = useState([]);
+  const [allDocumentTypes, setAllDocumentTypes] = useState([]);
   const [verificationLoading, setVerificationLoading] = useState(true);
   const [verificationError, setVerificationError] = useState(null);
   const [uploadType, setUploadType] = useState("POE");
@@ -843,10 +870,14 @@ export default function EmployerCompanyProfilePage() {
     try {
       setVerificationLoading(true);
       setVerificationError(null);
-      const data = await getVerification();
-      setDocuments(data?.documents ?? []);
+      const [verificationData, docTypesData] = await Promise.all([
+        getVerification(),
+        getDocumentTypes(),
+      ]);
+      setDocuments(verificationData?.documents ?? []);
+      setAllDocumentTypes(docTypesData?.data ?? []);
     } catch (err) {
-      console.error("getVerification error:", err);
+      console.error("loadVerification error:", err);
       setVerificationError("Could not load verification details.");
     } finally {
       setVerificationLoading(false);
@@ -879,13 +910,16 @@ export default function EmployerCompanyProfilePage() {
 
     try {
       setUploadingDoc(true);
-      await uploadDocument(uploadType, file);
+      await uploadDocument(uploadType, "", file);
       showToast("Document uploaded successfully.", "success");
 
       // Update documents locally immediately to improve responsiveness
       setDocuments((prev) => {
-        const index = prev.findIndex((doc) => doc.documentType === uploadType);
+        const index = prev.findIndex(
+          (doc) => doc.documentTypeId === uploadType || doc.documentType === uploadType
+        );
         const updatedDoc = {
+          documentTypeId: uploadType,
           documentType: uploadType,
           status: "Uploaded",
           uploadedAt: new Date().toISOString(),
@@ -1933,6 +1967,7 @@ export default function EmployerCompanyProfilePage() {
 
                   <RequiredDocumentsSection
                     documents={documents}
+                    allDocumentTypes={allDocumentTypes}
                     loading={verificationLoading}
                     error={verificationError}
                     onUpload={handleDirectUpload}
@@ -2423,17 +2458,18 @@ export default function EmployerCompanyProfilePage() {
                 </div>
                 <div className="sidebar-list-job">
                   <ul className="ul-disc">
-                    <li
-                      style={{
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        display: "-webkit-box",
-                        WebkitLineClamp: 3,
-                        WebkitBoxOrient: "vertical",
-                      }}
-                      title={buildRegisteredAddress() || undefined}
-                    >
-                      {buildRegisteredAddress() || "—"}
+                    <li title={buildRegisteredAddress() || undefined}>
+                      <span
+                        style={{
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          display: "-webkit-box",
+                          WebkitLineClamp: 3,
+                          WebkitBoxOrient: "vertical",
+                        }}
+                      >
+                        {buildRegisteredAddress() || "—"}
+                      </span>
                     </li>
                     <li>Phone: {company.phone}</li>
                     <li>Email: {company.email}</li>

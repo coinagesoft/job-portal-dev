@@ -70,7 +70,7 @@ const normalizeTicket = (ticket, audience) => {
     id: ticket.ticketId,
     audience,
     subject: ticket.subject || "",
-    category: ticket.category || "",
+    category: ticket.category || ticket.ticketType || "",
     description: ticket.description || "",
     status: ticket.status || "Open",
     createdOn: ticket.createdAt,
@@ -234,7 +234,13 @@ const SupportTicketCenter = ({
           ? await ticketApi.createTicket(payload)
           : await ticketApi.createTicket(candidateId, payload);
 
-      if (response?.data?.ticketId || response?.data?.success) {
+      if (
+        response?.data?.ticketId ||
+        response?.data?.success ||
+        response?.status === 200 ||
+        response?.status === 201 ||
+        response?.data
+      ) {
         await loadTickets();
         await loadTicketSummary();
 
@@ -532,9 +538,34 @@ const SupportTicketCenter = ({
                         }}
                       >
                         <div>
-                          <strong>{ticket.subject}</strong>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                              flexWrap: "wrap",
+                              marginBottom: "6px",
+                            }}
+                          >
+                            <strong>{ticket.subject}</strong>
+                            {ticket.category && (
+                              <span
+                                style={{
+                                  fontSize: "10px",
+                                  padding: "2px 8px",
+                                  borderRadius: "4px",
+                                  background: "#f0f2f5",
+                                  color: "#66789c",
+                                  fontWeight: 600,
+                                  border: "1px solid rgba(18,35,89,0.06)",
+                                }}
+                              >
+                                {formatCategory(ticket.category)}
+                              </span>
+                            )}
+                          </div>
 
-                          <p className="font-sm color-text-paragraph-2">
+                          <p className="font-sm color-text-paragraph-2" style={{ wordBreak: "break-word" }}>
                             {ticket.description}
                           </p>
                         </div>
@@ -633,7 +664,7 @@ const SupportTicketCenter = ({
                                 </p>
                                 <p
                                   className="font-sm mb-5"
-                                  style={{ color: "#3a4559" }}
+                                  style={{ color: "#3a4559", wordBreak: "break-word" }}
                                 >
                                   {message.text}
                                 </p>
