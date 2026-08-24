@@ -166,7 +166,7 @@ export default function HeroSection({ heroData }) {
   const [popularSearches, setPopularSearches] = React.useState([]);
 
   // Trade Category and Location options — both sourced from
-  // GET /api/public/homepage/data (tradeCategories[] and locations[]),
+  // GET /api/public/homepage/data (industries[] and locations[]),
   // via getHomepageData().
   const [tradeCategoryOptions, setTradeCategoryOptions] = React.useState([]);
   const [countryOptions, setCountryOptions] = React.useState([]);
@@ -178,7 +178,7 @@ export default function HeroSection({ heroData }) {
         const res = await getHomepageData();
 
         if (res.data?.success) {
-          const trades = res.data.tradeCategories || [];
+          const trades = res.data.industries || [];
           const locations = res.data.locations || [];
 
           const tradeNames = trades.map((t) => t.name).filter(Boolean);
