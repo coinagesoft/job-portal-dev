@@ -352,8 +352,6 @@ function validateAllSteps(jobForm) {
     issues.push({ stepNum: 1, title: "Job Details", message: "Please specify the Department for 'Other'" });
   if (!jobForm.JobType)
     issues.push({ stepNum: 1, title: "Job Details", message: "Job Type is required" });
-  if (!jobForm.JobDescription?.trim())
-    issues.push({ stepNum: 1, title: "Job Details", message: "Job Description is required" });
   if (
     jobForm.IsClientHiring &&
     !jobForm.ClientName?.trim()
@@ -384,6 +382,10 @@ function validateAllSteps(jobForm) {
     Number(jobForm.SalaryMin) > Number(jobForm.SalaryMax)
   )
     issues.push({ stepNum: 2, title: "Compensation", message: "Minimum Salary cannot be greater than Maximum Salary" });
+
+  // Step 3 – Skills & JD
+  if (!jobForm.JobDescription?.trim())
+    issues.push({ stepNum: 3, title: "Skills & JD", message: "Job Description is required" });
 
   // Step 1 – Experience range
   if (
@@ -984,7 +986,7 @@ function StepCard({ stepNum, title, subtitle, children, onBack, onContinue, isLa
 }
 
 /* ─── STEP 1 – Job Details ────────────────────────────────────────────────── */
-function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI, jdSuggestions, ghostSuggestion, handleJDTab, roleCategoriesList = roleCategories, departmentOptionsList = departmentOptions, industryOptionsList = industryOptions }) {
+function Step1({ go, jobForm, setJobForm, onSubmit, roleCategoriesList = roleCategories, departmentOptionsList = departmentOptions, industryOptionsList = industryOptions }) {
   // Single source of truth for "is this dropdown's value the 'Other' sentinel?"
   const isTradeOther = isOtherValue(jobForm.TradeCategory);
   const isIndustryOther = isOtherValue(jobForm.IndustryType);
@@ -1378,53 +1380,6 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
         </div>
       </div>
 
-      {/* Job Description */}
-      <Field label="Job Description" required>
-        <button
-          type="button"
-          className={styles.aiGenerateBtn}
-          style={{ marginBottom: 10 }}
-          onClick={handleGenerateJD}
-        >
-          {loadingAI ? "Generating…" : "✨ Generate with AI"}
-        </button>
-
-        <textarea
-          className={styles.textarea}
-          rows={6}
-          value={jobForm.JobDescription}
-          onChange={(e) =>
-            setJobForm((p) => ({ ...p, JobDescription: e.target.value }))
-          }
-          onKeyDown={handleJDTab}
-        />
-
-        {ghostSuggestion && (
-          <div className={styles.inlineSuggestion}>
-            <span className={styles.tabHint}>Press TAB ↹</span>
-            <span className={styles.suggestionText}>{ghostSuggestion}</span>
-          </div>
-        )}
-
-        {jdSuggestions.length > 0 && (
-          <div className={styles.aiSuggestions}>
-            {jdSuggestions.map((suggestion, index) => (
-              <div
-                key={index}
-                className={styles.aiSuggestion}
-                onClick={() =>
-                  setJobForm((p) => ({
-                    ...p,
-                    JobDescription: p.JobDescription + " " + suggestion,
-                  }))
-                }
-              >
-                {suggestion}
-              </div>
-            ))}
-          </div>
-        )}
-      </Field>
     </StepCard>
   );
 }
@@ -1554,7 +1509,7 @@ function Step2({ go, jobForm, setJobForm, onSubmit }) {
 }
 
 /* ─── STEP 3 – Skills & JD ────────────────────────────────────────────────── */
-function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, handleGenerateAdditionalJD, loadingAI, handleSuggestSkills, skillsLoading }) {
+function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, handleGenerateAdditionalJD, loadingAI, handleSuggestSkills, skillsLoading, handleGenerateJD, jdSuggestions, ghostSuggestion, handleJDTab }) {
   const [newSkillInput, setNewSkillInput] = useState("");
 
   const addManualSkill = () => {
@@ -1650,6 +1605,54 @@ function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, han
                   ×
                 </button>
               </span>
+            ))}
+          </div>
+        )}
+      </Field>
+
+      {/* Job Description */}
+      <Field label="Job Description" required>
+        <button
+          type="button"
+          className={styles.aiGenerateBtn}
+          style={{ marginBottom: 10 }}
+          onClick={handleGenerateJD}
+        >
+          {loadingAI ? "Generating…" : "✨ Generate with AI"}
+        </button>
+
+        <textarea
+          className={styles.textarea}
+          rows={6}
+          value={jobForm.JobDescription}
+          onChange={(e) =>
+            setJobForm((p) => ({ ...p, JobDescription: e.target.value }))
+          }
+          onKeyDown={handleJDTab}
+        />
+
+        {ghostSuggestion && (
+          <div className={styles.inlineSuggestion}>
+            <span className={styles.tabHint}>Press TAB ↹</span>
+            <span className={styles.suggestionText}>{ghostSuggestion}</span>
+          </div>
+        )}
+
+        {jdSuggestions.length > 0 && (
+          <div className={styles.aiSuggestions}>
+            {jdSuggestions.map((suggestion, index) => (
+              <div
+                key={index}
+                className={styles.aiSuggestion}
+                onClick={() =>
+                  setJobForm((p) => ({
+                    ...p,
+                    JobDescription: p.JobDescription + " " + suggestion,
+                  }))
+                }
+              >
+                {suggestion}
+              </div>
             ))}
           </div>
         )}
@@ -2723,7 +2726,6 @@ export default function DashboardPostJobPage() {
       return showToast("Please specify the Department when 'Other' is selected", "error");
     }
     if (!jobForm.JobType) return showToast("Job Type is required", "error");
-    if (!jobForm.JobDescription.trim()) return showToast("Job Description is required", "error");
     if (!jobForm.EmploymentType) return showToast("Employment Type is required", "error");
     if (!jobForm.EmploymentMode) return showToast("Employment Mode is required", "error");
     if (jobForm.IsClientHiring && !jobForm.ClientName.trim()) {
@@ -2766,7 +2768,6 @@ export default function DashboardPostJobPage() {
         IsOilField: jobForm.IsOilField,
         PaidOvertime: jobForm.PaidOvertime,
         KeyResponsibilities: jobForm.KeyResponsibilities,
-        JobDescription: jobForm.JobDescription,
       });
       
       setJobId(response.jobId);
@@ -2863,6 +2864,8 @@ export default function DashboardPostJobPage() {
   };
 
   const handleStep3 = async () => {
+    if (!jobForm.JobDescription.trim()) return showToast("Job Description is required", "error");
+
     setLoading(true);
     try {
       console.log("Saving Step 3:", {
@@ -2874,6 +2877,7 @@ export default function DashboardPostJobPage() {
         KeySkills: jobForm.KeySkills,
         KeyResponsibilities: jobForm.Step3KeyResponsibilities,
         AdditionalJobDescription: jobForm.AdditionalJobDescription,
+        JobDescription: jobForm.JobDescription,
         LanguageRequired: jobForm.LanguageRequired,
         Benefits: jobForm.Benefits,
         Tags: jobForm.Tags,
