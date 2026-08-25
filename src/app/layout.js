@@ -11,6 +11,7 @@ import EmployerSectionSidebar from '@/components/EmployerSectionSidebar'
 import CandidateSettingsSidebar from '@/components/CandidateSettingsSidebar'
 import { ToastProvider } from '@/components/Toast'
 import AuthInitializer from "@/components/AuthInitializer";
+import CandidateLocationSync from "@/components/CandidateLocationSync";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 export default function RootLayout({ children }) {
   return (
@@ -38,6 +39,7 @@ export default function RootLayout({ children }) {
         <Provider store={store}>
           <ToastProvider>
             <AuthInitializer />
+            <CandidateLocationSync />
             <AuthRouteGuard />
             <GoogleOAuthProvider
   clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}
