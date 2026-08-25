@@ -1775,7 +1775,7 @@ export default function EmployerCompanyProfilePage() {
                         gap: "20px",
                       }}
                     >
-                      <Field label="Address Line 1">
+                      <Field label="Address Line ">
                         <Inp
                           value={company.addressLine1 || ""}
                           maxLength={200}
