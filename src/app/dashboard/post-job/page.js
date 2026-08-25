@@ -73,7 +73,7 @@ import {
   getJobDropdowns,
   submitJobSuggestion,
 } from "@/services/recruiter/recruiterJobPostService";
-import { getIndustries } from "@/services/recruiter/recruiterRegistrationService";
+import { getIndustries, submitIndustrySuggestion } from "@/services/recruiter/recruiterRegistrationService";
 import { getDecodedToken } from "@/utils/authHelper";
 
 const COMBOBOX_SEARCH_THRESHOLD = 8;
@@ -342,8 +342,8 @@ function validateAllSteps(jobForm) {
     issues.push({ stepNum: 1, title: "Job Details", message: "Job Title is required" });
   if (!jobForm.TradeCategory)
     issues.push({ stepNum: 1, title: "Job Details", message: "Trade / Role Category is required" });
-  if (isOtherValue(jobForm.TradeCategory) && !jobForm.Role?.trim())
-    issues.push({ stepNum: 1, title: "Job Details", message: "Please specify the Role / Specialisation for 'Other' trade category" });
+  if (isOtherValue(jobForm.TradeCategory) && !jobForm.TradeCategoryOther?.trim())
+    issues.push({ stepNum: 1, title: "Job Details", message: "Please specify the Trade Category for 'Other'" });
   if (!jobForm.IndustryType)
     issues.push({ stepNum: 1, title: "Job Details", message: "Industry Type is required" });
   if (isOtherValue(jobForm.IndustryType) && !jobForm.IndustryTypeOther?.trim())
@@ -1013,28 +1013,39 @@ function Step1({ go, jobForm, setJobForm, onSubmit, handleGenerateJD, loadingAI,
         <Field label="Trade / Role Category" required hint="Pick from the list — select 'Other' to specify manually">
           <Combobox
             value={jobForm.TradeCategory}
-            onChange={(v) => setJobForm((p) => ({ ...p, TradeCategory: v }))}
+            onChange={(v) =>
+              setJobForm((p) => ({
+                ...p,
+                TradeCategory: v,
+                TradeCategoryOther: isOtherValue(v) ? p.TradeCategoryOther : "",
+              }))
+            }
             options={roleCategoriesList}
             placeholder="e.g. Welding, Electrician, Plumber"
           />
         </Field>
 
-        {/* Role (optional free-text specialisation; required + doubles as the
-            "Other" specify field when Trade Category is Other) */}
-        <Field
-          label={isTradeOther ? "Role / Specialisation *" : "Role / Specialisation"}
-          hint={isTradeOther ? "Please specify your trade, role, or specialisation" : undefined}
-          required={isTradeOther}
-        >
+        {/* Specify Trade Category — only shown when "Other" is selected */}
+        {isTradeOther && (
+          <Field label="Specify Trade Category" required hint="Tell us the trade category that isn't in the list">
+            <input
+              className={styles.control}
+              value={jobForm.TradeCategoryOther}
+              onChange={(e) =>
+                setJobForm((p) => ({ ...p, TradeCategoryOther: e.target.value }))
+              }
+              placeholder="e.g. Solar Technician"
+            />
+          </Field>
+        )}
+
+        {/* Role (optional free-text specialisation) */}
+        <Field label="Role / Specialisation">
           <input
             value={jobForm.Role}
             onChange={(e) => setJobForm((p) => ({ ...p, Role: e.target.value }))}
             className={styles.control}
-            placeholder={
-              isTradeOther
-                ? "e.g. Solar Technician, Scaffolding Inspector"
-                : "e.g. Pipe Welder"
-            }
+            placeholder="e.g. Pipe Welder"
           />
         </Field>
 
@@ -2132,7 +2143,7 @@ function Step6({ go, jobForm, setJobForm, onSubmit }) {
       onContinue={onSubmit}
     >
       <p style={{ fontSize: 13, color: "#66789c", marginBottom: 16 }}>
-        Screening questions are entirely optional. Add one or more if you'd
+        Screening questions are entirely optional. Add one or more if you&apos;d
         like candidates to answer specific questions when they apply, or skip
         this step and continue.
       </p>
@@ -2374,6 +2385,7 @@ export default function DashboardPostJobPage() {
     // Step 1 
     JobTitle: "",
     TradeCategory: "",
+    TradeCategoryOther: "", // free-text value when TradeCategory === "Other"
     Role: "",
     IndustryType: "",
     IndustryTypeOther: "", // free-text value when IndustryType === "Other"
@@ -2509,7 +2521,39 @@ export default function DashboardPostJobPage() {
       console.log("BENEFITS:", response.step3Data?.benefits);
 
       setJobId(id);
-      setJobForm((prev) => ({ ...prev, ...mapResumeToForm(response, roleCategories[0]) }));
+      
+      const flatForm = mapResumeToForm(response, roleCategories[0]);
+
+      // Normalize custom values to "Other" + Specify field for the UI dropdowns
+      const getOtherAndValue = (val, list) => {
+        if (!val) return { value: "", other: "" };
+        const normalizedList = (list || []).map(item => 
+          typeof item === "string" ? item.toLowerCase() : (item.value || "").toLowerCase()
+        ).filter(v => v !== "other");
+        const cleanVal = val.trim();
+        const isPresent = normalizedList.includes(cleanVal.toLowerCase());
+        if (isPresent) {
+          return { value: cleanVal, other: "" };
+        } else {
+          return { value: "Other", other: cleanVal };
+        }
+      };
+
+      const tradeRes = getOtherAndValue(flatForm.TradeCategory, roleCategoriesList);
+      const indRes = getOtherAndValue(flatForm.IndustryType, industryOptionsList);
+      const deptRes = getOtherAndValue(flatForm.Department, departmentOptionsList);
+
+      setJobForm((prev) => ({ 
+        ...prev, 
+        ...flatForm,
+        TradeCategory: tradeRes.value,
+        TradeCategoryOther: tradeRes.other,
+        IndustryType: indRes.value,
+        IndustryTypeOther: indRes.other,
+        Department: deptRes.value,
+        DepartmentOther: deptRes.other
+      }));
+
       setLastCompletedStep(response.stepStatus?.lastCompletedStep ?? 0);
 
       // Editing an existing (even fully-published) job should always start
@@ -2668,8 +2712,8 @@ export default function DashboardPostJobPage() {
   const handleStep1 = async () => {
     if (!jobForm.JobTitle.trim()) return showToast("Job Title is required", "error");
     if (!jobForm.TradeCategory) return showToast("Trade Category is required", "error");
-    if (isOtherValue(jobForm.TradeCategory) && !jobForm.Role.trim()) {
-      return showToast("Please specify your Role / Specialisation when 'Other' trade category is selected", "error");
+    if (isOtherValue(jobForm.TradeCategory) && !jobForm.TradeCategoryOther.trim()) {
+      return showToast("Please specify the Trade Category when 'Other' is selected", "error");
     }
     if (!jobForm.IndustryType) return showToast("Industry Type is required", "error");
     if (isOtherValue(jobForm.IndustryType) && !jobForm.IndustryTypeOther.trim()) {
@@ -2691,6 +2735,9 @@ export default function DashboardPostJobPage() {
       // When "Other" is selected, send the free-text value the employer
       // typed instead of the literal word "Other" so the backend/DB stores
       // a meaningful value.
+      const resolvedTradeCategory = isOtherValue(jobForm.TradeCategory)
+        ? jobForm.TradeCategoryOther.trim()
+        : jobForm.TradeCategory;
       const resolvedIndustryType = isOtherValue(jobForm.IndustryType)
         ? jobForm.IndustryTypeOther.trim()
         : jobForm.IndustryType;
@@ -2701,7 +2748,7 @@ export default function DashboardPostJobPage() {
       const response = await saveJobDetails({
         JobId: jobId ?? "",
         JobTitle: jobForm.JobTitle,
-        TradeCategory: jobForm.TradeCategory,
+        TradeCategory: resolvedTradeCategory,
         Role: jobForm.Role,
         IndustryType: resolvedIndustryType,
 
@@ -2730,11 +2777,11 @@ export default function DashboardPostJobPage() {
         const userEmail = decoded?.email || decoded?.sub || "";
         const userName = decoded?.name || decoded?.unique_name || "";
 
-        if (isOtherValue(jobForm.TradeCategory) && jobForm.Role.trim()) {
+        if (isOtherValue(jobForm.TradeCategory) && jobForm.TradeCategoryOther.trim()) {
           try {
             await submitJobSuggestion({
-              field: "tradeRoles",
-              suggestedName: jobForm.Role.trim(),
+              field: "TradeRole",
+              suggestedName: jobForm.TradeCategoryOther.trim(),
               note: "Suggested other Trade / Role Category during job posting",
               submittedByName: userName,
               submittedByEmail: userEmail,
@@ -2746,7 +2793,7 @@ export default function DashboardPostJobPage() {
 
         if (isOtherValue(jobForm.IndustryType) && jobForm.IndustryTypeOther.trim()) {
           try {
-            await submitJobSuggestion({
+            await submitIndustrySuggestion({
               field: "industry",
               suggestedName: jobForm.IndustryTypeOther.trim(),
               note: "Suggested other Industry Type during job posting",
@@ -2761,7 +2808,7 @@ export default function DashboardPostJobPage() {
         if (isOtherValue(jobForm.Department) && jobForm.DepartmentOther.trim()) {
           try {
             await submitJobSuggestion({
-              field: "departments",
+              field: "Department",
               suggestedName: jobForm.DepartmentOther.trim(),
               note: "Suggested other Department during job posting",
               submittedByName: userName,

@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   searchCandidates,
   getCvSearchDashboard,
@@ -256,6 +256,7 @@ const EmployerCvSearchPage = () => {
   const [dashboard, setDashboard] = useState(null);
   const [filterOptions, setFilterOptions] = useState(null);
   const [loading, setLoading] = useState(true);
+  const isFirstMount = useRef(true);
   const [jobs, setJobs] = useState([]);
   const [filters, setFilters] = useState({
     keyword: "",
@@ -276,7 +277,7 @@ const EmployerCvSearchPage = () => {
 
   const totalPages = Math.max(1, Math.ceil(totalCandidates / (filters.pageSize || 10)));
 
-  const resetFilters = async () => {
+  const resetFilters = () => {
     const defaultFilters = {
       keyword: "",
       tradeCategory: "",
@@ -294,15 +295,7 @@ const EmployerCvSearchPage = () => {
     };
 
     setFilters(defaultFilters);
-
-    try {
-      const response = await searchCandidates(defaultFilters);
-
-      setCvCandidates(response.candidates);
-      setTotalCandidates(response.totalCandidates);
-    } catch (error) {
-      console.error(error);
-    }
+    loadCandidates(defaultFilters);
   };
   const handleDownloadCv = async (candidateId, candidateName = "Candidate") => {
     try {
@@ -377,7 +370,9 @@ const EmployerCvSearchPage = () => {
     const next = { ...filters, pageNumber: page };
     setFilters(next);
     loadCandidates(next);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
   };
 
   const loadJobs = async () => {
@@ -436,6 +431,16 @@ const EmployerCvSearchPage = () => {
       }));
     }
   }, [filters.minExperience, filters.maxExperience]);
+
+  useEffect(() => {
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
+    if (!loading) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [filters.pageNumber, loading]);
 
   const updateFilterAndSearch = (partial) => {
     const next = { ...filters, ...partial, pageNumber: 1 };
