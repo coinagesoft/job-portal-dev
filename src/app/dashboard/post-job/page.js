@@ -1536,6 +1536,54 @@ function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, han
       onBack={() => go(2)}
       onContinue={onSubmit}
     >
+      {/* Job Description */}
+      <Field label="Job Description" required>
+        <button
+          type="button"
+          className={styles.aiGenerateBtn}
+          style={{ marginBottom: 10 }}
+          onClick={handleGenerateJD}
+        >
+          {loadingAI ? "Generating…" : "✨ Generate with AI"}
+        </button>
+
+        <textarea
+          className={styles.textarea}
+          rows={6}
+          value={jobForm.JobDescription}
+          onChange={(e) =>
+            setJobForm((p) => ({ ...p, JobDescription: e.target.value }))
+          }
+          onKeyDown={handleJDTab}
+        />
+
+        {ghostSuggestion && (
+          <div className={styles.inlineSuggestion}>
+            <span className={styles.tabHint}>Press TAB ↹</span>
+            <span className={styles.suggestionText}>{ghostSuggestion}</span>
+          </div>
+        )}
+
+        {jdSuggestions.length > 0 && (
+          <div className={styles.aiSuggestions}>
+            {jdSuggestions.map((suggestion, index) => (
+              <div
+                key={index}
+                className={styles.aiSuggestion}
+                onClick={() =>
+                  setJobForm((p) => ({
+                    ...p,
+                    JobDescription: p.JobDescription + " " + suggestion,
+                  }))
+                }
+              >
+                {suggestion}
+              </div>
+            ))}
+          </div>
+        )}
+      </Field>
+
       {/* Key Skills — AI-generated, plus manual add */}
       <Field
         label="Key Skills"
@@ -1605,54 +1653,6 @@ function Step3({ go, jobForm, setJobForm, onSubmit, additionalJdSuggestions, han
                   ×
                 </button>
               </span>
-            ))}
-          </div>
-        )}
-      </Field>
-
-      {/* Job Description */}
-      <Field label="Job Description" required>
-        <button
-          type="button"
-          className={styles.aiGenerateBtn}
-          style={{ marginBottom: 10 }}
-          onClick={handleGenerateJD}
-        >
-          {loadingAI ? "Generating…" : "✨ Generate with AI"}
-        </button>
-
-        <textarea
-          className={styles.textarea}
-          rows={6}
-          value={jobForm.JobDescription}
-          onChange={(e) =>
-            setJobForm((p) => ({ ...p, JobDescription: e.target.value }))
-          }
-          onKeyDown={handleJDTab}
-        />
-
-        {ghostSuggestion && (
-          <div className={styles.inlineSuggestion}>
-            <span className={styles.tabHint}>Press TAB ↹</span>
-            <span className={styles.suggestionText}>{ghostSuggestion}</span>
-          </div>
-        )}
-
-        {jdSuggestions.length > 0 && (
-          <div className={styles.aiSuggestions}>
-            {jdSuggestions.map((suggestion, index) => (
-              <div
-                key={index}
-                className={styles.aiSuggestion}
-                onClick={() =>
-                  setJobForm((p) => ({
-                    ...p,
-                    JobDescription: p.JobDescription + " " + suggestion,
-                  }))
-                }
-              >
-                {suggestion}
-              </div>
             ))}
           </div>
         )}
