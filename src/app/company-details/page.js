@@ -231,6 +231,16 @@ function CompanyDetailsContent() {
           value: humanize(companyInfo.industry),
         },
         {
+          icon: "industry",
+          label: "Nature of Company",
+          value:
+            companyInfo.natureOfCompany === "RecruitmentAgency"
+              ? "Recruitment Agency"
+              : companyInfo.natureOfCompany === "Employer"
+              ? "Employer"
+              : null,
+        },
+        {
           icon: "jobType",
           label: "Open Jobs",
           value:
