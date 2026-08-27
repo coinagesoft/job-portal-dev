@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, Suspense, useEffect } from "react";
+import { useState, useRef, Suspense, useEffect, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Script from "next/script";
 import { useToast } from "@/components/Toast";
@@ -113,6 +113,23 @@ const BUSINESS_TYPES = [
   { value: "Joint_Venture", label: "Joint Venture" },
   { value: "Other", label: "Other" },
 ];
+
+// Drives which licence uploads are shown as required on the Licences step.
+// "RecruitmentAgency" always needs the recruitment license on top of the
+// incorporation certificate every company needs; the international
+// placement question (and its POE/RPSL requirement) applies to both.
+const NATURE_OF_COMPANY_OPTIONS = [
+  { value: "RecruitmentAgency", label: "Recruitment Agency" },
+  { value: "Employer", label: "Employer" },
+];
+
+// Document names must match exactly what Admin has configured under
+// Admin > Recruiters > Document Types, since matching happens by name
+// (see requiredDocumentNames in EmployerForm).
+const DOC_NAME_INCORPORATION = "Certificate of Incorporation";
+const DOC_NAME_RECRUITMENT_LICENSE = "Recruitment License";
+const DOC_NAME_POE_LICENSE = "POE License";
+const DOC_NAME_RPSL_LICENSE = "RPSL License";
 
 const COMPANY_SIZES = [
   { value: "Size_1_10", label: "1-10 employees" },
@@ -1816,6 +1833,8 @@ function EmployerForm() {
     businessType: "",
     companySize: "",
     companyType: "",
+    natureOfCompany: "", // "RecruitmentAgency" | "Employer"
+    placesInternationally: null, // true | false | null (unanswered)
     pan: "",
     gstRegDate: "",
     cin: "",
@@ -2093,6 +2112,8 @@ function EmployerForm() {
     !!data.country &&
     PIN_REGEX.test(data.pincode) &&
     !!data.address &&
+    !!data.natureOfCompany &&
+    data.placesInternationally !== null &&
     isGstnValid;
   const isStep4Valid =
     data.contactName &&
@@ -2711,6 +2732,11 @@ setAdditionalDocuments(
       formData.append("websiteUrl", data.officialWebsite);
       formData.append("gstn", data.gstn);
       formData.append("pan", data.pan);
+      formData.append("natureOfCompany", data.natureOfCompany);
+      formData.append(
+        "placesCandidatesInternationally",
+        data.placesInternationally === true ? "true" : "false"
+      );
 
       formData.append("companyDisplayName", data.tradeName || data.legalName);
 
@@ -2894,6 +2920,72 @@ setAdditionalDocuments(
             placeholder="Type or select company type (e.g. Product-based)"
           />
         </Field>
+
+        {/* ── Nature of Company ─────────────────────────
+            Drives which licence uploads show as required on the
+            Licences step (see requiredDocumentNames below). */}
+        <Field
+          label="Nature of Company"
+          error={
+            attempt2 && !data.natureOfCompany
+              ? "Please select the nature of your company"
+              : null
+          }
+        >
+          <Combobox
+            value={data.natureOfCompany}
+            onChange={(v) => set("natureOfCompany", v)}
+            options={NATURE_OF_COMPANY_OPTIONS}
+            placeholder="Select nature of company"
+          />
+        </Field>
+
+        {data.natureOfCompany === "RecruitmentAgency" && (
+          <Alert type="info">
+            As a Recruitment Agency you'll need to upload your{" "}
+            <strong>Certificate of Incorporation</strong> and{" "}
+            <strong>Recruitment License</strong> on the next Licences step.
+          </Alert>
+        )}
+
+        {/* ── International placement ───────────────────
+            Asked regardless of Nature of Company — both a Recruitment
+            Agency and a direct Employer can place candidates abroad. */}
+        <Field
+          label="Do you place candidates internationally?"
+          error={
+            attempt2 && data.placesInternationally === null
+              ? "Please answer this question"
+              : null
+          }
+        >
+          <div style={{ display: "flex", gap: 10 }}>
+            <Btn
+              type="button"
+              variant={data.placesInternationally === true ? "primary" : "outline"}
+              style={{ flex: 1 }}
+              onClick={() => set("placesInternationally", true)}
+            >
+              Yes
+            </Btn>
+            <Btn
+              type="button"
+              variant={data.placesInternationally === false ? "primary" : "outline"}
+              style={{ flex: 1 }}
+              onClick={() => set("placesInternationally", false)}
+            >
+              No
+            </Btn>
+          </div>
+        </Field>
+
+        {data.placesInternationally === true && (
+          <Alert type="info">
+            Since you place candidates internationally, you'll also need to
+            upload your <strong>POE License</strong> and{" "}
+            <strong>RPSL License</strong> on the Licences step.
+          </Alert>
+        )}
 
         {/* GST Registration Date only for GST employers */}
 
@@ -3354,8 +3446,60 @@ setAdditionalDocuments(
   };
 
 
+  const [attempt4, setAttempt4] = useState(false);
+
+  // ── Which document names are "required" for this registrant ──────
+  // Certificate of Incorporation is required for everyone (it's also
+  // seeded as globally mandatory at the master-data level, so it always
+  // lands in mandatoryDocuments regardless of this list). Recruitment
+  // License only applies to a Recruitment Agency. POE/RPSL only apply
+  // once the registrant has said they place candidates internationally
+  // — true for either nature of company. Matching is by exact document
+  // name against what Admin has configured under Admin > Recruiters >
+  // Document Types (see DOC_NAME_* constants above).
+  const requiredDocumentNames = useMemo(() => {
+    const names = [DOC_NAME_INCORPORATION];
+
+    if (data.natureOfCompany === "RecruitmentAgency") {
+      names.push(DOC_NAME_RECRUITMENT_LICENSE);
+    }
+
+    if (data.placesInternationally === true) {
+      names.push(DOC_NAME_POE_LICENSE, DOC_NAME_RPSL_LICENSE);
+    }
+
+    return names;
+  }, [data.natureOfCompany, data.placesInternationally]);
+
+  const missingRequiredDocumentNames = useMemo(() => {
+    return requiredDocumentNames.filter((name) => {
+      const doc = [...mandatoryDocuments, ...optionalDocuments].find(
+        (d) => d.documentName === name
+      );
+      if (!doc) return false; // Admin hasn't configured this doc type yet
+      return !selectedDocuments.some(
+        (x) => x.documentTypeId === doc.documentTypeId
+      );
+    });
+  }, [requiredDocumentNames, mandatoryDocuments, optionalDocuments, selectedDocuments]);
+
   const handleStep4 = async () => {
     try {
+      // Soft-mandatory, consistent with how registration already treats
+      // documents (Step 4 is optional server-side — SubmitRegistrationAsync
+      // does not block submission on missing uploads). We still warn here
+      // rather than silently letting the recruiter continue, so the
+      // Nature of Company / international answers actually mean something
+      // instead of just being decorative text on Step 2.
+      if (missingRequiredDocumentNames.length > 0 && !attempt4) {
+        setAttempt4(true);
+        showToast(
+          `Please upload: ${missingRequiredDocumentNames.join(", ")} — or click Continue again to skip and upload later.`,
+          "warning"
+        );
+        return;
+      }
+
       const sessionId = localStorage.getItem("registrationSessionId");
 
       const documents = [
@@ -3387,7 +3531,6 @@ setAdditionalDocuments(
     }
   };
 
-  const [attempt4, setAttempt4] = useState(false);
   const renderStep4 = () => (
     <div>
       <h3
@@ -3413,9 +3556,16 @@ setAdditionalDocuments(
       </p>
 
       <Alert type="info">
-        <strong>Blue Tick</strong> requires: GST Verified + one active licence +
-        corporate domain email — all simultaneously.
+        Based on your answers, you'll need:{" "}
+        <strong>{requiredDocumentNames.join(", ")}</strong>.
       </Alert>
+
+      <div style={{ marginTop: 12 }}>
+        <Alert type="info">
+          <strong>Blue Tick</strong> requires: GST Verified + one active licence +
+          corporate domain email — all simultaneously.
+        </Alert>
+      </div>
 
 
 
@@ -3517,6 +3667,12 @@ setAdditionalDocuments(
                     (x) => x.documentTypeId === doc.documentTypeId
                   );
 
+                  const isConditionallyRequired = requiredDocumentNames.includes(
+                    doc.documentName
+                  );
+                  const isMissingAndAttempted =
+                    isConditionallyRequired && attempt4 && !selected;
+
                   return (
                     <div
                       key={doc.documentTypeId}
@@ -3524,12 +3680,35 @@ setAdditionalDocuments(
                     >
                       <label
                         style={{
-                          display: "block",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
                           marginBottom: 8,
                           fontWeight: 600,
                         }}
                       >
                         {doc.documentName}
+                        {isConditionallyRequired && (
+                          <span
+                            style={{
+                              fontSize: "var(--font-xs)",
+                              fontWeight: 700,
+                              color: isMissingAndAttempted ? "#c0392b" : "#8a5a00",
+                              background: isMissingAndAttempted
+                                ? "#fdecea"
+                                : "#fff8ee",
+                              border: `1px solid ${
+                                isMissingAndAttempted
+                                  ? "rgba(192,57,43,.35)"
+                                  : "rgba(255,163,0,.32)"
+                              }`,
+                              borderRadius: 6,
+                              padding: "2px 8px",
+                            }}
+                          >
+                            Required
+                          </span>
+                        )}
                       </label>
 
                       <input
@@ -3553,6 +3732,19 @@ setAdditionalDocuments(
                           }}
                         >
                           ✓ {selected.file.name}
+                        </small>
+                      )}
+
+                      {isMissingAndAttempted && (
+                        <small
+                          style={{
+                            color: "#c0392b",
+                            display: "block",
+                            marginTop: 6,
+                          }}
+                        >
+                          This document is required based on your answers on the
+                          previous step.
                         </small>
                       )}
                     </div>
