@@ -181,7 +181,11 @@ export default function HeroSection({ heroData }) {
           const trades = res.data.industries || [];
           const locations = res.data.locations || [];
 
-          const tradeNames = trades.map((t) => t.name).filter(Boolean);
+          // Only industries flagged for the search dropdown belong here —
+          // the rest are "Browse by Industry" cards, shown elsewhere.
+          const dropdownTrades = trades.filter((t) => t.showInDropdown);
+
+          const tradeNames = dropdownTrades.map((t) => t.name).filter(Boolean);
           setTradeCategoryOptions(tradeNames);
           setPopularSearches(tradeNames.slice(0, 7));
 

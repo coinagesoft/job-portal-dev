@@ -42,7 +42,9 @@ export default function HomepageNewPage() {
         <Suspense fallback={<div className="container py-4 text-center text-white">Loading search...</div>}>
           <HeroSection heroData={homepageData?.hero} />
         </Suspense>
-        <BrowseByCategory industriesData={homepageData?.industries} />
+        <BrowseByCategory
+          industriesData={homepageData?.industries?.filter((ind) => !ind.showInDropdown)}
+        />
         <StatsSectionNew statisticsData={homepageData?.statistics} />
         <HowItWorks />
       
@@ -56,4 +58,3 @@ export default function HomepageNewPage() {
     </>
   );
 }
-
