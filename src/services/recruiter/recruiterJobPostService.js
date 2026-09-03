@@ -113,6 +113,7 @@ export const saveSkills = async (jobId, payload) => {
 
   // scalars
   formData.append("AdditionalJobDescription", payload.AdditionalJobDescription ?? "");
+  formData.append("JobDescription", payload.JobDescription ?? "");
   formData.append("LanguageRequired", payload.LanguageRequired ?? "");
 
   const response = await api.patch(
