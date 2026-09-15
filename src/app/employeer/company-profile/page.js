@@ -678,21 +678,26 @@ const RequiredDocumentsSection = ({
                     style={{
                       borderRadius: "10px",
                       fontWeight: 700,
-                      cursor: uploading ? "wait" : "pointer",
+                      cursor:
+                        uploading === (doc.documentTypeId || doc.documentType)
+                          ? "wait"
+                          : "pointer",
                       background: "#ff9900",
                       borderColor: "#ff9900",
                       color: "#ffffff",
                       padding: "8px 14px",
                     }}
                     type="button"
-                    disabled={uploading}
+                    disabled={uploading === (doc.documentTypeId || doc.documentType)}
                     onClick={() => onUpload(doc.documentTypeId || doc.documentType)}
                   >
                     <i
                       className="fi fi-rr-upload"
                       style={{ marginRight: "5px" }}
                     />
-                    {uploading ? "Uploading…" : "Upload"}
+                  {uploading === (doc.documentTypeId || doc.documentType)
+  ? "Uploading…"
+  : "Upload"}
                   </button>
                 )}
               </div>
@@ -711,7 +716,7 @@ export default function EmployerCompanyProfilePage() {
   const [loading, setLoading] = useState(true);
   const [description, setDescription] = useState("");
   const [officeSameAsAddress, setOfficeSameAsAddress] = useState(false);
-  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(null);
   const [industriesList, setIndustriesList] = useState(INDUSTRIES);
 
   // Derived (not stored) — recomputed whenever the saved country/state
@@ -741,7 +746,7 @@ export default function EmployerCompanyProfilePage() {
   const [verificationLoading, setVerificationLoading] = useState(true);
   const [verificationError, setVerificationError] = useState(null);
   const [uploadType, setUploadType] = useState("POE");
-  const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [uploadingDoc, setUploadingDoc] = useState(null);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -909,7 +914,7 @@ export default function EmployerCompanyProfilePage() {
     }
 
     try {
-      setUploadingDoc(true);
+     setUploadingDoc(uploadType);
       await uploadDocument(uploadType, "", file);
       showToast("Document uploaded successfully.", "success");
 
@@ -939,7 +944,7 @@ export default function EmployerCompanyProfilePage() {
       console.error("uploadDocument error:", err);
       showToast("Upload failed. Please try again.", "error");
     } finally {
-      setUploadingDoc(false);
+      setUploadingDoc(null);
       e.target.value = "";
     }
   };
@@ -1068,8 +1073,8 @@ export default function EmployerCompanyProfilePage() {
 
     const payloadValue = field === "highlights"
       ? (typeof val === "string"
-          ? val.split(",").map((item) => item.trim()).filter(Boolean)
-          : val)
+        ? val.split(",").map((item) => item.trim()).filter(Boolean)
+        : val)
       : val;
 
     try {
@@ -1305,136 +1310,136 @@ export default function EmployerCompanyProfilePage() {
 
   return (
     <SubUserViewOnlyGuard>
-    <main className="main">
-      {/* Banner */}
-      <section className="section-box-2">
-        <div className="container">
-          <div className="banner-hero banner-image-single" style={{ position: "relative" }}>
-            <img
-              src={company?.coverImageUrl || "/assets/imgs/page/company/img.png"}
-              alt="company banner"
-              style={{
-                width: "100%",
-                borderRadius: "10px",
-                objectFit:'cover' ,
-                maxHeight: "370px",
-              }}
-            />
-            <label
-              style={{
-                position: "absolute",
-                bottom: "10px",
-                right: "10px",
-                background: "rgba(18,35,89,0.85)",
-                color: "#fff",
-                padding: "6px 12px",
-                borderRadius: "8px",
-                fontSize: "12px",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              {uploadingCover ? "Uploading…" : "Change Cover"}
-              <input
-                type="file"
-                accept="image/*"
-                style={{ display: "none" }}
-                onChange={(e) =>
-                  handleFileUpload(
-                    "coverImageUrl",
-                    "CoverImage",
-                    e.target.files?.[0],
-                    setUploadingCover,
-                  )
-                }
-              />
-            </label>
-          </div>
-
-   <div
-            style={{
-              position: "relative",
-              zIndex: 5,
-              marginTop: "0",
-              display: "flex",
-              alignItems: "flex-end",
-              gap: "18px",
-              flexWrap: "nowrap",
-              width: "100%",
-            }}
-          >
-            <div
-              style={{
-                position: "relative",
-                zIndex: 10,
-                width: "130px",
-                flexShrink: 0,
-                marginTop: "-90px",
-                marginLeft:"30px"
-              }}
-            >
+      <main className="main">
+        {/* Banner */}
+        <section className="section-box-2">
+          <div className="container">
+            <div className="banner-hero banner-image-single" style={{ position: "relative" }}>
               <img
-                src={
-                  company?.companyLogoUrl ||
-                  "/assets/imgs/page/company/company.png"
-                }
-                alt={company?.displayName}
+                src={company?.coverImageUrl || "/assets/imgs/page/company/img.png"}
+                alt="company banner"
                 style={{
-                  width: "130px",
-                  height: "120px",
-                  objectFit: "cover",
+                  width: "100%",
                   borderRadius: "10px",
-                  border: "4px solid #ffffff",
-                  boxShadow: "0 6px 18px rgba(18,35,89,0.15)",
-                  display: "block",
-                  background: "#ffffff",
+                  objectFit: 'cover',
+                  maxHeight: "370px",
                 }}
               />
               <label
                 style={{
                   position: "absolute",
-                  bottom: "0",
-                  right: "0",
-                  background: "#ffa300",
+                  bottom: "10px",
+                  right: "10px",
+                  background: "rgba(18,35,89,0.85)",
                   color: "#fff",
-                  width: "26px",
-                  height: "26px",
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
+                  padding: "6px 12px",
+                  borderRadius: "8px",
                   fontSize: "12px",
+                  fontWeight: 600,
+                  cursor: "pointer",
                 }}
-                title={uploadingLogo ? "Uploading…" : "Change Logo"}
               >
-                <i className="fi fi-rr-edit" />
+                {uploadingCover ? "Uploading…" : "Change Cover"}
                 <input
                   type="file"
                   accept="image/*"
                   style={{ display: "none" }}
                   onChange={(e) =>
                     handleFileUpload(
-                      "companyLogoUrl",
-                      "CompanyLogo",
+                      "coverImageUrl",
+                      "CoverImage",
                       e.target.files?.[0],
-                      setUploadingLogo,
+                      setUploadingCover,
                     )
                   }
                 />
               </label>
             </div>
-            <div className="row mt-2">
-              <div className="col-lg-8 col-md-12">
-                <h5 className="f-18">
-                  {company.displayName}
 
-                </h5>
-                {/* <p className=" font-md color-text-paragraph-2 mb-15">
+            <div
+              style={{
+                position: "relative",
+                zIndex: 5,
+                marginTop: "0",
+                display: "flex",
+                alignItems: "flex-end",
+                gap: "18px",
+                flexWrap: "nowrap",
+                width: "100%",
+              }}
+            >
+              <div
+                style={{
+                  position: "relative",
+                  zIndex: 10,
+                  width: "130px",
+                  flexShrink: 0,
+                  marginTop: "-90px",
+                  marginLeft: "30px"
+                }}
+              >
+                <img
+                  src={
+                    company?.companyLogoUrl ||
+                    "/assets/imgs/page/company/company.png"
+                  }
+                  alt={company?.displayName}
+                  style={{
+                    width: "130px",
+                    height: "120px",
+                    objectFit: "cover",
+                    borderRadius: "10px",
+                    border: "4px solid #ffffff",
+                    boxShadow: "0 6px 18px rgba(18,35,89,0.15)",
+                    display: "block",
+                    background: "#ffffff",
+                  }}
+                />
+                <label
+                  style={{
+                    position: "absolute",
+                    bottom: "0",
+                    right: "0",
+                    background: "#ffa300",
+                    color: "#fff",
+                    width: "26px",
+                    height: "26px",
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    fontSize: "12px",
+                  }}
+                  title={uploadingLogo ? "Uploading…" : "Change Logo"}
+                >
+                  <i className="fi fi-rr-edit" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    onChange={(e) =>
+                      handleFileUpload(
+                        "companyLogoUrl",
+                        "CompanyLogo",
+                        e.target.files?.[0],
+                        setUploadingLogo,
+                      )
+                    }
+                  />
+                </label>
+              </div>
+              <div className="row mt-2">
+                <div className="col-lg-8 col-md-12">
+                  <h5 className="f-18">
+                    {company.displayName}
+
+                  </h5>
+                  {/* <p className=" font-md color-text-paragraph-2 mb-15">
                   {company.tagline}
                 </p> */}
-                {/* Stats row */}
-                {/* <div style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
+                  {/* Stats row */}
+                  {/* <div style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
                   {[
                     ["Active Jobs", company.activeJobs],
                     ["Total Hired", company.totalHired],
@@ -1456,1038 +1461,1038 @@ export default function EmployerCompanyProfilePage() {
                     </div>
                   ))}
                 </div> */}
+                </div>
+                <span className="card-location font-regular ml-10 " >
+                  {company.location}
+                </span>
               </div>
-              <span className="card-location font-regular ml-10 " >
-                {company.location}
-              </span>
             </div>
+
+            {/* Tab nav */}
+            <div className="box-nav-tabs" style={{ marginTop: 28, marginBottom: 8 }}>
+              <ul className="nav" role="tablist" style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+                {[
+                  ["about", "About Us"],
+                  ["recruitments", "Recruitments"],
+                  ["people", "People"],
+                ].map(([key, label]) => (
+                  <li key={key} style={{ margin: 0 }}>
+                    <button
+                      className={`btn btn-border ${activeTab === key ? "active" : ""}`}
+                      onClick={() => setActiveTab(key)}
+                      style={{
+                        border:
+                          activeTab === key ? "2px solid #ffa300" : undefined,
+                        color: activeTab === key ? "#ffa300" : undefined,
+                      }}
+                    >
+                      {label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="border-bottom" style={{ marginTop: 8, marginBottom: 8 }} />
           </div>
+        </section>
 
-          {/* Tab nav */}
-          <div className="box-nav-tabs" style={{ marginTop: 28, marginBottom: 8 }}>
-            <ul className="nav" role="tablist" style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-              {[
-                ["about", "About Us"],
-                ["recruitments", "Recruitments"],
-                ["people", "People"],
-              ].map(([key, label]) => (
-                <li key={key} style={{ margin: 0 }}>
-                  <button
-                    className={`btn btn-border ${activeTab === key ? "active" : ""}`}
-                    onClick={() => setActiveTab(key)}
-                    style={{
-                      border:
-                        activeTab === key ? "2px solid #ffa300" : undefined,
-                      color: activeTab === key ? "#ffa300" : undefined,
-                    }}
-                  >
-                    {label}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="border-bottom" style={{ marginTop: 8, marginBottom: 8 }} />
-        </div>
-      </section>
+        <section className="section-box ">
+          <div className="container">
+            <div className="row">
+              {/* Main content */}
+              <div className="col-lg-8 col-md-12 col-sm-12">
+                {activeTab === "about" && (
+                  <div className="content-single ">
+                    <h4 style={{ color: "#122359" }}>Welcome to {company.displayName}</h4>
 
-      <section className="section-box ">
-        <div className="container">
-          <div className="row">
-            {/* Main content */}
-            <div className="col-lg-8 col-md-12 col-sm-12">
-              {activeTab === "about" && (
-                <div className="content-single ">
-                  <h4 style={{ color: "#122359" }}>Welcome to {company.displayName}</h4>
-
-                  <SectionCard
-                    onUpdate={updateBasicInfo}
-                  >
-
-                    <h4 style={{ color: "#122359" }}>Basic Info</h4>
-                    <p >
-                      Core company information and business details
-                    </p>
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
-                        gap: "0 20px",
-                      }}
+                    <SectionCard
+                      onUpdate={updateBasicInfo}
                     >
-                      <Field label="Legal Name">
-                        <Inp
-                          value={company.legalName || ""}
-                          maxLength={200}
-                          onChange={(e) =>
-                            handleInputChange("legalName", e.target.value)
-                          }
-                        />
-                      </Field>
 
-                      <Field label="Trade Name">
-                        <Inp
-                          value={company.tradeName || ""}
-                          maxLength={200}
-                          onChange={(e) =>
-                            handleInputChange("tradeName", e.target.value)
-                          }
-                        />
-                      </Field>
-                    </div>
-
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
-                        gap: "0 20px",
-                      }}
-                    >
-                      <Field label="Display Name">
-                        <Inp
-                          value={company.displayName || ""}
-                          maxLength={200}
-                          onChange={(e) =>
-                            handleInputChange("displayName", e.target.value)
-                          }
-                        />
-                      </Field>
-
-                      <Field label="Industry">
-                        <Combobox
-                          value={company.industry || ""}
-                          onChange={(v) => handleInputChange("industry", v)}
-                          options={industriesList}
-                          placeholder="Type or select industry…"
-                        />
-                      </Field>
-                    </div>
-
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
-                        gap: "0 20px",
-                      }}
-                    >
-                      <Field label="Business Type">
-                        <Combobox
-                          value={company.businessType || ""}
-                          onChange={(v) => handleInputChange("businessType", v)}
-                          options={BUSINESS_TYPES}
-                          placeholder="Type or select business type…"
-                        />
-                      </Field>
-
-                      <Field label="Company Size">
-                        <select
-                          className={styles.control}
-                          value={company.size || ""}
-                          onChange={(e) =>
-                            handleInputChange("size", e.target.value)
-                          }
-                        >
-                          <option value="1-10">1-10</option>
-                          <option value="11-50">11-50</option>
-                          <option value="51-200">51-200</option>
-                          <option value="201-500">201-500</option>
-                          <option value="500+">500+</option>
-                        </select>
-                      </Field>
-                    </div>
-
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr 1fr",
-                        gap: "0 20px",
-                      }}
-                    >
-                      <Field label="Total Employees">
-                        <Inp
-                          type="number"
-                          min="0"
-                          value={company.totalEmployees ?? ""}
-                          onChange={(e) =>
-                            handleInputChange("totalEmployees", e.target.value)
-                          }
-                        />
-                      </Field>
-
-                      <Field label="Founded (Year)">
-                        <Inp
-                          type="number"
-                          min="1800"
-                          max={new Date().getFullYear()}
-                          placeholder="e.g. 2015"
-                          value={company.founded ?? ""}
-                          onChange={(e) =>
-                            handleInputChange("founded", e.target.value)
-                          }
-                        />
-                      </Field>
-
-                      <Field label="Time Zone">
-                        <Combobox
-                          value={company.timeZone || ""}
-                          onChange={(v) => handleInputChange("timeZone", v)}
-                          options={TIME_ZONES}
-                          placeholder="Select time zone..."
-                        />
-                      </Field>
-                    </div>
-
-                    <Field label="Company Highlights">
-                      <p
-                        style={{
-                          fontSize: "12px",
-                          color: "#66789c",
-                          marginBottom: "8px",
-                          marginTop: "-4px",
-                        }}
-                      >
-                        Enter comma-separated values (e.g. ISO Certified, Offshore Projects, 500+ Employees)
+                      <h4 style={{ color: "#122359" }}>Basic Info</h4>
+                      <p >
+                        Core company information and business details
                       </p>
-
-                      <Textarea
-                        rows={3}
-                        value={company.highlights ?? ""}
-                        onChange={(e) =>
-                          handleInputChange("highlights", e.target.value)
-                        }
+                      <div
                         style={{
-                          borderColor: highlightsOverLimit ? "#dc2626" : undefined,
-                        }}
-                      />
-                      <p
-                        style={{
-                          fontSize: "12px",
-                          marginTop: "6px",
-                          marginBottom: 0,
-                          fontWeight: 600,
-                          color: highlightsOverLimit ? "#dc2626" : "#94a3b8",
-                          textAlign: "right",
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr",
+                          gap: "0 20px",
                         }}
                       >
-                        {highlightsWordCount} / {HIGHLIGHTS_WORD_LIMIT} words
-                        {highlightsOverLimit && " — please shorten"}
-                      </p>
-                    </Field>
-                    <Field label="Company Description">
-                      <p
-                        style={{
-                          fontSize: "12px",
-                          color: "#66789c",
-                          marginTop: "8px",
-                          marginBottom: 0,
-                        }}
-                      >
-                        Keep this summary concise and role-focused so candidates
-                        quickly understand your hiring needs.
-                      </p>
-                      <Textarea
-                        rows={10}
-                        value={description ?? ""}
-                        onChange={(e) => setDescription(e.target.value)}
-                        style={{
-                          minHeight: "240px",
-                          borderColor: descriptionOverLimit ? "#dc2626" : undefined,
-                        }}
-                      />
-                      <p
-                        style={{
-                          fontSize: "12px",
-                          marginTop: "6px",
-                          marginBottom: 0,
-                          fontWeight: 600,
-                          color: descriptionOverLimit ? "#dc2626" : "#94a3b8",
-                          textAlign: "right",
-                        }}
-                      >
-                        {descriptionWordCount} / {DESCRIPTION_WORD_LIMIT} words
-                        {descriptionOverLimit && " — please shorten"}
-                      </p>
-                    </Field>
-
-                  </SectionCard>
-
-
-                  <SectionCard
-                    onUpdate={updateOnlinePresence}
-                  >
-                    <h4 style={{ color: "#122359" }}>Online Presence</h4>
-                    <p>Website and social media links</p>
-
-                    <Field label="Website">
-                      <Inp
-                        value={company.website || ""}
-                        maxLength={300}
-                        onChange={(e) =>
-                          handleInputChange("website", e.target.value)
-                        }
-                      />
-                    </Field>
-
-                    <Field label="LinkedIn">
-                      <Inp
-                        value={company.linkedInUrl || ""}
-                        maxLength={300}
-                        onChange={(e) =>
-                          handleInputChange("linkedInUrl", e.target.value)
-                        }
-                      />
-                    </Field>
-
-                    <Field label="Instagram">
-                      <Inp
-                        value={company.instagramUrl || ""}
-                        maxLength={300}
-                        onChange={(e) =>
-                          handleInputChange("instagramUrl", e.target.value)
-                        }
-                      />
-                    </Field>
-
-                    <Field label="Facebook">
-                      <Inp
-                        value={company.facebookUrl || ""}
-                        maxLength={300}
-                        onChange={(e) =>
-                          handleInputChange("facebookUrl", e.target.value)
-                        }
-                      />
-                    </Field>
-                  </SectionCard>
-
-                  <SectionCard
-                    onUpdate={updateAddress}
-                  >
-                    <h4 style={{ color: "#122359", marginBottom: "20px" }}>
-                      Address
-                    </h4>
-                    <p className={styles.sectionSub}>
-                      Registered office and business location details
-                    </p>
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
-                        gap: "20px",
-                      }}
-                    >
-                      <Field label="Address Line ">
-                        <Inp
-                          value={company.addressLine1 || ""}
-                          maxLength={200}
-                          onChange={(e) =>
-                            handleInputChange("addressLine1", e.target.value)
-                          }
-                        />
-                      </Field>
-
-                      <Field label="Country">
-                        <Combobox
-                          value={company.country || ""}
-                          options={COUNTRY_NAMES}
-                          placeholder="Type or select your country (e.g. India)"
-                          onChange={(v) => {
-                            // Changing the country invalidates whatever
-                            // state/city was previously picked for a
-                            // different country — same as the register page.
-                            setCompany((prev) => ({
-                              ...prev,
-                              country: v,
-                              state: "",
-                              city: "",
-                            }));
-                          }}
-                        />
-                      </Field>
-
-                      <Field label="State">
-                        <Combobox
-                          value={company.state || ""}
-                          disabled={!countryIso}
-                          options={getStateNamesForCountry(countryIso)}
-                          placeholder={
-                            countryIso
-                              ? "Type or select your state (e.g. Maharashtra)"
-                              : "Select a country first"
-                          }
-                          onChange={(v) => {
-                            setCompany((prev) => ({
-                              ...prev,
-                              state: v,
-                              city: "",
-                            }));
-                          }}
-                        />
-                      </Field>
-
-                      <Field label="City">
-                        <Combobox
-                          value={company.city || ""}
-                          disabled={!stateIso}
-                          options={getCityNamesForState(countryIso, stateIso)}
-                          placeholder={
-                            stateIso
-                              ? "Type or select your city (e.g. Mumbai)"
-                              : "Select a state first"
-                          }
-                          onChange={(v) => handleInputChange("city", v)}
-                        />
-                      </Field>
-
-                      <Field label="Pincode">
-                        <Inp
-                          value={company.pincode || ""}
-                          maxLength={10}
-                          onChange={(e) =>
-                            handleInputChange("pincode", e.target.value)
-                          }
-                        />
-                      </Field>
-                    </div>
-
-                    <Field label="Office Address">
-                      <label
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          marginBottom: officeSameAsAddress ? 0 : 10,
-                          cursor: "pointer",
-                          fontSize: "13px",
-                          color: "#66789c",
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={officeSameAsAddress}
-                          onChange={(e) => {
-                            const checked = e.target.checked;
-                            setOfficeSameAsAddress(checked);
-                            if (checked) {
-                              handleInputChange(
-                                "officeAddress",
-                                buildRegisteredAddress()
-                              );
+                        <Field label="Legal Name">
+                          <Inp
+                            value={company.legalName || ""}
+                            maxLength={200}
+                            onChange={(e) =>
+                              handleInputChange("legalName", e.target.value)
                             }
+                          />
+                        </Field>
+
+                        <Field label="Trade Name">
+                          <Inp
+                            value={company.tradeName || ""}
+                            maxLength={200}
+                            onChange={(e) =>
+                              handleInputChange("tradeName", e.target.value)
+                            }
+                          />
+                        </Field>
+                      </div>
+
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr",
+                          gap: "0 20px",
+                        }}
+                      >
+                        <Field label="Display Name">
+                          <Inp
+                            value={company.displayName || ""}
+                            maxLength={200}
+                            onChange={(e) =>
+                              handleInputChange("displayName", e.target.value)
+                            }
+                          />
+                        </Field>
+
+                        <Field label="Industry">
+                          <Combobox
+                            value={company.industry || ""}
+                            onChange={(v) => handleInputChange("industry", v)}
+                            options={industriesList}
+                            placeholder="Type or select industry…"
+                          />
+                        </Field>
+                      </div>
+
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr",
+                          gap: "0 20px",
+                        }}
+                      >
+                        <Field label="Business Type">
+                          <Combobox
+                            value={company.businessType || ""}
+                            onChange={(v) => handleInputChange("businessType", v)}
+                            options={BUSINESS_TYPES}
+                            placeholder="Type or select business type…"
+                          />
+                        </Field>
+
+                        <Field label="Company Size">
+                          <select
+                            className={styles.control}
+                            value={company.size || ""}
+                            onChange={(e) =>
+                              handleInputChange("size", e.target.value)
+                            }
+                          >
+                            <option value="1-10">1-10</option>
+                            <option value="11-50">11-50</option>
+                            <option value="51-200">51-200</option>
+                            <option value="201-500">201-500</option>
+                            <option value="500+">500+</option>
+                          </select>
+                        </Field>
+                      </div>
+
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr 1fr",
+                          gap: "0 20px",
+                        }}
+                      >
+                        <Field label="Total Employees">
+                          <Inp
+                            type="number"
+                            min="0"
+                            value={company.totalEmployees ?? ""}
+                            onChange={(e) =>
+                              handleInputChange("totalEmployees", e.target.value)
+                            }
+                          />
+                        </Field>
+
+                        <Field label="Founded (Year)">
+                          <Inp
+                            type="number"
+                            min="1800"
+                            max={new Date().getFullYear()}
+                            placeholder="e.g. 2015"
+                            value={company.founded ?? ""}
+                            onChange={(e) =>
+                              handleInputChange("founded", e.target.value)
+                            }
+                          />
+                        </Field>
+
+                        <Field label="Time Zone">
+                          <Combobox
+                            value={company.timeZone || ""}
+                            onChange={(v) => handleInputChange("timeZone", v)}
+                            options={TIME_ZONES}
+                            placeholder="Select time zone..."
+                          />
+                        </Field>
+                      </div>
+
+                      <Field label="Company Highlights">
+                        <p
+                          style={{
+                            fontSize: "12px",
+                            color: "#66789c",
+                            marginBottom: "8px",
+                            marginTop: "-4px",
                           }}
-                          style={{ width: 16, height: 16, accentColor: "#ffa300" }}
-                        />
-                        Same as the address above
-                      </label>
-                      {!officeSameAsAddress && (
+                        >
+                          Enter comma-separated values (e.g. ISO Certified, Offshore Projects, 500+ Employees)
+                        </p>
+
                         <Textarea
                           rows={3}
-                          maxLength={500}
-                          value={company.officeAddress || ""}
+                          value={company.highlights ?? ""}
                           onChange={(e) =>
-                            handleInputChange("officeAddress", e.target.value)
+                            handleInputChange("highlights", e.target.value)
+                          }
+                          style={{
+                            borderColor: highlightsOverLimit ? "#dc2626" : undefined,
+                          }}
+                        />
+                        <p
+                          style={{
+                            fontSize: "12px",
+                            marginTop: "6px",
+                            marginBottom: 0,
+                            fontWeight: 600,
+                            color: highlightsOverLimit ? "#dc2626" : "#94a3b8",
+                            textAlign: "right",
+                          }}
+                        >
+                          {highlightsWordCount} / {HIGHLIGHTS_WORD_LIMIT} words
+                          {highlightsOverLimit && " — please shorten"}
+                        </p>
+                      </Field>
+                      <Field label="Company Description">
+                        <p
+                          style={{
+                            fontSize: "12px",
+                            color: "#66789c",
+                            marginTop: "8px",
+                            marginBottom: 0,
+                          }}
+                        >
+                          Keep this summary concise and role-focused so candidates
+                          quickly understand your hiring needs.
+                        </p>
+                        <Textarea
+                          rows={10}
+                          value={description ?? ""}
+                          onChange={(e) => setDescription(e.target.value)}
+                          style={{
+                            minHeight: "240px",
+                            borderColor: descriptionOverLimit ? "#dc2626" : undefined,
+                          }}
+                        />
+                        <p
+                          style={{
+                            fontSize: "12px",
+                            marginTop: "6px",
+                            marginBottom: 0,
+                            fontWeight: 600,
+                            color: descriptionOverLimit ? "#dc2626" : "#94a3b8",
+                            textAlign: "right",
+                          }}
+                        >
+                          {descriptionWordCount} / {DESCRIPTION_WORD_LIMIT} words
+                          {descriptionOverLimit && " — please shorten"}
+                        </p>
+                      </Field>
+
+                    </SectionCard>
+
+
+                    <SectionCard
+                      onUpdate={updateOnlinePresence}
+                    >
+                      <h4 style={{ color: "#122359" }}>Online Presence</h4>
+                      <p>Website and social media links</p>
+
+                      <Field label="Website">
+                        <Inp
+                          value={company.website || ""}
+                          maxLength={300}
+                          onChange={(e) =>
+                            handleInputChange("website", e.target.value)
                           }
                         />
-                      )}
-                    </Field>
-                  </SectionCard>
+                      </Field>
 
-                  <SectionCard
-                    onUpdate={updateContact}
-                  >
-                    <h4 style={{ color: "#122359", marginBottom: "20px" }}>
-                      Contact
-                    </h4>
-                    <p className={styles.sectionSub}>
-                      Primary contact information and operating hours
-                    </p>
+                      <Field label="LinkedIn">
+                        <Inp
+                          value={company.linkedInUrl || ""}
+                          maxLength={300}
+                          onChange={(e) =>
+                            handleInputChange("linkedInUrl", e.target.value)
+                          }
+                        />
+                      </Field>
 
+                      <Field label="Instagram">
+                        <Inp
+                          value={company.instagramUrl || ""}
+                          maxLength={300}
+                          onChange={(e) =>
+                            handleInputChange("instagramUrl", e.target.value)
+                          }
+                        />
+                      </Field>
+
+                      <Field label="Facebook">
+                        <Inp
+                          value={company.facebookUrl || ""}
+                          maxLength={300}
+                          onChange={(e) =>
+                            handleInputChange("facebookUrl", e.target.value)
+                          }
+                        />
+                      </Field>
+                    </SectionCard>
+
+                    <SectionCard
+                      onUpdate={updateAddress}
+                    >
+                      <h4 style={{ color: "#122359", marginBottom: "20px" }}>
+                        Address
+                      </h4>
+                      <p className={styles.sectionSub}>
+                        Registered office and business location details
+                      </p>
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr",
+                          gap: "20px",
+                        }}
+                      >
+                        <Field label="Address Line ">
+                          <Inp
+                            value={company.addressLine1 || ""}
+                            maxLength={200}
+                            onChange={(e) =>
+                              handleInputChange("addressLine1", e.target.value)
+                            }
+                          />
+                        </Field>
+
+                        <Field label="Country">
+                          <Combobox
+                            value={company.country || ""}
+                            options={COUNTRY_NAMES}
+                            placeholder="Type or select your country (e.g. India)"
+                            onChange={(v) => {
+                              // Changing the country invalidates whatever
+                              // state/city was previously picked for a
+                              // different country — same as the register page.
+                              setCompany((prev) => ({
+                                ...prev,
+                                country: v,
+                                state: "",
+                                city: "",
+                              }));
+                            }}
+                          />
+                        </Field>
+
+                        <Field label="State">
+                          <Combobox
+                            value={company.state || ""}
+                            disabled={!countryIso}
+                            options={getStateNamesForCountry(countryIso)}
+                            placeholder={
+                              countryIso
+                                ? "Type or select your state (e.g. Maharashtra)"
+                                : "Select a country first"
+                            }
+                            onChange={(v) => {
+                              setCompany((prev) => ({
+                                ...prev,
+                                state: v,
+                                city: "",
+                              }));
+                            }}
+                          />
+                        </Field>
+
+                        <Field label="City">
+                          <Combobox
+                            value={company.city || ""}
+                            disabled={!stateIso}
+                            options={getCityNamesForState(countryIso, stateIso)}
+                            placeholder={
+                              stateIso
+                                ? "Type or select your city (e.g. Mumbai)"
+                                : "Select a state first"
+                            }
+                            onChange={(v) => handleInputChange("city", v)}
+                          />
+                        </Field>
+
+                        <Field label="Pincode">
+                          <Inp
+                            value={company.pincode || ""}
+                            maxLength={10}
+                            onChange={(e) =>
+                              handleInputChange("pincode", e.target.value)
+                            }
+                          />
+                        </Field>
+                      </div>
+
+                      <Field label="Office Address">
+                        <label
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            marginBottom: officeSameAsAddress ? 0 : 10,
+                            cursor: "pointer",
+                            fontSize: "13px",
+                            color: "#66789c",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={officeSameAsAddress}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              setOfficeSameAsAddress(checked);
+                              if (checked) {
+                                handleInputChange(
+                                  "officeAddress",
+                                  buildRegisteredAddress()
+                                );
+                              }
+                            }}
+                            style={{ width: 16, height: 16, accentColor: "#ffa300" }}
+                          />
+                          Same as the address above
+                        </label>
+                        {!officeSameAsAddress && (
+                          <Textarea
+                            rows={3}
+                            maxLength={500}
+                            value={company.officeAddress || ""}
+                            onChange={(e) =>
+                              handleInputChange("officeAddress", e.target.value)
+                            }
+                          />
+                        )}
+                      </Field>
+                    </SectionCard>
+
+                    <SectionCard
+                      onUpdate={updateContact}
+                    >
+                      <h4 style={{ color: "#122359", marginBottom: "20px" }}>
+                        Contact
+                      </h4>
+                      <p className={styles.sectionSub}>
+                        Primary contact information and operating hours
+                      </p>
+
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr",
+                          gap: "20px",
+                        }}
+                      >
+                        <Field label="Contact Phone">
+                          <Inp
+                            value={company.phone || ""}
+                            onChange={(e) =>
+                              handleInputChange("phone", e.target.value)
+                            }
+                          />
+                        </Field>
+
+                        <Field label="Contact Email">
+                          <Inp
+                            value={company.email || ""}
+                            onChange={(e) =>
+                              handleInputChange("email", e.target.value)
+                            }
+                          />
+                        </Field>
+
+                        <Field label="Contact Person">
+                          <Inp
+                            value={company.contactPersonName || ""}
+                            onChange={(e) =>
+                              handleInputChange(
+                                "contactPersonName",
+                                e.target.value
+                              )
+                            }
+                          />
+                        </Field>
+
+                        <Field label="Designation">
+                          <Inp
+                            value={company.designation || ""}
+                            onChange={(e) =>
+                              handleInputChange("designation", e.target.value)
+                            }
+                          />
+                        </Field>
+                      </div>
+
+                      <Field label="Operating Hours">
+                        <Inp
+                          placeholder="e.g. Mon–Sat, 9:00 AM – 6:00 PM"
+                          value={company.operatingHours || ""}
+                          onChange={(e) =>
+                            handleInputChange("operatingHours", e.target.value)
+                          }
+                        />
+                      </Field>
+                    </SectionCard>
+
+                    <ReadOnlySection
+                      title="Verification & Status"
+                      rows={verificationRows}
+                      company={company}
+                    />
+
+                    <RequiredDocumentsSection
+                      documents={documents}
+                      allDocumentTypes={allDocumentTypes}
+                      loading={verificationLoading}
+                      error={verificationError}
+                      onUpload={handleDirectUpload}
+                      uploading={uploadingDoc}
+                    />
+                  </div>
+                )}
+
+                {activeTab === "recruitments" && (
+                  <div>
                     <div
                       style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
-                        gap: "20px",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: "24px",
+                        flexWrap: "wrap",
+                        gap: "12px",
                       }}
                     >
-                      <Field label="Contact Phone">
-                        <Inp
-                          value={company.phone || ""}
-                          onChange={(e) =>
-                            handleInputChange("phone", e.target.value)
-                          }
-                        />
-                      </Field>
+                      <h4
+                        style={{
+                          margin: 0,
+                          color: "#122359",
+                          fontWeight: 800,
+                        }}
+                      >
+                        Active Recruitments
+                      </h4>
 
-                      <Field label="Contact Email">
-                        <Inp
-                          value={company.email || ""}
-                          onChange={(e) =>
-                            handleInputChange("email", e.target.value)
-                          }
+                      <Link
+                        href="/dashboard/post-job"
+                        className="btn btn-default btn-sm mt-3"
+                        style={{
+                          borderRadius: "12px",
+                          fontWeight: 700,
+                          padding: "10px 18px",
+                          boxShadow: "0 8px 18px rgba(255,163,0,0.18)",
+                          display: "inline-flex",
+                          alignItems: "center",
+                        }}
+                      >
+                        <i
+                          className="fi fi-rr-plus"
+                          style={{ marginRight: "6px" }}
                         />
-                      </Field>
-
-                      <Field label="Contact Person">
-                        <Inp
-                          value={company.contactPersonName || ""}
-                          onChange={(e) =>
-                            handleInputChange(
-                              "contactPersonName",
-                              e.target.value
-                            )
-                          }
-                        />
-                      </Field>
-
-                      <Field label="Designation">
-                        <Inp
-                          value={company.designation || ""}
-                          onChange={(e) =>
-                            handleInputChange("designation", e.target.value)
-                          }
-                        />
-                      </Field>
+                        Post New Job
+                      </Link>
                     </div>
 
-                    <Field label="Operating Hours">
-                      <Inp
-                        placeholder="e.g. Mon–Sat, 9:00 AM – 6:00 PM"
-                        value={company.operatingHours || ""}
-                        onChange={(e) =>
-                          handleInputChange("operatingHours", e.target.value)
-                        }
-                      />
-                    </Field>
-                  </SectionCard>
-
-                  <ReadOnlySection
-                    title="Verification & Status"
-                    rows={verificationRows}
-                    company={company}
-                  />
-
-                  <RequiredDocumentsSection
-                    documents={documents}
-                    allDocumentTypes={allDocumentTypes}
-                    loading={verificationLoading}
-                    error={verificationError}
-                    onUpload={handleDirectUpload}
-                    uploading={uploadingDoc}
-                  />
-                </div>
-              )}
-
-              {activeTab === "recruitments" && (
-                <div>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: "24px",
-                      flexWrap: "wrap",
-                      gap: "12px",
-                    }}
-                  >
-                    <h4
-                      style={{
-                        margin: 0,
-                        color: "#122359",
-                        fontWeight: 800,
-                      }}
-                    >
-                      Active Recruitments
-                    </h4>
-
-                    <Link
-                      href="/dashboard/post-job"
-                      className="btn btn-default btn-sm mt-3"
-                      style={{
-                        borderRadius: "12px",
-                        fontWeight: 700,
-                        padding: "10px 18px",
-                        boxShadow: "0 8px 18px rgba(255,163,0,0.18)",
-                        display: "inline-flex",
-                        alignItems: "center",
-                      }}
-                    >
-                      <i
-                        className="fi fi-rr-plus"
-                        style={{ marginRight: "6px" }}
-                      />
-                      Post New Job
-                    </Link>
-                  </div>
-
-                  {jobsLoading ? (
-                    <p style={{ color: "#66789c" }}>Loading recruitments…</p>
-                  ) : jobs.length === 0 ? (
-                    <p style={{ color: "#66789c" }}>
-                      No active job postings yet. Click "Post New Job" to
-                      create one.
-                    </p>
-                  ) : (
-                    <div className="box-list-jobs display-list">
-                      {jobs.map((job) => (
-                        <div className="col-xl-12 col-12" key={job.id}>
-                          <div
-                            className="card-grid-2 hover-up cv-search-candidate-card"
-                            style={{
-                              marginBottom: "20px",
-                            }}
-                          >
+                    {jobsLoading ? (
+                      <p style={{ color: "#66789c" }}>Loading recruitments…</p>
+                    ) : jobs.length === 0 ? (
+                      <p style={{ color: "#66789c" }}>
+                        No active job postings yet. Click "Post New Job" to
+                        create one.
+                      </p>
+                    ) : (
+                      <div className="box-list-jobs display-list">
+                        {jobs.map((job) => (
+                          <div className="col-xl-12 col-12" key={job.id}>
                             <div
-                              className="card-block-info"
+                              className="card-grid-2 hover-up cv-search-candidate-card"
                               style={{
-                                padding: "26px",
+                                marginBottom: "20px",
                               }}
                             >
                               <div
+                                className="card-block-info"
                                 style={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  alignItems: "flex-start",
-                                  flexWrap: "wrap",
-                                  gap: "14px",
-                                }}
-                              >
-                                <div>
-                                  <h4
-                                    style={{
-                                      margin: "0 0 8px",
-                                      fontSize: "22px",
-                                      fontWeight: 700,
-                                      color: "#122359",
-                                      transition: "all .25s ease",
-                                    }}
-                                  >
-                                    <Link
-                                      href={`/employeer/applicants?jobId=${job.jobId}&jobTitle=${encodeURIComponent(job.title || "")}`}
-                                    >
-                                      {job.title}
-                                    </Link>
-                                  </h4>
-
-                                  <div
-                                    className="mt-5"
-                                    style={{
-                                      display: "flex",
-                                      alignItems: "center",
-                                      gap: "10px",
-                                      flexWrap: "wrap",
-                                    }}
-                                  >
-                                    <span className="card-briefcase">
-                                      {job.type}
-                                    </span>
-
-                                    <span className="card-time">
-                                      {job.posted}
-                                    </span>
-
-                                    <span
-                                      className="card-location"
-                                      style={{
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: "5px",
-                                        marginLeft: 0,
-                                      }}
-                                    >
-                                      {job.location}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                <div
-                                  style={{
-                                    textAlign: "right",
-                                    minWidth: "150px",
-                                  }}
-                                >
-                                  <div
-                                    style={{
-                                      fontWeight: 800,
-                                      color: "#122359",
-                                      fontSize: "20px",
-                                      marginBottom: "5px",
-                                    }}
-                                  >
-                                    {job.salary}
-                                  </div>
-
-                                  <div
-                                    style={{
-                                      fontSize: "13px",
-                                      color: "#66789c",
-                                      fontWeight: 600,
-                                    }}
-                                  >
-                                    {job.applicants} applicants
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div
-                                style={{
-                                  marginTop: "16px",
-                                  display: "flex",
-                                  gap: "8px",
-                                  flexWrap: "wrap",
-                                }}
-                              >
-                                {job.tags.map((tag) => (
-                                  <span
-                                    key={tag}
-                                    style={{
-                                      display: "inline-flex",
-                                      alignItems: "center",
-                                      padding: "7px 14px",
-                                      borderRadius: "999px",
-                                      background: "#fff7ea",
-                                      border: "1px solid rgba(255,163,0,0.18)",
-                                      color: "#ff9900",
-                                      fontSize: "12px",
-                                      fontWeight: 700,
-                                      lineHeight: 1,
-                                      transition: "all .25s ease",
-                                      boxShadow:
-                                        "0 4px 10px rgba(255,163,0,0.08)",
-                                    }}
-                                    onMouseEnter={(e) => {
-                                      e.currentTarget.style.transform =
-                                        "translateY(-2px)";
-                                      e.currentTarget.style.background =
-                                        "#ffa300";
-                                      e.currentTarget.style.color = "#ffffff";
-                                      e.currentTarget.style.boxShadow =
-                                        "0 10px 18px rgba(255,163,0,0.22)";
-                                    }}
-                                    onMouseLeave={(e) => {
-                                      e.currentTarget.style.transform =
-                                        "translateY(0px)";
-                                      e.currentTarget.style.background =
-                                        "#fff7ea";
-                                      e.currentTarget.style.color = "#ff9900";
-                                      e.currentTarget.style.boxShadow =
-                                        "0 4px 10px rgba(255,163,0,0.08)";
-                                    }}
-                                  >
-                                    {tag}
-                                  </span>
-                                ))}
-                              </div>
-
-                              <div
-                                className="card-2-bottom mt-20"
-                                style={{
-                                  paddingTop: "20px",
-                                  borderTop: "1px solid rgba(18,35,89,0.06)",
+                                  padding: "26px",
                                 }}
                               >
                                 <div
                                   style={{
                                     display: "flex",
-                                    gap: "10px",
+                                    justifyContent: "space-between",
+                                    alignItems: "flex-start",
+                                    flexWrap: "wrap",
+                                    gap: "14px",
+                                  }}
+                                >
+                                  <div>
+                                    <h4
+                                      style={{
+                                        margin: "0 0 8px",
+                                        fontSize: "22px",
+                                        fontWeight: 700,
+                                        color: "#122359",
+                                        transition: "all .25s ease",
+                                      }}
+                                    >
+                                      <Link
+                                        href={`/employeer/applicants?jobId=${job.jobId}&jobTitle=${encodeURIComponent(job.title || "")}`}
+                                      >
+                                        {job.title}
+                                      </Link>
+                                    </h4>
+
+                                    <div
+                                      className="mt-5"
+                                      style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "10px",
+                                        flexWrap: "wrap",
+                                      }}
+                                    >
+                                      <span className="card-briefcase">
+                                        {job.type}
+                                      </span>
+
+                                      <span className="card-time">
+                                        {job.posted}
+                                      </span>
+
+                                      <span
+                                        className="card-location"
+                                        style={{
+                                          display: "inline-flex",
+                                          alignItems: "center",
+                                          gap: "5px",
+                                          marginLeft: 0,
+                                        }}
+                                      >
+                                        {job.location}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  <div
+                                    style={{
+                                      textAlign: "right",
+                                      minWidth: "150px",
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        fontWeight: 800,
+                                        color: "#122359",
+                                        fontSize: "20px",
+                                        marginBottom: "5px",
+                                      }}
+                                    >
+                                      {job.salary}
+                                    </div>
+
+                                    <div
+                                      style={{
+                                        fontSize: "13px",
+                                        color: "#66789c",
+                                        fontWeight: 600,
+                                      }}
+                                    >
+                                      {job.applicants} applicants
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div
+                                  style={{
+                                    marginTop: "16px",
+                                    display: "flex",
+                                    gap: "8px",
                                     flexWrap: "wrap",
                                   }}
                                 >
-                                  <Link
-                                    href={`/employeer/applicants?jobId=${job.jobId}&jobTitle=${encodeURIComponent(job.title || "")}`}
-                                    className="btn btn-default"
-                                    style={{
-                                      background: "#ffa300",
-                                      borderColor: "#ffa300",
-                                      color: "#ffffff",
-                                      borderRadius: "12px",
-                                      padding: "10px 18px",
-                                      fontWeight: 700,
-                                      fontSize: "13px",
-                                      transition: "all .25s ease",
-                                      boxShadow:
-                                        "0 8px 20px rgba(255,163,0,0.22)",
-                                      display: "inline-flex",
-                                      alignItems: "center",
-                                      gap: "6px",
-                                    }}
-                                    onMouseEnter={(e) => {
-                                      e.currentTarget.style.transform =
-                                        "translateY(-2px)";
-                                      e.currentTarget.style.boxShadow =
-                                        "0 14px 28px rgba(255,163,0,0.32)";
-                                      e.currentTarget.style.background =
-                                        "#ff9900";
-                                    }}
-                                    onMouseLeave={(e) => {
-                                      e.currentTarget.style.transform =
-                                        "translateY(0px)";
-                                      e.currentTarget.style.boxShadow =
-                                        "0 8px 20px rgba(255,163,0,0.22)";
-                                      e.currentTarget.style.background =
-                                        "#ffa300";
-                                    }}
-                                  >
-                                    <i className="fi fi-rr-users" />
-                                    View Applicants
-                                  </Link>
+                                  {job.tags.map((tag) => (
+                                    <span
+                                      key={tag}
+                                      style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        padding: "7px 14px",
+                                        borderRadius: "999px",
+                                        background: "#fff7ea",
+                                        border: "1px solid rgba(255,163,0,0.18)",
+                                        color: "#ff9900",
+                                        fontSize: "12px",
+                                        fontWeight: 700,
+                                        lineHeight: 1,
+                                        transition: "all .25s ease",
+                                        boxShadow:
+                                          "0 4px 10px rgba(255,163,0,0.08)",
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        e.currentTarget.style.transform =
+                                          "translateY(-2px)";
+                                        e.currentTarget.style.background =
+                                          "#ffa300";
+                                        e.currentTarget.style.color = "#ffffff";
+                                        e.currentTarget.style.boxShadow =
+                                          "0 10px 18px rgba(255,163,0,0.22)";
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        e.currentTarget.style.transform =
+                                          "translateY(0px)";
+                                        e.currentTarget.style.background =
+                                          "#fff7ea";
+                                        e.currentTarget.style.color = "#ff9900";
+                                        e.currentTarget.style.boxShadow =
+                                          "0 4px 10px rgba(255,163,0,0.08)";
+                                      }}
+                                    >
+                                      {tag}
+                                    </span>
+                                  ))}
+                                </div>
 
-                                  <Link
-                                    href={`/dashboard/post-job?jobId=${job.jobId}`}
-                                    className="btn btn-border btn-sm"
+                                <div
+                                  className="card-2-bottom mt-20"
+                                  style={{
+                                    paddingTop: "20px",
+                                    borderTop: "1px solid rgba(18,35,89,0.06)",
+                                  }}
+                                >
+                                  <div
                                     style={{
-                                      borderRadius: "12px",
-                                      fontWeight: 700,
-                                      padding: "10px 16px",
+                                      display: "flex",
+                                      gap: "10px",
+                                      flexWrap: "wrap",
                                     }}
                                   >
-                                    Edit Job
-                                  </Link>
+                                    <Link
+                                      href={`/employeer/applicants?jobId=${job.jobId}&jobTitle=${encodeURIComponent(job.title || "")}`}
+                                      className="btn btn-default"
+                                      style={{
+                                        background: "#ffa300",
+                                        borderColor: "#ffa300",
+                                        color: "#ffffff",
+                                        borderRadius: "12px",
+                                        padding: "10px 18px",
+                                        fontWeight: 700,
+                                        fontSize: "13px",
+                                        transition: "all .25s ease",
+                                        boxShadow:
+                                          "0 8px 20px rgba(255,163,0,0.22)",
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: "6px",
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        e.currentTarget.style.transform =
+                                          "translateY(-2px)";
+                                        e.currentTarget.style.boxShadow =
+                                          "0 14px 28px rgba(255,163,0,0.32)";
+                                        e.currentTarget.style.background =
+                                          "#ff9900";
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        e.currentTarget.style.transform =
+                                          "translateY(0px)";
+                                        e.currentTarget.style.boxShadow =
+                                          "0 8px 20px rgba(255,163,0,0.22)";
+                                        e.currentTarget.style.background =
+                                          "#ffa300";
+                                      }}
+                                    >
+                                      <i className="fi fi-rr-users" />
+                                      View Applicants
+                                    </Link>
 
-                                  <button
-                                    className="btn btn-grey-small"
-                                    style={{
-                                      borderRadius: "12px",
-                                      fontWeight: 700,
-                                      padding: "10px 16px",
-                                    }}
-                                    onClick={() => handleTogglePause(job)}
-                                  >
-                                    {job.status === "Paused" ? "Resume" : "Pause"}
-                                  </button>
+                                    <Link
+                                      href={`/dashboard/post-job?jobId=${job.jobId}`}
+                                      className="btn btn-border btn-sm"
+                                      style={{
+                                        borderRadius: "12px",
+                                        fontWeight: 700,
+                                        padding: "10px 16px",
+                                      }}
+                                    >
+                                      Edit Job
+                                    </Link>
+
+                                    <button
+                                      className="btn btn-grey-small"
+                                      style={{
+                                        borderRadius: "12px",
+                                        fontWeight: 700,
+                                        padding: "10px 16px",
+                                      }}
+                                      onClick={() => handleTogglePause(job)}
+                                    >
+                                      {job.status === "Paused" ? "Resume" : "Pause"}
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {activeTab === "people" && (
-                <div>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: "20px",
-                    }}
-                  >
-                    <h4 style={{ margin: 0 }}>Team Members</h4>
-         <Link
-  href="/employeer/sub-user"
-  className="btn btn-default btn-sm mt-3"
-  style={{
-    borderRadius: "12px",
-    fontWeight: 700,
-    padding: "10px 18px",
-    boxShadow: "0 8px 18px rgba(255,163,0,0.18)",
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "6px",
-  }}
->
-  <i className="fi fi-rr-plus" />
-  Invite Member
-</Link>
+                        ))}
+                      </div>
+                    )}
                   </div>
+                )}
 
-                  {peopleLoading ? (
-                    <p style={{ color: "#66789c" }}>Loading team members…</p>
-                  ) : people.length === 0 ? (
-                    <p style={{ color: "#66789c" }}>
-                      No team members yet. Click "Invite Member" to add one.
-                    </p>
-                  ) : (
+                {activeTab === "people" && (
+                  <div>
                     <div
                       style={{
                         display: "flex",
-                        flexDirection: "column",
-                        gap: "14px",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: "20px",
                       }}
                     >
-                      {people.map((p) => (
-                        <div
-                          key={p.subUserId}
-                          className="employer-cv-surface-card"
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "16px",
-                            padding: "16px 20px",
-                            borderRadius: "16px",
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: "46px",
-                              height: "46px",
-                              borderRadius: "50%",
-                              background: "#ffa300",
-                              color: "#fff",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontWeight: "700",
-                              fontSize: "15px",
-                              flexShrink: 0,
-                            }}
-                          >
-                            {p.initials}
-                          </div>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: "600", color: "#122359" }}>
-                              {p.name}
-                            </div>
-                            <div style={{ fontSize: "12px", color: "#6b7280" }}>
-                              {p.role} · {p.email}
-                              {p.status ? ` · ${p.status}` : ""}
-                            </div>
-                          </div>
-                          <div style={{ display: "flex", gap: "8px" }}>
-                            <Link
-                              href="/employeer/sub-user"
-                              className="btn btn-border btn-sm"
-                            >
-                              Edit
-                            </Link>
-                            <button
-                              className="btn btn-grey-small"
-                              onClick={() => handleRevokeAccess(p)}
-                            >
-                              {p.status === "Deactivated"
-                                ? "Reactivate"
-                                : p.status === "Pending"
-                                  ? "Resend Invite"
-                                  : "Revoke"}
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Sidebar */}
-            <div className="col-lg-4 col-md-12 col-sm-12 col-12 pl-40 pl-lg-15 mt-lg-30 mt-4">
-              <div className="sidebar-border employer-cv-surface-card">
-                <div className="sidebar-heading">
-                  <div className="avatar-sidebar">
-                    <div className="sidebar-info pl-0">
-                      <span
-                        className="sidebar-company"
-                        style={{ display: "block", marginBottom: 8 }}
-                      >
-                        {company.displayName}
-                      </span>
-                      <span className="card-location">{company.location}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="sidebar-list-job">
-                  <div className="box-map">
-                    <iframe
-                      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d120703.02652159374!2d72.8776559!3d19.0760907!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7b63f3f9f8f79%3A0x3f6453f9b6f5e231!2sMumbai%2C%20Maharashtra!5e0!3m2!1sen!2sin!4v1712832000000!5m2!1sen!2sin"
-                      allowFullScreen
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                    />
-                  </div>
-                </div>
-                <div className="sidebar-list-job">
-                  <ul>
-                    {[
-                      {
-                        icon: "fi-rr-briefcase",
-                        label: "Sector",
-                        value: company.industry,
-                      },
-                      {
-                        icon: "fi-rr-building",
-                        label: "Company Size",
-                        value: company.size,
-                      },
-                      {
-                        icon: "fi-rr-marker",
-                        label: "Location",
-                        value: company.location,
-                      },
-                      {
-                        icon: "fi-rr-briefcase",
-                        label: "Business Type",
-                        value: company.businessType,
-                      },
-                      {
-                        icon: "fi-rr-calendar",
-                        label: "Founded",
-                        value: company.founded,
-                      },
-                      {
-                        icon: "fi-rr-shield-check",
-                        label: "Account Status",
-                        value: company.accountStatus,
-                      },
-                    ].map((item) => (
-                      <li key={item.label}>
-                        <div className="sidebar-icon-item">
-                          <i className={item.icon}></i>
-                        </div>
-                        <div className="sidebar-text-info">
-                          <span className="text-description">{item.label}</span>
-                          <strong
-                            className="small-heading"
-                            title={item.value || undefined}
-                            style={{
-                              display: "block",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                              maxWidth: "100%",
-                            }}
-                          >
-                            {item.value || "—"}
-                          </strong>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="sidebar-list-job">
-                  <ul className="ul-disc">
-                    <li title={buildRegisteredAddress() || undefined}>
-                      <span
+                      <h4 style={{ margin: 0 }}>Team Members</h4>
+                      <Link
+                        href="/employeer/sub-user"
+                        className="btn btn-default btn-sm mt-3"
                         style={{
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          display: "-webkit-box",
-                          WebkitLineClamp: 3,
-                          WebkitBoxOrient: "vertical",
+                          borderRadius: "12px",
+                          fontWeight: 700,
+                          padding: "10px 18px",
+                          boxShadow: "0 8px 18px rgba(255,163,0,0.18)",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "6px",
                         }}
                       >
-                        {buildRegisteredAddress() || "—"}
-                      </span>
-                    </li>
-                    <li>Phone: {company.phone}</li>
-                    <li>Email: {company.email}</li>
-                  </ul>
+                        <i className="fi fi-rr-plus" />
+                        Invite Member
+                      </Link>
+                    </div>
+
+                    {peopleLoading ? (
+                      <p style={{ color: "#66789c" }}>Loading team members…</p>
+                    ) : people.length === 0 ? (
+                      <p style={{ color: "#66789c" }}>
+                        No team members yet. Click "Invite Member" to add one.
+                      </p>
+                    ) : (
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "14px",
+                        }}
+                      >
+                        {people.map((p) => (
+                          <div
+                            key={p.subUserId}
+                            className="employer-cv-surface-card"
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "16px",
+                              padding: "16px 20px",
+                              borderRadius: "16px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: "46px",
+                                height: "46px",
+                                borderRadius: "50%",
+                                background: "#ffa300",
+                                color: "#fff",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontWeight: "700",
+                                fontSize: "15px",
+                                flexShrink: 0,
+                              }}
+                            >
+                              {p.initials}
+                            </div>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: "600", color: "#122359" }}>
+                                {p.name}
+                              </div>
+                              <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                                {p.role} · {p.email}
+                                {p.status ? ` · ${p.status}` : ""}
+                              </div>
+                            </div>
+                            <div style={{ display: "flex", gap: "8px" }}>
+                              <Link
+                                href="/employeer/sub-user"
+                                className="btn btn-border btn-sm"
+                              >
+                                Edit
+                              </Link>
+                              <button
+                                className="btn btn-grey-small"
+                                onClick={() => handleRevokeAccess(p)}
+                              >
+                                {p.status === "Deactivated"
+                                  ? "Reactivate"
+                                  : p.status === "Pending"
+                                    ? "Resend Invite"
+                                    : "Revoke"}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Sidebar */}
+              <div className="col-lg-4 col-md-12 col-sm-12 col-12 pl-40 pl-lg-15 mt-lg-30 mt-4">
+                <div className="sidebar-border employer-cv-surface-card">
+                  <div className="sidebar-heading">
+                    <div className="avatar-sidebar">
+                      <div className="sidebar-info pl-0">
+                        <span
+                          className="sidebar-company"
+                          style={{ display: "block", marginBottom: 8 }}
+                        >
+                          {company.displayName}
+                        </span>
+                        <span className="card-location">{company.location}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="sidebar-list-job">
+                    <div className="box-map">
+                      <iframe
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d120703.02652159374!2d72.8776559!3d19.0760907!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7b63f3f9f8f79%3A0x3f6453f9b6f5e231!2sMumbai%2C%20Maharashtra!5e0!3m2!1sen!2sin!4v1712832000000!5m2!1sen!2sin"
+                        allowFullScreen
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                      />
+                    </div>
+                  </div>
+                  <div className="sidebar-list-job">
+                    <ul>
+                      {[
+                        {
+                          icon: "fi-rr-briefcase",
+                          label: "Sector",
+                          value: company.industry,
+                        },
+                        {
+                          icon: "fi-rr-building",
+                          label: "Company Size",
+                          value: company.size,
+                        },
+                        {
+                          icon: "fi-rr-marker",
+                          label: "Location",
+                          value: company.location,
+                        },
+                        {
+                          icon: "fi-rr-briefcase",
+                          label: "Business Type",
+                          value: company.businessType,
+                        },
+                        {
+                          icon: "fi-rr-calendar",
+                          label: "Founded",
+                          value: company.founded,
+                        },
+                        {
+                          icon: "fi-rr-shield-check",
+                          label: "Account Status",
+                          value: company.accountStatus,
+                        },
+                      ].map((item) => (
+                        <li key={item.label}>
+                          <div className="sidebar-icon-item">
+                            <i className={item.icon}></i>
+                          </div>
+                          <div className="sidebar-text-info">
+                            <span className="text-description">{item.label}</span>
+                            <strong
+                              className="small-heading"
+                              title={item.value || undefined}
+                              style={{
+                                display: "block",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                                maxWidth: "100%",
+                              }}
+                            >
+                              {item.value || "—"}
+                            </strong>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="sidebar-list-job">
+                    <ul className="ul-disc">
+                      <li title={buildRegisteredAddress() || undefined}>
+                        <span
+                          style={{
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            display: "-webkit-box",
+                            WebkitLineClamp: 3,
+                            WebkitBoxOrient: "vertical",
+                          }}
+                        >
+                          {buildRegisteredAddress() || "—"}
+                        </span>
+                      </li>
+                      <li>Phone: {company.phone}</li>
+                      <li>Email: {company.email}</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".pdf,.jpg,.jpeg,.png"
-        style={{ display: "none" }}
-        onChange={handleFileSelected}
-      />
-    </main>
+        </section>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".pdf,.jpg,.jpeg,.png"
+          style={{ display: "none" }}
+          onChange={handleFileSelected}
+        />
+      </main>
     </SubUserViewOnlyGuard>
   );
 }
