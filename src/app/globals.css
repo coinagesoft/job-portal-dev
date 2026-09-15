@@ -99,6 +99,11 @@ img[src*="/assets/imgs/page/job-single/"] {
   transition: background 140ms;
 }
 
+
+input.form-icons{
+  padding-left: 15px !important;
+}
+
 .job-filter-checkbox {
   width: 20px;
   height: 20px;

@@ -561,7 +561,7 @@ const EmployerCvSearchPage = () => {
     width: "100%",
     height: "50px",
     borderRadius: "8px",
-    paddingLeft: "45px", // Increase this
+     // Increase this
   }}
 />
 
