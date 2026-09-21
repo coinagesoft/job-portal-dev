@@ -239,12 +239,39 @@ export default function JobPreviewModal({ open, onClose, job, loading }) {
           {!loading && job && (
             <>
               {/* Quick badges */}
-              <div style={{ marginBottom: 16 }}>
+              {/* Quick badges */}
+              <div
+                style={{
+                  marginBottom: 16,
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 8,
+                }}
+              >
                 <Pill>{humanize(job.JobType)}</Pill>
+
                 <Pill>{humanize(job.EmploymentType)}</Pill>
+
                 <Pill>{humanize(job.EmploymentMode)}</Pill>
-                {job.IndustryType && <Pill>{humanize(job.IndustryType)}</Pill>}
+
+                {job.IndustryType && (
+                  <Pill>{humanize(job.IndustryType)}</Pill>
+                )}
+
                 {job.IsOilField && <Pill>Oil Field</Pill>}
+
+                {/* RPSL Verification */}
+                {job.Verification?.isOffshore &&
+                  job.Verification?.rpslRequired &&
+                  !job.Verification?.rpslVerified && (
+                    <Pill>RPSL License Not Verified</Pill>
+                  )}
+
+                {job.Verification?.isOffshore &&
+                  job.Verification?.rpslRequired &&
+                  job.Verification?.rpslVerified && (
+                    <Pill>RPSL License Verified</Pill>
+                  )}
               </div>
 
               <Section title="Job Details">

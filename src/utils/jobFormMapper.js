@@ -86,4 +86,13 @@ export const mapResumeToForm = (response, defaultTradeCategory = "Welding") => (
   CompanyVisibility: humanize(response.step7Data?.companyVisibility) ?? "Show Name",
   PublishingTags: response.step7Data?.publishingTags ?? [],
   PublishNow: response.step7Data?.publishNow ?? true,
+
+
+  // Verification
+  Verification: response.verification ?? {
+    isOffshore: false,
+    rpslRequired: false,
+    rpslVerified: false,
+    rpslStatus: null,
+  },
 });
