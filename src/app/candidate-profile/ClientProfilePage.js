@@ -840,124 +840,124 @@ const StepPersonal = ({
           )}
         </Field>
       </div>
-<div
-  style={{
-    padding: "16px 18px",
-    background: T.bg,
-    borderRadius: 10,
-    marginTop: 4,
-  }}
->
-  <div
-    style={{
-      fontSize: 12,
-      fontWeight: 700,
-      color: T.navy,
-      marginBottom: 12,
-      textTransform: "uppercase",
-      letterSpacing: "0.04em",
-    }}
-  >
-    Availability
-  </div>
-
-  {/* Available Now */}
-  <label
-    style={{
-      display: "flex",
-      alignItems: "center",
-      gap: 10,
-      fontSize: 14,
-      color: T.navy,
-      fontWeight: 500,
-      cursor: "pointer",
-      marginBottom: 10,
-    }}
-  >
-    <input
-      type="radio"
-      name="availability"
-      checked={data.availableForWork === true}
-      onChange={() => {
-        onAvailabilityChange(true);
-      }}
-      style={{
-        width: 17,
-        height: 17,
-        cursor: "pointer",
-        accentColor: T.orange,
-      }}
-    />
-
-    Available now
-  </label>
-
-  {/* Not Available */}
-  <label
-    style={{
-      display: "flex",
-      alignItems: "center",
-      gap: 10,
-      fontSize: 14,
-      color: T.navy,
-      fontWeight: 500,
-      cursor: "pointer",
-      marginBottom: 12,
-    }}
-  >
-    <input
-      type="radio"
-      name="availability"
-      checked={data.availableForWork === false}
-      onChange={() => {
-        onAvailabilityChange(false);
-      }}
-      style={{
-        width: 17,
-        height: 17,
-        cursor: "pointer",
-        accentColor: T.orange,
-      }}
-    />
-
-    Not available
-  </label>
-
-  {/* Available In dropdown */}
-  {!data.availableForWork && (
-    <div style={{ marginTop: 8 }}>
-      <label
+      <div
         style={{
-          display: "block",
-          fontSize: 12,
-          fontWeight: 700,
-          color: T.navy,
-          marginBottom: 6,
-          textTransform: "uppercase",
-          letterSpacing: "0.04em",
+          padding: "16px 18px",
+          background: T.bg,
+          borderRadius: 10,
+          marginTop: 4,
         }}
       >
-        When will you be available?
-        <span style={{ color: T.error, marginLeft: 3 }}>*</span>
-      </label>
+        <div
+          style={{
+            fontSize: 12,
+            fontWeight: 700,
+            color: T.navy,
+            marginBottom: 12,
+            textTransform: "uppercase",
+            letterSpacing: "0.04em",
+          }}
+        >
+          Availability
+        </div>
 
-      <Sel
-        value={data.availableIn || ""}
-        onChange={(e) =>
-          onChange("availableIn", e.target.value)
-        }
-      >
-        <option value="">Select availability</option>
+        {/* Available Now */}
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            fontSize: 14,
+            color: T.navy,
+            fontWeight: 500,
+            cursor: "pointer",
+            marginBottom: 10,
+          }}
+        >
+          <input
+            type="radio"
+            name="availability"
+            checked={data.availableForWork === true}
+            onChange={() => {
+              onAvailabilityChange(true);
+            }}
+            style={{
+              width: 17,
+              height: 17,
+              cursor: "pointer",
+              accentColor: T.orange,
+            }}
+          />
 
-        {AVAILABILITY_OPTIONS.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </Sel>
-    </div>
-  )}
-</div>
+          Available now
+        </label>
+
+        {/* Not Available */}
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            fontSize: 14,
+            color: T.navy,
+            fontWeight: 500,
+            cursor: "pointer",
+            marginBottom: 12,
+          }}
+        >
+          <input
+            type="radio"
+            name="availability"
+            checked={data.availableForWork === false}
+            onChange={() => {
+              onAvailabilityChange(false);
+            }}
+            style={{
+              width: 17,
+              height: 17,
+              cursor: "pointer",
+              accentColor: T.orange,
+            }}
+          />
+
+          Not available
+        </label>
+
+        {/* Available In dropdown */}
+        {!data.availableForWork && (
+          <div style={{ marginTop: 8 }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: 12,
+                fontWeight: 700,
+                color: T.navy,
+                marginBottom: 6,
+                textTransform: "uppercase",
+                letterSpacing: "0.04em",
+              }}
+            >
+              When will you be available?
+              <span style={{ color: T.error, marginLeft: 3 }}>*</span>
+            </label>
+
+            <Sel
+              value={data.availableIn || ""}
+              onChange={(e) =>
+                onChange("availableIn", e.target.value)
+              }
+            >
+              <option value="">Select availability</option>
+
+              {AVAILABILITY_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </Sel>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -2972,6 +2972,7 @@ const CandidateProfilePage = () => {
   }));
   const [currentStep, setCurrentStep] = useState(1);
   const [done, setDone] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [profileCompletion, setProfileCompletion] = useState(null);
   const [initialPersonalInfo, setInitialPersonalInfo] = useState(null);
   const [initialWorkHistory, setInitialWorkHistory] = useState([]);
@@ -2982,15 +2983,15 @@ const CandidateProfilePage = () => {
     try {
       const response = await getAvailability();
 
-    if (response.data.success) {
-  setProfileData((prev) => ({
-    ...prev,
-    availableForWork:
-      response.data.data.availabilityStatus === "Available",
-    availableIn:
-      response.data.data.availableIn || "",
-  }));
-}
+      if (response.data.success) {
+        setProfileData((prev) => ({
+          ...prev,
+          availableForWork:
+            response.data.data.availabilityStatus === "Available",
+          availableIn:
+            response.data.data.availableIn || "",
+        }));
+      }
     } catch (error) {
       console.error("Failed to load availability", error);
     }
@@ -3134,7 +3135,7 @@ const CandidateProfilePage = () => {
           state: profile.currentState || "",
           pin: profile.pincode || "",
           summary: profile.about || "",
-          availableIn:profile.availableIn || "",
+          availableIn: profile.availableIn || "",
           yearsOfExperience: profile.totalExperienceYears || 0,
           salaryExpectation:
             profile.expectedSalary || profile.salaryExpectation || "",
@@ -3167,7 +3168,7 @@ const CandidateProfilePage = () => {
           nationality: profile.nationality || "",
           salaryExpectation:
             profile.expectedSalary || profile.salaryExpectation || "",
-          availableIn : profile.availableIn || "",
+          availableIn: profile.availableIn || "",
           avatar: profile.profilePhotoUrl
             ? buildProfilePhotoUrl(profile.profilePhotoUrl)
             : DEFAULT_PROFILE_PHOTO,
@@ -3255,25 +3256,25 @@ const CandidateProfilePage = () => {
 
       currentlyAvailableForWork: profileData.availableForWork,
 
-     availableIn: profileData.availableForWork
-    ? null
-    : profileData.availableIn,
+      availableIn: profileData.availableForWork
+        ? null
+        : profileData.availableIn,
       newsletterOptIn: false,
     };
     // console.log("Sending Payload:", currentPersonalInfo);
     try {
 
       if (
-  profileData.availableForWork === false &&
-  !profileData.availableIn
-) {
-  showToast(
-    "Please select when you will be available.",
-    "error"
-  );
+        profileData.availableForWork === false &&
+        !profileData.availableIn
+      ) {
+        showToast(
+          "Please select when you will be available.",
+          "error"
+        );
 
-  return false;
-}
+        return false;
+      }
 
       await updatePersonalInfo(currentPersonalInfo);
 
@@ -3304,13 +3305,13 @@ const CandidateProfilePage = () => {
 
       if (!personalChanged) {
         await updateAvailability({
-        availabilityStatus: profileData.availableForWork
-  ? "Available"
-  : "Not Available",
+          availabilityStatus: profileData.availableForWork
+            ? "Available"
+            : "Not Available",
 
-availableIn: profileData.availableForWork
-  ? null
-  : profileData.availableIn,
+          availableIn: profileData.availableForWork
+            ? null
+            : profileData.availableIn,
         });
 
         showToast(savedMessage, "success");
@@ -3345,13 +3346,13 @@ availableIn: profileData.availableForWork
 
       if (response.data.success) {
         await updateAvailability({
-       availabilityStatus: profileData.availableForWork
-  ? "Available"
-  : "Not Available",
+          availabilityStatus: profileData.availableForWork
+            ? "Available"
+            : "Not Available",
 
-availableIn: profileData.availableForWork
-  ? null
-  : profileData.availableIn,
+          availableIn: profileData.availableForWork
+            ? null
+            : profileData.availableIn,
         });
 
         savedMessage = response.data.message || savedMessage;
@@ -4092,13 +4093,13 @@ availableIn: profileData.availableForWork
     }));
   }, []);
 
-const handleAvailabilityChange = (checked) => {
-  setProfileData((prev) => ({
-    ...prev,
-    availableForWork: checked,
-    availableIn: checked ? "" : prev.availableIn,
-  }));
-};
+  const handleAvailabilityChange = (checked) => {
+    setProfileData((prev) => ({
+      ...prev,
+      availableForWork: checked,
+      availableIn: checked ? "" : prev.availableIn,
+    }));
+  };
 
   // Documents
   const uploadDoc = useCallback(
@@ -4164,83 +4165,98 @@ const handleAvailabilityChange = (checked) => {
   );
 
   const handleSaveStep = async () => {
-    // console.log("Current Step:", currentStep);
-    if (currentStep === 1) {
-      const saved = await savePersonalInfo();
-      // console.log("savePersonalInfo returned:", saved);
+    if (saving) return;
 
-      if (!saved) {
-        // console.log("NOT MOVING TO NEXT STEP");
-        return;
+    setSaving(true);
+
+    try {
+      // console.log("Current Step:", currentStep);
+      if (currentStep === 1) {
+        const saved = await savePersonalInfo();
+        // console.log("savePersonalInfo returned:", saved);
+
+        if (!saved) {
+          // console.log("NOT MOVING TO NEXT STEP");
+          return;
+        }
       }
-    }
 
-    if (currentStep === 3) {
-      const serverWorkEntries = profileData.workHistory.filter(
-        (work) => work.id && !String(work.id).startsWith("work-"),
+      if (currentStep === 3) {
+        const serverWorkEntries = profileData.workHistory.filter(
+          (work) => work.id && !String(work.id).startsWith("work-"),
+        );
+
+        const results = await Promise.all(
+          serverWorkEntries.map((work) => saveWork(work)),
+        );
+
+        if (results.some((saved) => !saved)) return;
+      }
+
+      if (currentStep === 4) {
+        const serverEducationEntries = profileData.education.filter(
+          (edu) => edu.id && !String(edu.id).startsWith("edu-"),
+        );
+
+        const results = await Promise.all(
+          serverEducationEntries.map((edu) => saveEducation(edu)),
+        );
+
+        if (results.some((saved) => !saved)) return;
+      }
+
+      if (currentStep === 5) {
+        const results = await Promise.all(
+          (profileData.skillMatrix || [])
+            .filter((skill) => skill.isModified)
+            .map((skill) => {
+              if (!skill.id || String(skill.id).startsWith("skill-")) {
+                return addSkill(skill.name);
+              }
+
+              return saveSkill(skill);
+            }),
+        );
+
+        if (results.some((saved) => !saved)) return;
+      }
+
+      if (currentStep === 6) {
+        const results = await Promise.all(
+          (profileData.languages || []).map((language) => saveLanguage(language)),
+        );
+
+        if (results.some((saved) => !saved)) return;
+      }
+
+      const names = [
+        "Personal Information",
+        "Documents",
+        "Work Experience",
+        "Education",
+        "Skills",
+        "Languages",
+      ];
+
+      // Don't show a second toast for Personal Information
+      if (currentStep !== 1) {
+        showToast(`${names[currentStep - 1]} saved!`, "success");
+      }
+
+      if (currentStep < TOTAL) {
+        setCurrentStep((s) => s + 1);
+      } else {
+        setDone(true);
+      }
+    } catch (error) {
+      console.error("Save step failed:", error);
+
+      showToast(
+        "Something went wrong while saving. Please try again.",
+        "error"
       );
-
-      const results = await Promise.all(
-        serverWorkEntries.map((work) => saveWork(work)),
-      );
-
-      if (results.some((saved) => !saved)) return;
-    }
-
-    if (currentStep === 4) {
-      const serverEducationEntries = profileData.education.filter(
-        (edu) => edu.id && !String(edu.id).startsWith("edu-"),
-      );
-
-      const results = await Promise.all(
-        serverEducationEntries.map((edu) => saveEducation(edu)),
-      );
-
-      if (results.some((saved) => !saved)) return;
-    }
-
-    if (currentStep === 5) {
-      const results = await Promise.all(
-        (profileData.skillMatrix || [])
-          .filter((skill) => skill.isModified)
-          .map((skill) => {
-            if (!skill.id || String(skill.id).startsWith("skill-")) {
-              return addSkill(skill.name);
-            }
-
-            return saveSkill(skill);
-          }),
-      );
-
-      if (results.some((saved) => !saved)) return;
-    }
-
-    if (currentStep === 6) {
-      const results = await Promise.all(
-        (profileData.languages || []).map((language) => saveLanguage(language)),
-      );
-
-      if (results.some((saved) => !saved)) return;
-    }
-
-    const names = [
-      "Personal Information",
-      "Documents",
-      "Work Experience",
-      "Education",
-      "Skills",
-      "Languages",
-    ];
-
-    // Don't show a second toast for Personal Information
-    if (currentStep !== 1) {
-      showToast(`${names[currentStep - 1]} saved!`, "success");
-    }
-
-    if (currentStep < TOTAL) {
-      setCurrentStep((s) => s + 1);
-    } else {
-      setDone(true);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -4570,8 +4586,26 @@ const handleAvailabilityChange = (checked) => {
                         />
                       ))}
                     </div>
-                    <Btn onClick={handleSaveStep}>
-                      {currentStep === TOTAL ? (
+                    <Btn
+                      onClick={handleSaveStep}
+                      disabled={saving}
+                    >
+                      {saving ? (
+                        <>
+                          <span
+                            style={{
+                              width: 14,
+                              height: 14,
+                              border: "2px solid rgba(255,255,255,0.4)",
+                              borderTopColor: "#fff",
+                              borderRadius: "50%",
+                              display: "inline-block",
+                              animation: "profileSaveSpin 0.7s linear infinite",
+                            }}
+                          />
+                          <span>Saving...</span>
+                        </>
+                      ) : currentStep === TOTAL ? (
                         <>
                           <span>Save & Complete</span>
                           <i className="fi-rr-check" aria-hidden="true" />
@@ -4593,8 +4627,18 @@ const handleAvailabilityChange = (checked) => {
           </div>
         </div>
       </section>
+      <style jsx>{`
+  @keyframes profileSaveSpin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+`}</style>
     </main>
+
   );
+
+
 };
 
 export default CandidateProfilePage;

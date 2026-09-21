@@ -5,9 +5,11 @@ export const metadata = {
   description: 'Candidate Profile'
 };
 
+
 const CandidateProfilePage = () => {
   return <ClientProfilePage />;
 };
+
 
 export default CandidateProfilePage;
 
