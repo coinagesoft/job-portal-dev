@@ -307,6 +307,7 @@ export default function JobPreviewModal({ open, onClose, job, loading }) {
 
               <Section title="Compensation">
                 <Row label="Salary Range" value={salaryLine} />
+                <Row label="Salary Period" value={humanize(job.SalaryPeriod)} />
                 <Row label="Display Option" value={humanize(job.SalaryDisplayOption)} />
               </Section>
 
