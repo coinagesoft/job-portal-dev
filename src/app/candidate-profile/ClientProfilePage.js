@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 
 import {
   getAvailability,
-  updateAvailability,
+  // updateAvailability,
 } from "@/services/candidate/availabilityService";
 
 import {
@@ -70,6 +70,7 @@ import React, { useCallback, useMemo, useState, useEffect } from "react";
 import { mockProfile } from "./components/data.js";
 import MyDocuments from "./components/MyDocuments";
 import { useToast } from "@/components/Toast";
+
 
 // ─── Theme tokens (matches site globals.css) ────────────────────────────────
 const T = {
@@ -3113,7 +3114,7 @@ const CandidateProfilePage = () => {
         `/api/candidate/profile/personal-info?candidateId=${candidateId}`,
       );
 
-      // console.log("PROFILE DATA", response.data);
+      console.log("PROFILE DATA", response.data);
 
       if (response.data.success) {
         const profile = response.data.data;
@@ -3133,6 +3134,7 @@ const CandidateProfilePage = () => {
           state: profile.currentState || "",
           pin: profile.pincode || "",
           summary: profile.about || "",
+          availableIn:profile.availableIn || "",
           yearsOfExperience: profile.totalExperienceYears || 0,
           salaryExpectation:
             profile.expectedSalary || profile.salaryExpectation || "",
@@ -3165,7 +3167,7 @@ const CandidateProfilePage = () => {
           nationality: profile.nationality || "",
           salaryExpectation:
             profile.expectedSalary || profile.salaryExpectation || "",
-
+          availableIn : profile.availableIn || "",
           avatar: profile.profilePhotoUrl
             ? buildProfilePhotoUrl(profile.profilePhotoUrl)
             : DEFAULT_PROFILE_PHOTO,
@@ -4090,39 +4092,11 @@ availableIn: profileData.availableForWork
     }));
   }, []);
 
-const handleAvailabilityChange = async (checked) => {
-  if (checked) {
-    // Available now
-    try {
-      await updateAvailability({
-        availabilityStatus: "Available",
-        availableIn: null,
-      });
-
-      setProfileData((prev) => ({
-        ...prev,
-        availableForWork: true,
-        availableIn: "",
-      }));
-
-      showToast("Availability updated successfully.", "success");
-    } catch (error) {
-      console.error("Failed to update availability", error);
-
-      showToast(
-        "Failed to update availability.",
-        "error"
-      );
-    }
-
-    return;
-  }
-
-  // Not available
+const handleAvailabilityChange = (checked) => {
   setProfileData((prev) => ({
     ...prev,
-    availableForWork: false,
-    availableIn: "",
+    availableForWork: checked,
+    availableIn: checked ? "" : prev.availableIn,
   }));
 };
 
