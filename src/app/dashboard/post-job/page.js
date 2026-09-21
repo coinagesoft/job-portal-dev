@@ -1013,13 +1013,39 @@ function Step1({
   const [contractMonths, setContractMonths] = useState("");
   const [contractDays, setContractDays] = useState("");
 
-  const tradeCategoryOptions = (roleCategoriesList || []).map((option) => {
+const tradeCategoryOptions = (roleCategoriesList || []).map((option) => {
   const value = typeof option === "string" ? option : option.value;
 
   if (isOtherValue(value)) {
     return {
       value: OTHER_OPTION,
       label: "Add whatever Category is Typed",
+    };
+  }
+
+  return option;
+});
+
+const industryTypeOptions = (industryOptionsList || []).map((option) => {
+  const value = typeof option === "string" ? option : option.value;
+
+  if (isOtherValue(value)) {
+    return {
+      value: OTHER_OPTION,
+      label: "Add whatever Industry Type is Typed",
+    };
+  }
+
+  return option;
+});
+
+const departmentOptions = (departmentOptionsList || []).map((option) => {
+  const value = typeof option === "string" ? option : option.value;
+
+  if (isOtherValue(value)) {
+    return {
+      value: OTHER_OPTION,
+      label: "Add whatever Department is Typed",
     };
   }
 
@@ -1147,7 +1173,7 @@ function Step1({
                 IndustryTypeOther: isOtherValue(v) ? p.IndustryTypeOther : "",
               }))
             }
-            options={industryOptionsList}
+            options={industryTypeOptions}
             placeholder="e.g. Oil & Gas"
           />
         </Field>
@@ -1461,7 +1487,7 @@ function Step1({
                 DepartmentOther: isOtherValue(v) ? p.DepartmentOther : "",
               }))
             }
-            options={departmentOptionsList}
+            options={departmentOptions}
             placeholder="e.g. Operations"
           />
         </Field>
