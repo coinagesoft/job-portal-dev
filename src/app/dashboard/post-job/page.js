@@ -3086,7 +3086,7 @@ console.log("EMPLOYMENT TYPE:", response.EmploymentType);
         SalaryMax: jobForm.SalaryMax,
         SalaryCurrency: jobForm.SalaryCurrency,
         SalaryDisplayOption: jobForm.SalaryDisplayOption,
-        SalaryPeriod: "Monthly",
+        SalaryPeriod: jobForm.SalaryPeriod,
       });
       updateDraft(response);
       go(3);
