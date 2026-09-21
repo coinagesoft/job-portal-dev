@@ -56,6 +56,17 @@ const EmployerCandidateProfilePage = () => {
     }, 600);
   };
 
+
+const availabilityOptions = [
+  "0.5 Months",
+  "1 Month",
+  "1.5 Months",
+  "2 Months",
+  "2.5 Months",
+  "3 Months",
+  "3+ Months",
+];
+
   const handleDownloadCv = () => {
     setDownloading(true);
     setTimeout(() => {

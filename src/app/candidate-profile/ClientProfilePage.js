@@ -839,41 +839,124 @@ const StepPersonal = ({
           )}
         </Field>
       </div>
+<div
+  style={{
+    padding: "16px 18px",
+    background: T.bg,
+    borderRadius: 10,
+    marginTop: 4,
+  }}
+>
+  <div
+    style={{
+      fontSize: 12,
+      fontWeight: 700,
+      color: T.navy,
+      marginBottom: 12,
+      textTransform: "uppercase",
+      letterSpacing: "0.04em",
+    }}
+  >
+    Availability
+  </div>
 
-      <div
+  {/* Available Now */}
+  <label
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+      fontSize: 14,
+      color: T.navy,
+      fontWeight: 500,
+      cursor: "pointer",
+      marginBottom: 10,
+    }}
+  >
+    <input
+      type="radio"
+      name="availability"
+      checked={data.availableForWork === true}
+      onChange={() => {
+        onAvailabilityChange(true);
+      }}
+      style={{
+        width: 17,
+        height: 17,
+        cursor: "pointer",
+        accentColor: T.orange,
+      }}
+    />
+
+    Available now
+  </label>
+
+  {/* Not Available */}
+  <label
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+      fontSize: 14,
+      color: T.navy,
+      fontWeight: 500,
+      cursor: "pointer",
+      marginBottom: 12,
+    }}
+  >
+    <input
+      type="radio"
+      name="availability"
+      checked={data.availableForWork === false}
+      onChange={() => {
+        onAvailabilityChange(false);
+      }}
+      style={{
+        width: 17,
+        height: 17,
+        cursor: "pointer",
+        accentColor: T.orange,
+      }}
+    />
+
+    Not available
+  </label>
+
+  {/* Available In dropdown */}
+  {!data.availableForWork && (
+    <div style={{ marginTop: 8 }}>
+      <label
         style={{
-          padding: "14px 18px",
-          background: T.bg,
-          borderRadius: 10,
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
+          display: "block",
+          fontSize: 12,
+          fontWeight: 700,
+          color: T.navy,
+          marginBottom: 6,
+          textTransform: "uppercase",
+          letterSpacing: "0.04em",
         }}
       >
-        <input
-          type="checkbox"
-          id="available"
-          checked={!!data.availableForWork}
-          onChange={(e) => onAvailabilityChange(e.target.checked)}
-          style={{
-            width: 18,
-            height: 18,
-            cursor: "pointer",
-            accentColor: T.orange,
-          }}
-        />
-        <label
-          htmlFor="available"
-          style={{
-            fontSize: 14,
-            color: T.navy,
-            fontWeight: 500,
-            cursor: "pointer",
-          }}
-        >
-          I am currently available for work
-        </label>
-      </div>
+        When will you be available?
+        <span style={{ color: T.error, marginLeft: 3 }}>*</span>
+      </label>
+
+      <Sel
+        value={data.availableIn || ""}
+        onChange={(e) =>
+          onChange("availableIn", e.target.value)
+        }
+      >
+        <option value="">Select availability</option>
+
+        {AVAILABILITY_OPTIONS.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </Sel>
+    </div>
+  )}
+</div>
     </div>
   );
 };
@@ -895,6 +978,16 @@ const NOTICE_PERIOD_OPTIONS = [
   "60 Days",
   "90 Days",
   "More than 90 Days",
+];
+
+const AVAILABILITY_OPTIONS = [
+  "0.5 Months",
+  "1 Month",
+  "1.5 Months",
+  "2 Months",
+  "2.5 Months",
+  "3 Months",
+  "3+ Months",
 ];
 
 const StepWork = ({ data, onUpdate, onAdd, onRemove }) => {
@@ -2867,6 +2960,7 @@ const CandidateProfilePage = () => {
     jobType: "",
     summary: "",
     availableForWork: false,
+    availableIn: "",
     completionHint: "",
     sidebarBadges: [],
     workHistory: [],
@@ -2887,13 +2981,15 @@ const CandidateProfilePage = () => {
     try {
       const response = await getAvailability();
 
-      if (response.data.success) {
-        setProfileData((prev) => ({
-          ...prev,
-          availableForWork:
-            response.data.data.availabilityStatus === "Available",
-        }));
-      }
+    if (response.data.success) {
+  setProfileData((prev) => ({
+    ...prev,
+    availableForWork:
+      response.data.data.availabilityStatus === "Available",
+    availableIn:
+      response.data.data.availableIn || "",
+  }));
+}
     } catch (error) {
       console.error("Failed to load availability", error);
     }
@@ -3156,10 +3252,27 @@ const CandidateProfilePage = () => {
       expectedSalary: profileData.salaryExpectation,
 
       currentlyAvailableForWork: profileData.availableForWork,
+
+     availableIn: profileData.availableForWork
+    ? null
+    : profileData.availableIn,
       newsletterOptIn: false,
     };
     // console.log("Sending Payload:", currentPersonalInfo);
     try {
+
+      if (
+  profileData.availableForWork === false &&
+  !profileData.availableIn
+) {
+  showToast(
+    "Please select when you will be available.",
+    "error"
+  );
+
+  return false;
+}
+
       await updatePersonalInfo(currentPersonalInfo);
 
       showToast("Personal information updated successfully", "success");
@@ -3189,9 +3302,13 @@ const CandidateProfilePage = () => {
 
       if (!personalChanged) {
         await updateAvailability({
-          availabilityStatus: profileData.availableForWork
-            ? "Open_To_Opportunities"
-            : "Not_Looking",
+        availabilityStatus: profileData.availableForWork
+  ? "Available"
+  : "Not Available",
+
+availableIn: profileData.availableForWork
+  ? null
+  : profileData.availableIn,
         });
 
         showToast(savedMessage, "success");
@@ -3226,9 +3343,13 @@ const CandidateProfilePage = () => {
 
       if (response.data.success) {
         await updateAvailability({
-          availabilityStatus: profileData.availableForWork
-            ? "Open_To_Opportunities"
-            : "Not_Looking",
+       availabilityStatus: profileData.availableForWork
+  ? "Available"
+  : "Not Available",
+
+availableIn: profileData.availableForWork
+  ? null
+  : profileData.availableIn,
         });
 
         savedMessage = response.data.message || savedMessage;
@@ -3969,24 +4090,41 @@ const CandidateProfilePage = () => {
     }));
   }, []);
 
-  const handleAvailabilityChange = async (checked) => {
-    // console.log("Sending:", {
-    //   availabilityStatus: checked
-    //     ? "Open_To_Opportunities"
-    //     : "Not_Available",
-    // });
+const handleAvailabilityChange = async (checked) => {
+  if (checked) {
+    // Available now
+    try {
+      await updateAvailability({
+        availabilityStatus: "Available",
+        availableIn: null,
+      });
 
-    await updateAvailability({
-      availabilityStatus: checked
-        ? "Available"
-        : "Not Available",
-    });
+      setProfileData((prev) => ({
+        ...prev,
+        availableForWork: true,
+        availableIn: "",
+      }));
 
-    setProfileData((prev) => ({
-      ...prev,
-      availableForWork: checked,
-    }));
-  };
+      showToast("Availability updated successfully.", "success");
+    } catch (error) {
+      console.error("Failed to update availability", error);
+
+      showToast(
+        "Failed to update availability.",
+        "error"
+      );
+    }
+
+    return;
+  }
+
+  // Not available
+  setProfileData((prev) => ({
+    ...prev,
+    availableForWork: false,
+    availableIn: "",
+  }));
+};
 
   // Documents
   const uploadDoc = useCallback(

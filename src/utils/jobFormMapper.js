@@ -26,6 +26,7 @@ export const mapResumeToForm = (response, defaultTradeCategory = "Welding") => (
   ExperienceMaxYears: response.step1Data?.experienceMaxYears ?? "",
   JobType: humanize(response.step1Data?.jobType) ?? "",
   EmploymentType: humanize(response.step1Data?.employmentType) ?? "Full Time",
+  ContractPeriod: response.step1Data?.contractPeriod ?? "",
   EmploymentMode: humanize(response.step1Data?.employmentMode) ?? "Onsite",
   Department: response.step1Data?.department ?? "",
   DutyHoursPerDay: response.step1Data?.dutyHoursPerDay ?? "",
@@ -39,7 +40,7 @@ export const mapResumeToForm = (response, defaultTradeCategory = "Welding") => (
   SalaryMax: response.step2Data?.salaryMax?.toString() ?? "",
   SalaryCurrency: response.step2Data?.salaryCurrency ?? "INR",
   SalaryDisplayOption: humanize(response.step2Data?.salaryDisplayOption) ?? "Show Range",
-
+  SalaryPeriod: response.step2Data?.salaryPeriod ?? "Monthly",
   // Step 3
   KeySkills: response.step3Data?.keySkills ?? [],
   Step3KeyResponsibilities: response.step3Data?.keyResponsibilities ?? [],

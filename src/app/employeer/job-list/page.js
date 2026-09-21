@@ -768,39 +768,68 @@ const EmployerJobListPage = () => {
                                   humanize(job.jobType)}
                               </span>
                               {/* Status badge */}
-                              <span
+                              <div
                                 style={{
-                                  display: "inline-flex",
+                                  display: "flex",
                                   alignItems: "center",
-                                  padding: "4px 10px",
-                                  borderRadius: 999,
-                                  background:
-                                    job.jobStatus === "Active"
-                                      ? "#DCFCE7"
-                                      : job.jobStatus === "Paused"
-                                        ? "#FEF3C7"
-                                        : job.jobStatus === "Closed"
-                                          ? "#FEE2E2"
-                                          : job.jobStatus === "Draft"
-                                            ? "#EAF4FF"
-                                            : "#E5E7EB",
-
-                                  color:
-                                    job.jobStatus === "Active"
-                                      ? "#166534"
-                                      : job.jobStatus === "Paused"
-                                        ? "#92400E"
-                                        : job.jobStatus === "Closed"
-                                          ? "#B91C1C"
-                                          : job.jobStatus === "Draft"
-                                            ? "#1D4ED8"
-                                            : "#374151",
-                                  fontSize: 11,
-                                  fontWeight: 700,
+                                  gap: "6px",
+                                  flexWrap: "wrap",
                                 }}
                               >
-                                {job.jobStatus}
-                              </span>
+                                {/* Job Status */}
+                                <span
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    padding: "4px 10px",
+                                    borderRadius: 999,
+                                    background:
+                                      job.jobStatus === "Active"
+                                        ? "#DCFCE7"
+                                        : job.jobStatus === "Paused"
+                                          ? "#FEF3C7"
+                                          : job.jobStatus === "Closed"
+                                            ? "#FEE2E2"
+                                            : job.jobStatus === "Draft"
+                                              ? "#EAF4FF"
+                                              : "#E5E7EB",
+
+                                    color:
+                                      job.jobStatus === "Active"
+                                        ? "#166534"
+                                        : job.jobStatus === "Paused"
+                                          ? "#92400E"
+                                          : job.jobStatus === "Closed"
+                                            ? "#B91C1C"
+                                            : job.jobStatus === "Draft"
+                                              ? "#1D4ED8"
+                                              : "#374151",
+
+                                    fontSize: 11,
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  {job.jobStatus}
+                                </span>
+
+                                {/* Department */}
+                                {job.department && (
+                                  <span
+                                    style={{
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      padding: "4px 10px",
+                                      borderRadius: 999,
+                                      background: "#F3E8FF",
+                                      color: "#7E22CE",
+                                      fontSize: 11,
+                                      fontWeight: 700,
+                                    }}
+                                  >
+                                    {job.department}
+                                  </span>
+                                )}
+                              </div>
                             </div>
 
                             {/* Meta */}
@@ -823,6 +852,8 @@ const EmployerJobListPage = () => {
                                 ? job.clientName
                                 : job.tradeCategory}
                             </p>
+
+
                             {/* Info row */}
                             <div
                               style={{
@@ -864,22 +895,29 @@ const EmployerJobListPage = () => {
                                 Vacancies: {job.vacancies}
                               </span>
 
-                              <span
-                                style={{
-                                  fontSize: 12,
-                                  color: "#94a3b8",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: 5,
-                                }}
-                              >
-                                <i
-                                  className="fi-rr-money"
-                                  style={{ color: "#ffa300" }}
-                                />
-                                ₹{job.salaryMin?.toLocaleString()} - ₹
-                                {job.salaryMax?.toLocaleString()}
-                              </span>
+                            <span
+  style={{
+    fontSize: 12,
+    color: "#94a3b8",
+    display: "flex",
+    alignItems: "center",
+    gap: 5,
+  }}
+>
+  <i
+    className="fi-rr-money"
+    style={{ color: "#ffa300" }}
+  />
+
+  ₹{job.salaryMin?.toLocaleString()} - ₹
+  {job.salaryMax?.toLocaleString()}
+
+  {job.salaryPeriod && (
+    <span>
+      / {job.salaryPeriod}
+    </span>
+  )}
+</span>
                             </div>
 
                             {/* Last applicant */}

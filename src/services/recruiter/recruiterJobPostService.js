@@ -88,7 +88,8 @@ export const saveCompensation = async (jobId, payload) => {
   }
   formData.append("SalaryCurrency", payload.SalaryCurrency ?? "INR");
   formData.append("SalaryDisplayOption", payload.SalaryDisplayOption ?? "Show_Range");
-
+  formData.append( "SalaryPeriod", payload.SalaryPeriod ?? "Monthly");
+  
   const response = await api.patch(
     `/api/recruiter/jobs/${jobId}/step2-compensation`,
     formData

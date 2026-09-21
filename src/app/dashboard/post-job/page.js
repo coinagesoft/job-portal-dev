@@ -143,7 +143,7 @@ const jobPostTypes = [
   { label: "Hot Vacancy", value: "Hot Vacancy" },
   { label: "Urgent Hiring", value: "Urgent Hiring" },
   { label: "Bulk Hiring", value: "Bulk Hiring" },
-  { label: "Classified", value: "Classified" },
+  // { label: "Classified", value: "Classified" },
 ];
 const employmentTypeOptions = [
   { label: "Full Time", value: "Full Time" },
@@ -284,6 +284,13 @@ const salaryDisplayOptions = [
   { value: "Negotiable", label: "Negotiable" },
   { value: "Hide Salary", label: "Hide Salary" },
 ];
+
+const salaryPeriodOptions = [
+  { value: "Hourly", label: "Hourly" },
+  { value: "Monthly", label: "Monthly" },
+  { value: "Annual", label: "Annual" },
+];
+
 const educationOptions = [
   { value: "No Specific Requirement", label: "No Specific Requirement" },
   { value: "Below 10th", label: "Below 10th" },
@@ -986,12 +993,90 @@ function StepCard({ stepNum, title, subtitle, children, onBack, onContinue, isLa
 }
 
 /* ─── STEP 1 – Job Details ────────────────────────────────────────────────── */
-function Step1({ go, jobForm, setJobForm, onSubmit, roleCategoriesList = roleCategories, departmentOptionsList = departmentOptions, industryOptionsList = industryOptions }) {
+function Step1({
+  go,
+  jobForm,
+  setJobForm,
+  onSubmit,
+  roleCategoriesList = roleCategories,
+  departmentOptionsList = departmentOptions,
+  industryOptionsList = industryOptions
+}) {
   // Single source of truth for "is this dropdown's value the 'Other' sentinel?"
   const isTradeOther = isOtherValue(jobForm.TradeCategory);
   const isIndustryOther = isOtherValue(jobForm.IndustryType);
   const isDeptOther = isOtherValue(jobForm.Department);
 
+  
+  // Contract duration UI state
+  const [contractYears, setContractYears] = useState("");
+  const [contractMonths, setContractMonths] = useState("");
+  const [contractDays, setContractDays] = useState("");
+
+  const tradeCategoryOptions = (roleCategoriesList || []).map((option) => {
+  const value = typeof option === "string" ? option : option.value;
+
+  if (isOtherValue(value)) {
+    return {
+      value: OTHER_OPTION,
+      label: "Add whatever Category is Typed",
+    };
+  }
+
+  return option;
+});
+  // Load existing ContractPeriod string into the 3 UI fields
+  useEffect(() => {
+    const value = jobForm.ContractPeriod || "";
+
+    if (!value) {
+      setContractYears("");
+      setContractMonths("");
+      setContractDays("");
+      return;
+    }
+
+    const yearsMatch = value.match(/(\d+)\s*Years?/i);
+    const monthsMatch = value.match(/(\d+)\s*Months?/i);
+    const daysMatch = value.match(/(\d+)\s*Days?/i);
+
+    setContractYears(yearsMatch ? yearsMatch[1] : "");
+    setContractMonths(monthsMatch ? monthsMatch[1] : "");
+    setContractDays(daysMatch ? daysMatch[1] : "");
+  }, [jobForm.ContractPeriod]);
+
+  // Convert Years / Months / Days into the single ContractPeriod string
+  const updateContractPeriod = (years, months, days) => {
+    const parts = [];
+
+    if (years) {
+      parts.push(
+        `${Number(years)} ${Number(years) === 1 ? "Year" : "Years"}`
+      );
+    }
+
+
+    if (months) {
+      parts.push(
+        `${Number(months)} ${Number(months) === 1 ? "Month" : "Months"}`
+      );
+    }
+
+
+    if (days) {
+      parts.push(
+        `${Number(days)} ${Number(days) === 1 ? "Day" : "Days"}`
+      );
+    }
+
+    const contractPeriod = parts.join(" ");
+
+    setJobForm((p) => ({
+      ...p,
+      ContractPeriod: contractPeriod,
+    }));
+  };
+  
   return (
     <StepCard
       stepNum={1}
@@ -1012,7 +1097,7 @@ function Step1({ go, jobForm, setJobForm, onSubmit, roleCategoriesList = roleCat
 
       <div className={styles.grid2}>
         {/* Trade Category */}
-        <Field label="Trade / Role Category" required hint="Pick from the list — select 'Other' to specify manually">
+        <Field label="Trade / Role Category" required hint="Pick from the list — select 'Add whatever Category is Typed' to specify manually">
           <Combobox
             value={jobForm.TradeCategory}
             onChange={(v) =>
@@ -1022,7 +1107,7 @@ function Step1({ go, jobForm, setJobForm, onSubmit, roleCategoriesList = roleCat
                 TradeCategoryOther: isOtherValue(v) ? p.TradeCategoryOther : "",
               }))
             }
-            options={roleCategoriesList}
+           options={tradeCategoryOptions}
             placeholder="e.g. Welding, Electrician, Plumber"
           />
         </Field>
@@ -1242,13 +1327,116 @@ function Step1({ go, jobForm, setJobForm, onSubmit, roleCategoriesList = roleCat
 
         {/* Contract Period — only when Employment Type is Contract */}
         {jobForm.EmploymentType === "Contract" && (
-          <Field label="Contract Period" required hint="How long is this contract?">
-            <Combobox
-              value={jobForm.ContractPeriod}
-              onChange={(v) => setJobForm((p) => ({ ...p, ContractPeriod: v }))}
-              options={contractPeriodOptions}
-              placeholder="e.g. 6 Months"
-            />
+          <Field
+            label="Contract Period"
+            required
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, 1fr)",
+                gap: "12px",
+                width: "100%",
+              }}
+            >
+              {/* Years */}
+              <div>
+                <input
+                  type="number"
+                  min="0"
+                  className={styles.control}
+                  value={contractYears}
+                  onChange={(e) => {
+                    const value = e.target.value;
+
+                    setContractYears(value);
+                    updateContractPeriod(
+                      value,
+                      contractMonths,
+                      contractDays
+                    );
+                  }}
+                  placeholder="0"
+                />
+
+                <div
+                  style={{
+                    marginTop: "6px",
+                    fontSize: "12px",
+                    color: "#66789c",
+                    fontWeight: 500,
+                  }}
+                >
+                  Years
+                </div>
+              </div>
+
+              {/* Months */}
+              <div>
+                <input
+                  type="number"
+                  min="0"
+                  max="11"
+                  className={styles.control}
+                  value={contractMonths}
+                  onChange={(e) => {
+                    const value = e.target.value;
+
+                    setContractMonths(value);
+                    updateContractPeriod(
+                      contractYears,
+                      value,
+                      contractDays
+                    );
+                  }}
+                  placeholder="0"
+                />
+
+                <div
+                  style={{
+                    marginTop: "6px",
+                    fontSize: "12px",
+                    color: "#66789c",
+                    fontWeight: 500,
+                  }}
+                >
+                  Months
+                </div>
+              </div>
+
+              {/* Days */}
+              <div>
+                <input
+                  type="number"
+                  min="0"
+                  max="30"
+                  className={styles.control}
+                  value={contractDays}
+                  onChange={(e) => {
+                    const value = e.target.value;
+
+                    setContractDays(value);
+                    updateContractPeriod(
+                      contractYears,
+                      contractMonths,
+                      value
+                    );
+                  }}
+                  placeholder="0"
+                />
+
+                <div
+                  style={{
+                    marginTop: "6px",
+                    fontSize: "12px",
+                    color: "#66789c",
+                    fontWeight: 500,
+                  }}
+                >
+                  Days
+                </div>
+              </div>
+            </div>
           </Field>
         )}
 
@@ -1402,6 +1590,46 @@ function Step2({ go, jobForm, setJobForm, onSubmit }) {
       onContinue={onSubmit}
     >
       <div className={styles.grid2}>
+
+        <Field label="Salary Period" required>
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: "24px",
+      flexWrap: "wrap",
+    }}
+  >
+    {salaryPeriodOptions.map((option) => (
+      <label
+        key={option.value}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          cursor: "pointer",
+          fontSize: "15px",
+          color: "#122359",
+        }}
+      >
+        <input
+          type="radio"
+          name="salaryPeriod"
+          value={option.value}
+          checked={jobForm.SalaryPeriod === option.value}
+          onChange={(e) =>
+            setJobForm((p) => ({
+              ...p,
+              SalaryPeriod: e.target.value,
+            }))
+          }
+        />
+
+        {option.label}
+      </label>
+    ))}
+  </div>
+</Field>
 
         {/* Currency First */}
         <Field label="Currency" required>
@@ -2524,13 +2752,13 @@ export default function DashboardPostJobPage() {
       console.log("BENEFITS:", response.step3Data?.benefits);
 
       setJobId(id);
-      
+
       const flatForm = mapResumeToForm(response, roleCategories[0]);
 
       // Normalize custom values to "Other" + Specify field for the UI dropdowns
       const getOtherAndValue = (val, list) => {
         if (!val) return { value: "", other: "" };
-        const normalizedList = (list || []).map(item => 
+        const normalizedList = (list || []).map(item =>
           typeof item === "string" ? item.toLowerCase() : (item.value || "").toLowerCase()
         ).filter(v => v !== "other");
         const cleanVal = val.trim();
@@ -2546,8 +2774,8 @@ export default function DashboardPostJobPage() {
       const indRes = getOtherAndValue(flatForm.IndustryType, industryOptionsList);
       const deptRes = getOtherAndValue(flatForm.Department, departmentOptionsList);
 
-      setJobForm((prev) => ({ 
-        ...prev, 
+      setJobForm((prev) => ({
+        ...prev,
         ...flatForm,
         TradeCategory: tradeRes.value,
         TradeCategoryOther: tradeRes.other,
@@ -2762,6 +2990,10 @@ export default function DashboardPostJobPage() {
         ExperienceMaxYears: jobForm.ExperienceMaxYears,
         JobType: jobForm.JobType,
         EmploymentType: jobForm.EmploymentType,
+        ContractPeriod:
+        jobForm.EmploymentType === "Contract"
+        ? jobForm.ContractPeriod
+         : "",
         EmploymentMode: jobForm.EmploymentMode,
         Department: resolvedDepartment,
         DutyHoursPerDay: jobForm.DutyHoursPerDay,
@@ -2769,9 +3001,12 @@ export default function DashboardPostJobPage() {
         PaidOvertime: jobForm.PaidOvertime,
         KeyResponsibilities: jobForm.KeyResponsibilities,
       });
-      
+
       setJobId(response.jobId);
       updateDraft(response);
+      console.log("STEP 1 JOB FORM:", response);
+console.log("CONTRACT PERIOD:", response.ContractPeriod);
+console.log("EMPLOYMENT TYPE:", response.EmploymentType);
 
       try {
         const decoded = getDecodedToken();
@@ -2830,7 +3065,9 @@ export default function DashboardPostJobPage() {
         error?.response?.data?.message || "Failed to save job details. Please try again.",
         "error",
       );
-    } finally {
+    } 
+    
+    finally {
       setLoading(false);
     }
   };
@@ -2849,6 +3086,7 @@ export default function DashboardPostJobPage() {
         SalaryMax: jobForm.SalaryMax,
         SalaryCurrency: jobForm.SalaryCurrency,
         SalaryDisplayOption: jobForm.SalaryDisplayOption,
+        SalaryPeriod: "Monthly",
       });
       updateDraft(response);
       go(3);
