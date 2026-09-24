@@ -73,7 +73,12 @@ import {
   getJobDropdowns,
   submitJobSuggestion,
 } from "@/services/recruiter/recruiterJobPostService";
-import { getIndustries, submitIndustrySuggestion } from "@/services/recruiter/recruiterRegistrationService";
+import {
+  getIndustries,
+  submitIndustrySuggestion,
+  getTradeCategoriesByIndustry,
+  getSubTradesByTradeCategory,
+} from "@/services/recruiter/recruiterRegistrationService";
 import { getDecodedToken } from "@/utils/authHelper";
 
 const COMBOBOX_SEARCH_THRESHOLD = 8;
@@ -201,6 +206,7 @@ const suggestedWorkingDocs = [
   "Welding Certification (CSWIP / AWS)",
   "Work Experience Certificate",
 ];
+
 const suggestedLanguages = [
   "English",
   "Hindi",
@@ -215,6 +221,7 @@ const suggestedLanguages = [
   "Odia",
   // "Local Language", 
 ];
+
 const industryOptions = [
   "Recruitement Agency",
   "Construction & Infrastructure",
@@ -243,6 +250,8 @@ const industryOptions = [
   "Government / Public Sector",
   "Other",
 ];
+
+
 const departmentOptions = [
   "Operations",
   "Production",
@@ -255,6 +264,8 @@ const departmentOptions = [
   "Procurement",
   "Other",
 ];
+
+
 const indianStates = [
   "Andhra Pradesh",
   "Assam",
@@ -666,6 +677,240 @@ function Combobox({ value, onChange, options, placeholder }) {
   );
 }
 
+function MasterHierarchyCombobox({
+  value,
+  onChange,
+  options = [],
+  placeholder,
+  disabled = false,
+  loading = false,
+  addLabel,
+  onAddNew,
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const selected = options.find((x) => {
+    const optionValue =
+      x?.value ??
+      x?.id ??
+      x?.Id ??
+      x?.registrationIndustryId ??
+      x?.RegistrationIndustryId ??
+      x?.tradeCategoryId ??
+      x?.TradeCategoryId ??
+      x?.subTradeId ??
+      x?.SubTradeId;
+
+    return optionValue === value;
+  });
+  const filteredOptions = options.filter((option) => {
+    const label =
+      option?.label ??
+      option?.name ??
+      option?.Name ??
+      "";
+
+    return label
+      .toString()
+      .toLowerCase()
+      .includes(search.toLowerCase());
+  });
+
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (!event.target.closest("[data-master-combobox]")) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+    };
+  }, []);
+
+  return (
+    <div
+      data-master-combobox
+      style={{
+        position: "relative",
+        width: "100%",
+      }}
+    >
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => !disabled && setOpen((prev) => !prev)}
+        style={{
+          width: "100%",
+          minHeight: 42,
+          padding: "9px 12px",
+          border: "1px solid #d6d3d1",
+          borderRadius: 8,
+          background: disabled ? "#f5f5f4" : "#fff",
+          color: selected ? "#292524" : "#78716c",
+          textAlign: "left",
+          cursor: disabled ? "not-allowed" : "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <span>
+          {loading
+            ? "Loading..."
+            : selected?.label ??
+            selected?.name ??
+            selected?.Name ??
+            placeholder}
+        </span>
+
+        <span style={{ fontSize: 12 }}>▼</span>
+      </button>
+
+      {open && !disabled && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 5px)",
+            left: 0,
+            right: 0,
+            zIndex: 1000,
+            background: "#fff",
+            border: "1px solid #e7e5e4",
+            borderRadius: 10,
+            boxShadow: "0 8px 25px rgba(0,0,0,0.12)",
+            overflow: "hidden",
+          }}
+        >
+          <div style={{ padding: 8 }}>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search..."
+              autoFocus
+              style={{
+                width: "100%",
+                padding: "8px 10px",
+                border: "1px solid #d6d3d1",
+                borderRadius: 7,
+                outline: "none",
+              }}
+            />
+          </div>
+
+          <div
+            style={{
+              maxHeight: 220,
+              overflowY: "auto",
+            }}
+          >
+            {loading ? (
+              <div
+                style={{
+                  padding: 12,
+                  color: "#78716c",
+                  fontSize: 13,
+                }}
+              >
+                Loading...
+              </div>
+            ) : filteredOptions.length > 0 ? (
+              filteredOptions.map((option, index) => {
+                const optionValue =
+                  option?.value ??
+                  option?.id ??
+                  option?.Id ??
+                  option?.registrationIndustryId ??
+                  option?.RegistrationIndustryId ??
+                  option?.tradeCategoryId ??
+                  option?.TradeCategoryId ??
+                  option?.subTradeId ??
+                  option?.SubTradeId ??
+                  `option-${index}`;
+
+                const optionLabel =
+                  option?.label ??
+                  option?.name ??
+                  option?.Name ??
+                  "";
+
+                return (
+                  <button
+                    key={String(optionValue)}
+                    type="button"
+                    onClick={() => {
+                      onChange(optionValue);
+                      setSearch("");
+                      setOpen(false);
+                    }}
+                    style={{
+                      width: "100%",
+                      border: "none",
+                      background:
+                        value === optionValue
+                          ? "#f5f5f4"
+                          : "#fff",
+                      padding: "10px 12px",
+                      textAlign: "left",
+                      cursor: "pointer",
+                      fontSize: 14,
+                    }}
+                  >
+                    {optionLabel}
+                  </button>
+                );
+              })
+            ) : (<div
+              style={{
+                padding: "12px",
+                color: "#78716c",
+                fontSize: 13,
+              }}
+            >
+              No options available.
+            </div>
+            )}
+          </div>
+
+          <div
+            style={{
+              borderTop: "1px solid #e7e5e4",
+              padding: 8,
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                setSearch("");
+                onAddNew?.();
+              }}
+              style={{
+                width: "100%",
+                border: "none",
+                background: "#f8fafc",
+                color: "#2563eb",
+                padding: "9px 10px",
+                borderRadius: 7,
+                textAlign: "left",
+                fontWeight: 600,
+                cursor: "pointer",
+                fontSize: 13,
+              }}
+            >
+              + {addLabel}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** 
  * Same dropdown-with-typing UX as Combobox, but the option list comes from 
  * a live API call (GET /api/recruiter/jobs/search-roles) instead of a fixed 
@@ -998,59 +1243,49 @@ function Step1({
   jobForm,
   setJobForm,
   onSubmit,
+  selectedSubTradeId,
+  onSubTradeChange,
   roleCategoriesList = roleCategories,
   departmentOptionsList = departmentOptions,
-  industryOptionsList = industryOptions
+
+  industryOptionsList = [],
+  tradeOptionsList = [],
+  subTradeOptionsList = [],
+
+  selectedIndustryId,
+  selectedTradeCategoryId,
+  customIndustry,
+  customTrade,
+  customSubTrade,
+
+  industryIsCustom,
+  tradeIsCustom,
+
+  hasIndustry,
+  hasTrade,
+
+  industryLoading,
+  tradeLoading,
+  subTradeLoading,
+
+  onIndustryChange,
+  onTradeChange,
+
+  onAddIndustry,
+  onAddTrade,
+  onAddSubTrade,
 }) {
   // Single source of truth for "is this dropdown's value the 'Other' sentinel?"
-  const isTradeOther = isOtherValue(jobForm.TradeCategory);
-  const isIndustryOther = isOtherValue(jobForm.IndustryType);
+
   const isDeptOther = isOtherValue(jobForm.Department);
 
-  
+
   // Contract duration UI state
   const [contractYears, setContractYears] = useState("");
   const [contractMonths, setContractMonths] = useState("");
   const [contractDays, setContractDays] = useState("");
 
-const tradeCategoryOptions = (roleCategoriesList || []).map((option) => {
-  const value = typeof option === "string" ? option : option.value;
 
-  if (isOtherValue(value)) {
-    return {
-      value: OTHER_OPTION,
-      label: "Add whatever Category is Typed",
-    };
-  }
-
-  return option;
-});
-
-const industryTypeOptions = (industryOptionsList || []).map((option) => {
-  const value = typeof option === "string" ? option : option.value;
-
-  if (isOtherValue(value)) {
-    return {
-      value: OTHER_OPTION,
-      label: "Add whatever Industry Type is Typed",
-    };
-  }
-
-  return option;
-});
-
-const departmentOptions = (departmentOptionsList || []).map((option) => {
-  const value = typeof option === "string" ? option : option.value;
-
-  if (isOtherValue(value)) {
-    return {
-      value: OTHER_OPTION,
-      label: "Add whatever Department is Typed",
-    };
-  }
-
-  return option;
-});
   // Load existing ContractPeriod string into the 3 UI fields
   useEffect(() => {
     const value = jobForm.ContractPeriod || "";
@@ -1102,7 +1337,7 @@ const departmentOptions = (departmentOptionsList || []).map((option) => {
       ContractPeriod: contractPeriod,
     }));
   };
-  
+
   return (
     <StepCard
       stepNum={1}
@@ -1121,36 +1356,82 @@ const departmentOptions = (departmentOptionsList || []).map((option) => {
         />
       </Field>
 
+      {/* Industry Type */}
+      <Field
+        label="Industry Type"
+        required
+        hint="Select an industry or add a new one"
+      >
+        <MasterHierarchyCombobox
+          value={selectedIndustryId}
+          onChange={onIndustryChange}
+          options={industryOptionsList}
+          loading={industryLoading}
+          placeholder={customIndustry || "Select Industry Type"}
+          addLabel="Add New Industry Type"
+          onAddNew={onAddIndustry}
+        />
+      </Field>
+
       <div className={styles.grid2}>
-        {/* Trade Category */}
-        <Field label="Trade / Role Category" required hint="Pick from the list — select 'Add whatever Category is Typed' to specify manually">
-          <Combobox
-            value={jobForm.TradeCategory}
-            onChange={(v) =>
-              setJobForm((p) => ({
-                ...p,
-                TradeCategory: v,
-                TradeCategoryOther: isOtherValue(v) ? p.TradeCategoryOther : "",
-              }))
+        {/* Trade / Role Category */}
+        <Field
+          label="Trade / Role Category"
+          required
+          hint={
+            selectedIndustryId
+              ? "Select a trade category or add a new one"
+              : "Select Industry Type first"
+          }
+        >
+          <MasterHierarchyCombobox
+            value={selectedTradeCategoryId}
+            onChange={onTradeChange}
+            options={industryIsCustom ? [] : tradeOptionsList}
+            disabled={false}
+            loading={industryIsCustom ? false : tradeLoading}
+            placeholder={
+              !hasIndustry
+                ? "Select Industry Type first"
+                : customTrade
+                  ? customTrade
+                  : "Select Trade / Role Category"
             }
-           options={tradeCategoryOptions}
-            placeholder="e.g. Welding, Electrician, Plumber"
+            addLabel="Add New Trade"
+            onAddNew={onAddTrade}
           />
         </Field>
 
-        {/* Specify Trade Category — only shown when "Other" is selected */}
-        {isTradeOther && (
-          <Field label="Specify Trade Category" required hint="Tell us the trade category that isn't in the list">
-            <input
-              className={styles.control}
-              value={jobForm.TradeCategoryOther}
-              onChange={(e) =>
-                setJobForm((p) => ({ ...p, TradeCategoryOther: e.target.value }))
-              }
-              placeholder="e.g. Solar Technician"
-            />
-          </Field>
-        )}
+
+
+        {/* SubTrade / Category */}
+        <Field
+          label="SubTrade / Category"
+          hint={
+            selectedTradeCategoryId
+              ? "Select a category or add a new one"
+              : "Select Trade / Role Category first"
+          }
+        >
+          <MasterHierarchyCombobox
+            value={selectedSubTradeId}
+            onChange={onSubTradeChange}
+            options={tradeIsCustom ? [] : subTradeOptionsList}
+            disabled={!hasTrade}
+            loading={tradeIsCustom ? false : subTradeLoading}
+            placeholder={
+              !hasTrade
+                ? "Select Trade / Role Category first"
+                : tradeIsCustom
+                  ? (customSubTrade || "Add New SubTrade")
+                  : "Select SubTrade / Category"
+            }
+            addLabel="Add New SubTrade"
+            onAddNew={onAddSubTrade}
+          />
+        </Field>
+
+
 
         {/* Role (optional free-text specialisation) */}
         <Field label="Role / Specialisation">
@@ -1162,35 +1443,6 @@ const departmentOptions = (departmentOptionsList || []).map((option) => {
           />
         </Field>
 
-        {/* Industry Type */}
-        <Field label="Industry Type" required hint="Pick from the list — select 'Other' to specify manually">
-          <Combobox
-            value={jobForm.IndustryType}
-            onChange={(v) =>
-              setJobForm((p) => ({
-                ...p,
-                IndustryType: v,
-                IndustryTypeOther: isOtherValue(v) ? p.IndustryTypeOther : "",
-              }))
-            }
-            options={industryTypeOptions}
-            placeholder="e.g. Oil & Gas"
-          />
-        </Field>
-
-        {/* Specify Industry Type — only shown when "Other" is selected */}
-        {isIndustryOther && (
-          <Field label="Specify Industry Type" required hint="Tell us the industry that isn't in the list">
-            <input
-              className={styles.control}
-              value={jobForm.IndustryTypeOther}
-              onChange={(e) =>
-                setJobForm((p) => ({ ...p, IndustryTypeOther: e.target.value }))
-              }
-              placeholder="e.g. Renewable Energy"
-            />
-          </Field>
-        )}
 
         <Field label="Hiring for Client">
           <label
@@ -1219,6 +1471,8 @@ const departmentOptions = (departmentOptionsList || []).map((option) => {
             This job is posted for another client
           </label>
         </Field>
+
+
         {jobForm.IsClientHiring && (
           <Field label="Client Name" required>
             <input
@@ -1234,6 +1488,7 @@ const departmentOptions = (departmentOptionsList || []).map((option) => {
             />
           </Field>
         )}
+
         {jobForm.IsClientHiring && (
           <Field label="Show Client Name to Candidate">
             <label
@@ -1618,44 +1873,44 @@ function Step2({ go, jobForm, setJobForm, onSubmit }) {
       <div className={styles.grid2}>
 
         <Field label="Salary Period" required>
-  <div
-    style={{
-      display: "flex",
-      alignItems: "center",
-      gap: "24px",
-      flexWrap: "wrap",
-    }}
-  >
-    {salaryPeriodOptions.map((option) => (
-      <label
-        key={option.value}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          cursor: "pointer",
-          fontSize: "15px",
-          color: "#122359",
-        }}
-      >
-        <input
-          type="radio"
-          name="salaryPeriod"
-          value={option.value}
-          checked={jobForm.SalaryPeriod === option.value}
-          onChange={(e) =>
-            setJobForm((p) => ({
-              ...p,
-              SalaryPeriod: e.target.value,
-            }))
-          }
-        />
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "24px",
+              flexWrap: "wrap",
+            }}
+          >
+            {salaryPeriodOptions.map((option) => (
+              <label
+                key={option.value}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  cursor: "pointer",
+                  fontSize: "15px",
+                  color: "#122359",
+                }}
+              >
+                <input
+                  type="radio"
+                  name="salaryPeriod"
+                  value={option.value}
+                  checked={jobForm.SalaryPeriod === option.value}
+                  onChange={(e) =>
+                    setJobForm((p) => ({
+                      ...p,
+                      SalaryPeriod: e.target.value,
+                    }))
+                  }
+                />
 
-        {option.label}
-      </label>
-    ))}
-  </div>
-</Field>
+                {option.label}
+              </label>
+            ))}
+          </div>
+        </Field>
 
         {/* Currency First */}
         <Field label="Currency" required>
@@ -2581,50 +2836,170 @@ export default function DashboardPostJobPage() {
   // is in flight; the API load below replaces them with live data + "Other".
   const [roleCategoriesList, setRoleCategoriesList] = useState(roleCategories);
   const [departmentOptionsList, setDepartmentOptionsList] = useState(departmentOptions);
-  const [industryOptionsList, setIndustryOptionsList] = useState(industryOptions);
+  const [industryOptionsList, setIndustryOptionsList] = useState([]);
+  const [tradeOptionsList, setTradeOptionsList] = useState([]);
+  const [subTradeOptionsList, setSubTradeOptionsList] = useState([]);
+
+  const [selectedIndustryId, setSelectedIndustryId] = useState("");
+  const [selectedTradeCategoryId, setSelectedTradeCategoryId] = useState("");
+  const [selectedSubTradeId, setSelectedSubTradeId] = useState("");
+  const [industryOptionsReady, setIndustryOptionsReady] = useState(false);
+  const [customIndustry, setCustomIndustry] = useState("");
+  const [customTrade, setCustomTrade] = useState("");
+  const [customSubTrade, setCustomSubTrade] = useState("");
+  const [addNewType, setAddNewType] = useState(null);
+  // "industry" | "trade" | "subTrade" | null
+
+
+
+  const [customHierarchyModal, setCustomHierarchyModal] = useState({
+    open: false,
+    type: "",
+    title: "",
+    placeholder: "",
+  });
+
+  const [customHierarchyValue, setCustomHierarchyValue] = useState("");
+
+  const [addNewValue, setAddNewValue] = useState("");
+  const [addNewLoading, setAddNewLoading] = useState(false);
+
+  const [pendingIndustrySuggestionId, setPendingIndustrySuggestionId] = useState(null);
+  const [pendingTradeSuggestionId, setPendingTradeSuggestionId] = useState(null);
+  const [industryLoading, setIndustryLoading] = useState(false);
+  const [tradeLoading, setTradeLoading] = useState(false);
+  const [subTradeLoading, setSubTradeLoading] = useState(false);
+
+
+  const industryIsCustom = Boolean(customIndustry.trim());
+  const tradeIsCustom = Boolean(customTrade.trim());
+
+  const hasIndustry =
+    Boolean(selectedIndustryId) || industryIsCustom;
+
+  const hasTrade =
+    Boolean(selectedTradeCategoryId) || tradeIsCustom;
 
   useEffect(() => {
     const fetchDropdownOptions = async () => {
       try {
         const res = await getJobDropdowns();
+
         if (res?.success) {
-          // Trade / Role Category ← tradeRoles
+          // Trade / Role Category - legacy field
           const apiTrades = (res.tradeRoles || [])
             .map((t) => t.name)
             .filter(Boolean);
+
           if (apiTrades.length > 0) {
             setRoleCategoriesList(withOtherOption(apiTrades));
           }
 
-          // Department ← departments
+          // Department
           const apiDepts = (res.departments || [])
             .map((d) => d.name)
             .filter(Boolean);
+
           if (apiDepts.length > 0) {
             setDepartmentOptionsList(withOtherOption(apiDepts));
           }
         }
       } catch (err) {
-        console.error("Failed to load post-job dropdown options via getJobDropdowns:", err);
-      }
-
-      try {
-        const res = await getIndustries();
-        if (res?.success && res.industries) {
-          // Industry Type ← industries
-          const apiIndustries = res.industries
-            .map((ind) => ind.name)
-            .filter(Boolean);
-          if (apiIndustries.length > 0) {
-            setIndustryOptionsList(withOtherOption(apiIndustries));
-          }
-        }
-      } catch (err) {
-        console.error("Failed to load industries via getIndustries:", err);
+        console.error(
+          "Failed to load post-job dropdown options via getJobDropdowns:",
+          err
+        );
       }
     };
+
     fetchDropdownOptions();
   }, []);
+
+
+  useEffect(() => {
+    const loadIndustries = async () => {
+      try {
+        setIndustryLoading(true);
+
+        const res = await getIndustries();
+
+        if (res?.success) {
+          const industries = (res.industries || [])
+            .map((x) => ({
+              value:
+                x?.id ??
+                x?.Id ??
+                x?.registrationIndustryId ??
+                x?.RegistrationIndustryId,
+              label:
+                x?.name ??
+                x?.Name ??
+                "",
+            }))
+            .filter((x) => x.value && x.label);
+
+          setIndustryOptionsList(industries);
+        } else {
+          setIndustryOptionsList([]);
+        }
+      } catch (error) {
+        console.error("Failed to load industries:", error);
+        setIndustryOptionsList([]);
+      } finally {
+        setIndustryLoading(false);
+        setIndustryOptionsReady(true);
+      }
+    };
+
+    loadIndustries();
+  }, []);
+
+  useEffect(() => {
+    const loadIndustries = async () => {
+      try {
+        setIndustryLoading(true);
+
+        const res = await getIndustries();
+
+        console.log("INDUSTRIES API RESPONSE:", res);
+
+        if (res?.success) {
+          const industries = (res.industries || [])
+            .map((x) => ({
+              value:
+                x?.id ??
+                x?.Id ??
+                x?.registrationIndustryId ??
+                x?.RegistrationIndustryId,
+              label:
+                x?.name ??
+                x?.Name ??
+                "",
+            }))
+            .filter((x) => x.value && x.label);
+
+          setIndustryOptionsList(industries);
+        } else {
+          setIndustryOptionsList([]);
+        }
+      } catch (error) {
+        console.error("Failed to load industries:", error);
+        setIndustryOptionsList([]);
+      } finally {
+        setIndustryLoading(false);
+        setIndustryOptionsReady(true);
+      }
+    };
+
+    loadIndustries();
+  }, []);
+
+  useEffect(() => {
+    if (editJobId && industryOptionsReady) {
+      loadJobForEdit(editJobId);
+    }
+  }, [editJobId, industryOptionsReady]);
+
   const [activeStep, setActiveStep] = useState(1);
   const [jdSuggestions, setJdSuggestions] = useState([]);
   const [additionalJdSuggestions, setAdditionalJdSuggestions] = useState([]);
@@ -2636,13 +3011,13 @@ export default function DashboardPostJobPage() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [showPreview, setShowPreview] = useState(false);
-
   /* ── initial state – every API field present ── */
   const [jobForm, setJobForm] = useState({
     // Step 1 
     JobTitle: "",
     TradeCategory: "",
     TradeCategoryOther: "", // free-text value when TradeCategory === "Other"
+    SubTrade: "",
     Role: "",
     IndustryType: "",
     IndustryTypeOther: "", // free-text value when IndustryType === "Other"
@@ -2712,6 +3087,402 @@ export default function DashboardPostJobPage() {
     PublishNow: true,
   });
 
+
+  const handleIndustryChange = async (industryId) => {
+    setSelectedIndustryId(industryId);
+
+    setCustomIndustry("");
+    setPendingIndustrySuggestionId(null);
+
+    setSelectedTradeCategoryId("");
+    setCustomTrade("");
+    setPendingTradeSuggestionId(null);
+
+    setSelectedSubTradeId("");
+    setCustomSubTrade("");
+
+    setTradeOptionsList([]);
+    setSubTradeOptionsList([]);
+
+    const selectedIndustry = industryOptionsList.find(
+      (x) => x.value === industryId
+    );
+
+    setJobForm((prev) => ({
+      ...prev,
+      IndustryType: selectedIndustry?.label || "",
+      TradeCategory: "",
+      SubTrade: "",
+    }));
+
+    if (!industryId) return;
+
+    try {
+      setTradeLoading(true);
+
+      const res = await getTradeCategoriesByIndustry(industryId);
+
+      console.log("TRADE API RESPONSE:", res);
+
+      if (res?.success) {
+        const trades = (res.tradeCategories || [])
+          .map((x) => ({
+            value:
+              x?.id ??
+              x?.Id ??
+              x?.tradeCategoryId ??
+              x?.TradeCategoryId,
+            label:
+              x?.name ??
+              x?.Name ??
+              "",
+          }))
+          .filter((x) => x.value && x.label);
+
+        setTradeOptionsList(trades);
+      } else {
+        setTradeOptionsList([]);
+      }
+    } catch (error) {
+      console.error("Failed to load trade categories:", error);
+      setTradeOptionsList([]);
+    } finally {
+      setTradeLoading(false);
+    }
+  };
+
+  const handleTradeChange = async (tradeCategoryId) => {
+
+    setSelectedTradeCategoryId(tradeCategoryId);
+    setSelectedSubTradeId("");
+
+    setSubTradeOptionsList([]);
+
+    const selectedTrade = tradeOptionsList.find(
+      (x) => x.value === tradeCategoryId
+    );
+
+    setJobForm((prev) => ({
+      ...prev,
+      TradeCategory: selectedTrade?.label || "",
+      SubTrade: "",
+    }));
+
+    if (!tradeCategoryId) return;
+
+    try {
+      setSubTradeLoading(true);
+
+      const res = await getSubTradesByTradeCategory(
+        tradeCategoryId
+      );
+
+      console.log("SUBTRADE API RESPONSE:", res);
+
+      if (res?.success) {
+        const subTrades = (res.subTrades || [])
+          .map((x) => ({
+            value:
+              x?.id ??
+              x?.Id ??
+              x?.subTradeId ??
+              x?.SubTradeId,
+            label:
+              x?.name ??
+              x?.Name ??
+              "",
+          }))
+          .filter((x) => x.value && x.label);
+
+        setSubTradeOptionsList(subTrades);
+      } else {
+        setSubTradeOptionsList([]);
+      }
+    } catch (error) {
+      console.error("Failed to load sub trades:", error);
+      setSubTradeOptionsList([]);
+    } finally {
+      setSubTradeLoading(false);
+    }
+  };
+
+  const handleSubTradeChange = (subTradeId) => {
+    setSelectedSubTradeId(subTradeId);
+
+    const selectedSubTrade = subTradeOptionsList.find(
+      (x) => x.value === subTradeId
+    );
+
+    setJobForm((prev) => ({
+      ...prev,
+      SubTrade: selectedSubTrade?.label || "",
+    }));
+  };
+
+  const handleAddIndustry = async () => {
+    setCustomHierarchyValue(customIndustry || "");
+
+    setCustomHierarchyModal({
+      open: true,
+      type: "industry",
+      title: "Add New Industry Type",
+      placeholder: "Enter Industry Type",
+    });
+  };
+
+
+  const handleAddTrade = async () => {
+    if (!hasIndustry) {
+      showToast(
+        "Please select or add an Industry Type first.",
+        "warning"
+      );
+      return;
+    }
+
+    setCustomHierarchyValue(customTrade || "");
+
+    setCustomHierarchyModal({
+      open: true,
+      type: "trade",
+      title: "Add New Trade / Role Category",
+      placeholder: "Enter Trade / Role Category",
+    });
+  };
+
+
+  const handleAddSubTrade = async () => {
+    if (!hasTrade) {
+      showToast(
+        "Please select or add a Trade / Role Category first.",
+        "warning"
+      );
+      return;
+    }
+
+    setCustomHierarchyValue(customSubTrade || "");
+
+    setCustomHierarchyModal({
+      open: true,
+      type: "subTrade",
+      title: "Add New SubTrade / Category",
+      placeholder: "Enter SubTrade / Category",
+    });
+  };
+
+  const handleCustomHierarchySubmit = async () => {
+    const value = customHierarchyValue.trim();
+
+    if (!value) {
+      showToast("Please enter a name.", "warning");
+      return;
+    }
+
+    const type = customHierarchyModal.type;
+
+    setAddNewLoading(true);
+
+    try {
+      const decoded = getDecodedToken();
+
+      const userEmail =
+        decoded?.email ||
+        decoded?.sub ||
+        "";
+
+      const userName =
+        decoded?.name ||
+        decoded?.unique_name ||
+        "Recruiter";
+
+      // ==================================================
+      // CUSTOM INDUSTRY
+      // ==================================================
+      if (type === "industry") {
+        const response = await submitIndustrySuggestion({
+          field: "RegistrationIndustry",
+          suggestedName: value,
+          note: "Suggested new Industry Type during job posting",
+          submittedByName: userName,
+          submittedByEmail: userEmail,
+        });
+
+        if (response?.success === false) {
+          throw new Error(
+            response?.message ||
+            "Failed to submit Industry Type suggestion."
+          );
+        }
+
+        // This job uses the custom Industry immediately.
+        setSelectedIndustryId("");
+        setSelectedTradeCategoryId("");
+        setSelectedSubTradeId("");
+
+        setCustomIndustry(value);
+        setCustomTrade("");
+        setCustomSubTrade("");
+
+        setPendingIndustrySuggestionId(
+          response?.suggestionId || null
+        );
+
+        setPendingTradeSuggestionId(null);
+
+        setTradeOptionsList([]);
+        setSubTradeOptionsList([]);
+
+        setJobForm((prev) => ({
+          ...prev,
+          IndustryType: value,
+          TradeCategory: "",
+          SubTrade: "",
+        }));
+
+        showToast(
+          "Industry Type added for this job and submitted for admin approval.",
+          "success"
+        );
+      }
+
+      // ==================================================
+      // CUSTOM TRADE
+      // ==================================================
+      else if (type === "trade") {
+        if (!hasIndustry) {
+          showToast(
+            "Please select or add an Industry Type first.",
+            "warning"
+          );
+          return;
+        }
+
+        const selectedIndustry = industryOptionsList.find(
+          (x) =>
+            String(x.value) ===
+            String(selectedIndustryId)
+        );
+
+        const response = await submitIndustrySuggestion({
+          field: "TradeCategory",
+          suggestedName: value,
+          note: "Suggested new Trade / Role Category during job posting",
+
+          // Only set this when Industry is an existing master record.
+          registrationIndustryId:
+            selectedIndustryId || null,
+
+          submittedByName: userName,
+          submittedByEmail: userEmail,
+        });
+
+        if (response?.success === false) {
+          throw new Error(
+            response?.message ||
+            "Failed to submit Trade suggestion."
+          );
+        }
+
+        setSelectedTradeCategoryId("");
+        setSelectedSubTradeId("");
+
+        setCustomTrade(value);
+        setCustomSubTrade("");
+
+        setPendingTradeSuggestionId(
+          response?.suggestionId || null
+        );
+
+        setSubTradeOptionsList([]);
+
+        setJobForm((prev) => ({
+          ...prev,
+          IndustryType:
+            selectedIndustry?.label ||
+            prev.IndustryType ||
+            customIndustry,
+          TradeCategory: value,
+          SubTrade: "",
+        }));
+
+        showToast(
+          "Trade added for this job and submitted for admin approval.",
+          "success"
+        );
+      }
+
+      // ==================================================
+      // CUSTOM SUBTRADE
+      // ==================================================
+      else if (type === "subTrade") {
+        if (!hasTrade) {
+          showToast(
+            "Please select or add a Trade / Role Category first.",
+            "warning"
+          );
+          return;
+        }
+
+        const response = await submitIndustrySuggestion({
+          field: "SubTrade",
+          suggestedName: value,
+          note: "Suggested new SubTrade / Category during job posting",
+
+          // Only available when Trade is an existing master record.
+          tradeCategoryId:
+            selectedTradeCategoryId || null,
+
+          submittedByName: userName,
+          submittedByEmail: userEmail,
+        });
+
+        if (response?.success === false) {
+          throw new Error(
+            response?.message ||
+            "Failed to submit SubTrade suggestion."
+          );
+        }
+
+        setSelectedSubTradeId("");
+        setCustomSubTrade(value);
+
+        setJobForm((prev) => ({
+          ...prev,
+          SubTrade: value,
+        }));
+
+        showToast(
+          "SubTrade added for this job and submitted for admin approval.",
+          "success"
+        );
+      }
+
+      // Close modal
+      setCustomHierarchyModal({
+        open: false,
+        type: "",
+        title: "",
+        placeholder: "",
+      });
+
+      setCustomHierarchyValue("");
+
+    } catch (error) {
+      console.error(
+        "Failed to submit custom hierarchy suggestion:",
+        error
+      );
+
+      showToast(
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to submit suggestion.",
+        "error"
+      );
+    } finally {
+      setAddNewLoading(false);
+    }
+  };
   /* ── read ?jobId from URL on mount ── */
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -2774,52 +3545,317 @@ export default function DashboardPostJobPage() {
       const response = await getJobResume(id);
 
       console.log("FULL RESPONSE:", response);
-      console.log("STEP 3 DATA:", response.step3Data);
-      console.log("BENEFITS:", response.step3Data?.benefits);
 
       setJobId(id);
 
-      const flatForm = mapResumeToForm(response, roleCategories[0]);
+      const flatForm = mapResumeToForm(
+        response,
+        roleCategories[0]
+      );
 
-      // Normalize custom values to "Other" + Specify field for the UI dropdowns
-      const getOtherAndValue = (val, list) => {
-        if (!val) return { value: "", other: "" };
-        const normalizedList = (list || []).map(item =>
-          typeof item === "string" ? item.toLowerCase() : (item.value || "").toLowerCase()
-        ).filter(v => v !== "other");
-        const cleanVal = val.trim();
-        const isPresent = normalizedList.includes(cleanVal.toLowerCase());
-        if (isPresent) {
-          return { value: cleanVal, other: "" };
-        } else {
-          return { value: "Other", other: cleanVal };
-        }
-      };
-
-      const tradeRes = getOtherAndValue(flatForm.TradeCategory, roleCategoriesList);
-      const indRes = getOtherAndValue(flatForm.IndustryType, industryOptionsList);
-      const deptRes = getOtherAndValue(flatForm.Department, departmentOptionsList);
+      // =========================================================
+      // 1. First populate normal form values
+      // =========================================================
 
       setJobForm((prev) => ({
         ...prev,
         ...flatForm,
-        TradeCategory: tradeRes.value,
-        TradeCategoryOther: tradeRes.other,
-        IndustryType: indRes.value,
-        IndustryTypeOther: indRes.other,
-        Department: deptRes.value,
-        DepartmentOther: deptRes.other
       }));
 
-      setLastCompletedStep(response.stepStatus?.lastCompletedStep ?? 0);
+      // =========================================================
+      // 2. RESET HIERARCHY STATE
+      // =========================================================
 
-      // Editing an existing (even fully-published) job should always start
-      // the wizard at step 1 with everything prefilled — not jump to
-      // whichever step happens to be "last completed", which for an
-      // already-published job is always step 7.
+      setSelectedIndustryId("");
+      setSelectedTradeCategoryId("");
+      setSelectedSubTradeId("");
+
+      setCustomIndustry("");
+      setCustomTrade("");
+      setCustomSubTrade("");
+
+      setTradeOptionsList([]);
+      setSubTradeOptionsList([]);
+
+      // =========================================================
+      // 3. INDUSTRY
+      // =========================================================
+
+      const savedIndustry =
+        flatForm.IndustryType?.trim() || "";
+
+      if (!savedIndustry) {
+        setLastCompletedStep(
+          response.stepStatus?.lastCompletedStep ?? 0
+        );
+
+        setActiveStep(1);
+        return;
+      }
+
+      const industryMatch =
+        industryOptionsList.find(
+          (x) =>
+            String(x.label).trim().toLowerCase() ===
+            savedIndustry.toLowerCase()
+        );
+
+      // ---------------------------------------------------------
+      // EXISTING INDUSTRY
+      // ---------------------------------------------------------
+
+      if (industryMatch) {
+        const industryId = industryMatch.value;
+
+        console.log(
+          "EDIT - EXISTING INDUSTRY:",
+          industryMatch
+        );
+
+        setSelectedIndustryId(industryId);
+        setCustomIndustry("");
+
+        // =======================================================
+        // 4. LOAD TRADES FOR EXISTING INDUSTRY
+        // =======================================================
+
+        setTradeLoading(true);
+
+        try {
+          const tradeResponse =
+            await getTradeCategoriesByIndustry(
+              industryId
+            );
+
+          console.log(
+            "EDIT - TRADE RESPONSE:",
+            tradeResponse
+          );
+
+          const trades = (
+            tradeResponse?.tradeCategories || []
+          )
+            .map((x) => ({
+              value:
+                x?.id ??
+                x?.Id ??
+                x?.tradeCategoryId ??
+                x?.TradeCategoryId,
+
+              label:
+                x?.name ??
+                x?.Name ??
+                "",
+            }))
+            .filter(
+              (x) =>
+                x.value &&
+                x.label
+            );
+
+          setTradeOptionsList(trades);
+
+          // =====================================================
+          // 5. FIND SAVED TRADE
+          // =====================================================
+
+          const savedTrade =
+            flatForm.TradeCategory?.trim() || "";
+
+          const tradeMatch =
+            trades.find(
+              (x) =>
+                x.label.trim().toLowerCase() ===
+                savedTrade.toLowerCase()
+            );
+
+          if (!tradeMatch) {
+            // Saved trade is custom
+            console.log(
+              "EDIT - CUSTOM TRADE:",
+              savedTrade
+            );
+
+            setSelectedTradeCategoryId("");
+            setCustomTrade(savedTrade);
+
+            setSelectedSubTradeId("");
+            setCustomSubTrade(
+              flatForm.SubTrade?.trim() || ""
+            );
+
+            setSubTradeOptionsList([]);
+
+            return;
+          }
+
+          // =====================================================
+          // EXISTING TRADE
+          // =====================================================
+
+          console.log(
+            "EDIT - EXISTING TRADE:",
+            tradeMatch
+          );
+
+          setSelectedTradeCategoryId(
+            tradeMatch.value
+          );
+
+          setCustomTrade("");
+
+          // =====================================================
+          // 6. LOAD SUBTRADES
+          // =====================================================
+
+          setSubTradeLoading(true);
+
+          try {
+            const subTradeResponse =
+              await getSubTradesByTradeCategory(
+                tradeMatch.value
+              );
+
+            console.log(
+              "EDIT - SUBTRADE RESPONSE:",
+              subTradeResponse
+            );
+
+            const subTrades = (
+              subTradeResponse?.subTrades || []
+            )
+              .map((x) => ({
+                value:
+                  x?.id ??
+                  x?.Id ??
+                  x?.subTradeId ??
+                  x?.SubTradeId,
+
+                label:
+                  x?.name ??
+                  x?.Name ??
+                  "",
+              }))
+              .filter(
+                (x) =>
+                  x.value &&
+                  x.label
+              );
+
+            setSubTradeOptionsList(
+              subTrades
+            );
+
+            // ===================================================
+            // 7. FIND SAVED SUBTRADE
+            // ===================================================
+
+            const savedSubTrade =
+              flatForm.SubTrade?.trim() || "";
+
+            if (savedSubTrade) {
+              const subTradeMatch =
+                subTrades.find(
+                  (x) =>
+                    x.label.trim().toLowerCase() ===
+                    savedSubTrade.toLowerCase()
+                );
+
+              if (subTradeMatch) {
+                // Existing SubTrade
+                console.log(
+                  "EDIT - EXISTING SUBTRADE:",
+                  subTradeMatch
+                );
+
+                setSelectedSubTradeId(
+                  subTradeMatch.value
+                );
+
+                setCustomSubTrade("");
+              } else {
+                // Custom SubTrade
+                console.log(
+                  "EDIT - CUSTOM SUBTRADE:",
+                  savedSubTrade
+                );
+
+                setSelectedSubTradeId("");
+                setCustomSubTrade(
+                  savedSubTrade
+                );
+              }
+            }
+          } catch (subTradeError) {
+            console.error(
+              "Failed to load sub trades while editing:",
+              subTradeError
+            );
+
+            setSubTradeOptionsList([]);
+          } finally {
+            setSubTradeLoading(false);
+          }
+        } catch (tradeError) {
+          console.error(
+            "Failed to load trades while editing:",
+            tradeError
+          );
+
+          setTradeOptionsList([]);
+        } finally {
+          setTradeLoading(false);
+        }
+      }
+
+      // ---------------------------------------------------------
+      // CUSTOM INDUSTRY
+      // ---------------------------------------------------------
+
+      else {
+        console.log(
+          "EDIT - CUSTOM INDUSTRY:",
+          savedIndustry
+        );
+
+        setSelectedIndustryId("");
+        setCustomIndustry(savedIndustry);
+
+        // Custom Industry cannot have existing Trade
+        setTradeOptionsList([]);
+        setSelectedTradeCategoryId("");
+
+        const savedTrade =
+          flatForm.TradeCategory?.trim() || "";
+
+        setCustomTrade(savedTrade);
+
+        // Custom Trade cannot have existing SubTrade
+        setSubTradeOptionsList([]);
+        setSelectedSubTradeId("");
+
+        const savedSubTrade =
+          flatForm.SubTrade?.trim() || "";
+
+        setCustomSubTrade(savedSubTrade);
+      }
+
+      // =========================================================
+      // 8. OTHER FORM VALUES
+      // =========================================================
+
+      setLastCompletedStep(
+        response.stepStatus?.lastCompletedStep ?? 0
+      );
+
+      // Always open edit at Step 1
       setActiveStep(1);
+
     } catch (error) {
-      console.error("loadJobForEdit:", error);
+      console.error(
+        "loadJobForEdit:",
+        error
+      );
     }
   };
 
@@ -3001,10 +4037,18 @@ export default function DashboardPostJobPage() {
         ? jobForm.DepartmentOther.trim()
         : jobForm.Department;
 
+      console.log("===== STEP 1 SAVE =====");
+      console.log("JobId:", jobId);
+      console.log("IndustryType:", jobForm.IndustryType);
+      console.log("TradeCategory:", jobForm.TradeCategory);
+      console.log("SubTrade:", jobForm.SubTrade);
+      console.log("=======================");
+
       const response = await saveJobDetails({
         JobId: jobId ?? "",
         JobTitle: jobForm.JobTitle,
         TradeCategory: resolvedTradeCategory,
+        SubTrade: jobForm.SubTrade,
         Role: jobForm.Role,
         IndustryType: resolvedIndustryType,
 
@@ -3017,9 +4061,9 @@ export default function DashboardPostJobPage() {
         JobType: jobForm.JobType,
         EmploymentType: jobForm.EmploymentType,
         ContractPeriod:
-        jobForm.EmploymentType === "Contract"
-        ? jobForm.ContractPeriod
-         : "",
+          jobForm.EmploymentType === "Contract"
+            ? jobForm.ContractPeriod
+            : "",
         EmploymentMode: jobForm.EmploymentMode,
         Department: resolvedDepartment,
         DutyHoursPerDay: jobForm.DutyHoursPerDay,
@@ -3031,8 +4075,8 @@ export default function DashboardPostJobPage() {
       setJobId(response.jobId);
       updateDraft(response);
       console.log("STEP 1 JOB FORM:", response);
-console.log("CONTRACT PERIOD:", response.ContractPeriod);
-console.log("EMPLOYMENT TYPE:", response.EmploymentType);
+      console.log("CONTRACT PERIOD:", response.ContractPeriod);
+      console.log("EMPLOYMENT TYPE:", response.EmploymentType);
 
       try {
         const decoded = getDecodedToken();
@@ -3091,8 +4135,8 @@ console.log("EMPLOYMENT TYPE:", response.EmploymentType);
         error?.response?.data?.message || "Failed to save job details. Please try again.",
         "error",
       );
-    } 
-    
+    }
+
     finally {
       setLoading(false);
     }
@@ -3374,6 +4418,7 @@ console.log("EMPLOYMENT TYPE:", response.EmploymentType);
                   setJobForm={setJobForm}
                   errors={errors}
                   onSubmit={stepHandlers[activeStep - 1] ?? (() => { })}
+
                   handleGenerateJD={handleGenerateJD}
                   handleGenerateAdditionalJD={handleGenerateAdditionalJD}
                   loadingAI={loadingAI}
@@ -3384,9 +4429,39 @@ console.log("EMPLOYMENT TYPE:", response.EmploymentType);
                   handleSuggestSkills={handleSuggestSkills}
                   skillsLoading={skillsLoading}
                   preflightIssues={preflightIssues}
+
                   roleCategoriesList={roleCategoriesList}
                   departmentOptionsList={departmentOptionsList}
+
                   industryOptionsList={industryOptionsList}
+                  tradeOptionsList={tradeOptionsList}
+                  subTradeOptionsList={subTradeOptionsList}
+
+                  selectedIndustryId={selectedIndustryId}
+                  selectedTradeCategoryId={selectedTradeCategoryId}
+                  selectedSubTradeId={selectedSubTradeId}
+
+                  customIndustry={customIndustry}
+                  customTrade={customTrade}
+                  customSubTrade={customSubTrade}
+
+                  industryIsCustom={industryIsCustom}
+                  tradeIsCustom={tradeIsCustom}
+
+                  hasIndustry={hasIndustry}
+                  hasTrade={hasTrade}
+
+                  industryLoading={industryLoading}
+                  tradeLoading={tradeLoading}
+                  subTradeLoading={subTradeLoading}
+
+                  onIndustryChange={handleIndustryChange}
+                  onTradeChange={handleTradeChange}
+                  onSubTradeChange={handleSubTradeChange}
+
+                  onAddIndustry={handleAddIndustry}
+                  onAddTrade={handleAddTrade}
+                  onAddSubTrade={handleAddSubTrade}
                 />
 
                 <div className={styles.bottomLink}>
@@ -3403,6 +4478,172 @@ console.log("EMPLOYMENT TYPE:", response.EmploymentType);
         onClose={() => setShowPreview(false)}
         job={jobForm}
       />
+
+      {customHierarchyModal.open && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.45)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+            padding: "20px",
+          }}
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget && !addNewLoading) {
+              setCustomHierarchyModal({
+                open: false,
+                type: "",
+                title: "",
+                placeholder: "",
+              });
+              setCustomHierarchyValue("");
+            }
+          }}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: "480px",
+              background: "#fff",
+              borderRadius: "14px",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.20)",
+              padding: "24px",
+            }}
+            role="dialog"
+            aria-modal="true"
+          >
+            <h4
+              style={{
+                margin: "0 0 8px",
+                color: "#122359",
+                fontSize: "20px",
+                fontWeight: 700,
+              }}
+            >
+              {customHierarchyModal.title}
+            </h4>
+
+            <p
+              style={{
+                margin: "0 0 18px",
+                color: "#667085",
+                fontSize: "14px",
+              }}
+            >
+              Enter the new value. It will be used for this job and submitted
+              for admin approval.
+            </p>
+
+            <input
+              type="text"
+              autoFocus
+              value={customHierarchyValue}
+              onChange={(e) =>
+                setCustomHierarchyValue(e.target.value)
+              }
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !addNewLoading) {
+                  e.preventDefault();
+                  handleCustomHierarchySubmit();
+                }
+
+                if (e.key === "Escape" && !addNewLoading) {
+                  setCustomHierarchyModal({
+                    open: false,
+                    type: "",
+                    title: "",
+                    placeholder: "",
+                  });
+                  setCustomHierarchyValue("");
+                }
+              }}
+              placeholder={customHierarchyModal.placeholder}
+              disabled={addNewLoading}
+              style={{
+                width: "100%",
+                height: "46px",
+                border: "1px solid #d0d5dd",
+                borderRadius: "8px",
+                padding: "0 14px",
+                fontSize: "15px",
+                outline: "none",
+                boxSizing: "border-box",
+              }}
+            />
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "10px",
+                marginTop: "20px",
+              }}
+            >
+              <button
+                type="button"
+                disabled={addNewLoading}
+                onClick={() => {
+                  setCustomHierarchyModal({
+                    open: false,
+                    type: "",
+                    title: "",
+                    placeholder: "",
+                  });
+                  setCustomHierarchyValue("");
+                }}
+                style={{
+                  height: "42px",
+                  padding: "0 18px",
+                  border: "1px solid #d0d5dd",
+                  background: "#fff",
+                  color: "#344054",
+                  borderRadius: "8px",
+                  cursor: addNewLoading
+                    ? "not-allowed"
+                    : "pointer",
+                }}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                disabled={
+                  addNewLoading ||
+                  !customHierarchyValue.trim()
+                }
+                onClick={handleCustomHierarchySubmit}
+                style={{
+                  height: "42px",
+                  padding: "0 20px",
+                  border: "none",
+                  background: "#2563eb",
+                  color: "#fff",
+                  borderRadius: "8px",
+                  fontWeight: 600,
+                  cursor:
+                    addNewLoading ||
+                      !customHierarchyValue.trim()
+                      ? "not-allowed"
+                      : "pointer",
+                  opacity:
+                    addNewLoading ||
+                      !customHierarchyValue.trim()
+                      ? 0.6
+                      : 1,
+                }}
+              >
+                {addNewLoading ? "Submitting..." : "Add"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
+
+
   );
 }

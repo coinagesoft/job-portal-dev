@@ -17,6 +17,7 @@ export const mapResumeToForm = (response, defaultTradeCategory = "Welding") => (
   // Step 1
   JobTitle: response.step1Data?.jobTitle ?? "",
   TradeCategory: response.step1Data?.tradeCategory ?? defaultTradeCategory,
+  SubTrade:response.step1Data?.subTrade ?? "",
   Role: response.step1Data?.role ?? "",
   IndustryType: response.step1Data?.industryType ?? "",
   IsClientHiring: response.step1Data?.isClientHiring ?? false,

@@ -238,7 +238,30 @@ export const getIndustries = async () => {
   return response.data;
 };
 
+
+
 export const submitIndustrySuggestion = async (payload) => {
   const response = await api.post("/api/recruiter/registration/industry-suggestions", payload);
   return response.data;
 };
+
+
+// Industry Type → Trade Categories
+export const getTradeCategoriesByIndustry = async (registrationIndustryId) => {
+  const response = await api.get(
+    `/api/recruiter/registration/industries/${registrationIndustryId}/trade-categories`
+  );
+
+  return response.data;
+};
+
+
+// Trade Category → Sub Trades
+export const getSubTradesByTradeCategory = async (tradeCategoryId) => {
+  const response = await api.get(
+    `/api/recruiter/registration/trade-categories/${tradeCategoryId}/sub-trades`
+  );
+
+  return response.data;
+};
+

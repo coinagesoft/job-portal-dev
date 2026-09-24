@@ -276,6 +276,8 @@ export default function JobPreviewModal({ open, onClose, job, loading }) {
 
               <Section title="Job Details">
                 <Row label="Job Title" value={job.JobTitle} />
+                <Row label="Industry Type" value={humanize(job.IndustryType)} />
+
                 <Row
                   label="Trade / Role Category"
                   value={
@@ -288,8 +290,16 @@ export default function JobPreviewModal({ open, onClose, job, loading }) {
                     </span>
                   }
                 />
+
+                <Row
+                  label="SubTrade / Category"
+                  value={humanize(job.SubTrade)}
+                />
+
                 <Row label="Role / Specialisation" value={job.Role} />
-                <Row label="Industry Type" value={humanize(job.IndustryType)} />
+
+               
+                <Row label="Role / Specialisation" value={job.Role} />
                 <Row label="Department" value={job.Department} />
                 <Row
                   label="Experience"

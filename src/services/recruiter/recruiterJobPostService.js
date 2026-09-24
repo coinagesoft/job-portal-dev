@@ -11,6 +11,7 @@ export const saveJobDetails = async (payload) => {
   formData.append("JobId", payload.JobId ?? "");
   formData.append("JobTitle", payload.JobTitle ?? "");
   formData.append("TradeCategory", payload.TradeCategory ?? "");
+  formData.append("SubTrade", payload.SubTrade ?? "");
   formData.append("Role", payload.Role ?? "");
   formData.append("IndustryType", payload.IndustryType ?? "");
   formData.append("IsClientHiring", String(payload.IsClientHiring ?? false));
