@@ -902,7 +902,7 @@ function MasterHierarchyCombobox({
                 fontSize: 13,
               }}
             >
-              + {addLabel}
+               {addLabel}
             </button>
           </div>
         </div>
