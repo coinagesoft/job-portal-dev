@@ -296,7 +296,7 @@ export default function JobPreviewModal({ open, onClose, job, loading }) {
                   value={humanize(job.SubTrade)}
                 />
 
-                <Row label="Role / Specialisation" value={job.Role} />
+                {/* <Row label="Role / Specialisation" value={job.Role} /> */}
 
                
                 <Row label="Role / Specialisation" value={job.Role} />
