@@ -44,8 +44,6 @@ const getStatesForCountry = (countryName) => {
   return State.getStatesOfCountry(iso).map((s) => s.name);
 };
 
-
-
 const countryOptions = countries
   .map((country) => country.name.common)
   .sort((a, b) => a.localeCompare(b));
@@ -288,6 +286,7 @@ const indianStates = [
   "West Bengal",
   "Other",
 ];
+
 const salaryDisplayOptions = [
   { value: "Show Range", label: "Show Range" },
   { value: "Show Min Only", label: "Show Minimum Only" },
@@ -502,6 +501,8 @@ function Field({ label, required, hint, children }) {
  * user types something that matches nothing and clicks away/tabs out, the 
  * text snaps back to whatever is actually selected. 
  */
+
+
 function Combobox({ value, onChange, options, placeholder }) {
   const normalized = (options || []).map((o) =>
     typeof o === "string" ? { value: o, label: o } : o
@@ -1247,7 +1248,7 @@ function Step1({
   onSubTradeChange,
   roleCategoriesList = roleCategories,
   departmentOptionsList = departmentOptions,
-
+  handleDepartmentChange,
   industryOptionsList = [],
   tradeOptionsList = [],
   subTradeOptionsList = [],
@@ -1388,7 +1389,7 @@ function Step1({
             value={selectedTradeCategoryId}
             onChange={onTradeChange}
             options={industryIsCustom ? [] : tradeOptionsList}
-            disabled={false}
+            disabled={!hasIndustry}
             loading={industryIsCustom ? false : tradeLoading}
             placeholder={
               !hasIndustry
@@ -1731,35 +1732,15 @@ function Step1({
           />
         </Field>
 
-        {/* Department */}
-        <Field label="Department" hint="Pick from the list — select 'Other' to specify manually">
-          <Combobox
-            value={jobForm.Department}
-            onChange={(v) =>
-              setJobForm((p) => ({
-                ...p,
-                Department: v,
-                DepartmentOther: isOtherValue(v) ? p.DepartmentOther : "",
-              }))
-            }
-            options={departmentOptions}
-            placeholder="e.g. Operations"
-          />
-        </Field>
-
-        {/* Specify Department — only shown when "Other" is selected */}
-        {isDeptOther && (
-          <Field label="Specify Department" required hint="Tell us the department that isn't in the list">
-            <input
-              className={styles.control}
-              value={jobForm.DepartmentOther}
-              onChange={(e) =>
-                setJobForm((p) => ({ ...p, DepartmentOther: e.target.value }))
-              }
-              placeholder="e.g. Research & Development"
-            />
-          </Field>
-        )}
+{/* Department */}
+<Field label="Department">
+  <Combobox
+    value={jobForm.Department}
+    onChange={handleDepartmentChange}
+    options={departmentOptionsList}
+    placeholder="Select Department"
+  />
+</Field>
 
         {/* Duty Hours Per Day */}
         <div
@@ -3219,6 +3200,27 @@ export default function DashboardPostJobPage() {
     }));
   };
 
+const handleDepartmentChange = (value) => {
+  if (isOtherValue(value)) {
+    setCustomHierarchyValue("");
+
+    setCustomHierarchyModal({
+      open: true,
+      type: "department",
+      title: "Add New Department",
+      placeholder: "Enter Department",
+    });
+
+    return;
+  }
+
+  setJobForm((prev) => ({
+    ...prev,
+    Department: value,
+    DepartmentOther: "",
+  }));
+};
+
   const handleAddIndustry = async () => {
     setCustomHierarchyValue(customIndustry || "");
 
@@ -3455,7 +3457,18 @@ export default function DashboardPostJobPage() {
           "SubTrade added for this job and submitted for admin approval.",
           "success"
         );
-      }
+       } else if (type === "department") {
+  setJobForm((prev) => ({
+    ...prev,
+    Department: value,
+    DepartmentOther: "",
+  }));
+
+  showToast(
+    "Department added for this job.",
+    "success"
+  );
+}
 
       // Close modal
       setCustomHierarchyModal({
@@ -4418,7 +4431,7 @@ export default function DashboardPostJobPage() {
                   setJobForm={setJobForm}
                   errors={errors}
                   onSubmit={stepHandlers[activeStep - 1] ?? (() => { })}
-
+                  handleDepartmentChange={handleDepartmentChange}
                   handleGenerateJD={handleGenerateJD}
                   handleGenerateAdditionalJD={handleGenerateAdditionalJD}
                   loadingAI={loadingAI}
@@ -4533,9 +4546,10 @@ export default function DashboardPostJobPage() {
                 fontSize: "14px",
               }}
             >
-              Enter the new value. It will be used for this job and submitted
-              for admin approval.
-            </p>
+  Enter the new value.
+  {customHierarchyModal.type !== "development" &&
+    " It will be used for this job and submitted for admin approval."}
+</p>
 
             <input
               type="text"
@@ -4620,8 +4634,8 @@ export default function DashboardPostJobPage() {
                   height: "42px",
                   padding: "0 20px",
                   border: "none",
-                  background: "#2563eb",
-                  color: "#fff",
+                  background: "#ffa300",
+                  color: "1223591f",
                   borderRadius: "8px",
                   fontWeight: 600,
                   cursor:

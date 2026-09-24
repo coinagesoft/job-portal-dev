@@ -505,7 +505,7 @@
 }
 
 .skillPriorityItem {
-  border: 1px solid rgba(18, 35, 89, 0.08);
+  border: 1px solid rgba(18, 35, 89, 0.078);
   border-radius: 14px;
   background: #ffffff;
   padding: 14px 16px;
@@ -598,7 +598,7 @@
   padding: 5px;
   margin-bottom: 14px;
   border-radius: 14px;
-  border: 1px solid rgba(18, 35, 89, 0.12);
+  border: 1px solid #1223591f;
   background: #ffffff;
   transition: all 0.2s ease;
 }
