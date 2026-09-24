@@ -2730,7 +2730,7 @@ function Step7({ go, jobForm, setJobForm, onSubmit, preflightIssues = [] }) {
           <span>{preflightIssues.length ? "⚠" : "✓"}</span>
           {preflightIssues.length
             ? `${preflightIssues.length} item${preflightIssues.length > 1 ? "s" : ""} need${preflightIssues.length > 1 ? "" : "s"} your attention before publishing`
-            : "Everything looks good — ready to publish"}
+            : "Everything looks good — Ready to publish"}
         </div>
 
         {preflightIssues.length > 0 && (
