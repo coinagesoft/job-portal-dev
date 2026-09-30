@@ -71,6 +71,7 @@ import {
   getJobDropdowns,
   submitJobSuggestion,
 } from "@/services/recruiter/recruiterJobPostService";
+
 import {
   getIndustries,
   submitIndustrySuggestion,
@@ -903,7 +904,7 @@ function MasterHierarchyCombobox({
                 fontSize: 13,
               }}
             >
-               {addLabel}
+              {addLabel}
             </button>
           </div>
         </div>
@@ -1423,8 +1424,8 @@ function Step1({
             placeholder={
               !hasTrade
                 ? "Select Trade / Role Category first"
-                : tradeIsCustom
-                  ? (customSubTrade || "Add New SubTrade")
+                : customSubTrade
+                  ? customSubTrade
                   : "Select SubTrade / Category"
             }
             addLabel="Add New SubTrade"
@@ -1732,15 +1733,15 @@ function Step1({
           />
         </Field>
 
-{/* Department */}
-<Field label="Department">
-  <Combobox
-    value={jobForm.Department}
-    onChange={handleDepartmentChange}
-    options={departmentOptionsList}
-    placeholder="Select Department"
-  />
-</Field>
+        {/* Department */}
+        <Field label="Department">
+          <Combobox
+            value={jobForm.Department}
+            onChange={handleDepartmentChange}
+            options={departmentOptionsList}
+            placeholder="Select Department"
+          />
+        </Field>
 
         {/* Duty Hours Per Day */}
         <div
@@ -2421,7 +2422,7 @@ function Step5({ go, jobForm, setJobForm, onSubmit, errors, }) {
   const isOnshore = jobForm.LocationType === "Onshore";
   const isOffshore = jobForm.LocationType === "Offshore";
 
-  const activeCountry = jobForm.OnshoreCountry || jobForm.Country || "India";
+  const activeCountry = jobForm.OnshoreCountry || "India";
 
   const stateOptions = useMemo(() => {
     const states = getStatesForCountry(activeCountry);
@@ -2429,34 +2430,26 @@ function Step5({ go, jobForm, setJobForm, onSubmit, errors, }) {
   }, [activeCountry]);
 
   const handleCountryChange = (countryVal) => {
-    setJobForm((p) => {
-      const updatedOnshoreCountry =
-        p.OnshoreCountry === p.Country || !p.OnshoreCountry ? countryVal : p.OnshoreCountry;
-      const targetCountry = updatedOnshoreCountry || countryVal;
-      const validStates = getStatesForCountry(targetCountry);
-      const isCurrentStateValid =
-        validStates.length === 0 || validStates.includes(p.OnshoreState);
-
-      return {
-        ...p,
-        Country: countryVal,
-        OnshoreCountry: updatedOnshoreCountry,
-        OnshoreState: isCurrentStateValid ? p.OnshoreState : "",
-      };
-    });
+    setJobForm((p) => ({
+      ...p,
+      Country: countryVal,
+    }));
   };
 
   const handleOnshoreCountryChange = (countryVal) => {
     setJobForm((p) => {
       const validStates = getStatesForCountry(countryVal);
+
       const isCurrentStateValid =
-        validStates.length === 0 || validStates.includes(p.OnshoreState);
+        validStates.length === 0 ||
+        validStates.includes(p.OnshoreState);
 
       return {
         ...p,
         OnshoreCountry: countryVal,
-        Country: p.Country || countryVal,
-        OnshoreState: isCurrentStateValid ? p.OnshoreState : "",
+        OnshoreState: isCurrentStateValid
+          ? p.OnshoreState
+          : "",
       };
     });
   };
@@ -3200,26 +3193,26 @@ export default function DashboardPostJobPage() {
     }));
   };
 
-const handleDepartmentChange = (value) => {
-  if (isOtherValue(value)) {
-    setCustomHierarchyValue("");
+  const handleDepartmentChange = (value) => {
+    if (isOtherValue(value)) {
+      setCustomHierarchyValue("");
 
-    setCustomHierarchyModal({
-      open: true,
-      type: "department",
-      title: "Add New Department",
-      placeholder: "Enter Department",
-    });
+      setCustomHierarchyModal({
+        open: true,
+        type: "department",
+        title: "Add New Department",
+        placeholder: "Enter Department",
+      });
 
-    return;
-  }
+      return;
+    }
 
-  setJobForm((prev) => ({
-    ...prev,
-    Department: value,
-    DepartmentOther: "",
-  }));
-};
+    setJobForm((prev) => ({
+      ...prev,
+      Department: value,
+      DepartmentOther: "",
+    }));
+  };
 
   const handleAddIndustry = async () => {
     setCustomHierarchyValue(customIndustry || "");
@@ -3430,9 +3423,8 @@ const handleDepartmentChange = (value) => {
           suggestedName: value,
           note: "Suggested new SubTrade / Category during job posting",
 
-          // Only available when Trade is an existing master record.
-          tradeCategoryId:
-            selectedTradeCategoryId || null,
+          tradeCategoryId: selectedTradeCategoryId || null,
+          parentSuggestionId: pendingTradeSuggestionId || null,
 
           submittedByName: userName,
           submittedByEmail: userEmail,
@@ -3457,18 +3449,18 @@ const handleDepartmentChange = (value) => {
           "SubTrade added for this job and submitted for admin approval.",
           "success"
         );
-       } else if (type === "department") {
-  setJobForm((prev) => ({
-    ...prev,
-    Department: value,
-    DepartmentOther: "",
-  }));
+      } else if (type === "department") {
+        setJobForm((prev) => ({
+          ...prev,
+          Department: value,
+          DepartmentOther: "",
+        }));
 
-  showToast(
-    "Department added for this job.",
-    "success"
-  );
-}
+        showToast(
+          "Department added for this job.",
+          "success"
+        );
+      }
 
       // Close modal
       setCustomHierarchyModal({
@@ -4546,10 +4538,10 @@ const handleDepartmentChange = (value) => {
                 fontSize: "14px",
               }}
             >
-  Enter the new value.
-  {customHierarchyModal.type !== "development" &&
-    " It will be used for this job and submitted for admin approval."}
-</p>
+              Enter the new value.
+              {customHierarchyModal.type !== "development" &&
+                " It will be used for this job and submitted for admin approval."}
+            </p>
 
             <input
               type="text"

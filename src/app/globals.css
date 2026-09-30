@@ -134,14 +134,17 @@ html {
 
 html,
 body {
-  max-width: 100vw;
+  /* max-width: 100vw; */
   overflow-x: hidden;
 }
 
 body {
-  min-height: 100%;
+  /* min-height: 100%; */
   display: flex;
   flex-direction: column;
+  min-height: 100vh;
+  
+  /* overflow-y: auto; */
   color: var(--foreground);
   background: var(--background);
   font-family: var(--font-family-base);
@@ -151,10 +154,19 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+main {
+    flex: 1 1 auto;
+}
+
+.footer {
+    flex-shrink: 0;
+    height: 70px;
+}
+
 * {
   box-sizing: border-box;
   padding: 0;
-  margin: 0;
+  /* margin: 20px; */
 }
 
 a {
@@ -2054,4 +2066,193 @@ textarea:focus,
   border-color: #ffa300 !important;
   box-shadow: 0 0 0 3px rgba(255, 163, 0, 0.15) !important;
   outline: none !important;
+}
+
+/* =========================================
+   LEGAL PAGES - PUBLIC TYPOGRAPHY
+   ========================================= */
+
+.legal-page {
+  width: 100%;
+  background: #fff;
+}
+
+.legal-page-container {
+  padding-top: 30px;
+  padding-bottom: 35px;
+}
+
+.legal-page-header {
+  margin-bottom: 22px !important;
+}
+
+.legal-page-header h1 {
+  margin: 0 0 6px !important;
+  padding: 0 !important;
+  font-size: 32px !important;
+  line-height: 1.25 !important;
+  font-weight: 700 !important;
+  color: #122359 !important;
+}
+
+.legal-effective-date {
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 13px !important;
+  line-height: 20px !important;
+  color: #66789c !important;
+}
+
+
+/* Main database HTML content */
+
+.legal-page-content {
+  margin: 0 !important;
+  padding: 0 !important;
+  font-size: 15px !important;
+  line-height: 1.6 !important;
+  color: #4f5e64 !important;
+}
+
+
+/* Headings */
+
+.legal-page-content h1 {
+  margin: 24px 0 8px !important;
+  padding: 0 !important;
+  font-size: 30px !important;
+  line-height: 1.3 !important;
+  font-weight: 700 !important;
+  color: #122359 !important;
+}
+
+.legal-page-content h2 {
+  margin: 22px 0 7px !important;
+  padding: 0 !important;
+  font-size: 24px !important;
+  line-height: 1.3 !important;
+  font-weight: 700 !important;
+  color: #122359 !important;
+}
+
+.legal-page-content h3 {
+  margin: 18px 0 6px !important;
+  padding: 0 !important;
+  font-size: 20px !important;
+  line-height: 1.35 !important;
+  font-weight: 700 !important;
+  color: #122359 !important;
+}
+
+.legal-page-content h4 {
+  margin: 15px 0 5px !important;
+  padding: 0 !important;
+  font-size: 17px !important;
+  line-height: 1.4 !important;
+  font-weight: 700 !important;
+  color: #122359 !important;
+}
+
+
+/* Paragraphs */
+
+.legal-page-content p {
+  margin: 0 0 9px !important;
+  padding: 0 !important;
+  font-size: 15px !important;
+  line-height: 1.6 !important;
+  color: #4f5e64 !important;
+}
+
+
+/* Lists */
+
+.legal-page-content ul,
+.legal-page-content ol {
+  margin: 6px 0 12px !important;
+  padding-left: 24px !important;
+}
+
+.legal-page-content li {
+  margin: 0 0 4px !important;
+  padding: 0 !important;
+  font-size: 15px !important;
+  line-height: 1.55 !important;
+  color: #4f5e64 !important;
+}
+
+
+/* Links */
+
+.legal-page-content a {
+  color: #122359 !important;
+  text-decoration: underline;
+}
+
+
+/* Strong */
+
+.legal-page-content strong {
+  color: #122359 !important;
+  font-weight: 700 !important;
+}
+
+
+/* Tables */
+
+.legal-page-content table {
+  width: 100%;
+  margin: 14px 0 18px !important;
+}
+
+.legal-page-content th,
+.legal-page-content td {
+  padding: 8px 10px !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+}
+
+
+/* Mobile */
+
+@media (max-width: 767.98px) {
+
+  .legal-page-container {
+    padding-top: 22px;
+    padding-bottom: 30px;
+  }
+
+  .legal-page-header {
+    margin-bottom: 18px !important;
+  }
+
+  .legal-page-header h1 {
+    font-size: 28px !important;
+  }
+
+  .legal-page-content {
+    font-size: 14px !important;
+  }
+
+  .legal-page-content h1 {
+    font-size: 26px !important;
+  }
+
+  .legal-page-content h2 {
+    font-size: 22px !important;
+    margin-top: 20px !important;
+  }
+
+  .legal-page-content h3 {
+    font-size: 18px !important;
+  }
+
+  .legal-page-content h4 {
+    font-size: 16px !important;
+  }
+
+  .legal-page-content p,
+  .legal-page-content li {
+    font-size: 14px !important;
+  }
 }

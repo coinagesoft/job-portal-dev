@@ -3920,9 +3920,11 @@ ul li:last-child .card-list-4 {
 }
 .footer .footer-bottom {
   border-top: 1px solid #ffc151;
-  padding: 30px 0px;
+  /* padding: 30px 0px; */
+  padding-top: 25px;
   color: #4F5E64;
   font-size: 14px;
+  /* margin-bottom: 30px; */
 }
 .footer .footer-bottom strong {
   color: #122359;
@@ -10339,6 +10341,7 @@ ul li:last-child .card-list-4 {
 
 body {
   background: #fffefd !important;
+  /* padding-bottom: 30px; */
 }
 
 /* Optional soft section tint */

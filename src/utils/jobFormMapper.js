@@ -67,7 +67,7 @@ export const mapResumeToForm = (response, defaultTradeCategory = "Welding") => (
 
   // Step 5
   LocationType: humanize(response.step5Data?.locationType) ?? "Onshore",
-  Country: response.step5Data?.country ?? "India",
+  Country: response.step5Data?.country ?? "",
   WorkAddressLine: response.step5Data?.workAddressLine ?? "",
   OnshoreCity: response.step5Data?.onshoreCity ?? "",
   OnshoreState: response.step5Data?.onshoreState ?? "",

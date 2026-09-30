@@ -6,6 +6,7 @@ import { useSelector } from "react-redux";
 // import { mockProfile } from "@/app/candidate-profile/components/data";
 
 import { applyJob } from "@/services/candidate/applyJobService";
+import { uploadDocument } from "@/services/candidate/documentService";
 import { getApplyQuestions } from "@/services/candidate/applyQuestionsService";
 import { useToast } from "@/components/Toast";
 
@@ -66,6 +67,9 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
   // Apply requirements + screening questions fetched from the API.
   const [applyDetails, setApplyDetails] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
+
+  const [requiredDocumentFiles, setRequiredDocumentFiles] = useState({});
+  const [uploadingDocument, setUploadingDocument] = useState(null);
   // Candidate confirmations for required languages / certificates / passport.
   const [confirmations, setConfirmations] = useState({
     languages: {},
@@ -111,16 +115,50 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
     });
   }, [applyDetails, job]);
 
-  // Required language / certificate / passport gates from the API.
-  const requiredLanguages = applyDetails?.languagesRequired ?? [];
-  const requiredCertificates = applyDetails?.certificatesRequired ?? [];
-  const passportRequired = applyDetails?.passportRequired ?? false;
+  const requiredLanguages =
+    Array.isArray(applyDetails?.languagesRequired)
+      ? applyDetails.languagesRequired
+      : [];
+
+  const personalDocumentsRequired =
+    Array.isArray(applyDetails?.personalDocumentsRequired)
+      ? applyDetails.personalDocumentsRequired
+      : [];
+
+  const workingDocumentsRequired =
+    Array.isArray(applyDetails?.workingDocumentsRequired)
+      ? applyDetails.workingDocumentsRequired
+      : [];
+
+  const requiredDocuments = [
+    ...new Set([
+      ...personalDocumentsRequired,
+      ...workingDocumentsRequired,
+    ]),
+  ];
+
+  const existingDocuments =
+    Array.isArray(applyDetails?.existingDocuments)
+      ? applyDetails.existingDocuments
+      : [];
+
+  const missingDocuments =
+    Array.isArray(applyDetails?.missingDocuments)
+      ? applyDetails.missingDocuments
+      : [];
+
+  const passportRequired =
+    applyDetails?.passportRequired ?? false;
+
+  const candidateHasPassport =
+    applyDetails?.candidateHasPassport ?? false;
+
+  const passportBlocksApplication =
+    passportRequired && !candidateHasPassport;
   // Whether the candidate actually has a passport on file (server-verified,
   // not self-attested). When the job requires a passport and the candidate
   // doesn't have one, applying is blocked with a clear message instead of
   // just showing a checkbox the candidate could tick without proof.
-  const candidateHasPassport = applyDetails?.candidateHasPassport ?? false;
-  const passportBlocksApplication = passportRequired && !candidateHasPassport;
 
   useEffect(() => {
     if (showModal && !isCandidateLoggedIn) {
@@ -168,6 +206,63 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
 
     loadApplyDetails();
   }, [showModal, job?.jobId, candidateId]);
+
+  const uploadRequiredDocument = async (documentName) => {
+    const file = requiredDocumentFiles[documentName];
+
+    if (!file) {
+      setError(`Please select ${documentName}.`);
+      return false;
+    }
+
+    try {
+      setUploadingDocument(documentName);
+      setError("");
+
+      const response = await uploadDocument(file);
+
+      if (!response?.data?.success) {
+        setError(
+          response?.data?.message ||
+          `Failed to upload ${documentName}.`
+        );
+        return false;
+      }
+
+      showToast(
+        response.data.message ||
+        `${documentName} uploaded successfully.`,
+        "success"
+      );
+
+      // Refresh backend document status
+      const detailsResponse = await getApplyQuestions(job.jobId);
+      setApplyDetails(detailsResponse.data);
+
+      // Remove temporary browser state
+      setRequiredDocumentFiles((prev) => {
+        const next = { ...prev };
+        delete next[documentName];
+        return next;
+      });
+
+      return true;
+    } catch (error) {
+      console.error(
+        `Failed to upload ${documentName}:`,
+        error
+      );
+
+      setError(
+        error.response?.data?.message ||
+        `Failed to upload ${documentName}.`
+      );
+
+      return false;
+    } finally {
+      setUploadingDocument(null);
+    }
+  };
 
 
   useEffect(() => {
@@ -353,9 +448,11 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
       }
     }
 
-    for (const cert of requiredCertificates) {
-      if (!confirmations.certificates[cert]) {
-        setError(`Please confirm you hold the required certificate: ${cert}.`);
+    for (const documentName of missingDocuments) {
+      if (!requiredDocumentFiles[documentName]) {
+        setError(
+          `Please upload the required document: ${documentName}.`
+        );
         return false;
       }
     }
@@ -418,11 +515,6 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
         languageConfirmations: requiredLanguages.map((name) => ({
           name,
           confirmed: !!confirmations.languages[name],
-        })),
-
-        certificateConfirmations: requiredCertificates.map((name) => ({
-          name,
-          confirmed: !!confirmations.certificates[name],
         })),
       };
       console.log("Apply Payload", JSON.stringify(payload, null, 2));
@@ -641,7 +733,7 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
 
                         {(passportRequired ||
                           requiredLanguages.length > 0 ||
-                          requiredCertificates.length > 0) && (
+                          missingDocuments.length > 0) && (
                             <div className="mb-15">
                               <h6 className="mb-10">Requirements to confirm</h6>
 
@@ -699,17 +791,63 @@ const ApplyJobModal = ({ showModal = false, setShowModal, job }) => {
                                 </label>
                               ))}
 
-                              {requiredCertificates.map((cert) => (
-                                <label key={`cert-${cert}`} className="mb-8" style={{ display: "flex", gap: "8px" }}>
-                                  <input
-                                    type="checkbox"
-                                    checked={!!confirmations.certificates[cert]}
-                                    onChange={(e) => toggleCertificate(cert, e.target.checked)}
-                                    style={{ accentColor: "#F7941D", cursor: "pointer" }}
-                                  />
-                                  <span className="font-sm">I hold the {cert} certificate *</span>
-                                </label>
-                              ))}
+                              {missingDocuments.length > 0 && (
+                                <div className="mb-15">
+                                  <h6 className="mb-10">Required Documents</h6>
+
+                                  <p className="font-xs mb-10">
+                                    Please upload the documents required for this job.
+                                  </p>
+
+                                  {missingDocuments.map((documentName) => (
+                                    <div key={documentName} className="mb-15">
+                                      <label className="font-sm fw-600 mb-5 d-block">
+                                        {documentName} *
+                                      </label>
+
+                                      <input
+                                        type="file"
+                                        className="form-control"
+                                        accept=".pdf,.jpg,.jpeg,.png,.webp"
+                                        disabled={uploadingDocument === documentName}
+                                        onChange={(e) => {
+                                          const file = e.target.files?.[0];
+
+                                          if (!file) return;
+
+                                          setRequiredDocumentFiles((prev) => ({
+                                            ...prev,
+                                            [documentName]: file,
+                                          }));
+
+                                          setError("");
+                                        }}
+                                      />
+
+                                      {requiredDocumentFiles[documentName] && (
+                                        <>
+                                          <p className="font-xs mt-5 mb-5">
+                                            {requiredDocumentFiles[documentName].name}
+                                          </p>
+
+                                          <button
+                                            type="button"
+                                            className="btn btn-default"
+                                            disabled={uploadingDocument === documentName}
+                                            onClick={() =>
+                                              uploadRequiredDocument(documentName)
+                                            }
+                                          >
+                                            {uploadingDocument === documentName
+                                              ? "Uploading..."
+                                              : "Upload Document"}
+                                          </button>
+                                        </>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           )}
 
