@@ -142,6 +142,7 @@ const roleCategories = [
   "Customer Service Executive",
   "Other",
 ];
+
 const jobPostTypes = [
   { label: "Regular Hiring", value: "Regular Hiring" },
   { label: "Hot Vacancy", value: "Hot Vacancy" },
@@ -149,6 +150,7 @@ const jobPostTypes = [
   { label: "Bulk Hiring", value: "Bulk Hiring" },
   // { label: "Classified", value: "Classified" },
 ];
+
 const employmentTypeOptions = [
   { label: "Full Time", value: "Full Time" },
   { label: "Part Time", value: "Part Time" },
@@ -159,6 +161,7 @@ const employmentTypeOptions = [
   // { label: "Permanent", value: "Permanent" }, 
   // { label: "Temporary", value: "Temporary" }, 
 ];
+
 const employmentModeOptions = [
   { label: "Onsite", value: "Onsite" },
   { label: "Remote", value: "Remote" },
@@ -1421,13 +1424,13 @@ function Step1({
             options={tradeIsCustom ? [] : subTradeOptionsList}
             disabled={!hasTrade}
             loading={tradeIsCustom ? false : subTradeLoading}
-            placeholder={
-              !hasTrade
-                ? "Select Trade / Role Category first"
-                : customSubTrade
-                  ? customSubTrade
-                  : "Select SubTrade / Category"
-            }
+           placeholder={
+  !hasTrade
+    ? "Select Trade / Role Category first"
+    : customSubTrade
+      ? customSubTrade
+      : "Select SubTrade / Category"
+}
             addLabel="Add New SubTrade"
             onAddNew={onAddSubTrade}
           />
@@ -3366,6 +3369,11 @@ export default function DashboardPostJobPage() {
           // Only set this when Industry is an existing master record.
           registrationIndustryId:
             selectedIndustryId || null,
+
+
+  // Custom Industry
+           parentSuggestionId:
+          pendingIndustrySuggestionId || null,
 
           submittedByName: userName,
           submittedByEmail: userEmail,
