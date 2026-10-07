@@ -1255,10 +1255,19 @@ useEffect(() => {
       }
 
       // Create order from backend
-      const orderResponse =
-        await createCandidateOrder({
-          amount: candidatePlan?.price || 100,
-        });
+const meta = getCountryMeta(form.countryCode);
+
+const region = meta?.name
+  ? meta.name.toLowerCase()
+  : "india";
+
+const orderResponse =
+  await createCandidateOrder({
+    region,
+    couponCode: couponApplied
+      ? couponCode.trim().toUpperCase()
+      : null,
+  });
 
       const order = orderResponse.data;
 
@@ -1282,7 +1291,7 @@ useEffect(() => {
       const options = {
         key: activeKey,
 
-        amount: order.amount * 100,
+        amount: order.finalAmountPaise,
 
         currency: order.currency,
 
@@ -1432,18 +1441,24 @@ useEffect(() => {
       }
 
       // existing OTP-based path — unchanged
-      const response = await registerCandidate({
-        fullName: form.name,
-        mobileNumber: form.mobile.replace(/\D/g, ""),
-        countryCode: form.countryCode,
-        email: form.email,
-        otpToken,
-        planId: payInfo.planId,
-        razorpayOrderId: payInfo.razorpayOrderId,
-        razorpayPaymentId: payInfo.razorpayPaymentId,
-        razorpaySignature: payInfo.razorpaySignature,
-        termsAccepted: terms,
-      });
+     const response = await registerCandidate({
+  fullName: form.name,
+  mobileNumber: form.mobile.replace(/\D/g, ""),
+  countryCode: form.countryCode,
+  email: form.email,
+  otpToken,
+  planId: payInfo.planId,
+
+  // Send the coupon used for this payment
+  couponCode: couponApplied
+    ? couponCode.trim().toUpperCase()
+    : null,
+
+  razorpayOrderId: payInfo.razorpayOrderId,
+  razorpayPaymentId: payInfo.razorpayPaymentId,
+  razorpaySignature: payInfo.razorpaySignature,
+  termsAccepted: terms,
+});
 
       showToast(response.data.message, "success");
       setTimeout(() => router.push("/Login"), 1000);
@@ -1668,7 +1683,7 @@ useEffect(() => {
 
     const response = await validateCandidateCoupon({
       code: couponCode.trim().toUpperCase(),
-      planType: 2,
+      planType: "Candidate",
       planId: candidatePlan.planId,
       region,
     });
@@ -1765,7 +1780,13 @@ useEffect(() => {
                   fontSize: "var(--font-sm)",
                 }}
               >
-                {loading ? "Processing..." : `Pay INR ${candidatePlan?.price || 100} via Razorpay`}
+                {loading
+  ? "Processing..."
+  : `Pay INR ${
+      couponApplied && couponFinalAmount !== null
+        ? couponFinalAmount.toFixed(2)
+        : (candidatePlan?.price || 100).toFixed(2)
+    } via Razorpay`}
               </Btn>
               {!terms && (
                 <p

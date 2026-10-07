@@ -34,12 +34,12 @@ const Footer = () => {
                   Terms & Conditions
                 </Link>
 
-                <a
+                 <Link
                   className="font-xs color-text-paragraph"
-                  href="#"
+                  href="/legalPages/cancellationrefund"
                 >
-                  Security
-                </a>
+                  Cancellation & Refund Policy
+                </Link>
               </div>
             </div>
           </div>
