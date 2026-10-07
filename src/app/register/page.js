@@ -1987,7 +1987,16 @@ function EmployerForm() {
   const showToast = useToast();
   const [step, setStep] = useState(1);
   const [industriesList, setIndustriesList] = useState([]);
+const [recruiterPlans, setRecruiterPlans] = useState([]);
+const [selectedPlanId, setSelectedPlanId] = useState("");
 
+const [couponCode, setCouponCode] = useState("");
+const [couponApplied, setCouponApplied] = useState(false);
+const [couponLoading, setCouponLoading] = useState(false);
+const [couponMessage, setCouponMessage] = useState("");
+
+const [couponDiscount, setCouponDiscount] = useState(0);
+const [couponFinalAmount, setCouponFinalAmount] = useState(null);
   const [data, setData] = useState({
     hasGst: null,
     industry: "",
@@ -2036,6 +2045,7 @@ function EmployerForm() {
   const [recruiterPlan, setRecruiterPlan] = useState(null);
   const [planLoading, setPlanLoading] = useState(false);
   const [payStatus, setPayStatus] = useState("");
+  
   const [paymentData, setPaymentData] = useState({
     planId: null,
     razorpayOrderId: "",
@@ -2046,34 +2056,123 @@ function EmployerForm() {
   const [paying, setPaying] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
-  const fetchRecruiterPlan = async (code) => {
-    try {
-      setPlanLoading(true);
-      const meta = getCountryMeta(code);
-      const region = meta?.name ? meta.name.toLowerCase() : "india";
-      let response = await getRecruiterPlan(region);
-      let list = response.data || [];
-      if (list.length === 0) {
-        response = await getRecruiterPlan("");
-        list = response.data || [];
-      }
-      if (list.length > 0) {
-        const activePlan = list.find((p) => p.isActive) || list[0];
-        setRecruiterPlan(activePlan);
-      } else {
-        setRecruiterPlan(null);
-      }
-    } catch (err) {
-      console.error("Failed to fetch recruiter plan:", err);
-      setRecruiterPlan(null);
-    } finally {
-      setPlanLoading(false);
+const fetchRecruiterPlan = async (code) => {
+  try {
+    setPlanLoading(true);
+
+    const meta = getCountryMeta(code);
+    const region = meta?.name
+      ? meta.name.toLowerCase()
+      : "india";
+
+    let response = await getRecruiterPlan(region);
+    let list = response.data || [];
+
+    // Fallback if no plans are found for the selected region
+    if (list.length === 0) {
+      response = await getRecruiterPlan("");
+      list = response.data || [];
     }
-  };
+
+    // Keep only active plans
+    const activePlans = list.filter((p) => p.isActive);
+
+    if (activePlans.length > 0) {
+      // Store all available active recruiter plans
+      setRecruiterPlans(activePlans);
+
+      // Select the first plan by default
+      const defaultPlan = activePlans[0];
+
+      setSelectedPlanId(defaultPlan.planId);
+
+      // Keep old state synchronized for now
+      setRecruiterPlan(defaultPlan);
+    } else {
+      setRecruiterPlans([]);
+      setSelectedPlanId("");
+      setRecruiterPlan(null);
+    }
+  } catch (err) {
+    console.error("Failed to fetch recruiter plans:", err);
+
+    setRecruiterPlans([]);
+    setSelectedPlanId("");
+    setRecruiterPlan(null);
+  } finally {
+    setPlanLoading(false);
+  }
+};
+
+const handleApplyRecruiterCoupon = async () => {
+  if (!couponCode.trim()) {
+    setCouponMessage("Please enter a coupon code.");
+    return;
+  }
+
+  if (!selectedPlanId) {
+    setCouponMessage("Please select a membership plan first.");
+    return;
+  }
+
+  try {
+    setCouponLoading(true);
+    setCouponMessage("");
+    setCouponApplied(false);
+    setCouponDiscount(0);
+    setCouponFinalAmount(null);
+
+    const meta = getCountryMeta(data.countryCode);
+
+    const region = meta?.name
+      ? meta.name.toLowerCase()
+      : "india";
+
+      const sessionId = localStorage.getItem("registrationSessionId");
+
+    // We don't need a separate frontend coupon API.
+    // The backend validates the coupon when creating the Razorpay order.
+    const response = await createMembershipOrder({
+      sessionId,
+      region,
+      planId: selectedPlanId,
+      couponCode: couponCode.trim().toUpperCase(),
+    });
+
+    const result = response.data;
+
+    if (!result?.success) {
+      setCouponMessage(
+        result?.message || "Invalid or expired coupon."
+      );
+      return;
+    }
+
+    setCouponApplied(true);
+    setCouponDiscount(result.discountAmount || 0);
+    setCouponFinalAmount(result.finalAmount);
+
+    setCouponMessage(
+      result.discountAmount > 0
+        ? `Coupon applied successfully. You save ₹${result.discountAmount}.`
+        : "Coupon applied successfully."
+    );
+  } catch (err) {
+    console.error("Recruiter coupon error:", err);
+
+    setCouponMessage(
+      err?.response?.data?.message ||
+        "Unable to validate coupon. Please try again."
+    );
+  } finally {
+    setCouponLoading(false);
+  }
+};
 
   useEffect(() => {
     fetchRecruiterPlan(data.countryCode);
   }, [data.countryCode]);
+
 
   useEffect(() => {
     const fetchIndustries = async () => {
@@ -2520,10 +2619,14 @@ setAdditionalDocuments(
       // admin-configured Recruiter MembershipPlan server-side) — NOT
       // createCandidateOrder, which was creating an order for the
       // candidate plan/price instead of the employer registration fee.
-      const orderResponse = await createMembershipOrder({
-        sessionId,
-        region,
-      });
+     const orderResponse = await createMembershipOrder({
+  sessionId,
+  region,
+  planId: selectedPlanId,
+  couponCode: couponApplied
+    ? couponCode.trim().toUpperCase()
+    : null,
+});
 
       const order = orderResponse.data;
 
@@ -2544,7 +2647,7 @@ setAdditionalDocuments(
 
       const options = {
         key: activeKey,
-        amount: order.amountPaise || (recruiterPlan?.price || 150) * 100,
+       amount: order.finalAmountPaise,
         currency: order.currency || "INR",
         name: "Job Box",
         description: "Employer Registration Fee",
@@ -2610,15 +2713,28 @@ setAdditionalDocuments(
       const sessionId = localStorage.getItem("registrationSessionId");
       const payInfo = paymentOverride || paymentData;
 
-      const response = await submitRegistration({
-        sessionId,
-        consentGiven: true,
-        consentVersion: "1.0",
-        planId: payInfo.planId,
-        razorpayOrderId: payInfo.razorpayOrderId,
-        razorpayPaymentId: payInfo.razorpayPaymentId,
-        razorpaySignature: payInfo.razorpaySignature,
-      });
+    const meta = getCountryMeta(data.countryCode);
+const region = meta?.name
+  ? meta.name.toLowerCase()
+  : "india";
+
+const response = await submitRegistration({
+  sessionId,
+  consentGiven: true,
+  consentVersion: "1.0",
+
+  planId: payInfo.planId,
+
+  region,
+
+  couponCode: couponApplied
+    ? couponCode.trim().toUpperCase()
+    : null,
+
+  razorpayOrderId: payInfo.razorpayOrderId,
+  razorpayPaymentId: payInfo.razorpayPaymentId,
+  razorpaySignature: payInfo.razorpaySignature,
+});
 
       if (response.data.success) {
         showToast("Registration completed", "success");
@@ -3422,6 +3538,7 @@ setAdditionalDocuments(
     }
   };
 
+  
   const handleResendEmailOtp = async () => {
     try {
       const sessionId = localStorage.getItem("registrationSessionId");
@@ -4277,52 +4394,226 @@ setAdditionalDocuments(
       )}
 
       <div style={{ marginTop: 14, marginBottom: 14 }}>
-        <Field label="Registration Fee">
-          {payStatus === "success" ? (
-            <Alert type="success">
-              {paying
-                ? "Payment successful — creating your account..."
-                : `Payment successful for INR ${recruiterPlan?.price || 150}. Your receipt will be sent to your registered email.`}
-            </Alert>
-          ) : (
-            <>
-              <Btn
-                variant="primary"
-                onClick={handleEmployerPay}
-                disabled={paying || !termsAccepted}
-                style={{
-                  width: "100%",
-                  padding: "11px 0",
-                  fontSize: "var(--font-sm)",
-                }}
-              >
-                {paying ? "Processing..." : `Pay INR ${recruiterPlan?.price || 150} via Razorpay`}
-              </Btn>
-              {!termsAccepted && (
-                <p
-                  style={{
-                    fontSize: "var(--font-xs)",
-                    marginTop: 8,
-                    color: "var(--color-text-tertiary)",
-                  }}
-                >
-                  Please accept the Terms of Service above to continue to payment.
-                </p>
-              )}
-            </>
-          )}
-          {paymentMessage && (
-            <p
-              style={{
-                fontSize: "var(--font-xs)",
-                marginTop: 8,
-                color: "var(--color-text-tertiary)",
-              }}
-            >
-              {paymentMessage}
-            </p>
-          )}
-        </Field>
+    <Field label="Registration Fee">
+
+{/* ── Membership Plan ── */}
+{recruiterPlans.length > 0 && (
+  <div style={{ marginBottom: 14 }}>
+    <label
+      style={{
+        display: "block",
+        fontSize: "var(--font-xs)",
+        fontWeight: 600,
+        marginBottom: 6,
+        color: "var(--color-text-secondary)",
+      }}
+    >
+      Membership Plan
+    </label>
+
+    <select
+      value={selectedPlanId}
+      disabled={paying || couponLoading || couponApplied}
+      onChange={(e) => {
+        const planId = e.target.value;
+
+        setSelectedPlanId(planId);
+
+        const selectedPlan = recruiterPlans.find(
+          (plan) => plan.planId === planId
+        );
+
+        setRecruiterPlan(selectedPlan || null);
+
+        // Reset coupon when changing plan
+        setCouponCode("");
+        setCouponApplied(false);
+        setCouponMessage("");
+        setCouponDiscount(0);
+        setCouponFinalAmount(null);
+      }}
+      style={{
+        width: "100%",
+        padding: "10px 12px",
+        borderRadius: 8,
+        border: "1px solid rgba(18,35,89,0.15)",
+        background: "#fff",
+        fontSize: "var(--font-sm)",
+        color: "var(--color-text-primary)",
+      }}
+    >
+      {recruiterPlans.map((plan) => (
+        <option key={plan.planId} value={plan.planId}>
+          {plan.planName} — INR {Number(plan.price).toFixed(2)}
+        </option>
+      ))}
+    </select>
+  </div>
+)}
+
+  {/* ── Recruiter Coupon ── */}
+  {payStatus !== "success" && (
+    <div style={{ marginBottom: 14 }}>
+      <label
+        style={{
+          display: "block",
+          fontSize: "var(--font-xs)",
+          fontWeight: 600,
+          marginBottom: 6,
+          color: "var(--color-text-secondary)",
+        }}
+      >
+        Coupon Code
+      </label>
+
+      <div
+        style={{
+          display: "flex",
+          gap: 8,
+          width: "100%",
+        }}
+      >
+        <Input
+          placeholder="Enter coupon code"
+          value={couponCode}
+          disabled={couponApplied || couponLoading || paying}
+          onChange={(e) => {
+            setCouponCode(e.target.value.toUpperCase());
+            setCouponApplied(false);
+            setCouponMessage("");
+            setCouponDiscount(0);
+            setCouponFinalAmount(null);
+          }}
+          style={{
+            flex: 1,
+            textTransform: "uppercase",
+          }}
+        />
+
+        <Btn
+          type="button"
+          variant={couponApplied ? "success" : "primary"}
+          disabled={
+            couponLoading ||
+            couponApplied ||
+            paying ||
+            !couponCode.trim() ||
+            !selectedPlanId
+          }
+          onClick={handleApplyRecruiterCoupon}
+          style={{
+            minWidth: 100,
+          }}
+        >
+          {couponLoading
+            ? "Checking..."
+            : couponApplied
+              ? "Applied"
+              : "Apply"}
+        </Btn>
+      </div>
+
+      {/* Coupon message */}
+      {couponMessage && (
+        <p
+          style={{
+            fontSize: "var(--font-xs)",
+            marginTop: 7,
+            marginBottom: 0,
+            color: couponApplied ? "#3B6D11" : "#A32D2D",
+          }}
+        >
+          {couponMessage}
+        </p>
+      )}
+
+      {/* Discount amount */}
+      {couponApplied && couponDiscount > 0 && (
+        <p
+          style={{
+            fontSize: "var(--font-xs)",
+            marginTop: 5,
+            marginBottom: 0,
+            color: "#3B6D11",
+            fontWeight: 600,
+          }}
+        >
+          Discount: INR {couponDiscount.toFixed(2)}
+        </p>
+      )}
+
+      {/* Final amount */}
+      {couponApplied && couponFinalAmount !== null && (
+        <p
+          style={{
+            fontSize: "var(--font-xs)",
+            marginTop: 5,
+            marginBottom: 0,
+            fontWeight: 600,
+          }}
+        >
+          Final Amount: INR {couponFinalAmount.toFixed(2)}
+        </p>
+      )}
+    </div>
+  )}
+
+  {payStatus === "success" ? (
+    <Alert type="success">
+      {paying
+        ? "Payment successful — creating your account..."
+        : `Payment successful for INR ${couponApplied && couponFinalAmount !== null
+            ? couponFinalAmount.toFixed(2)
+            : recruiterPlan?.price || 150
+          }. Your receipt will be sent to your registered email.`}
+    </Alert>
+  ) : (
+    <>
+      <Btn
+        variant="primary"
+        onClick={handleEmployerPay}
+        disabled={paying || !termsAccepted || !selectedPlanId}
+        style={{
+          width: "100%",
+          padding: "11px 0",
+          fontSize: "var(--font-sm)",
+        }}
+      >
+        {paying
+          ? "Processing..."
+          : `Pay INR ${
+              couponApplied && couponFinalAmount !== null
+                ? couponFinalAmount.toFixed(2)
+                : recruiterPlan?.price || 150
+            } via Razorpay`}
+      </Btn>
+
+      {!termsAccepted && (
+        <p
+          style={{
+            fontSize: "var(--font-xs)",
+            marginTop: 8,
+            color: "var(--color-text-tertiary)",
+          }}
+        >
+          Please accept the Terms of Service above to continue to payment.
+        </p>
+      )}
+    </>
+  )}
+
+  {paymentMessage && (
+    <p
+      style={{
+        fontSize: "var(--font-xs)",
+        marginTop: 8,
+        color: "var(--color-text-tertiary)",
+      }}
+    >
+      {paymentMessage}
+    </p>
+  )}
+</Field>
       </div>
 
       {payStatus === "success" && (
