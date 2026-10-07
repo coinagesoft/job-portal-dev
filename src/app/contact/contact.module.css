@@ -1,0 +1,672 @@
+.contactPage {
+  width: 100%;
+  background-color: #ffffff;
+}
+
+.heroBreadcrumb {
+  background: url('/assets/imgs/page/about/img-about.png') no-repeat center center;
+  background-size: cover;
+  position: relative;
+  padding: 60px 0;
+}
+
+.heroBreadcrumb::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(18, 35, 89, 0.85);
+  z-index: 1;
+}
+
+.heroContent {
+  position: relative;
+  z-index: 2;
+}
+
+.heroTitle {
+  font-size: 38px;
+  line-height: 48px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 10px;
+}
+
+.heroSubtitle {
+  font-size: 16px;
+  line-height: 26px;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 0;
+}
+
+.breadcrumbNav {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  padding: 8px 20px;
+  border-radius: 30px;
+  list-style: none;
+  margin: 0;
+}
+
+.breadcrumbItem {
+  font-size: 14px;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+}
+
+.breadcrumbItem a {
+  color: #ffc151;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.breadcrumbItem a:hover {
+  color: #ffffff;
+}
+
+.breadcrumbSeparator {
+  margin: 0 10px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+}
+
+/* Info Cards Section - Single Mumbai Office */
+.infoSection {
+  padding: 50px 0 30px;
+}
+
+.infoContainer {
+  background: #ffffff;
+  border: 1px solid rgba(255, 193, 81, 0.35);
+  box-shadow: 0 10px 30px rgba(18, 35, 89, 0.04);
+  border-radius: 16px;
+  padding: 40px 35px 20px;
+}
+
+.infoCard {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 5px;
+}
+
+.brandLogo {
+  height: 38px;
+  width: auto;
+  margin-bottom: 18px;
+}
+
+.officeCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.officeIconBox {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(255, 163, 0, 0.12);
+  color: #ffa300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.officeTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #122359;
+  margin-bottom: 2px;
+}
+
+.officeSubtitle {
+  font-size: 12px;
+  color: #ffa300;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.officeAddress {
+  font-size: 14px;
+  line-height: 22px;
+  color: #4F5E64;
+  margin-bottom: 16px;
+}
+
+.contactDetailItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #4F5E64;
+  margin-bottom: 10px;
+}
+
+.contactDetailItem i {
+  color: #ffa300;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.contactDetailItem a {
+  color: #4F5E64;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.contactDetailItem a:hover {
+  color: #ffa300;
+}
+
+.viewMapLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: #ffa300;
+  background: transparent;
+  border: none;
+  padding: 6px 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: auto;
+}
+
+.viewMapLink:hover {
+  color: #122359;
+  transform: translateX(4px);
+}
+
+.badgeHq {
+  display: inline-block;
+  background: rgba(255, 163, 0, 0.15);
+  color: #d88900;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  align-self: flex-start;
+}
+
+/* Form Section */
+.formSection {
+  padding: 40px 0 60px;
+}
+
+.sectionBadge {
+  display: inline-block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffa300;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 8px;
+}
+
+.sectionHeading {
+  font-size: 32px;
+  font-weight: 700;
+  color: #122359;
+  margin-bottom: 12px;
+}
+
+.sectionDesc {
+  font-size: 15px;
+  line-height: 24px;
+  color: #66789C;
+  margin-bottom: 30px;
+}
+
+.formCard {
+  background: #ffffff;
+  border: 1px solid rgba(255, 193, 81, 0.3);
+  border-radius: 16px;
+  padding: 35px 30px;
+  box-shadow: 0 10px 30px rgba(18, 35, 89, 0.03);
+}
+
+.inputGroup {
+  margin-bottom: 20px;
+}
+
+.inputLabel {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #122359;
+  margin-bottom: 8px;
+}
+
+.inputField {
+  width: 100%;
+  height: 50px;
+  padding: 12px 18px;
+  font-size: 14px;
+  color: #122359;
+  background-color: #ffffff;
+  border: 1.5px solid #ffc151;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.inputField:focus {
+  border-color: #ffa300;
+  box-shadow: 0 0 0 3px rgba(255, 163, 0, 0.15);
+}
+
+.inputField::placeholder {
+  color: #A0ABB8;
+}
+
+.textareaField {
+  width: 100%;
+  min-height: 140px;
+  padding: 14px 18px;
+  font-size: 14px;
+  color: #122359;
+  background-color: #ffffff;
+  border: 1.5px solid #ffc151;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  outline: none;
+  resize: vertical;
+}
+
+.textareaField:focus {
+  border-color: #ffa300;
+  box-shadow: 0 0 0 3px rgba(255, 163, 0, 0.15);
+}
+
+.textareaField::placeholder {
+  color: #A0ABB8;
+}
+
+.errorField {
+  border-color: #dc3545 !important;
+}
+
+.errorText {
+  color: #dc3545;
+  font-size: 12px;
+  margin-top: 5px;
+  display: block;
+}
+
+.checkboxContainer {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 25px;
+  font-size: 14px;
+  color: #66789C;
+  cursor: pointer;
+}
+
+.checkboxContainer input {
+  margin-top: 3px;
+  accent-color: #ffa300;
+  width: 16px;
+  height: 16px;
+}
+
+.submitBtn {
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 22px;
+  color: #ffffff;
+  padding: 14px 34px;
+  background: #ffa300;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.25s ease;
+  box-shadow: 0 6px 16px rgba(255, 163, 0, 0.25);
+}
+
+.submitBtn:hover:not(:disabled) {
+  background-color: #122359;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(18, 35, 89, 0.2);
+}
+
+.submitBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.formImageWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.contactIllustration {
+  width: 100%;
+  max-width: 380px;
+  height: 480px;
+  object-fit: cover;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(18, 35, 89, 0.08);
+  border: 1px solid rgba(255, 193, 81, 0.35);
+  margin-bottom: 20px;
+}
+
+.quickHelpBox {
+  background: #f8faff;
+  border: 1px solid rgba(255, 193, 81, 0.35);
+  border-radius: 12px;
+  padding: 22px 24px;
+  width: 100%;
+  max-width: 380px;
+  text-align: left;
+}
+
+.quickHelpTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #122359;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.quickHelpText {
+  font-size: 13px;
+  line-height: 20px;
+  color: #66789C;
+  margin-bottom: 12px;
+}
+
+.successMessageCard {
+  background: #f0fdf4;
+  border: 1.5px solid #86efac;
+  border-radius: 12px;
+  padding: 25px 20px;
+  text-align: center;
+  margin-bottom: 25px;
+  animation: fadeIn 0.4s ease-in-out;
+}
+
+.successIcon {
+  width: 48px;
+  height: 48px;
+  background: #22c55e;
+  color: #ffffff;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  margin-bottom: 12px;
+}
+
+.successTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #15803d;
+  margin-bottom: 6px;
+}
+
+.successDesc {
+  font-size: 14px;
+  color: #166534;
+  margin-bottom: 16px;
+}
+
+/* Map Section - Mumbai Focus */
+.mapSection {
+  padding: 30px 0 70px;
+  scroll-margin-top: 80px;
+}
+
+.mapContainer {
+  background: #ffffff;
+  border: 1px solid rgba(255, 193, 81, 0.35);
+  box-shadow: 0 12px 35px rgba(18, 35, 89, 0.05);
+  border-radius: 20px;
+  padding: 35px;
+  overflow: hidden;
+}
+
+.mapHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 25px;
+  gap: 20px;
+}
+
+.mumbaiBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 163, 0, 0.15);
+  color: #d88900;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.mapFrameWrapper {
+  position: relative;
+  width: 100%;
+  height: 460px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+.mapIframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.mapFooterBar {
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.mapCurrentInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mapIconCircle {
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 163, 0, 0.12);
+  color: #ffa300;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.mapCurrentName {
+  font-size: 15px;
+  font-weight: 700;
+  color: #122359;
+  margin-bottom: 2px;
+}
+
+.mapCurrentAddress {
+  font-size: 13px;
+  color: #66789C;
+  margin: 0;
+}
+
+.directionsBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #122359;
+  color: #ffffff;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.directionsBtn:hover {
+  background: #ffa300;
+  color: #ffffff;
+  transform: translateY(-2px);
+}
+
+/* Support Help Grid */
+.supportCardsSection {
+  padding: 10px 0 60px;
+}
+
+.helpCard {
+  background: #ffffff;
+  border: 1px solid rgba(255, 193, 81, 0.3);
+  border-radius: 14px;
+  padding: 30px 25px;
+  text-align: center;
+  height: 100%;
+  transition: all 0.25s ease;
+  box-shadow: 0 6px 20px rgba(18, 35, 89, 0.03);
+}
+
+.helpCard:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 14px 30px rgba(18, 35, 89, 0.08);
+  border-color: #ffa300;
+}
+
+.helpCardIcon {
+  width: 54px;
+  height: 54px;
+  background: rgba(255, 163, 0, 0.12);
+  color: #ffa300;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  margin-bottom: 18px;
+}
+
+.helpCardTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #122359;
+  margin-bottom: 10px;
+}
+
+.helpCardDesc {
+  font-size: 14px;
+  line-height: 22px;
+  color: #66789C;
+  margin-bottom: 18px;
+}
+
+.helpCardLink {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffa300;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: gap 0.2s ease;
+}
+
+.helpCardLink:hover {
+  color: #122359;
+  gap: 10px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 991.98px) {
+  .heroTitle {
+    font-size: 30px;
+    line-height: 40px;
+  }
+  .infoContainer {
+    padding: 30px 20px 10px;
+  }
+  .mapContainer {
+    padding: 25px 18px;
+  }
+  .mapFrameWrapper {
+    height: 380px;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .heroBreadcrumb {
+    padding: 40px 0;
+    text-align: center;
+  }
+  .breadcrumbNav {
+    margin-top: 15px;
+  }
+  .sectionHeading {
+    font-size: 26px;
+  }
+  .mapHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .mapFrameWrapper {
+    height: 320px;
+  }
+  .mapFooterBar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .directionsBtn {
+    width: 100%;
+    justify-content: center;
+  }
+}

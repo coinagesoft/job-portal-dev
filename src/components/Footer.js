@@ -21,6 +21,13 @@ const Footer = () => {
             <div className="col-md-6 text-md-end text-start">
               <div className="footer-social">
                 <Link
+                  className="font-xs color-text-paragraph mr-30"
+                  href="/contact"
+                >
+                  Contact Us
+                </Link>
+
+                <Link
                   className="font-xs color-text-paragraph"
                   href="/legalPages/privacypolicy"
                 >
