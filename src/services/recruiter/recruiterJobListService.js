@@ -7,11 +7,10 @@ const getEmployerId = () => {
   if (!token) {
     throw new Error("Token not found");
   }
-
   const decoded = jwtDecode(token);
-
   return decoded.EmployerId;
 };
+
 
 export const getJobDashboard = async () => {
   const employerId = getEmployerId();

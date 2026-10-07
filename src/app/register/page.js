@@ -18,6 +18,7 @@ import {
   createCandidateOrder,
   googleLogin,
   linkedInLogin,
+  validateCandidateCoupon,
   getCandidatePlan,
 } from "@/services/candidate/candidateAuthService";
 import {
@@ -1064,6 +1065,14 @@ function CandidateForm() {
     razorpayPaymentId: "",
     razorpaySignature: ""
   });
+
+const [couponCode, setCouponCode] = useState("");
+const [couponApplied, setCouponApplied] = useState(false);
+const [couponLoading, setCouponLoading] = useState(false);
+const [couponMessage, setCouponMessage] = useState("");
+const [couponDiscount, setCouponDiscount] = useState(0);
+const [couponFinalAmount, setCouponFinalAmount] = useState(null);
+
   const [terms, setTerms] = useState(false);
   const [payStatus, setPayStatus] = useState("");
   const [loading, setLoading] = useState(false);
@@ -1099,10 +1108,17 @@ function CandidateForm() {
       setPlanLoading(false);
     }
   };
+useEffect(() => {
+  fetchPlan(form.countryCode);
 
-  useEffect(() => {
-    fetchPlan(form.countryCode);
-  }, [form.countryCode]);
+  // Clear coupon when country/region changes
+  setCouponCode("");
+  setCouponApplied(false);
+  setCouponMessage("");
+  setCouponDiscount(0);
+  setCouponFinalAmount(null);
+}, [form.countryCode]);
+
 
   useEffect(() => {
     const pending = sessionStorage.getItem("linkedinVerifiedState");
@@ -1600,6 +1616,134 @@ function CandidateForm() {
           </label>
         </div>
       )}
+
+  {canShowPayment && (
+  <Field label="Coupon Code">
+    <div style={{ display: "flex", gap: 8 }}>
+      <Input
+        placeholder="Enter coupon code"
+        value={couponCode}
+        disabled={couponApplied || couponLoading || loading}
+        onChange={(e) => {
+          setCouponCode(e.target.value.toUpperCase());
+          setCouponApplied(false);
+          setCouponMessage("");
+          setCouponDiscount(0);
+          setCouponFinalAmount(null);
+        }}
+        style={{
+          flex: 1,
+          textTransform: "uppercase",
+        }}
+      />
+
+      <Btn
+        variant={couponApplied ? "success" : "primary"}
+        disabled={
+          !couponCode.trim() ||
+          couponLoading ||
+          couponApplied ||
+          loading
+        }
+       onClick={async () => {
+  if (!couponCode.trim()) {
+    setCouponMessage("Please enter a coupon code.");
+    return;
+  }
+
+  if (!candidatePlan?.planId) {
+    setCouponMessage("Membership plan is not available.");
+    return;
+  }
+
+  try {
+    setCouponLoading(true);
+    setCouponMessage("");
+
+    const meta = getCountryMeta(form.countryCode);
+
+    const region = meta?.name
+      ? meta.name.toLowerCase()
+      : "india";
+
+    const response = await validateCandidateCoupon({
+      code: couponCode.trim().toUpperCase(),
+      planType: 2,
+      planId: candidatePlan.planId,
+      region,
+    });
+
+    const result = response?.data ?? response;
+
+    if (!result?.isValid) {
+      setCouponApplied(false);
+      setCouponDiscount(0);
+      setCouponFinalAmount(null);
+      setCouponMessage(
+        result?.message || "Invalid or expired coupon."
+      );
+      return;
+    }
+
+    setCouponApplied(true);
+    setCouponDiscount(Number(result.discountAmount || 0));
+    setCouponFinalAmount(Number(result.finalAmount || 0));
+    setCouponMessage(
+      result.message || "Coupon applied successfully."
+    );
+  } catch (error) {
+    console.error("Coupon validation error:", error);
+
+    setCouponApplied(false);
+    setCouponDiscount(0);
+    setCouponFinalAmount(null);
+
+    setCouponMessage(
+      error?.response?.data?.message ||
+      "Unable to validate coupon. Please try again."
+    );
+  } finally {
+    setCouponLoading(false);
+  }
+}}
+        style={{
+          minWidth: 100,
+        }}
+      >
+        {couponLoading
+          ? "Checking..."
+          : couponApplied
+            ? "Applied"
+            : "Apply"}
+      </Btn>
+    </div>
+
+    {couponMessage && (
+      <p
+        style={{
+          fontSize: "var(--font-xs)",
+          marginTop: 8,
+          color: couponApplied ? "#3B6D11" : "#A32D2D",
+        }}
+      >
+        {couponMessage}
+      </p>
+    )}
+
+    {couponApplied && couponDiscount > 0 && (
+      <p
+        style={{
+          fontSize: "var(--font-xs)",
+          marginTop: 4,
+          color: "#3B6D11",
+          fontWeight: 600,
+        }}
+      >
+        Discount: INR {couponDiscount.toFixed(2)}
+      </p>
+    )}
+  </Field>
+)}
 
       {canShowPayment && (
         <Field label="Registration Fee">

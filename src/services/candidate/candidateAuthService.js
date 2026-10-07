@@ -12,6 +12,9 @@ api.post("/api/candidate/auth/verify-otp", payload);
 export const createCandidateOrder = (payload) =>
 api.post("/api/candidate/auth/create-order", payload);
 
+export const validateCandidateCoupon = (payload) =>
+  api.post("/api/candidate/auth/validate-coupon", payload);
+
 export const googleLogin = (payload) =>
 api.post("/api/candidate/auth/google", payload);
 
