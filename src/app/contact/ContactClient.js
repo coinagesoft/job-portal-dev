@@ -6,15 +6,14 @@ import Image from 'next/image';
 import styles from './contact.module.css';
 
 const MUMBAI_OFFICE = {
-  name: 'JobBox Mumbai Head Office',
+  name: 'Mumbai Office',
   city: 'Mumbai, Maharashtra, India',
-  address: 'Unit 4B, Trade Tower, Ballard Estate, Fort, Mumbai, Maharashtra 400001, India',
-  phone: '+91 (22) 6789 0123',
-  mobile: '+91 98765 43210',
-  email: 'contact@jobbox.com',
-  supportEmail: 'support@jobbox.in',
+  address: '3610/3611, Marathon Futurex, NM Joshi Marg, Lower Parel, Mumbai 400013, India',
+  phone: '+91-22-48018106',
+  mobile: '+91-98202-20162',
+  email: 'info@vanshay.in',
   hours: 'Mon – Sat: 9:30 AM – 6:30 PM IST',
-  mapQuery: 'Ballard Estate, Fort, Mumbai, Maharashtra 400001, India',
+  mapQuery: 'Marathon Futurex, NM Joshi Marg, Lower Parel, Mumbai 400013, India',
 };
 
 export default function ContactClient() {
@@ -28,6 +27,7 @@ export default function ContactClient() {
     agreeTerms: true,
   });
   const [errors, setErrors] = useState({});
+  const [submitError, setSubmitError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -47,6 +47,9 @@ export default function ContactClient() {
     }));
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
+    }
+    if (submitError) {
+      setSubmitError('');
     }
   };
 
@@ -69,7 +72,7 @@ export default function ContactClient() {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const validationErrors = validateForm();
     if (Object.keys(validationErrors).length > 0) {
@@ -78,11 +81,38 @@ export default function ContactClient() {
     }
 
     setIsSubmitting(true);
-    // Simulate contact form submission
-    setTimeout(() => {
-      setIsSubmitting(false);
+    setSubmitError('');
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          company: formData.company,
+          email: formData.email,
+          phone: formData.phone,
+          subject: formData.subject,
+          message: formData.message,
+        }),
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to submit enquiry. Please try again.');
+      }
+
       setIsSubmitted(true);
-    }, 900);
+    } catch (err) {
+      console.error('Contact submission error:', err);
+      setSubmitError(
+        err.message || 'Unable to send enquiry. Please contact us directly at info@vanshay.in.'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleResetForm = () => {
@@ -96,12 +126,12 @@ export default function ContactClient() {
       agreeTerms: true,
     });
     setErrors({});
+    setSubmitError('');
     setIsSubmitted(false);
   };
 
-  const googleMapsUrl = `https://maps.google.com/maps?q=${encodeURIComponent(
-    MUMBAI_OFFICE.mapQuery
-  )}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
+  const googleMapsUrl =
+    'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3347.529569181477!2d72.82886728200647!3d18.99488605857379!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7cef3836311c1%3A0x8cfa9225e0aa9bca!2sMarathon%20Futurex!5e1!3m2!1sen!2sin!4v1791362900372!5m2!1sen!2sin';
 
   const googleMapsDirectionsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
     MUMBAI_OFFICE.address
@@ -137,7 +167,7 @@ export default function ContactClient() {
         <div className="container">
           <div className={styles.infoContainer}>
             <div className="row">
-              {/* Card 1: Head Office Location */}
+              {/* Card 1: Address */}
               <div className="col-lg-4 col-md-6 col-sm-12 mb-30">
                 <div className={styles.infoCard}>
                   <span className={styles.badgeHq}>Head Office &bull; Mumbai</span>
@@ -146,8 +176,8 @@ export default function ContactClient() {
                       <i className="fi-rr-map-marker"></i>
                     </div>
                     <div>
-                      <h5 className={styles.officeTitle}>Mumbai Office</h5>
-                      <span className={styles.officeSubtitle}>Ballard Estate, Fort</span>
+                      <h5 className={styles.officeTitle}>Address</h5>
+                      <span className={styles.officeSubtitle}>Lower Parel, Mumbai</span>
                     </div>
                   </div>
                   <p className={styles.officeAddress}>
@@ -163,7 +193,7 @@ export default function ContactClient() {
                 </div>
               </div>
 
-              {/* Card 2: Phone & Helpline */}
+              {/* Card 2: Call Us */}
               <div className="col-lg-4 col-md-6 col-sm-12 mb-30">
                 <div className={styles.infoCard}>
                   <span className={styles.badgeHq}>Helpline & Support</span>
@@ -172,20 +202,20 @@ export default function ContactClient() {
                       <i className="fi-rr-phone-call"></i>
                     </div>
                     <div>
-                      <h5 className={styles.officeTitle}>Call & WhatsApp</h5>
+                      <h5 className={styles.officeTitle}>Call Us</h5>
                       <span className={styles.officeSubtitle}>Mon – Sat, 9:30 AM – 6:30 PM IST</span>
                     </div>
                   </div>
                   <div className={styles.contactDetailItem}>
                     <i className="fi-rr-phone-call"></i>
                     <a href={`tel:${MUMBAI_OFFICE.phone}`}>
-                      <strong>Landline:</strong> {MUMBAI_OFFICE.phone}
+                      {MUMBAI_OFFICE.phone}
                     </a>
                   </div>
                   <div className={styles.contactDetailItem}>
                     <i className="fi-rr-smartphone"></i>
                     <a href={`tel:${MUMBAI_OFFICE.mobile}`}>
-                      <strong>Helpline:</strong> {MUMBAI_OFFICE.mobile}
+                      {MUMBAI_OFFICE.mobile}
                     </a>
                   </div>
                   <p className="font-xs color-text-paragraph-2 mt-15 mb-0">
@@ -194,7 +224,7 @@ export default function ContactClient() {
                 </div>
               </div>
 
-              {/* Card 3: Email Inquiries */}
+              {/* Card 3: Email */}
               <div className="col-lg-4 col-md-12 col-sm-12 mb-30">
                 <div className={styles.infoCard}>
                   <span className={styles.badgeHq}>Online Assistance</span>
@@ -203,20 +233,14 @@ export default function ContactClient() {
                       <i className="fi-rr-envelope"></i>
                     </div>
                     <div>
-                      <h5 className={styles.officeTitle}>Email Inquiries</h5>
-                      <span className={styles.officeSubtitle}>24/7 Ticket & Email Desk</span>
+                      <h5 className={styles.officeTitle}>Email</h5>
+                      <span className={styles.officeSubtitle}>Official Inquiry Desk</span>
                     </div>
                   </div>
                   <div className={styles.contactDetailItem}>
                     <i className="fi-rr-envelope"></i>
                     <a href={`mailto:${MUMBAI_OFFICE.email}`}>
-                      <strong>General:</strong> {MUMBAI_OFFICE.email}
-                    </a>
-                  </div>
-                  <div className={styles.contactDetailItem}>
-                    <i className="fi-rr-headset"></i>
-                    <a href={`mailto:${MUMBAI_OFFICE.supportEmail}`}>
-                      <strong>Support:</strong> {MUMBAI_OFFICE.supportEmail}
+                      {MUMBAI_OFFICE.email}
                     </a>
                   </div>
                   <p className="font-xs color-text-paragraph-2 mt-15 mb-0">
@@ -244,9 +268,9 @@ export default function ContactClient() {
                 {isSubmitted ? (
                   <div className={styles.successMessageCard}>
                     <div className={styles.successIcon}>✓</div>
-                    <h3 className={styles.successTitle}>Thank You!</h3>
+                    <h3 className={styles.successTitle}>Enquiry Sent Successfully!</h3>
                     <p className={styles.successDesc}>
-                      Your message has been received. Our Mumbai office team will get back to you shortly.
+                      Thank you for contacting us. Your message has been forwarded to our team (<strong>shivraj.b@coinage.in</strong>). We will get back to you shortly.
                     </p>
                     <button
                       type="button"
@@ -257,7 +281,13 @@ export default function ContactClient() {
                     </button>
                   </div>
                 ) : (
-                  <form onSubmit={handleSubmit} noValidate>
+                  <>
+                    {submitError && (
+                      <div className="alert alert-danger mb-20" role="alert">
+                        {submitError}
+                      </div>
+                    )}
+                    <form onSubmit={handleSubmit} noValidate>
                     <div className="row">
                       <div className="col-lg-6 col-md-6">
                         <div className={styles.inputGroup}>
@@ -424,7 +454,8 @@ export default function ContactClient() {
                       </div>
                     </div>
                   </form>
-                )}
+                </>
+              )}
               </div>
             </div>
 
@@ -448,6 +479,18 @@ export default function ContactClient() {
                     Our customer success and technical team based in Mumbai is ready to assist candidates and employers.
                   </p>
                   <div className="d-flex align-items-center mb-10">
+                    <i className="fi-rr-phone-call mr-10 color-brand-2"></i>
+                    <a href="tel:+912248018106" className="font-xs color-text-paragraph">
+                      +91-22-48018106 / +91-98202-20162
+                    </a>
+                  </div>
+                  <div className="d-flex align-items-center mb-10">
+                    <i className="fi-rr-envelope mr-10 color-brand-2"></i>
+                    <a href="mailto:info@vanshay.in" className="font-xs color-text-paragraph">
+                      info@vanshay.in
+                    </a>
+                  </div>
+                  <div className="d-flex align-items-center mb-10">
                     <i className="fi-rr-clock mr-10 color-brand-2"></i>
                     <span className="font-xs color-text-paragraph">
                       Mon – Sat, 9:30 AM – 6:30 PM IST
@@ -466,7 +509,7 @@ export default function ContactClient() {
         </div>
       </section>
 
-      {/* 4. Integrated Map Section - Mumbai Head Office */}
+      {/* 4. Integrated Map Section - Mumbai Office */}
       <section
         className={styles.mapSection}
         id="map-section"
@@ -481,25 +524,25 @@ export default function ContactClient() {
                   Visit Our Mumbai Office
                 </h3>
                 <p className="font-sm color-text-paragraph-2 mb-0">
-                  Unit 4B, Trade Tower, Ballard Estate, Fort, Mumbai, Maharashtra 400001, India
+                  {MUMBAI_OFFICE.address}
                 </p>
               </div>
 
               <span className={styles.mumbaiBadge}>
                 <i className="fi-rr-marker"></i>
-                Mumbai, Maharashtra
+                Lower Parel, Mumbai
               </span>
             </div>
 
             {/* Embedded Google Map centered on Mumbai Office */}
             <div className={styles.mapFrameWrapper}>
               <iframe
-                title="Map of Mumbai Head Office"
+                title="Map of Marathon Futurex, Mumbai"
                 src={googleMapsUrl}
                 className={styles.mapIframe}
                 allowFullScreen=""
                 loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
+                referrerPolicy="strict-origin-when-cross-origin"
               ></iframe>
             </div>
 
@@ -510,7 +553,7 @@ export default function ContactClient() {
                   <i className="fi-rr-map-marker"></i>
                 </div>
                 <div>
-                  <h6 className={styles.mapCurrentName}>{MUMBAI_OFFICE.name}</h6>
+                  <h6 className={styles.mapCurrentName}>Marathon Futurex, Lower Parel</h6>
                   <p className={styles.mapCurrentAddress}>
                     {MUMBAI_OFFICE.address} &bull; {MUMBAI_OFFICE.phone} &bull; {MUMBAI_OFFICE.hours}
                   </p>
