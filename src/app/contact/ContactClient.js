@@ -9,8 +9,7 @@ const MUMBAI_OFFICE = {
   name: 'Mumbai Office',
   city: 'Mumbai, Maharashtra, India',
   address: '3610/3611, Marathon Futurex, NM Joshi Marg, Lower Parel, Mumbai 400013, India',
-  phone: '+91-22-48018106',
-  mobile: '+91-98202-20162',
+  phone: '+91 8424880365',
   email: 'info@vanshay.in',
   hours: 'Mon – Sat: 9:30 AM – 6:30 PM IST',
   mapQuery: 'Marathon Futurex, NM Joshi Marg, Lower Parel, Mumbai 400013, India',
@@ -210,12 +209,6 @@ export default function ContactClient() {
                     <i className="fi-rr-phone-call"></i>
                     <a href={`tel:${MUMBAI_OFFICE.phone}`}>
                       {MUMBAI_OFFICE.phone}
-                    </a>
-                  </div>
-                  <div className={styles.contactDetailItem}>
-                    <i className="fi-rr-smartphone"></i>
-                    <a href={`tel:${MUMBAI_OFFICE.mobile}`}>
-                      {MUMBAI_OFFICE.mobile}
                     </a>
                   </div>
                   <p className="font-xs color-text-paragraph-2 mt-15 mb-0">
@@ -481,7 +474,7 @@ export default function ContactClient() {
                   <div className="d-flex align-items-center mb-10">
                     <i className="fi-rr-phone-call mr-10 color-brand-2"></i>
                     <a href="tel:+912248018106" className="font-xs color-text-paragraph">
-                      +91-22-48018106 / +91-98202-20162
+                      +91 8424880365
                     </a>
                   </div>
                   <div className="d-flex align-items-center mb-10">
