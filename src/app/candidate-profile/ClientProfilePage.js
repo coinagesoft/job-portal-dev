@@ -447,7 +447,43 @@ const StepPersonal = ({
 }) => {
   const [avatarPreview, setAvatarPreview] = useState(null);
   const avatarSrc = avatarPreview || data.avatar || DEFAULT_PROFILE_PHOTO;
+  const [trades, setTrades] = useState([]);
+  const [tradesLoading, setTradesLoading] = useState(true);
+ 
+const [tradeSearch, setTradeSearch] = useState("");
+const [showTradeOptions, setShowTradeOptions] = useState(false);
 
+  const filteredTrades = trades.filter((trade) =>
+  (trade.name || "")
+    .toLowerCase()
+    .includes(tradeSearch.toLowerCase())
+);
+
+
+  useEffect(() => {
+    const fetchTrades = async () => {
+      try {
+        const response = await api.get("/api/candidate-trades");
+
+        const result = response.data;
+
+        const tradeList = Array.isArray(result)
+          ? result
+          : Array.isArray(result?.data)
+            ? result.data
+            : [];
+
+        setTrades(tradeList);
+      } catch (error) {
+        console.error("Failed to fetch trades:", error);
+        setTrades([]);
+      } finally {
+        setTradesLoading(false);
+      }
+    };
+
+    fetchTrades();
+  }, []);
   const handleAvatar = async (e) => {
     const file = e.target.files[0];
 
@@ -753,19 +789,87 @@ const StepPersonal = ({
             </p>
           )}
         </Field>
-        <Field label="Trade / Job Title" required>
-          <Inp
-            value={data.trade || ""}
-            onChange={(e) => onChange("trade", e.target.value)}
-            placeholder="Enter your trade or job title"
-            required
-          />
-          {errors.trade && (
-            <p style={{ color: "red", fontSize: "12px", marginTop: "4px" }}>
-              {errors.trade}
-            </p>
-          )}
-        </Field>
+      
+<Field label="Trade / Job Title" required>
+  <div style={{ position: "relative" }}>
+   <Inp
+  value={tradeSearch || data.trade || ""}
+  onChange={(e) => {
+    setTradeSearch(e.target.value);
+    onChange("trade", e.target.value);
+  }}
+  onFocus={() => setShowTradeOptions(true)}
+  onBlur={() => {
+    setTimeout(() => setShowTradeOptions(false), 150);
+  }}
+  placeholder={
+    tradesLoading ? "Loading trades..." : "Search or enter a trade"
+  }
+  autoComplete="off"
+  required
+/>
+
+    {showTradeOptions && !tradesLoading && (
+      <div
+        style={{
+          position: "absolute",
+          top: "100%",
+          left: 0,
+          right: 0,
+          zIndex: 1000,
+          background: T.white,
+          border: `1px solid ${T.border}`,
+          borderRadius: 8,
+          maxHeight: 220,
+          overflowY: "auto",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+        }}
+      >
+        {filteredTrades.length > 0 ? (
+          filteredTrades.map((trade) => (
+            <button
+              key={trade.tradeCategoryId}
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+           
+onClick={() => {
+  onChange("trade", trade.name);
+  onChange("tradeCategoryId", trade.tradeCategoryId);
+  setTradeSearch("");
+  setShowTradeOptions(false);
+}}
+
+              style={{
+                display: "block",
+                width: "100%",
+                padding: "12px 14px",
+                textAlign: "left",
+                border: "none",
+                background: T.white,
+                color: T.navy,
+                cursor: "pointer",
+                fontSize: 14,
+              }}
+            >
+              {trade.name}
+            </button>
+          ))
+        ) : (
+          <div style={{ padding: 12, color: T.muted, fontSize: 13 }}>
+            No matching trades found
+          </div>
+        )}
+      </div>
+    )}
+  </div>
+
+  {errors.trade && (
+    <p style={{ color: "red", fontSize: 12, marginTop: 4 }}>
+      {errors.trade}
+    </p>
+  )}
+</Field>
+
       </div>
 
       <Field
@@ -3127,6 +3231,7 @@ const CandidateProfilePage = () => {
           lastName: names.slice(1).join(" ") || "",
           mobile: profile.mobileNumber || "",
           trade: profile.role || profile.jobTitle || "",
+          tradeCategoryId: profileData.tradeCategoryId || null,
           nationality: profile.nationality || "",
           dob: profile.dateOfBirth ? profile.dateOfBirth.split("T")[0] : "",
           gender: profile.gender || "",
