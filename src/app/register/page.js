@@ -201,7 +201,20 @@ const isValidMobile = (mobile, countryCode) => {
 
 const TOTAL_EMP_STEPS = 5;
 const EMPLOYER_UI_PREVIEW_MODE = false;
+const isRegistrationOtpBypass = (countryCode, mobileNumber) => {
+  const countryDigits = String(countryCode || "").replace(/\D/g, "");
+  let mobileDigits = String(mobileNumber || "").replace(/\D/g, "");
 
+  // Accept a leading trunk zero.
+  if (mobileDigits.length === 11 && mobileDigits.startsWith("0")) {
+    mobileDigits = mobileDigits.substring(1);
+  }
+
+  return (
+    countryDigits === "91" &&
+    mobileDigits === "9175140525"
+  );
+};
 // ─────────────────────────────────────────────
 // Sub-components
 // ─────────────────────────────────────────────
@@ -756,6 +769,7 @@ function MobileOtpField({
   sendMobileOtp,
   verifyMobileOtp,
   resendMobileOtp,
+  skipOtp,
 }) {
   const { sent, verified, userVal } = otp;
   const meta = getCountryMeta(countryCode);
@@ -837,7 +851,7 @@ function MobileOtpField({
         </p>
       )}
 
-      {!verified && !sent && (
+      {!skipOtp && !verified && !sent && (
         <div style={{ marginTop: 8 }}>
           <Btn
             variant="ghost"
@@ -850,7 +864,7 @@ function MobileOtpField({
         </div>
       )}
 
-      {!verified && sent && (
+      {!skipOtp && !verified && sent && (
         <div
           style={{
             marginTop: 12,
@@ -1118,7 +1132,22 @@ function CandidateForm() {
     setCouponDiscount(0);
     setCouponFinalAmount(null);
   }, [form.countryCode]);
+useEffect(() => {
+  if (!isRegistrationOtpBypass(form.countryCode, form.mobile)) {
+    return;
+  }
 
+  if (mobileOtp.verified || mobileOtp.sent) {
+    return;
+  }
+
+  sendMobileOtp();
+}, [
+  form.countryCode,
+  form.mobile,
+  mobileOtp.verified,
+  mobileOtp.sent,
+]);
 
   useEffect(() => {
     const pending = sessionStorage.getItem("linkedinVerifiedState");
@@ -1143,27 +1172,21 @@ function CandidateForm() {
         return;
       }
 
-      // Match the login review-account flow: the API skips SMS for the
-      // configured registration review number. Verify it immediately so the
-      // normal registration flow receives its required one-time OTP token.
+      // The registration API completes verification for the configured
+      // review number and returns its one-time registration token directly.
+      // Do not show the OTP input or submit a static OTP from the frontend.
       if (response.data.otpSkipped) {
-        const verification = await verifyOtp({
-          identifier,
-          countryCode: form.countryCode,
-          otpCode: "000000",
-        });
-
-        if (!verification.data.success || !verification.data.otpToken) {
+        if (!response.data.otpToken) {
           showToast(
-            verification.data.message || "Unable to verify mobile number",
+            "The review number was not verified by the server. Please try again.",
             "error"
           );
           return;
         }
 
-        setOtpToken(verification.data.otpToken);
+        setOtpToken(response.data.otpToken);
         setMobileOtp({ sent: true, verified: true, userVal: "" });
-        showToast("Review mobile number verified successfully", "success");
+        showToast("Mobile number verified successfully", "success");
         return;
       }
 
@@ -1589,6 +1612,7 @@ function CandidateForm() {
           sendMobileOtp={sendMobileOtp}
           verifyMobileOtp={verifyMobileOtp}
           resendMobileOtp={sendMobileOtp}
+         skipOtp={isRegistrationOtpBypass(form.countryCode, form.mobile)}
         />
       </Field>
 
@@ -3262,28 +3286,28 @@ function EmployerForm() {
         )}
 
 
-       
-<Field
-  label="Company Location Type"
-  required
-  error={
-    attempt2 && !data.companyLocationType
-      ? "Please select company location type"
-      : null
-  }
->
-  <Select
-    value={data.companyLocationType}
-    onChange={(e) =>
-      set("companyLocationType", e.target.value)
-    }
-    error={attempt2 && !data.companyLocationType}
-  >
-    <option value="">Select Location Type</option>
-    <option value="Onshore">Onshore</option>
-    <option value="Offshore">Offshore</option>
-  </Select>
-</Field>
+
+        <Field
+          label="Company Location Type"
+          required
+          error={
+            attempt2 && !data.companyLocationType
+              ? "Please select company location type"
+              : null
+          }
+        >
+          <Select
+            value={data.companyLocationType}
+            onChange={(e) =>
+              set("companyLocationType", e.target.value)
+            }
+            error={attempt2 && !data.companyLocationType}
+          >
+            <option value="">Select Location Type</option>
+            <option value="Onshore">Onshore</option>
+            <option value="Offshore">Offshore</option>
+          </Select>
+        </Field>
 
 
 
@@ -3799,109 +3823,109 @@ function EmployerForm() {
   // name against what Admin has configured under Admin > Recruiters >
   // Document Types (see DOC_NAME_* constants above).
 
-const requiredDocumentNames = useMemo(() => {
-  const names = [DOC_NAME_INCORPORATION];
+  const requiredDocumentNames = useMemo(() => {
+    const names = [DOC_NAME_INCORPORATION];
 
-  if (data.natureOfCompany === "RecruitmentAgency") {
-    names.push(DOC_NAME_RECRUITMENT_LICENSE);
-  }
-
-  const locationType = (data.companyLocationType || "")
-    .trim()
-    .toLowerCase();
-
-  const country = (data.country || "").trim().toLowerCase();
-
-  if (locationType === "onshore" && country !== "india") {
-    names.push(DOC_NAME_POE_LICENSE);
-  }
-
-  // Offshore: RPSL License OR Registration Certificate.
-  // This alternative requirement is handled separately by
-  // missingRequiredDocumentNames.
-
-  return names;
-}, [
-  data.natureOfCompany,
-  data.companyLocationType,
-  data.country,
-]);
-
-
-  
- 
-const DOC_NAME_REGISTRATION_CERTIFICATE = "Registration Certificate";
-
-const missingRequiredDocumentNames = useMemo(() => {
-  const allDocuments = [...mandatoryDocuments, ...optionalDocuments];
-
-  const findDocument = (documentName) =>
-    allDocuments.find((d) => d.documentName === documentName);
-
-  const isDocumentSelected = (documentName) => {
-    const doc = findDocument(documentName);
-
-    return !!doc && selectedDocuments.some(
-      (x) => x.documentTypeId === doc.documentTypeId
-    );
-  };
-
-  const locationType = (data.companyLocationType || "")
-    .trim()
-    .toLowerCase();
-
-  const country = (data.country || "").trim().toLowerCase();
-  const isIndia = country === "india";
-
-  // Preserve the existing incorporation and recruitment-agency rules.
-  // Apply POE/RPSL requirements separately according to location.
-  const missing = requiredDocumentNames
-    .filter(
-      (name) =>
-        name !== DOC_NAME_POE_LICENSE &&
-        name !== DOC_NAME_RPSL_LICENSE
-    )
-    .filter((name) => !isDocumentSelected(name));
-
-  if (locationType === "onshore" && !isIndia) {
-    if (!isDocumentSelected(DOC_NAME_POE_LICENSE)) {
-      missing.push(DOC_NAME_POE_LICENSE);
+    if (data.natureOfCompany === "RecruitmentAgency") {
+      names.push(DOC_NAME_RECRUITMENT_LICENSE);
     }
-  }
 
-  if (locationType === "offshore") {
-    const rpslDoc = findDocument(DOC_NAME_RPSL_LICENSE);
-    const registrationDoc = findDocument(
-      DOC_NAME_REGISTRATION_CERTIFICATE
-    );
+    const locationType = (data.companyLocationType || "")
+      .trim()
+      .toLowerCase();
 
-    const hasRpsl = isDocumentSelected(DOC_NAME_RPSL_LICENSE);
-    const hasRegistrationCertificate = isDocumentSelected(
-      DOC_NAME_REGISTRATION_CERTIFICATE
-    );
+    const country = (data.country || "").trim().toLowerCase();
 
-    if (!hasRpsl && !hasRegistrationCertificate) {
-      if (!rpslDoc && !registrationDoc) {
-        missing.push(
-          `${DOC_NAME_RPSL_LICENSE} or ${DOC_NAME_REGISTRATION_CERTIFICATE} (configure one in Admin)`
-        );
-      } else {
-        missing.push(
-          `${DOC_NAME_RPSL_LICENSE} or ${DOC_NAME_REGISTRATION_CERTIFICATE}`
-        );
+    if (locationType === "onshore" && country !== "india") {
+      names.push(DOC_NAME_POE_LICENSE);
+    }
+
+    // Offshore: RPSL License OR Registration Certificate.
+    // This alternative requirement is handled separately by
+    // missingRequiredDocumentNames.
+
+    return names;
+  }, [
+    data.natureOfCompany,
+    data.companyLocationType,
+    data.country,
+  ]);
+
+
+
+
+  const DOC_NAME_REGISTRATION_CERTIFICATE = "Registration Certificate";
+
+  const missingRequiredDocumentNames = useMemo(() => {
+    const allDocuments = [...mandatoryDocuments, ...optionalDocuments];
+
+    const findDocument = (documentName) =>
+      allDocuments.find((d) => d.documentName === documentName);
+
+    const isDocumentSelected = (documentName) => {
+      const doc = findDocument(documentName);
+
+      return !!doc && selectedDocuments.some(
+        (x) => x.documentTypeId === doc.documentTypeId
+      );
+    };
+
+    const locationType = (data.companyLocationType || "")
+      .trim()
+      .toLowerCase();
+
+    const country = (data.country || "").trim().toLowerCase();
+    const isIndia = country === "india";
+
+    // Preserve the existing incorporation and recruitment-agency rules.
+    // Apply POE/RPSL requirements separately according to location.
+    const missing = requiredDocumentNames
+      .filter(
+        (name) =>
+          name !== DOC_NAME_POE_LICENSE &&
+          name !== DOC_NAME_RPSL_LICENSE
+      )
+      .filter((name) => !isDocumentSelected(name));
+
+    if (locationType === "onshore" && !isIndia) {
+      if (!isDocumentSelected(DOC_NAME_POE_LICENSE)) {
+        missing.push(DOC_NAME_POE_LICENSE);
       }
     }
-  }
 
-  return [...new Set(missing)];
-}, [
-  requiredDocumentNames,
-  mandatoryDocuments,
-  optionalDocuments,
-  selectedDocuments,
-  data.companyLocationType,
-  data.country,
-]);
+    if (locationType === "offshore") {
+      const rpslDoc = findDocument(DOC_NAME_RPSL_LICENSE);
+      const registrationDoc = findDocument(
+        DOC_NAME_REGISTRATION_CERTIFICATE
+      );
+
+      const hasRpsl = isDocumentSelected(DOC_NAME_RPSL_LICENSE);
+      const hasRegistrationCertificate = isDocumentSelected(
+        DOC_NAME_REGISTRATION_CERTIFICATE
+      );
+
+      if (!hasRpsl && !hasRegistrationCertificate) {
+        if (!rpslDoc && !registrationDoc) {
+          missing.push(
+            `${DOC_NAME_RPSL_LICENSE} or ${DOC_NAME_REGISTRATION_CERTIFICATE} (configure one in Admin)`
+          );
+        } else {
+          missing.push(
+            `${DOC_NAME_RPSL_LICENSE} or ${DOC_NAME_REGISTRATION_CERTIFICATE}`
+          );
+        }
+      }
+    }
+
+    return [...new Set(missing)];
+  }, [
+    requiredDocumentNames,
+    mandatoryDocuments,
+    optionalDocuments,
+    selectedDocuments,
+    data.companyLocationType,
+    data.country,
+  ]);
 
 
   const handleStep4 = async () => {
@@ -3976,25 +4000,25 @@ const missingRequiredDocumentNames = useMemo(() => {
         You may also upload optional documents to strengthen your company profile.
       </p>
 
-     
-<Alert type="info">
-  Based on your company details:
-  <ul style={{ marginBottom: 0, paddingLeft: 20 }}>
-    <li>Certificate of Incorporation is required.</li>
-    {data.natureOfCompany === "RecruitmentAgency" && (
-      <li>Recruitment License is required.</li>
-    )}
-    {data.companyLocationType === "Onshore" &&
-      data.country?.trim().toLowerCase() !== "india" && (
-        <li>POE License is required for Onshore companies outside India.</li>
-      )}
-    {data.companyLocationType === "Offshore" && (
-      <li>
-        Upload either an RPSL License or a Registration Certificate.
-      </li>
-    )}
-  </ul>
-</Alert>
+
+      <Alert type="info">
+        Based on your company details:
+        <ul style={{ marginBottom: 0, paddingLeft: 20 }}>
+          <li>Certificate of Incorporation is required.</li>
+          {data.natureOfCompany === "RecruitmentAgency" && (
+            <li>Recruitment License is required.</li>
+          )}
+          {data.companyLocationType === "Onshore" &&
+            data.country?.trim().toLowerCase() !== "india" && (
+              <li>POE License is required for Onshore companies outside India.</li>
+            )}
+          {data.companyLocationType === "Offshore" && (
+            <li>
+              Upload either an RPSL License or a Registration Certificate.
+            </li>
+          )}
+        </ul>
+      </Alert>
 
 
       <div style={{ marginTop: 12 }}>
@@ -4135,8 +4159,8 @@ const missingRequiredDocumentNames = useMemo(() => {
                                 ? "#fdecea"
                                 : "#fff8ee",
                               border: `1px solid ${isMissingAndAttempted
-                                  ? "rgba(192,57,43,.35)"
-                                  : "rgba(255,163,0,.32)"
+                                ? "rgba(192,57,43,.35)"
+                                : "rgba(255,163,0,.32)"
                                 }`,
                               borderRadius: 6,
                               padding: "2px 8px",
