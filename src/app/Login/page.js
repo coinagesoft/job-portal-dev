@@ -367,6 +367,60 @@ export default function LoginPage() {
     resetResendCooldown();
   };
 
+  // ─────────────────────────────────────────────
+  // Finish a login from an auth payload (same fields verify-otp returns).
+  // Used by the normal OTP sign-in AND by the review-account bypass, where
+  // the backend completes the login inside send-otp.
+  // ─────────────────────────────────────────────
+  const completeLogin = (d) => {
+    dispatch(
+      setUser({
+        user: {
+          userId: d.userId,
+          employerId: d.employerId,
+          userName: d.userName,
+
+          role: d.userType === "Recruiter"
+            ? "employer"
+            : "candidate",
+          isSubUser: d.isSubUser ?? false,
+          canSearchCandidates: d.canSearchCandidates ?? true,
+          canUnlockProfiles: d.canUnlockProfiles ?? true,
+          canPostJobs: d.canPostJobs ?? true,
+          canManageApplications: d.canManageApplications ?? true,
+        },
+
+        token: d.token,
+      })
+    );
+
+    localStorage.setItem(
+      "token",
+      d.token
+    );
+    if (d.userType === "Candidate" && d.candidateId) {
+      localStorage.setItem("candidateId", d.candidateId);
+    }
+    if (d.employerId) {
+      localStorage.setItem("employerId", d.employerId);
+    }
+
+    showToast(
+      d.message || "Login successful!",
+      d.accountRecovered ? "info" : "success"
+    );
+
+    const params = new URLSearchParams(window.location.search);
+    const redirectUrl = params.get("redirectTo");
+    if (redirectUrl) {
+      router.push(redirectUrl);
+    } else if (d.userType === "Recruiter") {
+      router.push("/employeer/cv-search");
+    } else {
+      router.push("/candidate-profile");
+    }
+  };
+
   // Send OTP
   const handleSendOtp = async () => {
     try {
@@ -383,6 +437,13 @@ export default function LoginPage() {
 
       if (!response.data.success) {
         setError(response.data.message);
+        return;
+      }
+
+      // Review account: the backend already completed the login inside
+      // send-otp, so skip the OTP screen and go straight in.
+      if (response.data.otpSkipped && response.data.auth?.token) {
+        completeLogin(response.data.auth);
         return;
       }
 
@@ -423,52 +484,7 @@ export default function LoginPage() {
         setError(response.data.message);
         return;
       }
-      dispatch(
-        setUser({
-          user: {
-            userId: response.data.userId,
-            employerId: response.data.employerId,
-            userName: response.data.userName,
-
-            role: response.data.userType === "Recruiter"
-              ? "employer"
-              : "candidate",
-            isSubUser: response.data.isSubUser ?? false,
-            canSearchCandidates: response.data.canSearchCandidates ?? true,
-            canUnlockProfiles: response.data.canUnlockProfiles ?? true,
-            canPostJobs: response.data.canPostJobs ?? true,
-            canManageApplications: response.data.canManageApplications ?? true,
-          },
-
-          token: response.data.token,
-        })
-      );
-      console.log("response" + response)
-      localStorage.setItem(
-        "token",
-        response.data.token
-      );
-      if (response.data.userType === "Candidate" && response.data.candidateId) {
-        localStorage.setItem("candidateId", response.data.candidateId);
-      }
-      if (response.data.employerId) {
-        localStorage.setItem("employerId", response.data.employerId);
-      }
-
-      showToast(
-        response.data.message || "Login successful!",
-        response.data.accountRecovered ? "info" : "success"
-      );
-
-      const params = new URLSearchParams(window.location.search);
-      const redirectUrl = params.get("redirectTo");
-      if (redirectUrl) {
-        router.push(redirectUrl);
-      } else if (response.data.userType === "Recruiter") {
-        router.push("/employeer/cv-search");
-      } else {
-        router.push("/candidate-profile");
-      }
+      completeLogin(response.data);
     }
     catch (err) {
       setError(

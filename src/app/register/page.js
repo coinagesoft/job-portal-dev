@@ -1132,21 +1132,49 @@ function CandidateForm() {
   }, []);
   const sendMobileOtp = async () => {
     try {
+      const identifier = form.mobile.replace(/\D/g, "");
       const response = await sendOtp({
-        identifier: form.mobile.replace(/\D/g, ""),
+        identifier,
         countryCode: form.countryCode,
       });
 
-      if (response.data.success) {
-        setMobileOtp((p) => ({
-          ...p,
-          sent: true,
-          verified: false,
-          userVal: "",
-        }));
-
-        showToast(response.data.message, "success");
+      if (!response.data.success) {
+        showToast(response.data.message || "Failed to send OTP", "error");
+        return;
       }
+
+      // Match the login review-account flow: the API skips SMS for the
+      // configured registration review number. Verify it immediately so the
+      // normal registration flow receives its required one-time OTP token.
+      if (response.data.otpSkipped) {
+        const verification = await verifyOtp({
+          identifier,
+          countryCode: form.countryCode,
+          otpCode: "000000",
+        });
+
+        if (!verification.data.success || !verification.data.otpToken) {
+          showToast(
+            verification.data.message || "Unable to verify mobile number",
+            "error"
+          );
+          return;
+        }
+
+        setOtpToken(verification.data.otpToken);
+        setMobileOtp({ sent: true, verified: true, userVal: "" });
+        showToast("Review mobile number verified successfully", "success");
+        return;
+      }
+
+      setMobileOtp((p) => ({
+        ...p,
+        sent: true,
+        verified: false,
+        userVal: "",
+      }));
+
+      showToast(response.data.message, "success");
     } catch (err) {
       showToast(
         err?.response?.data?.message || "Failed to send OTP",
