@@ -1066,12 +1066,12 @@ function CandidateForm() {
     razorpaySignature: ""
   });
 
-const [couponCode, setCouponCode] = useState("");
-const [couponApplied, setCouponApplied] = useState(false);
-const [couponLoading, setCouponLoading] = useState(false);
-const [couponMessage, setCouponMessage] = useState("");
-const [couponDiscount, setCouponDiscount] = useState(0);
-const [couponFinalAmount, setCouponFinalAmount] = useState(null);
+  const [couponCode, setCouponCode] = useState("");
+  const [couponApplied, setCouponApplied] = useState(false);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponMessage, setCouponMessage] = useState("");
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [couponFinalAmount, setCouponFinalAmount] = useState(null);
 
   const [terms, setTerms] = useState(false);
   const [payStatus, setPayStatus] = useState("");
@@ -1079,7 +1079,7 @@ const [couponFinalAmount, setCouponFinalAmount] = useState(null);
   const [paymentMessage, setPaymentMessage] = useState("");
   const [registering, setRegistering] = useState(false);
   const isSocialVerified = !!socialAuth;
-    const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+  const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
   const [candidatePlan, setCandidatePlan] = useState(null);
   const [planLoading, setPlanLoading] = useState(false);
@@ -1108,16 +1108,16 @@ const [couponFinalAmount, setCouponFinalAmount] = useState(null);
       setPlanLoading(false);
     }
   };
-useEffect(() => {
-  fetchPlan(form.countryCode);
+  useEffect(() => {
+    fetchPlan(form.countryCode);
 
-  // Clear coupon when country/region changes
-  setCouponCode("");
-  setCouponApplied(false);
-  setCouponMessage("");
-  setCouponDiscount(0);
-  setCouponFinalAmount(null);
-}, [form.countryCode]);
+    // Clear coupon when country/region changes
+    setCouponCode("");
+    setCouponApplied(false);
+    setCouponMessage("");
+    setCouponDiscount(0);
+    setCouponFinalAmount(null);
+  }, [form.countryCode]);
 
 
   useEffect(() => {
@@ -1255,19 +1255,19 @@ useEffect(() => {
       }
 
       // Create order from backend
-const meta = getCountryMeta(form.countryCode);
+      const meta = getCountryMeta(form.countryCode);
 
-const region = meta?.name
-  ? meta.name.toLowerCase()
-  : "india";
+      const region = meta?.name
+        ? meta.name.toLowerCase()
+        : "india";
 
-const orderResponse =
-  await createCandidateOrder({
-    region,
-    couponCode: couponApplied
-      ? couponCode.trim().toUpperCase()
-      : null,
-  });
+      const orderResponse =
+        await createCandidateOrder({
+          region,
+          couponCode: couponApplied
+            ? couponCode.trim().toUpperCase()
+            : null,
+        });
 
       const order = orderResponse.data;
 
@@ -1441,24 +1441,24 @@ const orderResponse =
       }
 
       // existing OTP-based path — unchanged
-     const response = await registerCandidate({
-  fullName: form.name,
-  mobileNumber: form.mobile.replace(/\D/g, ""),
-  countryCode: form.countryCode,
-  email: form.email,
-  otpToken,
-  planId: payInfo.planId,
+      const response = await registerCandidate({
+        fullName: form.name,
+        mobileNumber: form.mobile.replace(/\D/g, ""),
+        countryCode: form.countryCode,
+        email: form.email,
+        otpToken,
+        planId: payInfo.planId,
 
-  // Send the coupon used for this payment
-  couponCode: couponApplied
-    ? couponCode.trim().toUpperCase()
-    : null,
+        // Send the coupon used for this payment
+        couponCode: couponApplied
+          ? couponCode.trim().toUpperCase()
+          : null,
 
-  razorpayOrderId: payInfo.razorpayOrderId,
-  razorpayPaymentId: payInfo.razorpayPaymentId,
-  razorpaySignature: payInfo.razorpaySignature,
-  termsAccepted: terms,
-});
+        razorpayOrderId: payInfo.razorpayOrderId,
+        razorpayPaymentId: payInfo.razorpayPaymentId,
+        razorpaySignature: payInfo.razorpaySignature,
+        termsAccepted: terms,
+      });
 
       showToast(response.data.message, "success");
       setTimeout(() => router.push("/Login"), 1000);
@@ -1632,133 +1632,133 @@ const orderResponse =
         </div>
       )}
 
-  {canShowPayment && (
-  <Field label="Coupon Code">
-    <div style={{ display: "flex", gap: 8 }}>
-      <Input
-        placeholder="Enter coupon code"
-        value={couponCode}
-        disabled={couponApplied || couponLoading || loading}
-        onChange={(e) => {
-          setCouponCode(e.target.value.toUpperCase());
-          setCouponApplied(false);
-          setCouponMessage("");
-          setCouponDiscount(0);
-          setCouponFinalAmount(null);
-        }}
-        style={{
-          flex: 1,
-          textTransform: "uppercase",
-        }}
-      />
+      {canShowPayment && (
+        <Field label="Coupon Code">
+          <div style={{ display: "flex", gap: 8 }}>
+            <Input
+              placeholder="Enter coupon code"
+              value={couponCode}
+              disabled={couponApplied || couponLoading || loading}
+              onChange={(e) => {
+                setCouponCode(e.target.value.toUpperCase());
+                setCouponApplied(false);
+                setCouponMessage("");
+                setCouponDiscount(0);
+                setCouponFinalAmount(null);
+              }}
+              style={{
+                flex: 1,
+                textTransform: "uppercase",
+              }}
+            />
 
-      <Btn
-        variant={couponApplied ? "success" : "primary"}
-        disabled={
-          !couponCode.trim() ||
-          couponLoading ||
-          couponApplied ||
-          loading
-        }
-       onClick={async () => {
-  if (!couponCode.trim()) {
-    setCouponMessage("Please enter a coupon code.");
-    return;
-  }
+            <Btn
+              variant={couponApplied ? "success" : "primary"}
+              disabled={
+                !couponCode.trim() ||
+                couponLoading ||
+                couponApplied ||
+                loading
+              }
+              onClick={async () => {
+                if (!couponCode.trim()) {
+                  setCouponMessage("Please enter a coupon code.");
+                  return;
+                }
 
-  if (!candidatePlan?.planId) {
-    setCouponMessage("Membership plan is not available.");
-    return;
-  }
+                if (!candidatePlan?.planId) {
+                  setCouponMessage("Membership plan is not available.");
+                  return;
+                }
 
-  try {
-    setCouponLoading(true);
-    setCouponMessage("");
+                try {
+                  setCouponLoading(true);
+                  setCouponMessage("");
 
-    const meta = getCountryMeta(form.countryCode);
+                  const meta = getCountryMeta(form.countryCode);
 
-    const region = meta?.name
-      ? meta.name.toLowerCase()
-      : "india";
+                  const region = meta?.name
+                    ? meta.name.toLowerCase()
+                    : "india";
 
-    const response = await validateCandidateCoupon({
-      code: couponCode.trim().toUpperCase(),
-      planType: "Candidate",
-      planId: candidatePlan.planId,
-      region,
-    });
+                  const response = await validateCandidateCoupon({
+                    code: couponCode.trim().toUpperCase(),
+                    planType: "Candidate",
+                    planId: candidatePlan.planId,
+                    region,
+                  });
 
-    const result = response?.data ?? response;
+                  const result = response?.data ?? response;
 
-    if (!result?.isValid) {
-      setCouponApplied(false);
-      setCouponDiscount(0);
-      setCouponFinalAmount(null);
-      setCouponMessage(
-        result?.message || "Invalid or expired coupon."
-      );
-      return;
-    }
+                  if (!result?.isValid) {
+                    setCouponApplied(false);
+                    setCouponDiscount(0);
+                    setCouponFinalAmount(null);
+                    setCouponMessage(
+                      result?.message || "Invalid or expired coupon."
+                    );
+                    return;
+                  }
 
-    setCouponApplied(true);
-    setCouponDiscount(Number(result.discountAmount || 0));
-    setCouponFinalAmount(Number(result.finalAmount || 0));
-    setCouponMessage(
-      result.message || "Coupon applied successfully."
-    );
-  } catch (error) {
-    console.error("Coupon validation error:", error);
+                  setCouponApplied(true);
+                  setCouponDiscount(Number(result.discountAmount || 0));
+                  setCouponFinalAmount(Number(result.finalAmount || 0));
+                  setCouponMessage(
+                    result.message || "Coupon applied successfully."
+                  );
+                } catch (error) {
+                  console.error("Coupon validation error:", error);
 
-    setCouponApplied(false);
-    setCouponDiscount(0);
-    setCouponFinalAmount(null);
+                  setCouponApplied(false);
+                  setCouponDiscount(0);
+                  setCouponFinalAmount(null);
 
-    setCouponMessage(
-      error?.response?.data?.message ||
-      "Unable to validate coupon. Please try again."
-    );
-  } finally {
-    setCouponLoading(false);
-  }
-}}
-        style={{
-          minWidth: 100,
-        }}
-      >
-        {couponLoading
-          ? "Checking..."
-          : couponApplied
-            ? "Applied"
-            : "Apply"}
-      </Btn>
-    </div>
+                  setCouponMessage(
+                    error?.response?.data?.message ||
+                    "Unable to validate coupon. Please try again."
+                  );
+                } finally {
+                  setCouponLoading(false);
+                }
+              }}
+              style={{
+                minWidth: 100,
+              }}
+            >
+              {couponLoading
+                ? "Checking..."
+                : couponApplied
+                  ? "Applied"
+                  : "Apply"}
+            </Btn>
+          </div>
 
-    {couponMessage && (
-      <p
-        style={{
-          fontSize: "var(--font-xs)",
-          marginTop: 8,
-          color: couponApplied ? "#3B6D11" : "#A32D2D",
-        }}
-      >
-        {couponMessage}
-      </p>
-    )}
+          {couponMessage && (
+            <p
+              style={{
+                fontSize: "var(--font-xs)",
+                marginTop: 8,
+                color: couponApplied ? "#3B6D11" : "#A32D2D",
+              }}
+            >
+              {couponMessage}
+            </p>
+          )}
 
-    {couponApplied && couponDiscount > 0 && (
-      <p
-        style={{
-          fontSize: "var(--font-xs)",
-          marginTop: 4,
-          color: "#3B6D11",
-          fontWeight: 600,
-        }}
-      >
-        Discount: INR {couponDiscount.toFixed(2)}
-      </p>
-    )}
-  </Field>
-)}
+          {couponApplied && couponDiscount > 0 && (
+            <p
+              style={{
+                fontSize: "var(--font-xs)",
+                marginTop: 4,
+                color: "#3B6D11",
+                fontWeight: 600,
+              }}
+            >
+              Discount: INR {couponDiscount.toFixed(2)}
+            </p>
+          )}
+        </Field>
+      )}
 
       {canShowPayment && (
         <Field label="Registration Fee">
@@ -1781,12 +1781,11 @@ const orderResponse =
                 }}
               >
                 {loading
-  ? "Processing..."
-  : `Pay INR ${
-      couponApplied && couponFinalAmount !== null
-        ? couponFinalAmount.toFixed(2)
-        : (candidatePlan?.price || 100).toFixed(2)
-    } via Razorpay`}
+                  ? "Processing..."
+                  : `Pay INR ${couponApplied && couponFinalAmount !== null
+                    ? couponFinalAmount.toFixed(2)
+                    : (candidatePlan?.price || 100).toFixed(2)
+                  } via Razorpay`}
               </Btn>
               {!terms && (
                 <p
@@ -1987,20 +1986,20 @@ function EmployerForm() {
   const showToast = useToast();
   const [step, setStep] = useState(1);
   const [industriesList, setIndustriesList] = useState([]);
-const [recruiterPlans, setRecruiterPlans] = useState([]);
-const [selectedPlanId, setSelectedPlanId] = useState("");
+  const [recruiterPlans, setRecruiterPlans] = useState([]);
+  const [selectedPlanId, setSelectedPlanId] = useState("");
 
-const [couponCode, setCouponCode] = useState("");
-const [couponApplied, setCouponApplied] = useState(false);
-const [couponLoading, setCouponLoading] = useState(false);
-const [couponMessage, setCouponMessage] = useState("");
+  const [couponCode, setCouponCode] = useState("");
+  const [couponApplied, setCouponApplied] = useState(false);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponMessage, setCouponMessage] = useState("");
 
-const [couponDiscount, setCouponDiscount] = useState(0);
-const [couponFinalAmount, setCouponFinalAmount] = useState(null);
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [couponFinalAmount, setCouponFinalAmount] = useState(null);
   const [data, setData] = useState({
     hasGst: null,
     industry: "",
-      customIndustry: "", 
+    customIndustry: "",
     gstn: "",
     legalName: "",
     tradeName: "",
@@ -2008,6 +2007,7 @@ const [couponFinalAmount, setCouponFinalAmount] = useState(null);
     companySize: "",
     companyType: "",
     natureOfCompany: "", // "RecruitmentAgency" | "Employer"
+    companyLocationType: "",
     placesInternationally: null, // true | false | null (unanswered)
     pan: "",
     gstRegDate: "",
@@ -2038,14 +2038,14 @@ const [couponFinalAmount, setCouponFinalAmount] = useState(null);
   const [attempt1, setAttempt1] = useState(false);
   const [attempt2, setAttempt2] = useState(false);
   const [attempt3, setAttempt3] = useState(false);
-  
+
   const logoRef = useRef();
   const licRef = useRef();
 
   const [recruiterPlan, setRecruiterPlan] = useState(null);
   const [planLoading, setPlanLoading] = useState(false);
   const [payStatus, setPayStatus] = useState("");
-  
+
   const [paymentData, setPaymentData] = useState({
     planId: null,
     razorpayOrderId: "",
@@ -2056,118 +2056,118 @@ const [couponFinalAmount, setCouponFinalAmount] = useState(null);
   const [paying, setPaying] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
-const fetchRecruiterPlan = async (code) => {
-  try {
-    setPlanLoading(true);
+  const fetchRecruiterPlan = async (code) => {
+    try {
+      setPlanLoading(true);
 
-    const meta = getCountryMeta(code);
-    const region = meta?.name
-      ? meta.name.toLowerCase()
-      : "india";
+      const meta = getCountryMeta(code);
+      const region = meta?.name
+        ? meta.name.toLowerCase()
+        : "india";
 
-    let response = await getRecruiterPlan(region);
-    let list = response.data || [];
+      let response = await getRecruiterPlan(region);
+      let list = response.data || [];
 
-    // Fallback if no plans are found for the selected region
-    if (list.length === 0) {
-      response = await getRecruiterPlan("");
-      list = response.data || [];
-    }
+      // Fallback if no plans are found for the selected region
+      if (list.length === 0) {
+        response = await getRecruiterPlan("");
+        list = response.data || [];
+      }
 
-    // Keep only active plans
-    const activePlans = list.filter((p) => p.isActive);
+      // Keep only active plans
+      const activePlans = list.filter((p) => p.isActive);
 
-    if (activePlans.length > 0) {
-      // Store all available active recruiter plans
-      setRecruiterPlans(activePlans);
+      if (activePlans.length > 0) {
+        // Store all available active recruiter plans
+        setRecruiterPlans(activePlans);
 
-      // Select the first plan by default
-      const defaultPlan = activePlans[0];
+        // Select the first plan by default
+        const defaultPlan = activePlans[0];
 
-      setSelectedPlanId(defaultPlan.planId);
+        setSelectedPlanId(defaultPlan.planId);
 
-      // Keep old state synchronized for now
-      setRecruiterPlan(defaultPlan);
-    } else {
+        // Keep old state synchronized for now
+        setRecruiterPlan(defaultPlan);
+      } else {
+        setRecruiterPlans([]);
+        setSelectedPlanId("");
+        setRecruiterPlan(null);
+      }
+    } catch (err) {
+      console.error("Failed to fetch recruiter plans:", err);
+
       setRecruiterPlans([]);
       setSelectedPlanId("");
       setRecruiterPlan(null);
+    } finally {
+      setPlanLoading(false);
     }
-  } catch (err) {
-    console.error("Failed to fetch recruiter plans:", err);
+  };
 
-    setRecruiterPlans([]);
-    setSelectedPlanId("");
-    setRecruiterPlan(null);
-  } finally {
-    setPlanLoading(false);
-  }
-};
-
-const handleApplyRecruiterCoupon = async () => {
-  if (!couponCode.trim()) {
-    setCouponMessage("Please enter a coupon code.");
-    return;
-  }
-
-  if (!selectedPlanId) {
-    setCouponMessage("Please select a membership plan first.");
-    return;
-  }
-
-  try {
-    setCouponLoading(true);
-    setCouponMessage("");
-    setCouponApplied(false);
-    setCouponDiscount(0);
-    setCouponFinalAmount(null);
-
-    const meta = getCountryMeta(data.countryCode);
-
-    const region = meta?.name
-      ? meta.name.toLowerCase()
-      : "india";
-
-      const sessionId = localStorage.getItem("registrationSessionId");
-
-    // We don't need a separate frontend coupon API.
-    // The backend validates the coupon when creating the Razorpay order.
-    const response = await createMembershipOrder({
-      sessionId,
-      region,
-      planId: selectedPlanId,
-      couponCode: couponCode.trim().toUpperCase(),
-    });
-
-    const result = response.data;
-
-    if (!result?.success) {
-      setCouponMessage(
-        result?.message || "Invalid or expired coupon."
-      );
+  const handleApplyRecruiterCoupon = async () => {
+    if (!couponCode.trim()) {
+      setCouponMessage("Please enter a coupon code.");
       return;
     }
 
-    setCouponApplied(true);
-    setCouponDiscount(result.discountAmount || 0);
-    setCouponFinalAmount(result.finalAmount);
+    if (!selectedPlanId) {
+      setCouponMessage("Please select a membership plan first.");
+      return;
+    }
 
-    setCouponMessage(
-      result.discountAmount > 0
-        ? `Coupon applied successfully. You save ₹${result.discountAmount}.`
-        : "Coupon applied successfully."
-    );
-  } catch (err) {
-    console.error("Recruiter coupon error:", err);
+    try {
+      setCouponLoading(true);
+      setCouponMessage("");
+      setCouponApplied(false);
+      setCouponDiscount(0);
+      setCouponFinalAmount(null);
 
-    setCouponMessage(
-      err?.response?.data?.message ||
+      const meta = getCountryMeta(data.countryCode);
+
+      const region = meta?.name
+        ? meta.name.toLowerCase()
+        : "india";
+
+      const sessionId = localStorage.getItem("registrationSessionId");
+
+      // We don't need a separate frontend coupon API.
+      // The backend validates the coupon when creating the Razorpay order.
+      const response = await createMembershipOrder({
+        sessionId,
+        region,
+        planId: selectedPlanId,
+        couponCode: couponCode.trim().toUpperCase(),
+      });
+
+      const result = response.data;
+
+      if (!result?.success) {
+        setCouponMessage(
+          result?.message || "Invalid or expired coupon."
+        );
+        return;
+      }
+
+      setCouponApplied(true);
+      setCouponDiscount(result.discountAmount || 0);
+      setCouponFinalAmount(result.finalAmount);
+
+      setCouponMessage(
+        result.discountAmount > 0
+          ? `Coupon applied successfully. You save ₹${result.discountAmount}.`
+          : "Coupon applied successfully."
+      );
+    } catch (err) {
+      console.error("Recruiter coupon error:", err);
+
+      setCouponMessage(
+        err?.response?.data?.message ||
         "Unable to validate coupon. Please try again."
-    );
-  } finally {
-    setCouponLoading(false);
-  }
-};
+      );
+    } finally {
+      setCouponLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchRecruiterPlan(data.countryCode);
@@ -2192,7 +2192,7 @@ const handleApplyRecruiterCoupon = async () => {
     fetchIndustries();
   }, []);
 
-    const set = (k, v) => setData((p) => ({ ...p, [k]: v }));
+  const set = (k, v) => setData((p) => ({ ...p, [k]: v }));
 
   // Ensure "Other" is always selectable even if the API list doesn't include it
   const industryOptions = industriesList.includes("Other")
@@ -2365,7 +2365,7 @@ const handleApplyRecruiterCoupon = async () => {
   };
 
   const isGstnValid = !data.hasGst || data.gstn.trim().length === 15;
-    const isStep2Valid =
+  const isStep2Valid =
     data.hasGst !== null &&
     !!data.industry &&
     (data.industry !== "Other" || !!data.customIndustry.trim());
@@ -2377,6 +2377,7 @@ const handleApplyRecruiterCoupon = async () => {
     PIN_REGEX.test(data.pincode) &&
     !!data.address &&
     !!data.natureOfCompany &&
+    !!data.companyLocationType?.trim() &&
     data.placesInternationally !== null &&
     isGstnValid;
   const isStep4Valid =
@@ -2417,99 +2418,99 @@ const handleApplyRecruiterCoupon = async () => {
           const step3 = session.step3Data || {};
           const step4 = session.step4Data || {};
 
-         setData((p) => ({
-  ...p,
+          setData((p) => ({
+            ...p,
 
-  // STEP 1
-  hasGst: step1.gstRegistered,
-  industry: step1.industryType,
+            // STEP 1
+            hasGst: step1.gstRegistered,
+            industry: step1.industryType,
 
-  // STEP 2
-  legalName: step2.legalName || "",
-  tradeName: step2.tradeName || "",
+            // STEP 2
+            legalName: step2.legalName || "",
+            tradeName: step2.tradeName || "",
+            companyLocationType: step2.companyLocationType || "",
+            businessType: step2.businessType || "",
+            companySize: step2.companySize || "",
 
-  businessType: step2.businessType || "",
-  companySize: step2.companySize || "",
+            gstn: step2.gstn || "",
+            pan: step2.pan || "",
+            cin: step2.cin || "",
 
-  gstn: step2.gstn || "",
-  pan: step2.pan || "",
-  cin: step2.cin || "",
+            state: step2.state || "",
+            stateIso: getStateIso(
+              getCountryIso(step2.country || ""),
+              step2.state || ""
+            ),
+            city: step2.city || "",
+            country: step2.country || "",
+            countryIso: getCountryIso(step2.country || ""),
+            pincode: step2.pincode || "",
+            address: step2.addressLine1 || "",
 
-  state: step2.state || "",
-  stateIso: getStateIso(
-    getCountryIso(step2.country || ""),
-    step2.state || ""
-  ),
-  city: step2.city || "",
-  country: step2.country || "",
-  countryIso: getCountryIso(step2.country || ""),
-  pincode: step2.pincode || "",
-  address: step2.addressLine1 || "",
+            officialWebsite: step2.websiteUrl || "",
 
-  officialWebsite: step2.websiteUrl || "",
+            companyLogo: step2.companyLogoUrl
+              ? {
+                name: step2.companyLogoUrl.split("/").pop(),
+                url: step2.companyLogoUrl,
+              }
+              : null,
 
-  companyLogo: step2.companyLogoUrl
-    ? {
-        name: step2.companyLogoUrl.split("/").pop(),
-        url: step2.companyLogoUrl,
-      }
-    : null,
+            // STEP 3
+            contactName: step3.contactPersonName || "",
+            designation: step3.designation || "",
 
-  // STEP 3
-  contactName: step3.contactPersonName || "",
-  designation: step3.designation || "",
+            contactPersonEmail: step3.contactPersonEmail || "",
 
-  contactPersonEmail: step3.contactPersonEmail || "",
+            corpEmail: step3.companyEmail || "",
 
-  corpEmail: step3.companyEmail || "",
+            mobile: step3.mobileNumber || "",
 
-  mobile: step3.mobileNumber || "",
+            countryCode: step3.countryCode || "+91",
 
-  countryCode: step3.countryCode || "+91",
+            profileSummary: step3.companyDescription || "",
 
-  profileSummary: step3.companyDescription || "",
+            mobileOtp: {
+              ...p.mobileOtp,
+              sent: !!step3.mobileNumber,
+              verified: step3.mobileVerified || false,
+            },
 
-  mobileOtp: {
-    ...p.mobileOtp,
-    sent: !!step3.mobileNumber,
-    verified: step3.mobileVerified || false,
-  },
+            corpEmailOtp: {
+              ...p.corpEmailOtp,
+              sent: !!step3.companyEmail,
+              verified: step3.companyEmailVerified || false,
+            },
+          }));
+          // Restore uploaded mandatory & optional documents
+          setSelectedDocuments(
+            (step4.documents || [])
+              .filter((d) => d.documentTypeId)
+              .map((d) => ({
+                documentTypeId: d.documentTypeId,
+                file: {
+                  name: d.documentName,
+                  url: d.fileUrl,
+                },
+                fileUrl: d.fileUrl,
+                status: d.status,
+              }))
+          );
 
-  corpEmailOtp: {
-    ...p.corpEmailOtp,
-    sent: !!step3.companyEmail,
-    verified: step3.companyEmailVerified || false,
-  },
-}));
-// Restore uploaded mandatory & optional documents
-setSelectedDocuments(
-  (step4.documents || [])
-    .filter((d) => d.documentTypeId)
-    .map((d) => ({
-      documentTypeId: d.documentTypeId,
-      file: {
-        name: d.documentName,
-        url: d.fileUrl,
-      },
-      fileUrl: d.fileUrl,
-      status: d.status,
-    }))
-);
-
-// Restore uploaded additional documents
-setAdditionalDocuments(
-  (step4.documents || [])
-    .filter((d) => !d.documentTypeId)
-    .map((d) => ({
-      file: {
-        name: d.documentName,
-        url: d.fileUrl,
-      },
-      fileUrl: d.fileUrl,
-      status: d.status,
-      documentName: d.documentName,
-    }))
-);
+          // Restore uploaded additional documents
+          setAdditionalDocuments(
+            (step4.documents || [])
+              .filter((d) => !d.documentTypeId)
+              .map((d) => ({
+                file: {
+                  name: d.documentName,
+                  url: d.fileUrl,
+                },
+                fileUrl: d.fileUrl,
+                status: d.status,
+                documentName: d.documentName,
+              }))
+          );
           console.log("hasGst being set to", session.gstRegistered);
           // move to next step
           setStep(Math.min(session.stepStatus.lastCompletedStep + 1, 5));
@@ -2619,14 +2620,14 @@ setAdditionalDocuments(
       // admin-configured Recruiter MembershipPlan server-side) — NOT
       // createCandidateOrder, which was creating an order for the
       // candidate plan/price instead of the employer registration fee.
-     const orderResponse = await createMembershipOrder({
-  sessionId,
-  region,
-  planId: selectedPlanId,
-  couponCode: couponApplied
-    ? couponCode.trim().toUpperCase()
-    : null,
-});
+      const orderResponse = await createMembershipOrder({
+        sessionId,
+        region,
+        planId: selectedPlanId,
+        couponCode: couponApplied
+          ? couponCode.trim().toUpperCase()
+          : null,
+      });
 
       const order = orderResponse.data;
 
@@ -2647,7 +2648,7 @@ setAdditionalDocuments(
 
       const options = {
         key: activeKey,
-       amount: order.finalAmountPaise,
+        amount: order.finalAmountPaise,
         currency: order.currency || "INR",
         name: "Job Box",
         description: "Employer Registration Fee",
@@ -2713,28 +2714,28 @@ setAdditionalDocuments(
       const sessionId = localStorage.getItem("registrationSessionId");
       const payInfo = paymentOverride || paymentData;
 
-    const meta = getCountryMeta(data.countryCode);
-const region = meta?.name
-  ? meta.name.toLowerCase()
-  : "india";
+      const meta = getCountryMeta(data.countryCode);
+      const region = meta?.name
+        ? meta.name.toLowerCase()
+        : "india";
 
-const response = await submitRegistration({
-  sessionId,
-  consentGiven: true,
-  consentVersion: "1.0",
+      const response = await submitRegistration({
+        sessionId,
+        consentGiven: true,
+        consentVersion: "1.0",
 
-  planId: payInfo.planId,
+        planId: payInfo.planId,
 
-  region,
+        region,
 
-  couponCode: couponApplied
-    ? couponCode.trim().toUpperCase()
-    : null,
+        couponCode: couponApplied
+          ? couponCode.trim().toUpperCase()
+          : null,
 
-  razorpayOrderId: payInfo.razorpayOrderId,
-  razorpayPaymentId: payInfo.razorpayPaymentId,
-  razorpaySignature: payInfo.razorpaySignature,
-});
+        razorpayOrderId: payInfo.razorpayOrderId,
+        razorpayPaymentId: payInfo.razorpayPaymentId,
+        razorpaySignature: payInfo.razorpaySignature,
+      });
 
       if (response.data.success) {
         showToast("Registration completed", "success");
@@ -2825,7 +2826,7 @@ const response = await submitRegistration({
     </div>
   );
 
-   const handleStep1 = async () => {
+  const handleStep1 = async () => {
     try {
       const response = await gstCheck({
         gstRegistered: data.hasGst,
@@ -2942,7 +2943,7 @@ const response = await submitRegistration({
         </p>
       )}
 
-            <Field
+      <Field
         label="Industry Type"
         required
         hint="Start typing to search, or pick from the list — you can also enter your own industry."
@@ -2979,7 +2980,7 @@ const response = await submitRegistration({
       <div
         style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}
       >
-                <Btn
+        <Btn
           variant="primary"
           onClick={() => {
             setAttempt1(true);
@@ -3018,12 +3019,15 @@ const response = await submitRegistration({
         "placesCandidatesInternationally",
         data.placesInternationally === true ? "true" : "false"
       );
-
+      formData.append(
+        "companyLocationType",
+        data.companyLocationType || ""
+      );
       formData.append("companyDisplayName", data.tradeName || data.legalName);
 
       formData.append("addressLine2", "");
 
-            formData.append(
+      formData.append(
         "industryType",
         data.industry === "Other" ? data.customIndustry.trim() : data.industry
       );
@@ -3228,6 +3232,33 @@ const response = await submitRegistration({
             <strong>Recruitment License</strong> on the next Licences step.
           </Alert>
         )}
+
+
+       
+<Field
+  label="Company Location Type"
+  required
+  error={
+    attempt2 && !data.companyLocationType
+      ? "Please select company location type"
+      : null
+  }
+>
+  <Select
+    value={data.companyLocationType}
+    onChange={(e) =>
+      set("companyLocationType", e.target.value)
+    }
+    error={attempt2 && !data.companyLocationType}
+  >
+    <option value="">Select Location Type</option>
+    <option value="Onshore">Onshore</option>
+    <option value="Offshore">Offshore</option>
+  </Select>
+</Field>
+
+
+
 
         {/* ── International placement ───────────────────
             Asked regardless of Nature of Company — both a Recruitment
@@ -3538,7 +3569,7 @@ const response = await submitRegistration({
     }
   };
 
-  
+
   const handleResendEmailOtp = async () => {
     try {
       const sessionId = localStorage.getItem("registrationSessionId");
@@ -3687,7 +3718,7 @@ const response = await submitRegistration({
           label="Company Profile Summary"
           hint="Brief description of your company and hiring focus (shown on job listings)"
         >
-          
+
           <textarea
             className="form-control"
             value={data.profileSummary}
@@ -3739,31 +3770,111 @@ const response = await submitRegistration({
   // — true for either nature of company. Matching is by exact document
   // name against what Admin has configured under Admin > Recruiters >
   // Document Types (see DOC_NAME_* constants above).
-  const requiredDocumentNames = useMemo(() => {
-    const names = [DOC_NAME_INCORPORATION];
 
-    if (data.natureOfCompany === "RecruitmentAgency") {
-      names.push(DOC_NAME_RECRUITMENT_LICENSE);
+const requiredDocumentNames = useMemo(() => {
+  const names = [DOC_NAME_INCORPORATION];
+
+  if (data.natureOfCompany === "RecruitmentAgency") {
+    names.push(DOC_NAME_RECRUITMENT_LICENSE);
+  }
+
+  const locationType = (data.companyLocationType || "")
+    .trim()
+    .toLowerCase();
+
+  const country = (data.country || "").trim().toLowerCase();
+
+  if (locationType === "onshore" && country !== "india") {
+    names.push(DOC_NAME_POE_LICENSE);
+  }
+
+  // Offshore: RPSL License OR Registration Certificate.
+  // This alternative requirement is handled separately by
+  // missingRequiredDocumentNames.
+
+  return names;
+}, [
+  data.natureOfCompany,
+  data.companyLocationType,
+  data.country,
+]);
+
+
+  
+ 
+const DOC_NAME_REGISTRATION_CERTIFICATE = "Registration Certificate";
+
+const missingRequiredDocumentNames = useMemo(() => {
+  const allDocuments = [...mandatoryDocuments, ...optionalDocuments];
+
+  const findDocument = (documentName) =>
+    allDocuments.find((d) => d.documentName === documentName);
+
+  const isDocumentSelected = (documentName) => {
+    const doc = findDocument(documentName);
+
+    return !!doc && selectedDocuments.some(
+      (x) => x.documentTypeId === doc.documentTypeId
+    );
+  };
+
+  const locationType = (data.companyLocationType || "")
+    .trim()
+    .toLowerCase();
+
+  const country = (data.country || "").trim().toLowerCase();
+  const isIndia = country === "india";
+
+  // Preserve the existing incorporation and recruitment-agency rules.
+  // Apply POE/RPSL requirements separately according to location.
+  const missing = requiredDocumentNames
+    .filter(
+      (name) =>
+        name !== DOC_NAME_POE_LICENSE &&
+        name !== DOC_NAME_RPSL_LICENSE
+    )
+    .filter((name) => !isDocumentSelected(name));
+
+  if (locationType === "onshore" && !isIndia) {
+    if (!isDocumentSelected(DOC_NAME_POE_LICENSE)) {
+      missing.push(DOC_NAME_POE_LICENSE);
     }
+  }
 
-    if (data.placesInternationally === true) {
-      names.push(DOC_NAME_POE_LICENSE, DOC_NAME_RPSL_LICENSE);
+  if (locationType === "offshore") {
+    const rpslDoc = findDocument(DOC_NAME_RPSL_LICENSE);
+    const registrationDoc = findDocument(
+      DOC_NAME_REGISTRATION_CERTIFICATE
+    );
+
+    const hasRpsl = isDocumentSelected(DOC_NAME_RPSL_LICENSE);
+    const hasRegistrationCertificate = isDocumentSelected(
+      DOC_NAME_REGISTRATION_CERTIFICATE
+    );
+
+    if (!hasRpsl && !hasRegistrationCertificate) {
+      if (!rpslDoc && !registrationDoc) {
+        missing.push(
+          `${DOC_NAME_RPSL_LICENSE} or ${DOC_NAME_REGISTRATION_CERTIFICATE} (configure one in Admin)`
+        );
+      } else {
+        missing.push(
+          `${DOC_NAME_RPSL_LICENSE} or ${DOC_NAME_REGISTRATION_CERTIFICATE}`
+        );
+      }
     }
+  }
 
-    return names;
-  }, [data.natureOfCompany, data.placesInternationally]);
+  return [...new Set(missing)];
+}, [
+  requiredDocumentNames,
+  mandatoryDocuments,
+  optionalDocuments,
+  selectedDocuments,
+  data.companyLocationType,
+  data.country,
+]);
 
-  const missingRequiredDocumentNames = useMemo(() => {
-    return requiredDocumentNames.filter((name) => {
-      const doc = [...mandatoryDocuments, ...optionalDocuments].find(
-        (d) => d.documentName === name
-      );
-      if (!doc) return false; // Admin hasn't configured this doc type yet
-      return !selectedDocuments.some(
-        (x) => x.documentTypeId === doc.documentTypeId
-      );
-    });
-  }, [requiredDocumentNames, mandatoryDocuments, optionalDocuments, selectedDocuments]);
 
   const handleStep4 = async () => {
     try {
@@ -3837,10 +3948,26 @@ const response = await submitRegistration({
         You may also upload optional documents to strengthen your company profile.
       </p>
 
-      <Alert type="info">
-        Based on your answers, you'll need:{" "}
-        <strong>{requiredDocumentNames.join(", ")}</strong>.
-      </Alert>
+     
+<Alert type="info">
+  Based on your company details:
+  <ul style={{ marginBottom: 0, paddingLeft: 20 }}>
+    <li>Certificate of Incorporation is required.</li>
+    {data.natureOfCompany === "RecruitmentAgency" && (
+      <li>Recruitment License is required.</li>
+    )}
+    {data.companyLocationType === "Onshore" &&
+      data.country?.trim().toLowerCase() !== "india" && (
+        <li>POE License is required for Onshore companies outside India.</li>
+      )}
+    {data.companyLocationType === "Offshore" && (
+      <li>
+        Upload either an RPSL License or a Registration Certificate.
+      </li>
+    )}
+  </ul>
+</Alert>
+
 
       <div style={{ marginTop: 12 }}>
         <Alert type="info">
@@ -3979,11 +4106,10 @@ const response = await submitRegistration({
                               background: isMissingAndAttempted
                                 ? "#fdecea"
                                 : "#fff8ee",
-                              border: `1px solid ${
-                                isMissingAndAttempted
+                              border: `1px solid ${isMissingAndAttempted
                                   ? "rgba(192,57,43,.35)"
                                   : "rgba(255,163,0,.32)"
-                              }`,
+                                }`,
                               borderRadius: 6,
                               padding: "2px 8px",
                             }}
@@ -4036,81 +4162,81 @@ const response = await submitRegistration({
             )}
 
             <hr />
-<div>
-  <h5 style={{ marginBottom: 15 }}>Additional Documents</h5>
+            <div>
+              <h5 style={{ marginBottom: 15 }}>Additional Documents</h5>
 
-  {additionalDocuments.map((doc, index) => (
-    <div key={index} style={{ marginBottom: 18 }}>
-      <div
-        style={{
-          position: "relative",
-          display: "flex",
-          alignItems: "center",
-        }}
-      >
-        <input
-          type="file"
-          className="form-control"
-          accept=".pdf,.jpg,.jpeg,.png"
-          onChange={(e) =>
-            handleAdditionalDocument(index, e.target.files?.[0])
-          }
-          style={{
-            flex: 1,
-            paddingRight: additionalDocuments.length > 1 ? 36 : undefined,
-          }}
-        />
+              {additionalDocuments.map((doc, index) => (
+                <div key={index} style={{ marginBottom: 18 }}>
+                  <div
+                    style={{
+                      position: "relative",
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                  >
+                    <input
+                      type="file"
+                      className="form-control"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) =>
+                        handleAdditionalDocument(index, e.target.files?.[0])
+                      }
+                      style={{
+                        flex: 1,
+                        paddingRight: additionalDocuments.length > 1 ? 36 : undefined,
+                      }}
+                    />
 
-        {additionalDocuments.length > 0 && (
-          <button
-            type="button"
-            onClick={() => removeAdditionalDocument(index)}
-            aria-label={`Remove document ${index + 1}`}
-            style={{
-              position: "absolute",
-              right: 8,
-              top: "50%",
-              transform: "translateY(-50%)",
-              zIndex: 10,
+                    {additionalDocuments.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => removeAdditionalDocument(index)}
+                        aria-label={`Remove document ${index + 1}`}
+                        style={{
+                          position: "absolute",
+                          right: 8,
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                          zIndex: 10,
 
-              width: 22,
-              height: 22,
-              border: "none",
-              background: "transparent",
-              color: "#888",
-              fontSize: 16,
-              fontWeight: 700,
-              cursor: "pointer",
+                          width: 22,
+                          height: 22,
+                          border: "none",
+                          background: "transparent",
+                          color: "#888",
+                          fontSize: 16,
+                          fontWeight: 700,
+                          cursor: "pointer",
 
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-         
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "transparent";
-              e.currentTarget.style.color = "#888";
-            }}
-          >
-            ×
-          </button>
-        )}
-      </div>
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
 
-      {doc.file && (
-        <div style={{ marginTop: 6 }}>
-          <span style={{ fontSize: 13, color: "#555" }}>
-            {doc.file.name}
-          </span>
-        </div>
-      )}
-    </div>
-  ))}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = "transparent";
+                          e.currentTarget.style.color = "#888";
+                        }}
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
 
-  <Btn variant="outline" onClick={addAdditionalDocument}>
-    + Add Additional Document
-  </Btn>
-</div>
+                  {doc.file && (
+                    <div style={{ marginTop: 6 }}>
+                      <span style={{ fontSize: 13, color: "#555" }}>
+                        {doc.file.name}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              <Btn variant="outline" onClick={addAdditionalDocument}>
+                + Add Additional Document
+              </Btn>
+            </div>
           </>
         )}
       </div>
@@ -4313,7 +4439,7 @@ const response = await submitRegistration({
         <ReviewRow label="Business type" val={labelFor(BUSINESS_TYPES, data.businessType)} />
         <ReviewRow label="Company size" val={labelFor(COMPANY_SIZES, data.companySize)} />
         <ReviewRow label="Company type" val={labelFor(COMPANY_TYPES, data.companyType)} />
-                <ReviewRow
+        <ReviewRow
           label="Industry"
           val={data.industry === "Other" ? data.customIndustry : data.industry}
         />
@@ -4351,16 +4477,16 @@ const response = await submitRegistration({
           label="Company logo"
           val={data.companyLogo ? `✓ ${data.companyLogo.name}` : ""}
         />
-      <ReviewRow
-  label="Licences"
-  val={
-    [...selectedDocuments, ...additionalDocuments].length > 0
-      ? [...selectedDocuments, ...additionalDocuments]
-          .map((d) => d.file?.name || d.documentName)
-          .join(", ")
-      : ""
-  }
-/>
+        <ReviewRow
+          label="Licences"
+          val={
+            [...selectedDocuments, ...additionalDocuments].length > 0
+              ? [...selectedDocuments, ...additionalDocuments]
+                .map((d) => d.file?.name || d.documentName)
+                .join(", ")
+              : ""
+          }
+        />
         <ReviewRow label="GST registered" val={data.hasGst ? "Yes" : "No"} />
       </ReviewSection>
 
@@ -4394,226 +4520,225 @@ const response = await submitRegistration({
       )}
 
       <div style={{ marginTop: 14, marginBottom: 14 }}>
-    <Field label="Registration Fee">
+        <Field label="Registration Fee">
 
-{/* ── Membership Plan ── */}
-{recruiterPlans.length > 0 && (
-  <div style={{ marginBottom: 14 }}>
-    <label
-      style={{
-        display: "block",
-        fontSize: "var(--font-xs)",
-        fontWeight: 600,
-        marginBottom: 6,
-        color: "var(--color-text-secondary)",
-      }}
-    >
-      Membership Plan
-    </label>
+          {/* ── Membership Plan ── */}
+          {recruiterPlans.length > 0 && (
+            <div style={{ marginBottom: 14 }}>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "var(--font-xs)",
+                  fontWeight: 600,
+                  marginBottom: 6,
+                  color: "var(--color-text-secondary)",
+                }}
+              >
+                Membership Plan
+              </label>
 
-    <select
-      value={selectedPlanId}
-      disabled={paying || couponLoading || couponApplied}
-      onChange={(e) => {
-        const planId = e.target.value;
+              <select
+                value={selectedPlanId}
+                disabled={paying || couponLoading || couponApplied}
+                onChange={(e) => {
+                  const planId = e.target.value;
 
-        setSelectedPlanId(planId);
+                  setSelectedPlanId(planId);
 
-        const selectedPlan = recruiterPlans.find(
-          (plan) => plan.planId === planId
-        );
+                  const selectedPlan = recruiterPlans.find(
+                    (plan) => plan.planId === planId
+                  );
 
-        setRecruiterPlan(selectedPlan || null);
+                  setRecruiterPlan(selectedPlan || null);
 
-        // Reset coupon when changing plan
-        setCouponCode("");
-        setCouponApplied(false);
-        setCouponMessage("");
-        setCouponDiscount(0);
-        setCouponFinalAmount(null);
-      }}
-      style={{
-        width: "100%",
-        padding: "10px 12px",
-        borderRadius: 8,
-        border: "1px solid rgba(18,35,89,0.15)",
-        background: "#fff",
-        fontSize: "var(--font-sm)",
-        color: "var(--color-text-primary)",
-      }}
-    >
-      {recruiterPlans.map((plan) => (
-        <option key={plan.planId} value={plan.planId}>
-          {plan.planName} — INR {Number(plan.price).toFixed(2)}
-        </option>
-      ))}
-    </select>
-  </div>
-)}
+                  // Reset coupon when changing plan
+                  setCouponCode("");
+                  setCouponApplied(false);
+                  setCouponMessage("");
+                  setCouponDiscount(0);
+                  setCouponFinalAmount(null);
+                }}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  borderRadius: 8,
+                  border: "1px solid rgba(18,35,89,0.15)",
+                  background: "#fff",
+                  fontSize: "var(--font-sm)",
+                  color: "var(--color-text-primary)",
+                }}
+              >
+                {recruiterPlans.map((plan) => (
+                  <option key={plan.planId} value={plan.planId}>
+                    {plan.planName} — INR {Number(plan.price).toFixed(2)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
-  {/* ── Recruiter Coupon ── */}
-  {payStatus !== "success" && (
-    <div style={{ marginBottom: 14 }}>
-      <label
-        style={{
-          display: "block",
-          fontSize: "var(--font-xs)",
-          fontWeight: 600,
-          marginBottom: 6,
-          color: "var(--color-text-secondary)",
-        }}
-      >
-        Coupon Code
-      </label>
+          {/* ── Recruiter Coupon ── */}
+          {payStatus !== "success" && (
+            <div style={{ marginBottom: 14 }}>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "var(--font-xs)",
+                  fontWeight: 600,
+                  marginBottom: 6,
+                  color: "var(--color-text-secondary)",
+                }}
+              >
+                Coupon Code
+              </label>
 
-      <div
-        style={{
-          display: "flex",
-          gap: 8,
-          width: "100%",
-        }}
-      >
-        <Input
-          placeholder="Enter coupon code"
-          value={couponCode}
-          disabled={couponApplied || couponLoading || paying}
-          onChange={(e) => {
-            setCouponCode(e.target.value.toUpperCase());
-            setCouponApplied(false);
-            setCouponMessage("");
-            setCouponDiscount(0);
-            setCouponFinalAmount(null);
-          }}
-          style={{
-            flex: 1,
-            textTransform: "uppercase",
-          }}
-        />
+              <div
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  width: "100%",
+                }}
+              >
+                <Input
+                  placeholder="Enter coupon code"
+                  value={couponCode}
+                  disabled={couponApplied || couponLoading || paying}
+                  onChange={(e) => {
+                    setCouponCode(e.target.value.toUpperCase());
+                    setCouponApplied(false);
+                    setCouponMessage("");
+                    setCouponDiscount(0);
+                    setCouponFinalAmount(null);
+                  }}
+                  style={{
+                    flex: 1,
+                    textTransform: "uppercase",
+                  }}
+                />
 
-        <Btn
-          type="button"
-          variant={couponApplied ? "success" : "primary"}
-          disabled={
-            couponLoading ||
-            couponApplied ||
-            paying ||
-            !couponCode.trim() ||
-            !selectedPlanId
-          }
-          onClick={handleApplyRecruiterCoupon}
-          style={{
-            minWidth: 100,
-          }}
-        >
-          {couponLoading
-            ? "Checking..."
-            : couponApplied
-              ? "Applied"
-              : "Apply"}
-        </Btn>
-      </div>
+                <Btn
+                  type="button"
+                  variant={couponApplied ? "success" : "primary"}
+                  disabled={
+                    couponLoading ||
+                    couponApplied ||
+                    paying ||
+                    !couponCode.trim() ||
+                    !selectedPlanId
+                  }
+                  onClick={handleApplyRecruiterCoupon}
+                  style={{
+                    minWidth: 100,
+                  }}
+                >
+                  {couponLoading
+                    ? "Checking..."
+                    : couponApplied
+                      ? "Applied"
+                      : "Apply"}
+                </Btn>
+              </div>
 
-      {/* Coupon message */}
-      {couponMessage && (
-        <p
-          style={{
-            fontSize: "var(--font-xs)",
-            marginTop: 7,
-            marginBottom: 0,
-            color: couponApplied ? "#3B6D11" : "#A32D2D",
-          }}
-        >
-          {couponMessage}
-        </p>
-      )}
+              {/* Coupon message */}
+              {couponMessage && (
+                <p
+                  style={{
+                    fontSize: "var(--font-xs)",
+                    marginTop: 7,
+                    marginBottom: 0,
+                    color: couponApplied ? "#3B6D11" : "#A32D2D",
+                  }}
+                >
+                  {couponMessage}
+                </p>
+              )}
 
-      {/* Discount amount */}
-      {couponApplied && couponDiscount > 0 && (
-        <p
-          style={{
-            fontSize: "var(--font-xs)",
-            marginTop: 5,
-            marginBottom: 0,
-            color: "#3B6D11",
-            fontWeight: 600,
-          }}
-        >
-          Discount: INR {couponDiscount.toFixed(2)}
-        </p>
-      )}
+              {/* Discount amount */}
+              {couponApplied && couponDiscount > 0 && (
+                <p
+                  style={{
+                    fontSize: "var(--font-xs)",
+                    marginTop: 5,
+                    marginBottom: 0,
+                    color: "#3B6D11",
+                    fontWeight: 600,
+                  }}
+                >
+                  Discount: INR {couponDiscount.toFixed(2)}
+                </p>
+              )}
 
-      {/* Final amount */}
-      {couponApplied && couponFinalAmount !== null && (
-        <p
-          style={{
-            fontSize: "var(--font-xs)",
-            marginTop: 5,
-            marginBottom: 0,
-            fontWeight: 600,
-          }}
-        >
-          Final Amount: INR {couponFinalAmount.toFixed(2)}
-        </p>
-      )}
-    </div>
-  )}
+              {/* Final amount */}
+              {couponApplied && couponFinalAmount !== null && (
+                <p
+                  style={{
+                    fontSize: "var(--font-xs)",
+                    marginTop: 5,
+                    marginBottom: 0,
+                    fontWeight: 600,
+                  }}
+                >
+                  Final Amount: INR {couponFinalAmount.toFixed(2)}
+                </p>
+              )}
+            </div>
+          )}
 
-  {payStatus === "success" ? (
-    <Alert type="success">
-      {paying
-        ? "Payment successful — creating your account..."
-        : `Payment successful for INR ${couponApplied && couponFinalAmount !== null
-            ? couponFinalAmount.toFixed(2)
-            : recruiterPlan?.price || 150
-          }. Your receipt will be sent to your registered email.`}
-    </Alert>
-  ) : (
-    <>
-      <Btn
-        variant="primary"
-        onClick={handleEmployerPay}
-        disabled={paying || !termsAccepted || !selectedPlanId}
-        style={{
-          width: "100%",
-          padding: "11px 0",
-          fontSize: "var(--font-sm)",
-        }}
-      >
-        {paying
-          ? "Processing..."
-          : `Pay INR ${
-              couponApplied && couponFinalAmount !== null
-                ? couponFinalAmount.toFixed(2)
-                : recruiterPlan?.price || 150
-            } via Razorpay`}
-      </Btn>
+          {payStatus === "success" ? (
+            <Alert type="success">
+              {paying
+                ? "Payment successful — creating your account..."
+                : `Payment successful for INR ${couponApplied && couponFinalAmount !== null
+                  ? couponFinalAmount.toFixed(2)
+                  : recruiterPlan?.price || 150
+                }. Your receipt will be sent to your registered email.`}
+            </Alert>
+          ) : (
+            <>
+              <Btn
+                variant="primary"
+                onClick={handleEmployerPay}
+                disabled={paying || !termsAccepted || !selectedPlanId}
+                style={{
+                  width: "100%",
+                  padding: "11px 0",
+                  fontSize: "var(--font-sm)",
+                }}
+              >
+                {paying
+                  ? "Processing..."
+                  : `Pay INR ${couponApplied && couponFinalAmount !== null
+                    ? couponFinalAmount.toFixed(2)
+                    : recruiterPlan?.price || 150
+                  } via Razorpay`}
+              </Btn>
 
-      {!termsAccepted && (
-        <p
-          style={{
-            fontSize: "var(--font-xs)",
-            marginTop: 8,
-            color: "var(--color-text-tertiary)",
-          }}
-        >
-          Please accept the Terms of Service above to continue to payment.
-        </p>
-      )}
-    </>
-  )}
+              {!termsAccepted && (
+                <p
+                  style={{
+                    fontSize: "var(--font-xs)",
+                    marginTop: 8,
+                    color: "var(--color-text-tertiary)",
+                  }}
+                >
+                  Please accept the Terms of Service above to continue to payment.
+                </p>
+              )}
+            </>
+          )}
 
-  {paymentMessage && (
-    <p
-      style={{
-        fontSize: "var(--font-xs)",
-        marginTop: 8,
-        color: "var(--color-text-tertiary)",
-      }}
-    >
-      {paymentMessage}
-    </p>
-  )}
-</Field>
+          {paymentMessage && (
+            <p
+              style={{
+                fontSize: "var(--font-xs)",
+                marginTop: 8,
+                color: "var(--color-text-tertiary)",
+              }}
+            >
+              {paymentMessage}
+            </p>
+          )}
+        </Field>
       </div>
 
       {payStatus === "success" && (
@@ -4790,7 +4915,7 @@ function RegisterPageInner() {
                 ? "Candidate Registration"
                 : "Create your account"}
           </h1>
-          <p  
+          <p
             style={{
               fontSize: "var(--font-sm)",
               color: "var(--color-text-secondary)",

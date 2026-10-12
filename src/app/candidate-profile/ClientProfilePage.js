@@ -155,7 +155,12 @@ const Field = ({ label, required, children, hint }) => (
   </div>
 );
 
-const Inp = ({ style = {}, ...props }) => (
+const Inp = ({
+  style = {},
+  onFocus,
+  onBlur,
+  ...props
+}) => (
   <input
     {...props}
     style={{
@@ -172,8 +177,14 @@ const Inp = ({ style = {}, ...props }) => (
       transition: "border-color .15s",
       ...style,
     }}
-    onFocus={(e) => (e.target.style.borderColor = T.orangeLight)}
-    onBlur={(e) => (e.target.style.borderColor = T.border)}
+    onFocus={(e) => {
+      e.target.style.borderColor = T.orangeLight;
+      onFocus?.(e);
+    }}
+    onBlur={(e) => {
+      e.target.style.borderColor = T.border;
+      onBlur?.(e);
+    }}
   />
 );
 
@@ -3231,7 +3242,7 @@ const CandidateProfilePage = () => {
           lastName: names.slice(1).join(" ") || "",
           mobile: profile.mobileNumber || "",
           trade: profile.role || profile.jobTitle || "",
-          tradeCategoryId: profileData.tradeCategoryId || null,
+tradeCategoryId: profile.tradeCategoryId || null,
           nationality: profile.nationality || "",
           dob: profile.dateOfBirth ? profile.dateOfBirth.split("T")[0] : "",
           gender: profile.gender || "",
@@ -3265,7 +3276,8 @@ const CandidateProfilePage = () => {
           city: profile.currentCity || "",
           state: profile.currentState || "",
           pin: profile.pincode || "",
-
+      tradeCategoryId: profile.tradeCategoryId || null,
+subTradeId: profile.subTradeId || null,
           summary: profile.about || "",
 
           yearsOfExperience: profile.totalExperienceYears || 0,
@@ -3341,7 +3353,8 @@ const CandidateProfilePage = () => {
       fullName: `${profileData.firstName} ${profileData.lastName}`,
 
       role: profileData.trade,
-
+        tradeCategoryId: profileData.tradeCategoryId || null,
+  subTradeId: profileData.subTradeId || null,
       email: profileData.email,
       mobileNumber: profileData.mobile,
       countryCode: "+91",
