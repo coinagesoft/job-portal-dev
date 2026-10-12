@@ -201,20 +201,6 @@ const isValidMobile = (mobile, countryCode) => {
 
 const TOTAL_EMP_STEPS = 5;
 const EMPLOYER_UI_PREVIEW_MODE = false;
-const isRegistrationOtpBypass = (countryCode, mobileNumber) => {
-  const countryDigits = String(countryCode || "").replace(/\D/g, "");
-  let mobileDigits = String(mobileNumber || "").replace(/\D/g, "");
-
-  // Accept a leading trunk zero.
-  if (mobileDigits.length === 11 && mobileDigits.startsWith("0")) {
-    mobileDigits = mobileDigits.substring(1);
-  }
-
-  return (
-    countryDigits === "91" &&
-    mobileDigits === "9175140525"
-  );
-};
 // ─────────────────────────────────────────────
 // Sub-components
 // ─────────────────────────────────────────────
@@ -1132,23 +1118,6 @@ function CandidateForm() {
     setCouponDiscount(0);
     setCouponFinalAmount(null);
   }, [form.countryCode]);
-useEffect(() => {
-  if (!isRegistrationOtpBypass(form.countryCode, form.mobile)) {
-    return;
-  }
-
-  if (mobileOtp.verified || mobileOtp.sent) {
-    return;
-  }
-
-  sendMobileOtp();
-}, [
-  form.countryCode,
-  form.mobile,
-  mobileOtp.verified,
-  mobileOtp.sent,
-]);
-
   useEffect(() => {
     const pending = sessionStorage.getItem("linkedinVerifiedState");
     if (pending) {
@@ -1172,9 +1141,9 @@ useEffect(() => {
         return;
       }
 
-      // The registration API completes verification for the configured
-      // review number and returns its one-time registration token directly.
-      // Do not show the OTP input or submit a static OTP from the frontend.
+      // For the configured review number the API verifies the phone inside
+      // send-otp and returns the one-time registration token directly, so
+      // no OTP input is shown.
       if (response.data.otpSkipped) {
         if (!response.data.otpToken) {
           showToast(
@@ -1612,7 +1581,6 @@ useEffect(() => {
           sendMobileOtp={sendMobileOtp}
           verifyMobileOtp={verifyMobileOtp}
           resendMobileOtp={sendMobileOtp}
-         skipOtp={isRegistrationOtpBypass(form.countryCode, form.mobile)}
         />
       </Field>
 
