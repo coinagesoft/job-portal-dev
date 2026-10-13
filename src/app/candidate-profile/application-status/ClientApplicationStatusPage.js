@@ -536,7 +536,7 @@ const ApplicationStatusCard = ({ application, isAcknowledged, onAcknowledge, onW
 
             <Link
               href={getJobDetailsHref(application.jobId)}
-              style={{ ...ACTION_BTN_STYLE, background: '#ff9900', color: '#fff', display: 'inline-block' }}
+              style={{ ...ACTION_BTN_STYLE, background: '#FFA300', color: '#fff', display: 'inline-block' }}
             >
               View Job
             </Link>
@@ -579,7 +579,7 @@ const ApplicationStatusCard = ({ application, isAcknowledged, onAcknowledge, onW
 
             <Link
               href={getJobDetailsHref(application.jobId)}
-              style={{ ...ACTION_BTN_STYLE, background: '#ff9900', color: '#fff', display: 'inline-block' }}
+              style={{ ...ACTION_BTN_STYLE, background: '#FFA300', color: '#fff', display: 'inline-block' }}
             >
               View Job
             </Link>

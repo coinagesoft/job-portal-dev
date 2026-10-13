@@ -148,16 +148,16 @@ const EmployerInvoicesPage = () => {
             <div className="card-grid-2 hover-up cv-search-candidate-card mt-20">
               <div className="card-block-info pt-20">
                 <div className="table-responsive">
-                  <table className="table table-striped">
+                  <table className="table table-striped employer-invoice-table">
                     <thead>
                       <tr>
                         <th>Invoice no.</th>
                         <th>Date</th>
                         <th>Type</th>
-                        <th>Amount</th>
-                        <th>GST</th>
-                        <th>Total</th>
-                        <th>Invoice</th>
+                        <th className="text-end">Amount</th>
+                        <th className="text-end">GST</th>
+                        <th className="text-end">Total</th>
+                        <th className="text-end">Invoice</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -182,17 +182,17 @@ const EmployerInvoicesPage = () => {
 
                             <td>{invoice.transactionType}</td>
 
-                            <td>₹{invoice.amount}</td>
+                            <td className="text-end">₹{invoice.amount}</td>
 
-                            <td>₹{invoice.gst}</td>
+                            <td className="text-end">₹{invoice.gst}</td>
 
-                            <td>
+                            <td className="text-end">
                               <strong>₹{invoice.total}</strong>
                             </td>
 
-                            <td>
+                            <td className="text-end">
                               {invoice.invoiceUrl ? (
-                                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "flex-end" }}>
                                   <button
                                     className="btn btn-border btn-sm"
                                     disabled={downloadingId === invoice.invoiceId}

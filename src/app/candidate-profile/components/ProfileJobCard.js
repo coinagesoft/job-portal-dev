@@ -46,8 +46,8 @@ const SAVED_JOB_META_COLOR = "#66789C";
 
 const SAVED_JOB_ACTION_BUTTON_STYLE = {
   color: "#ffffff",
-  background: "#ff9900",
-  border: "1px solid #ff9900",
+  background: "#FFA300",
+  border: "1px solid #FFA300",
   transition: "all 0.25s ease"
 };
 
@@ -83,8 +83,8 @@ const handleSavedJobButtonHoverEnter = (event) => {
 };
 
 const handleSavedJobButtonHoverLeave = (event) => {
-  event.currentTarget.style.background = "#ff9900";
-  event.currentTarget.style.border = "1px solid #ff9900";
+  event.currentTarget.style.background = "#FFA300";
+  event.currentTarget.style.border = "1px solid #FFA300";
   event.currentTarget.style.transform = "translateY(0px)";
   event.currentTarget.style.boxShadow = "none";
 };

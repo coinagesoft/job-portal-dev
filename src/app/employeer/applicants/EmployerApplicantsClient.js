@@ -740,7 +740,7 @@ const EmployerApplicantsClient = () => {
             )}
 
             {/* ── Status filter tabs (matches Job List page style) ── */}
-            <div className="candidate-status-filter mb-30">
+            <div className="candidate-status-filter employer-applicants-status-filter mb-30">
               {statusTabs.map((tab) => (
                 <button
                   key={tab.label}

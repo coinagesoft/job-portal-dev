@@ -2256,3 +2256,35 @@ textarea:focus,
     font-size: 14px !important;
   }
 }
+/* Employer invoices table: header text colour per bug #242 */
+.employer-invoice-table thead th {
+  color: #6B7280;
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* #240 Employer applicants: inactive status tabs use #6B7280 */
+.employer-applicants-status-filter .candidate-status-filter-btn:not(.active):not(:hover) {
+  color: #6B7280;
+}
+
+/* #235 Company profile section headings are 20px */
+.cp-section-heading {
+  font-size: 20px !important;
+  line-height: 28px !important;
+}
+
+/* #221 Jobs list "Apply now" button */
+.btn-apply-now.job-card-apply-btn {
+  background-color: #FFA300;
+  border-color: #FFA300;
+  color: #ffffff;
+}
+.btn-apply-now.job-card-apply-btn:hover {
+  background-color: #E68F00;
+  border-color: #E68F00;
+}

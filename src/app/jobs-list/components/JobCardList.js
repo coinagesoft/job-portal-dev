@@ -605,7 +605,7 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) 
                 ) : (
                   <button
                     type="button"
-                    className="btn btn-apply-now"
+                    className="btn btn-apply-now job-card-apply-btn"
                     style={{ color: "#ffffff" }}
                     onClick={(e) => {
                       e.stopPropagation();

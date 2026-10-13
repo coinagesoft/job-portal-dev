@@ -401,7 +401,7 @@ const Combobox = ({ value, onChange, options, placeholder, disabled }) => {
 const ReadOnlySection = ({ title, rows, company }) => (
   <>
     <h4
-      className="mt-30"
+      className="mt-30 cp-section-heading"
       style={{ color: "#122359", fontWeight: 700, marginBottom: "20px" }}
     >
       {title}
@@ -544,7 +544,7 @@ const RequiredDocumentsSection = ({
   return (
     <>
       <h4
-        className="mt-30"
+        className="mt-30 cp-section-heading"
         style={{ color: "#122359", fontWeight: 700, marginBottom: "20px" }}
       >
         Required Documents
@@ -1509,7 +1509,7 @@ export default function EmployerCompanyProfilePage() {
                       onUpdate={updateBasicInfo}
                     >
 
-                      <h4 style={{ color: "#122359" }}>Basic Info</h4>
+                      <h4 className="cp-section-heading" style={{ color: "#122359" }}>Basic Info</h4>
                       <p >
                         Core company information and business details
                       </p>
@@ -1720,7 +1720,7 @@ export default function EmployerCompanyProfilePage() {
                     <SectionCard
                       onUpdate={updateOnlinePresence}
                     >
-                      <h4 style={{ color: "#122359" }}>Online Presence</h4>
+                      <h4 className="cp-section-heading" style={{ color: "#122359" }}>Online Presence</h4>
                       <p>Website and social media links</p>
 
                       <Field label="Website">
@@ -1767,7 +1767,7 @@ export default function EmployerCompanyProfilePage() {
                     <SectionCard
                       onUpdate={updateAddress}
                     >
-                      <h4 style={{ color: "#122359", marginBottom: "20px" }}>
+                      <h4 className="cp-section-heading" style={{ color: "#122359", marginBottom: "20px" }}>
                         Address
                       </h4>
                       <p className={styles.sectionSub}>
@@ -1899,7 +1899,7 @@ export default function EmployerCompanyProfilePage() {
                     <SectionCard
                       onUpdate={updateContact}
                     >
-                      <h4 style={{ color: "#122359", marginBottom: "20px" }}>
+                      <h4 className="cp-section-heading" style={{ color: "#122359", marginBottom: "20px" }}>
                         Contact
                       </h4>
                       <p className={styles.sectionSub}>
