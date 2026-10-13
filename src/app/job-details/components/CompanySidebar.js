@@ -293,7 +293,7 @@ const CompanySidebar = ({ job = {} }) => {
 
                       {/* Location */}
                       <div className="mt-5">
-                        <span className="card-briefcase">
+                        <span className="card-briefcase" style={{ color: '#66789C' }}>
                           {item.companyLocation}
                         </span>
                       </div>

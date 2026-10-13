@@ -420,7 +420,7 @@ const StepBar = ({ current, onStepClick, completedSteps }) => (
             </div>
             <span
               style={{
-                fontSize: 11,
+                fontSize: 13,
                 fontWeight: active ? 700 : 500,
                 color: active ? T.orange : done ? T.success : T.muted,
                 textAlign: "center",

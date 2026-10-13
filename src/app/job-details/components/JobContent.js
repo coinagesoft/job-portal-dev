@@ -45,7 +45,7 @@ const renderJobDescription = (text) => {
   const flushList = (key) => {
     if (currentList.length === 0) return;
     blocks.push(
-      <ul key={`list-${key}`} style={{ paddingLeft: '20px', marginBottom: '14px' }}>
+      <ul key={`list-${key}`} style={{ paddingLeft: '20px', marginBottom: '14px', color: '#66789C' }}>
         {currentList.map((item, i) => (
           <li key={i} style={{ marginBottom: '6px', lineHeight: 1.6 }}>
             {item}
@@ -102,7 +102,7 @@ const renderJobDescription = (text) => {
       );
     } else {
       blocks.push(
-        <p key={`p-${index}`} style={{ marginBottom: '10px', lineHeight: 1.7 }}>
+        <p key={`p-${index}`} style={{ marginBottom: '10px', lineHeight: 1.7, color: '#66789C' }}>
           {line}
         </p>
       );
@@ -327,7 +327,7 @@ const JobContent = ({ job = {}, isApplied = false, isSaved = false, onSavedToggl
                     borderRadius: 999,
                     background: '#FFF8EE',
                     border: '1px solid #FFE4B8',
-                    color: '#B8792A',
+                    color: '#122359',
                     fontSize: '13px',
                     fontWeight: 600,
                   }}

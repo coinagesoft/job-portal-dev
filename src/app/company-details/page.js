@@ -192,9 +192,27 @@ function CompanyDetailsContent() {
   console.log("COMPANY SIZE FROM API:", companyInfo.companySize);
   const jobs = companyInfo.jobs || [];
 
+  // "Why Candidates Choose Us" entries. The API normally sends an array,
+  // but older/edited profiles can come back as one comma-separated string
+  // (the employer form is comma-separated) or with blanks/duplicates, which
+  // used to crash the page (.map on a string) or render empty cards.
+  const rawHighlights = companyInfo.companyHighlights;
+  const highlights = Array.from(
+    new Set(
+      (Array.isArray(rawHighlights)
+        ? rawHighlights
+        : typeof rawHighlights === "string"
+          ? rawHighlights.split(",")
+          : []
+      )
+        .map((item) => String(item ?? "").trim())
+        .filter(Boolean)
+    )
+  );
+
   const hasAboutContent = Boolean(
     companyInfo.companyDescription ||
-    (companyInfo.companyHighlights || []).length > 0 ||
+    highlights.length > 0 ||
     companyInfo.businessType ||
     companyInfo.totalEmployees ||
     companyInfo.reviewCount != null ||
@@ -351,7 +369,7 @@ function CompanyDetailsContent() {
                   )} */}
                 </h5>
                 {(companyInfo.city || companyInfo.state || companyInfo.country) && (
-                  <span className="card-location">
+                  <span className="card-location" style={{ color: "#66789C" }}>
                     {[companyInfo.city, companyInfo.state, companyInfo.country].filter(Boolean).join(", ")}
                   </span>
                 )}
@@ -476,14 +494,14 @@ function CompanyDetailsContent() {
                               marginBottom: "0",
                               fontSize: "14.5px",
                               lineHeight: 1.7,
-                              color: "#4b5a7a",
+                              color: "#66789C",
                             }}
                           >
                             {companyInfo.companyDescription}
                           </p>
                         </>
                       )}
-                      {(companyInfo.companyHighlights || []).length > 0 && (
+                      {highlights.length > 0 && (
                         <div style={{ marginTop: "30px" }}>
                           <div
                             style={{
@@ -516,21 +534,22 @@ function CompanyDetailsContent() {
                           </div>
 
                           <div className="row">
-                            {(companyInfo.companyHighlights || []).map(
+                            {highlights.map(
                               (item, index) => (
                                 <div
                                   className="col-lg-6 mb-3"
-                                  key={index}
+                                  key={`${item}-${index}`}
                                 >
                                   <div
                                     style={{
+                                      height: "100%",
                                       padding: "14px 16px",
                                       borderRadius: "12px",
                                       border:
                                         "1px solid rgba(18,35,89,.08)",
                                       background: "#fff",
                                       display: "flex",
-                                      alignItems: "center",
+                                      alignItems: "flex-start",
                                       gap: "10px",
                                     }}
                                   >
@@ -539,10 +558,21 @@ function CompanyDetailsContent() {
                                       style={{
                                         color: "#ff9900",
                                         fontSize: "16px",
+                                        flexShrink: 0,
+                                        marginTop: "3px",
                                       }}
                                     />
 
-                                    <span>{item}</span>
+                                    <span
+                                      style={{
+                                        minWidth: 0,
+                                        overflowWrap: "anywhere",
+                                        color: "#66789C",
+                                        lineHeight: 1.6,
+                                      }}
+                                    >
+                                      {item}
+                                    </span>
                                   </div>
                                 </div>
                               )
@@ -789,6 +819,7 @@ function CompanyDetailsContent() {
                         <span
                           className="card-location"
                           style={{
+                            color: "#66789C",
                             display: "block",
                             overflowWrap: "anywhere",
                             wordBreak: "break-word",

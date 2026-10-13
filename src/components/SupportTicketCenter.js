@@ -39,6 +39,15 @@ const CATEGORY_TO_API = {
   Other: "Other",
 };
 
+// Subject / Category / Description labels in the "Raise a Support Ticket" form
+// (shared by the candidate and employer help & support pages).
+const TICKET_FORM_LABEL_STYLE = {
+  color: "#122359",
+  fontWeight: 700,
+  fontSize: "12px",
+  lineHeight: "18px",
+};
+
 const CATEGORY_LABELS = {
   ProfileAndResume: "Profile & Resume",
   JobApplication: "Job Application",
@@ -336,7 +345,7 @@ const SupportTicketCenter = ({
               timeline.
             </p>
 <div className="input-style-1 mb-15">
-  <label className="font-sm color-text-mutted mb-10">
+  <label className="color-text-mutted mb-10" style={TICKET_FORM_LABEL_STYLE}>
     Subject *
   </label>
   <input
@@ -378,7 +387,7 @@ const SupportTicketCenter = ({
 </div>
 
             <div className="input-style-1 mb-15">
-              <label className="font-sm color-text-mutted mb-10">
+              <label className="color-text-mutted mb-10" style={TICKET_FORM_LABEL_STYLE}>
                 Category *
               </label>
               <select
@@ -409,7 +418,7 @@ const SupportTicketCenter = ({
             </div>
 
            <div className="input-style-1 mb-20">
-  <label className="font-sm color-text-mutted mb-10">
+  <label className="color-text-mutted mb-10" style={TICKET_FORM_LABEL_STYLE}>
     Description *
   </label>
   <textarea
@@ -565,7 +574,10 @@ const SupportTicketCenter = ({
                             )}
                           </div>
 
-                          <p className="font-sm color-text-paragraph-2" style={{ wordBreak: "break-word" }}>
+                          <p
+                            className="color-text-paragraph-2"
+                            style={{ wordBreak: "break-word", fontSize: "12px", lineHeight: "18px", color: "#FFA300" }}
+                          >
                             {ticket.description}
                           </p>
                         </div>

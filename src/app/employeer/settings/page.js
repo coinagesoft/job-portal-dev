@@ -181,7 +181,11 @@ const SectionHeader = ({ icon, title, subtitle, danger = false }) => (
     <div>
       <h5
         className={styles.sectionTitle}
-        style={danger ? { color: "#a32d2d" } : undefined}
+        style={{
+          fontSize: 20,
+          lineHeight: "28px",
+          ...(danger ? { color: "#a32d2d" } : {}),
+        }}
       >
         {title}
       </h5>
@@ -1197,7 +1201,7 @@ const EmployerSettingsPage = () => {
                           </option>
                         ))}
                       </select>
-                      <p className={styles.hint}>
+                      <p className={styles.hint} style={{ color: "#66789C" }}>
                         Used for portal interface and system notifications.
                       </p>
                     </div>
@@ -1220,7 +1224,7 @@ const EmployerSettingsPage = () => {
                           </option>
                         ))}
                       </select>
-                      <p className={styles.hint}>
+                      <p className={styles.hint} style={{ color: "#66789C" }}>
                         Shown as alternate in candidate-facing job listings.
                       </p>
                     </div>
@@ -1316,7 +1320,7 @@ const EmployerSettingsPage = () => {
                           OTP-based Login Active
                         </p>
                       </div>
-                      <p className={styles.inlinePanelText} style={{ margin: 0 }}>
+                      <p className={styles.inlinePanelText} style={{ margin: 0, color: "#66789C" }}>
                         Your account uses mobile OTP for authentication. No
                         password is required.
                       </p>
@@ -1515,7 +1519,10 @@ const EmployerSettingsPage = () => {
                           <i className="fi-rr-bell" />
                         </div>
                         <div>
-                          <h5 className={styles.sectionTitle}>
+                          <h5
+                            className={styles.sectionTitle}
+                            style={{ fontSize: 20, lineHeight: "28px" }}
+                          >
                             Email Notifications
                           </h5>
                           <p className={styles.sectionSub}>

@@ -65,6 +65,12 @@ const getStatusStyle = (status) => {
   };
 };
 
+// Field labels in the Invite / Edit Sub-User form
+const SUBUSER_LABEL_STYLE = {
+  fontSize: "12px",
+  fontWeight: 700,
+};
+
 const EmployerSubUserPage = () => {
   const showToast = useToast();
   const [editingUser, setEditingUser] = useState(null);
@@ -633,7 +639,7 @@ const EmployerSubUserPage = () => {
                     </h5>
 
                     <div className="form-group">
-                      <label className="form-label">Name</label>
+                      <label className="form-label" style={SUBUSER_LABEL_STYLE}>Name</label>
                       <input
                         className="form-control"
                         type="text"
@@ -669,7 +675,7 @@ const EmployerSubUserPage = () => {
                     </div>
 
                     <div className="form-group">
-                      <label className="form-label">Email</label>
+                      <label className="form-label" style={SUBUSER_LABEL_STYLE}>Email</label>
                       <input
                         className="form-control"
                         type="email"
@@ -705,7 +711,7 @@ const EmployerSubUserPage = () => {
                     </div>
 
                     <div className="form-group">
-                      <label className="form-label">Mobile</label>
+                      <label className="form-label" style={SUBUSER_LABEL_STYLE}>Mobile</label>
                       <input
                         className="form-control"
                         type="text"
@@ -743,9 +749,9 @@ const EmployerSubUserPage = () => {
 
                     {!editingUser && (
                       <div className="form-group">
-                        <label className="form-label">
+                        <label className="form-label" style={SUBUSER_LABEL_STYLE}>
                           Initial credits{" "}
-                          <span style={{ fontWeight: 400, color: "#66789c" }}>
+                          <span style={{ fontWeight: 700, color: "#66789c" }}>
                             (optional)
                           </span>
                         </label>
@@ -791,7 +797,7 @@ const EmployerSubUserPage = () => {
                     )}
 
                     <div className="form-group">
-                      <label className="form-label d-block mb-12">
+                      <label className="form-label d-block mb-12" style={SUBUSER_LABEL_STYLE}>
                         Permissions
                       </label>
                       <p style={{ fontSize: 12, color: "#66789c", marginTop: -6, marginBottom: 14 }}>
@@ -1065,7 +1071,7 @@ const EmployerSubUserPage = () => {
                         borderRadius: "16px",
                         background: "#fff7ea",
                         border: "1px solid rgba(255,163,0,0.18)",
-                        color: "#ff9900",
+                        color: "#FFA300",
                         fontSize: "13px",
                         fontWeight: 600,
                       }}

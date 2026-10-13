@@ -41,6 +41,9 @@ const JOB_LIST_TAG_STYLE = {
   cursor: "pointer"
 };
 
+// Text colour for location, work type and experience on saved job cards
+const SAVED_JOB_META_COLOR = "#66789C";
+
 const SAVED_JOB_ACTION_BUTTON_STYLE = {
   color: "#ffffff",
   background: "#ff9900",
@@ -176,6 +179,7 @@ const ProfileJobCard = ({ job, isListView, applyToDetails = false, onUnsave }) =
                   textOverflow: "ellipsis",
                   maxWidth: "180px",
                   display: "block",
+                  ...(applyToDetails ? { color: SAVED_JOB_META_COLOR } : {}),
                 }}
               >
                 {job.location}
@@ -199,9 +203,9 @@ const ProfileJobCard = ({ job, isListView, applyToDetails = false, onUnsave }) =
           <Link href={job.jobId ? `/job-details?jobId=${job.jobId}` : "/job-details"}>{job.title}</Link>
         </h4>
         <div className="mt-1">
-          <span className="card-briefcase">{job.type}</span>
+          <span className="card-briefcase" style={applyToDetails ? { color: SAVED_JOB_META_COLOR } : undefined}>{job.type}</span>
           {applyToDetails ? (
-            <span className="card-time">
+            <span className="card-time" style={{ color: SAVED_JOB_META_COLOR }}>
               <span>Experience:</span>
               <span>{job.experience || "Not specified"}</span>
             </span>

@@ -498,7 +498,7 @@ const EmployerJobListPage = () => {
               {JOB_STATUS_TABS.map((tab) => (
                 <button
                   key={tab.label}
-                  className={`candidate-status-filter-btn${activeStatus === tab.label ? " active" : ""}`}
+                  className={`candidate-status-filter-btn employer-job-filter-btn${activeStatus === tab.label ? " active" : ""}`}
                   type="button"
                   onClick={() => setActiveStatus(tab.label)}
                 >
@@ -889,7 +889,7 @@ const EmployerJobListPage = () => {
                                 }}
                               >
                                 <i
-                                  className="fi-rr-users"
+                                  className="fi-rr-user"
                                   style={{ color: "#ffa300" }}
                                 />
                                 Vacancies: {job.vacancies}
@@ -1357,6 +1357,13 @@ const EmployerJobListPage = () => {
           </div>
         </div>
       )}
+
+      {/* Scoped to this page (the applicants page shares .candidate-status-filter-btn) */}
+      <style jsx global>{`
+        .employer-job-filter-btn:not(.active):not(:hover) {
+          color: #6B7280;
+        }
+      `}</style>
     </main>
   );
 };

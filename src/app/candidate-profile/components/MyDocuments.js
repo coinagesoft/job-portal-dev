@@ -326,7 +326,7 @@ export default function MyDocuments() {
         }
       `}</style>
       <h4 style={{ color: NAVY, marginTop: 0, marginBottom: 6 }}>My Documents</h4>
-      <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 16 }}>
+      <p style={{ fontSize: 13, color: "#66789c", marginBottom: 16 }}>
         A document is accepted only when the name on it matches your profile name.
       </p>
 

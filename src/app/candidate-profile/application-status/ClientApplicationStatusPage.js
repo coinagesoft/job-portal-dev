@@ -347,7 +347,7 @@ const ApplicationStatusCard = ({ application, isAcknowledged, onAcknowledge, onW
         height={14}
         style={{ opacity: 0.7 }}
       />
-      <span style={{ fontSize: 13, color: "#4a5578", fontWeight: 500 }}>
+      <span style={{ fontSize: 13, color: "#66789C", fontWeight: 500 }}>
         {application.company}
       </span>
     </div>
@@ -362,7 +362,7 @@ const ApplicationStatusCard = ({ application, isAcknowledged, onAcknowledge, onW
             height={14}
             style={{ opacity: 0.7 }}
           />
-          <span style={{ fontSize: 13, color: "#5a6a85", fontWeight: 500 }}>
+          <span style={{ fontSize: 13, color: "#66789C", fontWeight: 500 }}>
             {application.location}
           </span>
         </div>
@@ -495,7 +495,7 @@ const ApplicationStatusCard = ({ application, isAcknowledged, onAcknowledge, onW
               style={{
                 marginTop: 10,
                 fontSize: 12,
-                color: "#8891ab",
+                color: "#66789C",
                 display: "flex",
                 alignItems: "center",
                 gap: 6,
@@ -560,7 +560,7 @@ const ApplicationStatusCard = ({ application, isAcknowledged, onAcknowledge, onW
           <div
             style={{
               fontSize: 12,
-              color: "#8891ab",
+              color: "#66789C",
               fontWeight: 500,
             }}
           >
@@ -796,7 +796,7 @@ const ClientApplicationStatusPage = () => {
                 <button
                   key={filterName}
                   type="button"
-                  className={`candidate-status-filter-btn ${activeFilter === filterName ? 'active' : ''}`}
+                  className={`candidate-status-filter-btn candidate-app-filter-btn ${activeFilter === filterName ? 'active' : ''}`}
                   onClick={() => setActiveFilter(filterName)}
                 >
                   <span>{filterName}</span>
@@ -844,6 +844,13 @@ const ClientApplicationStatusPage = () => {
           </div>
         </div>
       </section>
+
+      {/* Scoped to this page only (the employer pages share .candidate-status-filter-btn) */}
+      <style jsx global>{`
+        .candidate-app-filter-btn:not(.active):not(:hover) {
+          color: #6B7280;
+        }
+      `}</style>
 
       <WithdrawConfirmModal
         open={Boolean(withdrawTarget)}

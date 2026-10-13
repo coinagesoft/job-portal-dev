@@ -242,7 +242,7 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) 
                       display: "flex",
                       alignItems: "center",
                       gap: "4px",
-                      color: "#98A2B3",
+                      color: "#66789C",
                       ...(viewMode === "grid"
                         ? {
                           overflow: "hidden",
@@ -258,7 +258,7 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) 
                       className="fi-rr-marker"
                       style={{
                         fontSize: "11px",
-                        color: "#98A2B3",
+                        color: "#66789C",
                         flexShrink: 0,
                       }}
                     ></i>
@@ -284,7 +284,7 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) 
                       alignItems: "center",
                       gap: "4px",
                       fontSize: "12px",
-                      color: "#98A2B3",
+                      color: "#66789C",
                       fontWeight: 500,
                     }}
                   >
@@ -527,17 +527,18 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) 
               overflow: "hidden",
               minHeight: viewMode === "grid" ? "42px" : "auto",
               marginBottom: "10px",
+              color: "#66789C",
             }}
           >
             {job.description}
           </p>
 
-          <div className="mt-5 mb-10" style={{ fontSize: "12px", color: "#64748B" }}>
-            <span>Openings: <strong style={{ color: "#1E293B" }}>{job.vacancies || 1}</strong></span>
+          <div className="mt-5 mb-10" style={{ fontSize: "12px", color: "#66789C" }}>
+            <span>Openings: <strong style={{ color: "#66789C" }}>{job.vacancies || 1}</strong></span>
             {job.experienceDisplay && (
               <>
                 <span style={{ margin: "0 8px" }}>•</span>
-                <span>Experience: <strong style={{ color: "#1E293B" }}>{job.experienceDisplay}</strong></span>
+                <span>Experience: <strong style={{ color: "#66789C" }}>{job.experienceDisplay}</strong></span>
               </>
             )}
           </div>

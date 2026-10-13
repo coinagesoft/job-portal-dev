@@ -22,7 +22,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: #ff9900;
+  color: #FFA300;
 }
 
 .sidebarTitle {
@@ -67,7 +67,7 @@
   box-shadow:
     0 12px 22px rgba(255, 153, 0, 0.2),
     0 6px 12px rgba(18, 35, 89, 0.08);
-  color: #ff9900;
+  color: #FFA300;
 }
 
 .sidebarLinkActive {
@@ -75,7 +75,7 @@
   box-shadow:
     0 14px 24px rgba(255, 153, 0, 0.2),
     inset 0 0 0 1px rgba(255, 153, 0, 0.35);
-  color: #ff9900;
+  color: #FFA300;
   font-weight: 700;
 }
 

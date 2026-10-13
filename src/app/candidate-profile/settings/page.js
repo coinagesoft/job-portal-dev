@@ -33,6 +33,13 @@ const SETTINGS_SHORTCUTS = [
   
 const SECURITY_ITEMS = [];
 
+// Field labels in the Profile Preferences card
+const PREFERENCE_LABEL_STYLE = {
+  color: "#122359",
+  fontWeight: 700,
+  fontSize: "12px",
+};
+
 const CandidateSettingsPage = () => {
   const showToast = useToast();
   const [saved, setSaved] = useState(false);
@@ -138,12 +145,12 @@ const CandidateSettingsPage = () => {
             <div className="row">
               <div className="col-xl-7 col-lg-7 col-md-12">
                 <div className="candidate-settings-card mb-20">
-                  <h5 className="mb-20">Profile Preferences</h5>
+                  <h5 className="mb-20" style={{ color: "#122359", fontWeight: 700 }}>Profile Preferences</h5>
                   <div className="candidate-settings-form-grid">
 
                     {/* Language Preference */}
                     <div className="input-style-1">
-                      <label className="font-sm color-text-mutted mb-10">Preferred Language</label>
+                      <label className="font-sm color-text-mutted mb-10" style={PREFERENCE_LABEL_STYLE}>Preferred Language</label>
                       <select
                         className="form-control form-select"
                         value={language}
@@ -156,7 +163,7 @@ const CandidateSettingsPage = () => {
                     </div>
 
                     <div className="input-style-1">
-                      <label className="font-sm color-text-mutted mb-10">Time Zone</label>
+                      <label className="font-sm color-text-mutted mb-10" style={PREFERENCE_LABEL_STYLE}>Time Zone</label>
                       <select
                         className="form-control form-select"
                         value={timezone}
@@ -171,7 +178,7 @@ const CandidateSettingsPage = () => {
                     </div>
 
                     <div className="input-style-1">
-                      <label className="font-sm color-text-mutted mb-10">Default Resume Visibility</label>
+                      <label className="font-sm color-text-mutted mb-10" style={PREFERENCE_LABEL_STYLE}>Default Resume Visibility</label>
                       <select
                         className="form-control form-select"
                         value={visibility}
@@ -184,7 +191,7 @@ const CandidateSettingsPage = () => {
                     </div>
 
                     <div className="input-style-1">
-                      <label className="font-sm color-text-mutted mb-10">Communication Preference</label>
+                      <label className="font-sm color-text-mutted mb-10" style={PREFERENCE_LABEL_STYLE}>Communication Preference</label>
                       <select
                         className="form-control form-select"
                         value={comms}
@@ -204,7 +211,7 @@ const CandidateSettingsPage = () => {
   className="btn btn-small"
   style={{
     background: "#fff",
-    color: "#ff9900",
+    color: "#FFA300",
     border: "1px solid #ff9900",
     fontSize:"16px"
   }}
