@@ -131,6 +131,21 @@ const DOC_NAME_INCORPORATION = "Certificate of Incorporation";
 const DOC_NAME_RECRUITMENT_LICENSE = "Recruitment License";
 const DOC_NAME_POE_LICENSE = "POE License";
 const DOC_NAME_RPSL_LICENSE = "RPSL License";
+const DOC_NAME_REGISTRATION_CERTIFICATE = "Registration Certificate";
+
+// Licence rule by company location (Step 2):
+//   Onshore + country outside India -> POE License is REQUIRED, RPSL not applicable
+//   Offshore                        -> RPSL License OR Registration Certificate
+//                                      is REQUIRED, POE not applicable
+//   Onshore + India                 -> neither is required (both optional)
+// "country" defaults to India when empty, same as the API does on save.
+const getLicenceRule = (companyLocationType, country) => {
+  const locationType = (companyLocationType || "").trim().toLowerCase();
+  const isIndia = ((country || "India").trim().toLowerCase()) === "india";
+  if (locationType === "offshore") return "offshore";
+  if (locationType === "onshore" && !isIndia) return "onshoreAbroad";
+  return "default";
+};
 
 const COMPANY_SIZES = [
   { value: "Size_1_10", label: "1-10 employees" },
@@ -2449,6 +2464,11 @@ function EmployerForm() {
             legalName: step2.legalName || "",
             tradeName: step2.tradeName || "",
             companyLocationType: step2.companyLocationType || "",
+            natureOfCompany: step2.natureOfCompany || "",
+            placesInternationally:
+              typeof step2.placesCandidatesInternationally === "boolean"
+                ? step2.placesCandidatesInternationally
+                : null,
             businessType: step2.businessType || "",
             companySize: step2.companySize || "",
 
@@ -3311,11 +3331,20 @@ function EmployerForm() {
           </div>
         </Field>
 
-        {data.placesInternationally === true && (
+        {getLicenceRule(data.companyLocationType, data.country) === "onshoreAbroad" && (
           <Alert type="info">
-            Since you place candidates internationally, you'll also need to
-            upload your <strong>POE License</strong> and{" "}
-            <strong>RPSL License</strong> on the Licences step.
+            Since your company is <strong>Onshore outside India</strong>, you'll
+            need to upload your <strong>POE License</strong> on the Licences
+            step.
+          </Alert>
+        )}
+
+        {getLicenceRule(data.companyLocationType, data.country) === "offshore" && (
+          <Alert type="info">
+            Since your company is <strong>Offshore</strong>, you'll need to
+            upload either your <strong>RPSL License</strong> or your{" "}
+            <strong>Registration Certificate</strong> on the Licences step. A
+            POE License is not required.
           </Alert>
         )}
 
@@ -3791,6 +3820,8 @@ function EmployerForm() {
   // name against what Admin has configured under Admin > Recruiters >
   // Document Types (see DOC_NAME_* constants above).
 
+  const licenceRule = getLicenceRule(data.companyLocationType, data.country);
+
   const requiredDocumentNames = useMemo(() => {
     const names = [DOC_NAME_INCORPORATION];
 
@@ -3798,31 +3829,45 @@ function EmployerForm() {
       names.push(DOC_NAME_RECRUITMENT_LICENSE);
     }
 
-    const locationType = (data.companyLocationType || "")
-      .trim()
-      .toLowerCase();
-
-    const country = (data.country || "").trim().toLowerCase();
-
-    if (locationType === "onshore" && country !== "india") {
+    // Onshore outside India: POE License (RPSL not applicable).
+    if (licenceRule === "onshoreAbroad") {
       names.push(DOC_NAME_POE_LICENSE);
     }
 
-    // Offshore: RPSL License OR Registration Certificate.
-    // This alternative requirement is handled separately by
-    // missingRequiredDocumentNames.
+    // Offshore: RPSL License OR Registration Certificate (POE not
+    // applicable). This either/or requirement is handled separately by
+    // oneOfRequiredNames / missingRequiredDocumentNames.
 
     return names;
   }, [
     data.natureOfCompany,
-    data.companyLocationType,
-    data.country,
+    licenceRule,
   ]);
 
+  // Offshore: at least ONE of these must be uploaded.
+  const oneOfRequiredNames = useMemo(
+    () =>
+      licenceRule === "offshore"
+        ? [DOC_NAME_RPSL_LICENSE, DOC_NAME_REGISTRATION_CERTIFICATE]
+        : [],
+    [licenceRule]
+  );
+
+  // Licences that don't apply to this company are hidden (and never
+  // uploaded): RPSL for Onshore-outside-India, POE for Offshore.
+  const isHiddenDocument = (documentName) =>
+    (licenceRule === "onshoreAbroad" && documentName === DOC_NAME_RPSL_LICENSE) ||
+    (licenceRule === "offshore" && documentName === DOC_NAME_POE_LICENSE);
+
+  const visibleMandatoryDocuments = mandatoryDocuments.filter(
+    (d) => !isHiddenDocument(d.documentName)
+  );
+  const visibleOptionalDocuments = optionalDocuments.filter(
+    (d) => !isHiddenDocument(d.documentName)
+  );
 
 
 
-  const DOC_NAME_REGISTRATION_CERTIFICATE = "Registration Certificate";
 
   const missingRequiredDocumentNames = useMemo(() => {
     const allDocuments = [...mandatoryDocuments, ...optionalDocuments];
@@ -3838,13 +3883,6 @@ function EmployerForm() {
       );
     };
 
-    const locationType = (data.companyLocationType || "")
-      .trim()
-      .toLowerCase();
-
-    const country = (data.country || "").trim().toLowerCase();
-    const isIndia = country === "india";
-
     // Preserve the existing incorporation and recruitment-agency rules.
     // Apply POE/RPSL requirements separately according to location.
     const missing = requiredDocumentNames
@@ -3855,13 +3893,13 @@ function EmployerForm() {
       )
       .filter((name) => !isDocumentSelected(name));
 
-    if (locationType === "onshore" && !isIndia) {
+    if (licenceRule === "onshoreAbroad") {
       if (!isDocumentSelected(DOC_NAME_POE_LICENSE)) {
         missing.push(DOC_NAME_POE_LICENSE);
       }
     }
 
-    if (locationType === "offshore") {
+    if (licenceRule === "offshore") {
       const rpslDoc = findDocument(DOC_NAME_RPSL_LICENSE);
       const registrationDoc = findDocument(
         DOC_NAME_REGISTRATION_CERTIFICATE
@@ -3891,8 +3929,7 @@ function EmployerForm() {
     mandatoryDocuments,
     optionalDocuments,
     selectedDocuments,
-    data.companyLocationType,
-    data.country,
+    licenceRule,
   ]);
 
 
@@ -3915,8 +3952,20 @@ function EmployerForm() {
 
       const sessionId = localStorage.getItem("registrationSessionId");
 
+      // Drop licences that don't apply to this company (e.g. the user picked
+      // a POE file, then switched the company to Offshore).
+      const hiddenDocumentTypeIds = new Set(
+        [...mandatoryDocuments, ...optionalDocuments]
+          .filter((d) => isHiddenDocument(d.documentName))
+          .map((d) => d.documentTypeId)
+      );
+
       const documents = [
-        ...selectedDocuments.filter((x) => x.file instanceof File),
+        ...selectedDocuments.filter(
+          (x) =>
+            x.file instanceof File &&
+            !hiddenDocumentTypeIds.has(x.documentTypeId)
+        ),
 
         ...additionalDocuments
           .filter((x) => x.file instanceof File)
@@ -3976,13 +4025,18 @@ function EmployerForm() {
           {data.natureOfCompany === "RecruitmentAgency" && (
             <li>Recruitment License is required.</li>
           )}
-          {data.companyLocationType === "Onshore" &&
-            data.country?.trim().toLowerCase() !== "india" && (
-              <li>POE License is required for Onshore companies outside India.</li>
-            )}
-          {data.companyLocationType === "Offshore" && (
+          {licenceRule === "onshoreAbroad" && (
+            <li>POE License is required for Onshore companies outside India.</li>
+          )}
+          {licenceRule === "offshore" && (
             <li>
-              Upload either an RPSL License or a Registration Certificate.
+              Upload either an RPSL License or a Registration Certificate
+              (POE License is not required for Offshore companies).
+            </li>
+          )}
+          {licenceRule === "default" && (
+            <li>
+              POE and RPSL licences are optional for Onshore companies in India.
             </li>
           )}
         </ul>
@@ -4035,7 +4089,7 @@ function EmployerForm() {
                 Mandatory Documents
               </h5>
 
-              {mandatoryDocuments.map((doc) => {
+              {visibleMandatoryDocuments.map((doc) => {
                 const selected = selectedDocuments.find(
                   (x) => x.documentTypeId === doc.documentTypeId
                 );
@@ -4083,7 +4137,7 @@ function EmployerForm() {
               })}
             </div>
 
-            {optionalDocuments.length > 0 && (
+            {visibleOptionalDocuments.length > 0 && (
               <div>
                 <hr />
 
@@ -4091,16 +4145,33 @@ function EmployerForm() {
                   Optional Documents
                 </h5>
 
-                {optionalDocuments.map((doc) => {
+                {visibleOptionalDocuments.map((doc) => {
                   const selected = selectedDocuments.find(
                     (x) => x.documentTypeId === doc.documentTypeId
                   );
 
-                  const isConditionallyRequired = requiredDocumentNames.includes(
+                  const isOneOfRequired = oneOfRequiredNames.includes(
                     doc.documentName
                   );
+                  const isConditionallyRequired =
+                    requiredDocumentNames.includes(doc.documentName) ||
+                    isOneOfRequired;
+
+                  // For either/or documents (Offshore: RPSL or Registration
+                  // Certificate) it is only "missing" if NONE of them is chosen.
+                  const anyOneOfSelected =
+                    isOneOfRequired &&
+                    optionalDocuments.some(
+                      (d) =>
+                        oneOfRequiredNames.includes(d.documentName) &&
+                        selectedDocuments.some(
+                          (x) => x.documentTypeId === d.documentTypeId
+                        )
+                    );
                   const isMissingAndAttempted =
-                    isConditionallyRequired && attempt4 && !selected;
+                    isConditionallyRequired &&
+                    attempt4 &&
+                    (isOneOfRequired ? !anyOneOfSelected : !selected);
 
                   return (
                     <div
@@ -4134,7 +4205,9 @@ function EmployerForm() {
                               padding: "2px 8px",
                             }}
                           >
-                            Required
+                            {isOneOfRequired
+                              ? "Required (RPSL License or Registration Certificate)"
+                              : "Required"}
                           </span>
                         )}
                       </label>

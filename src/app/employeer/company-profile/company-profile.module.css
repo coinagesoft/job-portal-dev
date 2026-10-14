@@ -193,11 +193,33 @@
     0 0 0 2px rgba(255, 163, 0, 0.12);
 }
 
-.sectionCard:hover {
+/* Read-only "Verification & Status" block and "Required Documents" rows:
+   same golden border + lift on hover as .sectionCard. */
+.infoCard {
+  background: #f9fafb;
+  border: 1px solid rgba(18, 35, 89, 0.06);
+  border-radius: 20px;
+  overflow: hidden;
+  margin-bottom: 28px;
+  transition: all 0.25s ease;
+}
+
+.docCard {
+  background: #ffffff;
+  border: 1px solid rgba(18, 35, 89, 0.08);
+  border-radius: 18px;
+  box-shadow: 0 4px 14px rgba(18, 35, 89, 0.04);
+  transition: all 0.25s ease;
+}
+
+.infoCard:hover,
+.docCard:hover {
   transform: translateY(-2px);
+  border-color: #ffa300;
   box-shadow:
     0 16px 30px rgba(18, 35, 89, 0.08),
-    0 6px 14px rgba(18, 35, 89, 0.05);
+    0 6px 14px rgba(18, 35, 89, 0.05),
+    0 0 0 2px rgba(255, 163, 0, 0.12);
 }
 
 .sectionSummary {

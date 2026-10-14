@@ -1,8 +1,13 @@
 ﻿export const filterCategories = [
   { label: "Work Mode", type: "employmentModes" },
   { label: "Department", type: "departments" },
-  { label: "Industries", type: "tradeCategories" },
+  // Industries = job.industryType; Trade Category = job.tradeCategory.
+  // They are different taxonomies and must stay separate sections.
+  { label: "Industries", type: "industries" },
+  { label: "Trade Category", type: "tradeCategories" },
   { label: "Role", type: "roles" },
+  { label: "Experience", type: "experience" },
+  { label: "Salary", type: "salary" },
   { label: "Education", type: "educationLevels" },
   { label: "Location", type: "cities" },
   { label: "Skills", type: "skills" },
@@ -97,5 +102,3 @@ export const filterOptions = {
     { label: "Ahmedabad", count: 132, selected: false }
   ]
 };
-
-

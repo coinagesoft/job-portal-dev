@@ -446,7 +446,7 @@ const JobList = ({ filters = {} }) => {
   const matchesSalary = (job) => {
     const selected = filters.salary || [];
     if (selected.length === 0) return true;
-    const jobSal = parseJobSalary(job.salaryRange);
+    const jobSal = parseJobSalary(job.salaryRange || job.salaryDisplay);
     return selected.some(label => salaryOverlap(jobSal, parseSalaryFilter(label)));
   };
 

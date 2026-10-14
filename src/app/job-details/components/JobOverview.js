@@ -54,6 +54,8 @@ const JobOverview = ({ job = {} }) => {
           value: job.isClientHiring && job.showClientName ? job.clientName : null,
         },
         { icon: 'fa-solid fa-industry', label: 'Trade Category', value: humanize(job.tradeCategory) },
+        { icon: 'fa-solid fa-diagram-project', label: 'SubTrade / Category', value: humanize(job.subTrade) },
+        { icon: 'fa-solid fa-user-gear', label: 'Role / Specialisation', value: humanize(job.role) },
         { icon: 'fa-solid fa-sitemap', label: 'Department', value: humanize(job.department) },
         { icon: 'fa-solid fa-layer-group', label: 'Industry Type', value: humanize(job.industryType) },
         { icon: 'fa-solid fa-briefcase', label: 'Employment Type', value: humanize(job.employmentType) },
@@ -109,6 +111,14 @@ const JobOverview = ({ job = {} }) => {
           icon: 'fa-solid fa-passport',
           label: 'Passport Required',
           value: job.passportRequired !== undefined ? (job.passportRequired ? 'Yes' : 'No') : null,
+        },
+        {
+          icon: 'fa-solid fa-passport',
+          label: 'Passport Validity',
+          value:
+            job.passportRequired && job.passportValidityMonths
+              ? `${job.passportValidityMonths} months`
+              : null,
         },
         {
           icon: 'fa-solid fa-globe',

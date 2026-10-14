@@ -406,15 +406,7 @@ const ReadOnlySection = ({ title, rows, company }) => (
     >
       {title}
     </h4>
-    <div
-      style={{
-        background: "#f9fafb",
-        borderRadius: "20px",
-        border: "1px solid rgba(18,35,89,0.06)",
-        overflow: "hidden",
-        marginBottom: "28px",
-      }}
-    >
+    <div className={styles.infoCard}>
       {rows.map((row, index) => (
         <div
           key={row.key}
@@ -582,6 +574,7 @@ const RequiredDocumentsSection = ({
           return (
             <div
               key={doc.documentTypeId || doc.documentType}
+              className={styles.docCard}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -589,11 +582,6 @@ const RequiredDocumentsSection = ({
                 flexWrap: "wrap",
                 gap: "14px",
                 padding: "18px 22px",
-                borderRadius: "18px",
-                border: "1px solid rgba(18,35,89,0.08)",
-                background: "#ffffff",
-                boxShadow: "0 4px 14px rgba(18,35,89,0.04)",
-                transition: "all .35s ease",
               }}
             >
               <div>

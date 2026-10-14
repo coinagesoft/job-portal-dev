@@ -2432,11 +2432,37 @@ function Step5({ go, jobForm, setJobForm, onSubmit, errors, }) {
     return states.length > 0 ? states : indianStates;
   }, [activeCountry]);
 
+  // A job is International when its country is set and is not India. Same
+  // rule the backend uses to set IsInternational (shown on the JD).
+  const isOutsideIndia = (c) =>
+    !!c && c.trim() !== "" && c.trim().toLowerCase() !== "india";
+  const isInternationalJob =
+    isOutsideIndia(jobForm.Country) ||
+    (isOnshore && isOutsideIndia(jobForm.OnshoreCountry)) ||
+    (isOffshore && isOutsideIndia(jobForm.OffshoreCountry));
+
   const handleCountryChange = (countryVal) => {
-    setJobForm((p) => ({
-      ...p,
-      Country: countryVal,
-    }));
+    setJobForm((p) => {
+      const next = { ...p, Country: countryVal };
+
+      // Keep the Onshore/Offshore country in step with the general Country
+      // unless the recruiter deliberately set it to something else, so the
+      // two can't silently disagree (which made international jobs show up
+      // as "International Job: No" on the JD).
+      if (!p.OnshoreCountry || p.OnshoreCountry === p.Country) {
+        const validStates = getStatesForCountry(countryVal);
+        next.OnshoreCountry = countryVal;
+        if (
+          !(validStates.length === 0 || validStates.includes(p.OnshoreState))
+        ) {
+          next.OnshoreState = "";
+        }
+      }
+      if (!p.OffshoreCountry || p.OffshoreCountry === p.Country) {
+        next.OffshoreCountry = countryVal;
+      }
+      return next;
+    });
   };
 
   const handleOnshoreCountryChange = (countryVal) => {
@@ -2484,6 +2510,29 @@ function Step5({ go, jobForm, setJobForm, onSubmit, errors, }) {
             options={countryOptions}
             placeholder="e.g. India"
           />
+        </Field>
+
+        {/* International Job — set automatically from the country */}
+        <Field
+          label="International Job"
+          hint="Set automatically: any country other than India makes this an International job."
+        >
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "8px 12px",
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 700,
+              border: `1px solid ${isInternationalJob ? "rgba(255,163,0,.4)" : "#e4eaf3"}`,
+              background: isInternationalJob ? "#fff7e8" : "#f8faff",
+              color: isInternationalJob ? "#8a5a00" : "#66789c",
+            }}
+          >
+            {isInternationalJob ? "Yes — International job" : "No — Domestic job (India)"}
+          </div>
         </Field>
 
         {/* Work Address Line (both types) */}

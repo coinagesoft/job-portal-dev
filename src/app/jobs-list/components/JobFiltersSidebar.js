@@ -40,6 +40,29 @@ const parseSalaryRangeToMinMax = (salaryRange) => {
   return { min, max };
 };
 
+// Fixed experience ranges. Labels must stay parseable by JobList's
+// parseExperienceFilter ("Fresher", "1-3", "10+"), which is what actually
+// filters the list.
+const EXPERIENCE_BUCKETS = [
+  { label: "Fresher (0-1 yr)", min: 0, max: 1 },
+  { label: "1-3 Years", min: 1, max: 3 },
+  { label: "3-5 Years", min: 3, max: 5 },
+  { label: "5-10 Years", min: 5, max: 10 },
+  { label: "10+ Years", min: 10, max: Infinity },
+];
+
+// Same parsing as JobList's parseJobExperience: "2-5 Years", "Fresher",
+// "3+ years"; no number at all means "any experience".
+const parseJobExperience = (experienceDisplay) => {
+  const text = String(experienceDisplay || "").toLowerCase();
+  const nums = text.match(/\d+/g)?.map(Number) || [];
+  if (text.includes("fresher")) return { min: 0, max: 1 };
+  if (nums.length === 0) return { min: 0, max: Infinity };
+  const min = nums[0];
+  const max = nums[1] || min;
+  return { min, max };
+};
+
 // Builds N buckets spanning the actual min/max salary found in the data,
 // rounded to a "nice" step so labels don't show ugly numbers. The last
 // bucket is open-ended ("+"). Returns [] if there's no usable salary data.
@@ -93,6 +116,10 @@ const getOptionCount = (categoryType, optionLabel, jobsList) => {
         const jobState = normalizeString(job.state || job.jobLocation);
         return jobState.includes(normLabel);
       }
+      case "industries": {
+        const jobIndustry = normalizeString(job.industryType);
+        return jobIndustry === normLabel;
+      }
       case "tradeCategories": {
         const jobTrade = normalizeString(job.tradeCategory);
         return jobTrade.includes(normLabel);
@@ -141,6 +168,7 @@ const JobFiltersSidebar = ({ jobs = [], filters = {}, onFilterChange }) => {
     const salaryBuckets = buildSalaryBuckets(jobs);
 
     return {
+      industries: uniqueValues(jobs.map(j => j.industryType)).map(label => ({ label, count: null })),
       tradeCategories: uniqueValues(jobs.map(j => j.tradeCategory)).map(label => ({ label, count: null })),
       roles: uniqueValues(jobs.map(j => j.jobTitle || j.role)).map(label => ({ label, count: null })),
       cities: uniqueValues(jobs.map(j => j.city || j.jobLocation)).map(label => ({ label, count: null })),
@@ -151,6 +179,7 @@ const JobFiltersSidebar = ({ jobs = [], filters = {}, onFilterChange }) => {
       departments: uniqueValues(jobs.map(j => j.department)).map(label => ({ label, count: null })),
       skills: uniqueValues(jobs.flatMap(j => Array.isArray(j.skills) ? j.skills : [])).map(label => ({ label, count: null })),
       employmentModes: uniqueValues(jobs.map(j => j.employmentMode)).map(label => ({ label, count: null })),
+      experience: EXPERIENCE_BUCKETS.map(b => ({ label: b.label, count: null, min: b.min, max: b.max })),
       salary: salaryBuckets.map(b => ({ label: b.label, count: null, min: b.min, max: b.max })),
     };
   }, [jobs]);
@@ -199,6 +228,14 @@ const JobFiltersSidebar = ({ jobs = [], filters = {}, onFilterChange }) => {
             const jobSal = parseSalaryRangeToMinMax(job.salaryRange || job.salaryDisplay);
             if (!jobSal) return false;
             return jobSal.min <= opt.max && jobSal.max >= opt.min;
+          }).length,
+        }));
+      } else if (type === "experience") {
+        result[type] = opts.map(opt => ({
+          ...opt,
+          count: jobs.filter(job => {
+            const jobExp = parseJobExperience(job.experienceDisplay);
+            return jobExp.min <= opt.max && jobExp.max >= opt.min;
           }).length,
         }));
       } else {

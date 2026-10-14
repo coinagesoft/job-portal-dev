@@ -130,17 +130,18 @@ export default function JobPreviewModal({ open, onClose, job, loading }) {
       .filter(Boolean)
       .join(" – ") || "Not specified"
     : "Not specified";
-  const displayTradeOrClient =
-    job?.IsClientHiring &&
-      job?.ShowClientName &&
-      job?.ClientName
-      ? job.ClientName
-      : humanize(job?.TradeCategory);
+  // Trade / Role Category must always show the trade, never the client name
+  // (the client is shown in its own "Hiring Type" section below).
+  const tradeCategoryText = humanize(job?.TradeCategory);
 
-  const isClientName =
-    job?.IsClientHiring &&
-    job?.ShowClientName &&
-    !!job?.ClientName;
+  // Same rule the backend uses for IsInternational: any country other than India.
+  const outsideIndia = (c) =>
+    typeof c === "string" && c.trim() !== "" && c.trim().toLowerCase() !== "india";
+  const isInternationalJob =
+    outsideIndia(job?.Country) ||
+    (job?.LocationType === "Offshore"
+      ? outsideIndia(job?.OffshoreCountry)
+      : outsideIndia(job?.OnshoreCountry));
   return (
     <div
       onMouseDown={(e) => {
@@ -200,10 +201,10 @@ export default function JobPreviewModal({ open, onClose, job, loading }) {
                   color: "#c9d4ee",
                   margin: "4px 0 0",
                   fontSize: 14,
-                  fontWeight: isClientName ? 700 : 400,
+                  fontWeight: 400,
                 }}
               >
-                {`${displayTradeOrClient}${job.Role ? ` • ${job.Role}` : ""}`}
+                {`${tradeCategoryText}${job.Role ? ` • ${job.Role}` : ""}`}
               </p>
             )}
           </div>
@@ -281,12 +282,8 @@ export default function JobPreviewModal({ open, onClose, job, loading }) {
                 <Row
                   label="Trade / Role Category"
                   value={
-                    <span
-                      style={{
-                        fontWeight: isClientName ? 700 : 600,
-                      }}
-                    >
-                      {displayTradeOrClient}
+                    <span style={{ fontWeight: 600 }}>
+                      {tradeCategoryText}
                     </span>
                   }
                 />
@@ -295,6 +292,7 @@ export default function JobPreviewModal({ open, onClose, job, loading }) {
                   label="SubTrade / Category"
                   value={humanize(job.SubTrade)}
                 />
+
 
                 {/* <Row label="Role / Specialisation" value={job.Role} /> */}
 
@@ -339,6 +337,24 @@ export default function JobPreviewModal({ open, onClose, job, loading }) {
                       {job.JobDescription}
                     </p>
                   </div>
+                )}
+              </Section>
+
+              {/* Is this job for a client or the recruiter's own company? */}
+              <Section title="Hiring Type">
+                <Row
+                  label="This job is for"
+                  value={job.IsClientHiring ? "Client" : "Own company"}
+                />
+                {job.IsClientHiring && (
+                  <Row
+                    label="Client Name"
+                    value={
+                      job.ClientName
+                        ? `${job.ClientName} (${job.ShowClientName ? "visible to candidates" : "hidden from candidates"})`
+                        : "Not provided"
+                    }
+                  />
                 )}
               </Section>
 
@@ -390,7 +406,7 @@ export default function JobPreviewModal({ open, onClose, job, loading }) {
                 <Row label="Disability Eligible" value={job.DisabilityEligible ? "Yes" : "No"} />
                 <Row label="Passport Required" value={job.PassportRequired ? "Yes" : "No"} />
                 {job.PassportRequired && (
-                  <Row label="Passport Validity" value={job.PassportValidityMonths ? `${job.PassportValidityMonths} months` : null} />
+                  <Row label="Passport Validity" value={job.PassportValidityMonths ? `${job.PassportValidityMonths} months` : "Not specified"} />
                 )}
                 <Row
                   label="Personal Documents Required"
@@ -405,6 +421,7 @@ export default function JobPreviewModal({ open, onClose, job, loading }) {
 
               <Section title="Location">
                 <Row label="Location Type" value={humanize(job.LocationType)} />
+                <Row label="International Job" value={isInternationalJob ? "Yes" : "No"} />
                 <Row label="Address" value={job.WorkAddressLine} />
                 <Row label="Location" value={locationSummary} />
                 <Row label="Pincode" value={job.OnshorePincode} />
