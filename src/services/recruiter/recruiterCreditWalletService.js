@@ -121,8 +121,36 @@ export const verifyCreditPlanPayment = async (payload) => {
   return data;
 };
 
-export const getCreditPlans = async () => {
-  const { data } = await api.get("/api/recruiter/plans");
+/**
+ * GET /api/recruiter/plans[?region=us]
+ * region is optional — pass the visitor's pricing region (from
+ * /api/visitor/payment-region) to get only that region's plans.
+ */
+export const getCreditPlans = async (region) => {
+  const { data } = await api.get("/api/recruiter/plans", {
+    params: region ? { region } : undefined,
+  });
 
+  return data;
+};
+
+/**
+ * POST /api/recruiter/plans/paypal/create-order
+ * Outside India only. Returns { payPalOrderId, transactionId, currency, ... }
+ */
+export const createPayPalPlanOrder = async (planId) => {
+  const { data } = await api.post("/api/recruiter/plans/paypal/create-order", {
+    planId,
+  });
+
+  return data;
+};
+
+/**
+ * POST /api/recruiter/plans/paypal/capture
+ * Backend captures the approved order, verifies amount/currency, credits the wallet.
+ */
+export const capturePayPalPlanPayment = async (payload) => {
+  const { data } = await api.post("/api/recruiter/plans/paypal/capture", payload);
   return data;
 };

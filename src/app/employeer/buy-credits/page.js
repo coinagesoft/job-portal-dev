@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Script from "next/script";
 import {
@@ -8,44 +8,40 @@ import {
   getCreditPlans,
   createCreditPlanOrder,
   verifyCreditPlanPayment,
+  createPayPalPlanOrder,
+  capturePayPalPlanPayment,
 } from "@/services/recruiter/recruiterCreditWalletService";
-import companyProfileService from "@/services/recruiter/companyProfileService";
+import { getVisitorPaymentRegion } from "@/services/candidate/visitorCountryService";
 import SubUserViewOnlyGuard from "@/components/SubUserViewOnlyGuard.js";
 
-const filterPlansByCountry = (plansList, countryName) => {
-  const activePlans = (plansList || []).filter((plan) => plan.isActive === true);
+const PAYPAL_CLIENT_ID = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || "";
+const PAYPAL_SANDBOX = process.env.NEXT_PUBLIC_PAYPAL_MODE === "sandbox";
 
-  if (!countryName) return [];
+// Admin-entered regions may be "India"/"USA"/... — map them to the backend's region codes.
+const normalizeRegion = (value) => {
+  const r = (value || "").toLowerCase().trim();
+  if (r === "india") return "in";
+  if (r === "usa" || r === "united states" || r === "united states of america") return "us";
+  return r;
+};
 
-  const cLower = countryName.toLowerCase().trim();
-  const isIndian = cLower === "india" || cLower === "in";
+const filterPlansByRegion = (plansList, region) =>
+  (plansList || []).filter(
+    (plan) => plan.isActive === true && normalizeRegion(plan.region) === normalizeRegion(region),
+  );
 
-  if (isIndian) {
-    return activePlans.filter((plan) => {
-      const rLower = plan.region?.toLowerCase().trim() || "";
-      return rLower === "india" || rLower === "in";
-    });
+const formatMoney = (amount, currency = "INR") => {
+  const n = Number(amount || 0);
+  try {
+    return new Intl.NumberFormat(currency === "INR" ? "en-IN" : "en-US", {
+      style: "currency",
+      currency,
+      minimumFractionDigits: Number.isInteger(n) ? 0 : 2,
+      maximumFractionDigits: 2,
+    }).format(n);
+  } catch {
+    return `${currency} ${n.toFixed(2)}`;
   }
-
-  const isUsa =
-    cLower === "usa" ||
-    cLower === "us" ||
-    cLower === "united states" ||
-    cLower === "united states of america";
-  if (isUsa) {
-    return activePlans.filter((plan) => {
-      const rLower = plan.region?.toLowerCase().trim() || "";
-      return rLower === "usa" || rLower === "us" || rLower === "united states";
-    });
-  }
-
-  // Otherwise, match region exactly
-  const filtered = activePlans.filter((plan) => {
-    const rLower = plan.region?.toLowerCase().trim() || "";
-    return rLower === cLower;
-  });
-
-  return filtered;
 };
 
 const EmployerBuyCreditsPage = () => {
@@ -58,33 +54,46 @@ const EmployerBuyCreditsPage = () => {
   const [selected, setSelected] = useState(null);
   const [plansLoading, setPlansLoading] = useState(true);
   const [plansError, setPlansError] = useState(null);
-  const [recruiterCountry, setRecruiterCountry] = useState("");
+  // Detected server-side from the visitor's public IP: { countryCode, countryName, region, currency, paymentGateway }
+  const [visitor, setVisitor] = useState(null);
+  const [paypalReady, setPaypalReady] = useState(false);
+  const paypalContainerRef = useRef(null);
 
-  const gst = selected ? selected.price * 0.18 : 0;
+  const isPayPal = visitor?.paymentGateway === "PayPal";
+  const isRazorpay = visitor?.paymentGateway === "Razorpay";
+  const currency = visitor?.currency || "INR";
+
+  // GST (18%) applies to Razorpay / India only.
+  const gst = selected && !isPayPal ? selected.price * 0.18 : 0;
 
   const total = selected ? selected.price + gst : 0;
 
-  const loadPlans = (country) => {
-    const activeCountry = typeof country === "string" ? country : recruiterCountry;
+  const init = async () => {
     setPlansLoading(true);
     setPlansError(null);
 
-    getCreditPlans()
-      .then((data) => {
-        // Some backends wrap the array as { plans: [...] } — support both shapes.
-        const list = Array.isArray(data) ? data : data?.plans || [];
-        const filteredList = filterPlansByCountry(list, activeCountry);
-        setPlans(filteredList);
-        if (filteredList.length > 0) setSelected(filteredList[0]);
-      })
-      .catch((err) => {
-        console.error(err);
-        setPlansError(
-          err?.response?.data?.message ||
+    try {
+      const v = await getVisitorPaymentRegion();
+      if (!v) throw new Error("Could not detect your country.");
+      setVisitor(v);
+
+      // PayPal regions are exact backend codes ("us", "gb"...) so ask the server to filter.
+      // Razorpay keeps the previous behaviour (all plans, India filtered client-side).
+      const data = await getCreditPlans(v.paymentGateway === "PayPal" ? v.region : undefined);
+      const list = Array.isArray(data) ? data : data?.plans || [];
+      const filteredList = filterPlansByRegion(list, v.region);
+
+      setPlans(filteredList);
+      setSelected(filteredList[0] || null);
+    } catch (err) {
+      console.error(err);
+      setPlansError(
+        err?.response?.data?.message ||
           "Failed to load credit plans. Please try again.",
-        );
-      })
-      .finally(() => setPlansLoading(false));
+      );
+    } finally {
+      setPlansLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -95,18 +104,96 @@ const EmployerBuyCreditsPage = () => {
         setWallet(null);
       });
 
-    companyProfileService.getCompanyProfile()
-      .then((profileData) => {
-        const country = profileData?.country || "";
-        setRecruiterCountry(country);
-        loadPlans(country);
-      })
-      .catch((err) => {
-        console.error("Failed to load recruiter company profile:", err);
-        loadPlans("");
-      });
+    init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const finishSuccess = async (pack, amountText) => {
+    setPaidPack({ ...pack, amountText });
+    setPaid(true);
+
+    try {
+      setWallet(await getWallet());
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // PayPal popup: render the official PayPal button; clicking it opens the PayPal popup
+  // (same idea as rzp.open()). Hooks must stay above the early returns below.
+  useEffect(() => {
+    if (!isPayPal || !paypalReady || !selected || paid || plansLoading) return;
+
+    const container = paypalContainerRef.current;
+    if (!container || typeof window === "undefined" || !window.paypal?.Buttons) return;
+
+    container.innerHTML = "";
+    let order = null;
+    const pack = selected;
+    const amountText = formatMoney(total, currency);
+
+    const buttons = window.paypal.Buttons({
+      style: { layout: "vertical", shape: "rect", label: "pay" },
+
+      createOrder: async () => {
+        setPaying(true);
+        order = await createPayPalPlanOrder(pack.planId);
+
+        if (!order?.success || !order?.payPalOrderId) {
+          throw new Error(order?.message || "Unable to create payment order.");
+        }
+
+        return order.payPalOrderId;
+      },
+
+      onApprove: async (data) => {
+        try {
+          const result = await capturePayPalPlanPayment({
+            transactionId: order.transactionId,
+            payPalOrderId: data.orderID,
+            paymentGateway: "PayPal",
+          });
+
+          if (result.success) {
+            await finishSuccess(pack, amountText);
+          } else {
+            alert(result.message || "Payment verification failed.");
+          }
+        } catch (err) {
+          console.error("PayPal capture exception:", err);
+          alert(
+            err.response?.data?.message ||
+              "Payment verification failed. If money was deducted, please contact support.",
+          );
+        } finally {
+          setPaying(false);
+        }
+      },
+
+      onCancel: () => setPaying(false),
+
+      onError: (err) => {
+        console.error("PayPal error:", err);
+        alert(
+          err?.response?.data?.message ||
+            err?.message ||
+            "PayPal payment failed. Please try again.",
+        );
+        setPaying(false);
+      },
+    });
+
+    buttons.render(container).catch((e) => console.error("PayPal render failed:", e));
+
+    return () => {
+      try {
+        buttons.close();
+      } catch {
+        /* already closed */
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPayPal, paypalReady, paid, plansLoading, selected?.planId, currency]);
 
   if (plansLoading) {
     return (
@@ -129,7 +216,7 @@ const EmployerBuyCreditsPage = () => {
             <p className="font-md color-text-paragraph-2 mb-20">
               {plansError}
             </p>
-            <button className="btn btn-default" onClick={loadPlans}>
+            <button className="btn btn-default" onClick={init}>
               Try Again
             </button>
           </div>
@@ -140,6 +227,8 @@ const EmployerBuyCreditsPage = () => {
 
 
   const handlePayment = async () => {
+    if (!isRazorpay) return;
+
     if (typeof window === "undefined" || !window.Razorpay) {
       alert("Payment gateway is loading. Please try again.");
       return;
@@ -181,11 +270,7 @@ const EmployerBuyCreditsPage = () => {
     });
 
     if (verify.success) {
-      setPaidPack(selected);
-      setPaid(true);
-
-      const wallet = await getWallet();
-      setWallet(wallet);
+      await finishSuccess(selected, formatMoney(total, "INR"));
     } else {
       console.error("Payment verification failed:", verify);
       alert(verify.message || "Payment verification failed.");
@@ -248,13 +333,29 @@ const EmployerBuyCreditsPage = () => {
     }
   };
 
-  if (paid && paidPack) {
-    return (
-      <main className="main">
+  const gatewayScripts = (
+    <>
+      {isRazorpay && (
         <Script
           src="https://checkout.razorpay.com/v1/checkout.js"
           strategy="lazyOnload"
         />
+      )}
+      {isPayPal && PAYPAL_CLIENT_ID && (
+        <Script
+          id="paypal-sdk"
+          src={`https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(PAYPAL_CLIENT_ID)}&currency=${encodeURIComponent(currency)}&intent=capture`}
+          strategy="afterInteractive"
+          onReady={() => setPaypalReady(true)}
+        />
+      )}
+    </>
+  );
+
+  if (paid && paidPack) {
+    return (
+      <main className="main">
+        {gatewayScripts}
         <section className="section-box mt-50 mb-50">
           <div className="container">
             <div className="content-page">
@@ -305,10 +406,7 @@ const EmployerBuyCreditsPage = () => {
                           Amount Paid
                         </span>
                         <strong className="color-brand-1">
-                          ₹
-                          {(paidPack.price * 1.18).toLocaleString(
-                            "en-IN",
-                          )}
+                          {paidPack.amountText}
                         </strong>
                       </div>
                       <div
@@ -347,10 +445,7 @@ const EmployerBuyCreditsPage = () => {
   return (
     <SubUserViewOnlyGuard>
     <main className="main">
-      <Script
-        src="https://checkout.razorpay.com/v1/checkout.js"
-        strategy="lazyOnload"
-      />
+      {gatewayScripts}
       <section className="section-box mt-50 mb-20">
         <div className="container">
           <div className="content-page">
@@ -436,17 +531,10 @@ const EmployerBuyCreditsPage = () => {
               <div className="card-grid-2 hover-up cv-search-candidate-card text-center mt-30 p-40">
                 <h4 className="mb-15">No credit plans available</h4>
                 <p className="font-md color-text-paragraph-2 mb-20">
-                  {recruiterCountry
-                    ? `There are no active credit plans available for your country/region (${recruiterCountry}).`
-                    : "No country is configured in your company profile. Please update your profile settings to view available plans."}
+                  {visitor?.countryName
+                    ? `There are no active credit plans available for your country/region (${visitor.countryName}).`
+                    : "We could not determine your region. Please refresh the page."}
                 </p>
-                {!recruiterCountry && (
-                  <div>
-                    <Link href="/employeer/company-profile" className="btn btn-default">
-                      Go to Company Profile
-                    </Link>
-                  </div>
-                )}
               </div>
             ) : (
               <>
@@ -500,12 +588,13 @@ const EmployerBuyCreditsPage = () => {
                             </div>
                             <div className="border-bottom mb-30">
                               <p className="text-desc-package font-sm color-text-paragraph mb-30">
-                                ₹{pack.price.toLocaleString("en-IN")} + GST
+                                {formatMoney(pack.price, currency)}
+                                {isPayPal ? "" : " + GST"}
                               </p>
                             </div>
                             <ul className="list-package-feature flex-grow-1 mb-30">
                               {/* <li>{pack.rateLabel}</li> */}
-                              <li>GST - compliant invoice generated</li>
+                              <li>{isPayPal ? "Invoice generated" : "GST - compliant invoice generated"}</li>
                               <li>Shared wallet with sub-users</li>
                               <li>Unlock profiles across bands</li>
                               <li>Package expiry auto-tracked</li>
@@ -545,14 +634,16 @@ const EmployerBuyCreditsPage = () => {
                           <span className="font-sm color-text-paragraph">
                             Price
                           </span>
-                          <strong>₹{selected?.price ? selected.price.toLocaleString("en-IN") : "0"}</strong>
+                          <strong>{formatMoney(selected?.price || 0, currency)}</strong>
                         </div>
-                        <div className="d-flex justify-content-between mb-10">
-                          <span className="font-sm color-text-paragraph">
-                            GST (18%)
-                          </span>
-                          <strong>₹{gst.toLocaleString("en-IN")}</strong>
-                        </div>
+                        {!isPayPal && (
+                          <div className="d-flex justify-content-between mb-10">
+                            <span className="font-sm color-text-paragraph">
+                              GST (18%)
+                            </span>
+                            <strong>{formatMoney(gst, "INR")}</strong>
+                          </div>
+                        )}
                         <div
                           className="d-flex justify-content-between mb-20 pt-10"
                           style={{ borderTop: "1px solid #eee" }}
@@ -564,39 +655,71 @@ const EmployerBuyCreditsPage = () => {
                             className="color-brand-1"
                             style={{ fontSize: "18px" }}
                           >
-                            ₹{total.toLocaleString("en-IN")}
+                            {formatMoney(total, currency)}
                           </strong>
                         </div>
 
                         {/* Test mode notice */}
-                        <div
-                          className="mb-15 p-10"
-                          style={{
-                            background: "#fff8e1",
-                            border: "1px solid #ffe082",
-                            borderRadius: "8px",
-                          }}
-                        >
-                          <p className="font-xs mb-0" style={{ color: "#856404" }}>
-                            🧪 <strong>Test Mode:</strong> Use Razorpay test card{" "}
-                            <code>4111 1111 1111 1111</code>, any future expiry, CVV{" "}
-                            <code>123</code>. No real money is charged.
-                          </p>
-                        </div>
+                        {isRazorpay && (
+                          <div
+                            className="mb-15 p-10"
+                            style={{
+                              background: "#fff8e1",
+                              border: "1px solid #ffe082",
+                              borderRadius: "8px",
+                            }}
+                          >
+                            <p className="font-xs mb-0" style={{ color: "#856404" }}>
+                              🧪 <strong>Test Mode:</strong> Use Razorpay test card{" "}
+                              <code>4111 1111 1111 1111</code>, any future expiry, CVV{" "}
+                              <code>123</code>. No real money is charged.
+                            </p>
+                          </div>
+                        )}
+                        {isPayPal && PAYPAL_SANDBOX && (
+                          <div
+                            className="mb-15 p-10"
+                            style={{
+                              background: "#fff8e1",
+                              border: "1px solid #ffe082",
+                              borderRadius: "8px",
+                            }}
+                          >
+                            <p className="font-xs mb-0" style={{ color: "#856404" }}>
+                              🧪 <strong>Sandbox Mode:</strong> Pay with a PayPal sandbox
+                              buyer account. No real money is charged.
+                            </p>
+                          </div>
+                        )}
 
-                        <button
-                          className="btn btn-default w-100 mt-5"
-                          type="button"
-                          onClick={handlePayment}
-                          disabled={paying}
-                        >
-                          {paying
-                            ? "Opening Payment..."
-                            : `Pay ₹${total.toLocaleString("en-IN")} via Razorpay`}
-                        </button>
+                        {isPayPal ? (
+                          PAYPAL_CLIENT_ID ? (
+                            <div
+                              ref={paypalContainerRef}
+                              className="mt-5"
+                              style={{ minHeight: 45 }}
+                            />
+                          ) : (
+                            <p className="font-sm text-danger mb-0">
+                              PayPal is not configured (missing
+                              NEXT_PUBLIC_PAYPAL_CLIENT_ID).
+                            </p>
+                          )
+                        ) : (
+                          <button
+                            className="btn btn-default w-100 mt-5"
+                            type="button"
+                            onClick={handlePayment}
+                            disabled={paying}
+                          >
+                            {paying
+                              ? "Opening Payment..."
+                              : `Pay ${formatMoney(total, "INR")} via Razorpay`}
+                          </button>
+                        )}
                         <p className="font-xs color-text-paragraph-2 text-center mt-10 mb-0">
-                          Secured by Razorpay. Invoice generated instantly after
-                          payment.
+                          Secured by {isPayPal ? "PayPal" : "Razorpay"}. Invoice
+                          generated instantly after payment.
                         </p>
                       </div>
                     </div>
