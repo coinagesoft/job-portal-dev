@@ -233,6 +233,32 @@ export const createMembershipOrder = (payload) =>
     payload
   );
 
+// ── PayPal (visitors outside India) ─────────────────────────────
+
+// GET /api/visitor/payment-region — server-side IP lookup.
+// Returns { countryCode, region, currency, paymentGateway, ... }
+// paymentGateway is "Razorpay" for India and "PayPal" everywhere else.
+export const getPaymentRegion = () =>
+  api.get("/api/visitor/payment-region");
+
+// Outside India only. Body: { sessionId, planId, couponCode? }
+// The region is taken from the server's IP lookup, never from the client.
+// Returns { success, payPalOrderId, planId, currency, finalAmount, ... }
+export const createPayPalMembershipOrder = (payload) =>
+  api.post(
+    "/api/recruiter/registration/paypal/create-order",
+    payload
+  );
+
+// Body: { sessionId, payPalOrderId }
+// Captures the approved order. The amount is verified again on submit-registration.
+export const capturePayPalMembership = (payload) =>
+  api.post(
+    "/api/recruiter/registration/paypal/capture",
+    payload
+  );
+
+
 export const getIndustries = async () => {
   const response = await api.get("/api/recruiter/registration/industries");
   return response.data;
@@ -264,4 +290,3 @@ export const getSubTradesByTradeCategory = async (tradeCategoryId) => {
 
   return response.data;
 };
-
