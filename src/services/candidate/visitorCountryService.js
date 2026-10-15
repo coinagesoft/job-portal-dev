@@ -1,4 +1,4 @@
-import api from "./api";
+import api from "../api";
 
 /** Returns the country-derived gateway and admin pricing region for this visitor. */
 export const getVisitorPaymentRegion = async () => {
