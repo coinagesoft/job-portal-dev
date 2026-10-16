@@ -16,6 +16,8 @@ import {
   sendOtp,
   verifyOtp,
   createCandidateOrder,
+  createCandidatePayPalOrder,
+  captureCandidatePayPal,
   googleLogin,
   linkedInLogin,
   validateCandidateCoupon,
@@ -1081,8 +1083,20 @@ function CandidateForm() {
     planId: null,
     razorpayOrderId: "",
     razorpayPaymentId: "",
-    razorpaySignature: ""
+    razorpaySignature: "",
+    payPalOrderId: ""
   });
+
+  // ── Payment gateway, decided by the server from the visitor's IP ──
+  // India -> Razorpay (INR). Everywhere else -> PayPal (plan currency).
+  // The backend enforces the same rule, this only drives what we show.
+  const [visitor, setVisitor] = useState(null);
+  const [visitorLoaded, setVisitorLoaded] = useState(false);
+  const isPayPal = visitor?.paymentGateway === "PayPal";
+  const payCurrency = isPayPal ? visitor?.currency || "USD" : "INR";
+  const [payPalReady, setPayPalReady] = useState(false);
+  const payPalContainerRef = useRef(null);
+  const payPalCtxRef = useRef({});
 
   const [couponCode, setCouponCode] = useState("");
   const [couponApplied, setCouponApplied] = useState(false);
@@ -1102,14 +1116,17 @@ function CandidateForm() {
   const [candidatePlan, setCandidatePlan] = useState(null);
   const [planLoading, setPlanLoading] = useState(false);
 
-  const fetchPlan = async (code) => {
+  const fetchPlan = async () => {
     try {
       setPlanLoading(true);
-      const meta = getCountryMeta(code);
-      const region = meta?.name ? meta.name.toLowerCase() : "india";
+      // PayPal visitors: the pricing region comes from the server's IP lookup
+      // (backend region codes like "us", "gb"). India (Razorpay): the "in" plans.
+      const region = isPayPal ? visitor.region : "in";
       let response = await getCandidatePlan(region);
       let list = response.data || [];
-      if (list.length === 0) {
+      // Fallback for India only. Never for PayPal: charging another region's
+      // plan would be rejected by the server.
+      if (list.length === 0 && !isPayPal) {
         response = await getCandidatePlan("");
         list = response.data || [];
       }
@@ -1127,7 +1144,49 @@ function CandidateForm() {
     }
   };
   useEffect(() => {
-    fetchPlan(form.countryCode);
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await getPaymentRegion();
+        const d = res?.data?.data ?? res?.data;
+        if (!cancelled && d?.paymentGateway) setVisitor(d);
+      } catch (err) {
+        console.error("Failed to detect payment region:", err);
+      } finally {
+        if (!cancelled) setVisitorLoaded(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Load the PayPal JS SDK only for visitors outside India.
+  useEffect(() => {
+    if (!isPayPal) return;
+    const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
+    if (!clientId) {
+      setPaymentMessage("PayPal is not configured (missing NEXT_PUBLIC_PAYPAL_CLIENT_ID).");
+      return;
+    }
+    if (window.paypal) {
+      setPayPalReady(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(
+      clientId
+    )}&currency=${encodeURIComponent(payCurrency)}&intent=capture&components=buttons`;
+    script.async = true;
+    script.onload = () => setPayPalReady(true);
+    script.onerror = () => setPaymentMessage("Could not load PayPal. Please refresh and try again.");
+    document.body.appendChild(script);
+  }, [isPayPal, payCurrency]);
+
+  useEffect(() => {
+    // Wait for the gateway/region so the right plan (and price) is shown.
+    if (!visitorLoaded) return;
+    fetchPlan();
 
     // Clear coupon when country/region changes
     setCouponCode("");
@@ -1135,7 +1194,8 @@ function CandidateForm() {
     setCouponMessage("");
     setCouponDiscount(0);
     setCouponFinalAmount(null);
-  }, [form.countryCode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.countryCode, visitorLoaded, isPayPal, visitor?.region]);
   useEffect(() => {
     const pending = sessionStorage.getItem("linkedinVerifiedState");
     if (pending) {
@@ -1292,16 +1352,10 @@ function CandidateForm() {
         return;
       }
 
-      // Create order from backend
-      const meta = getCountryMeta(form.countryCode);
-
-      const region = meta?.name
-        ? meta.name.toLowerCase()
-        : "india";
-
+      // Create order from backend. The pricing region is fixed server-side
+      // (India), and the server refuses Razorpay for visitors outside India.
       const orderResponse =
         await createCandidateOrder({
-          region,
           couponCode: couponApplied
             ? couponCode.trim().toUpperCase()
             : null,
@@ -1313,7 +1367,7 @@ function CandidateForm() {
         setLoading(false);
 
         setPaymentMessage(
-          "Unable to create payment order."
+          order.message || "Unable to create payment order."
         );
 
         return;
@@ -1404,14 +1458,142 @@ function CandidateForm() {
       setLoading(false);
 
       setPaymentMessage(
+        error?.response?.data?.message ||
         "Payment initialization failed."
       );
 
     }
   };
 
+  // ── PayPal (outside India) ─────────────────────────────────────
+  // The PayPal order is bound to the credential this registration will present:
+  // the OTP token (mobile/email) or the Google/LinkedIn access token.
+  // Latest values for the PayPal button callbacks, which are created once.
+  payPalCtxRef.current = {
+    otpToken,
+    socialAuth,
+    couponApplied,
+    couponCode,
+    terms,
+    planId: candidatePlan?.planId,
+  };
+
+  const payPalCredential = () => {
+    const ctx = payPalCtxRef.current;
+    return ctx.socialAuth
+      ? { accessToken: ctx.socialAuth.accessToken }
+      : { otpToken: ctx.otpToken };
+  };
+
+  const payPalOrderMetaRef = useRef({});
+
+  const payPalCreateOrder = async () => {
+    const ctx = payPalCtxRef.current;
+
+    const res = await createCandidatePayPalOrder({
+      ...payPalCredential(),
+      couponCode: ctx.couponApplied ? ctx.couponCode.trim().toUpperCase() : null,
+    });
+
+    const order = res.data;
+
+    if (!order?.success || !order.payPalOrderId) {
+      throw new Error(order?.message || "Unable to create PayPal order.");
+    }
+
+    payPalOrderMetaRef.current = { planId: order.planId };
+    return order.payPalOrderId;
+  };
+
+  const payPalOnApprove = async (approval) => {
+    try {
+      setLoading(true);
+
+      const res = await captureCandidatePayPal({
+        ...payPalCredential(),
+        payPalOrderId: approval.orderID,
+      });
+
+      if (!res.data?.success) {
+        throw new Error(res.data?.message || "PayPal payment could not be confirmed.");
+      }
+
+      const paymentInfo = {
+        planId: payPalOrderMetaRef.current.planId || payPalCtxRef.current.planId,
+        razorpayOrderId: "",
+        razorpayPaymentId: "",
+        razorpaySignature: "",
+        payPalOrderId: approval.orderID,
+      };
+
+      setPaymentData(paymentInfo);
+      setPayStatus("success");
+      setPaymentMessage(`Payment successful. Reference: ${approval.orderID}`);
+      setLoading(false);
+
+      // Payment captured — complete registration right away.
+      handleCandidateSubmit(paymentInfo);
+    } catch (err) {
+      setLoading(false);
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "PayPal payment could not be confirmed.";
+      setPaymentMessage(msg);
+      showToast(msg, "error");
+    }
+  };
 
   const canShowPayment = mobileOtp.verified || emailOtp.verified;
+
+  const showPayPalButtons =
+    canShowPayment &&
+    isPayPal &&
+    payPalReady &&
+    payStatus !== "success" &&
+    !!candidatePlan?.planId;
+
+  useEffect(() => {
+    if (!showPayPalButtons || !payPalContainerRef.current || !window.paypal) return;
+
+    const buttons = window.paypal.Buttons({
+      style: { layout: "vertical", shape: "rect", label: "pay" },
+      onClick: (_d, actions) => {
+        if (!payPalCtxRef.current.terms) {
+          showToast("Please accept the Terms of Service to continue.", "warning");
+          return actions.reject();
+        }
+        return actions.resolve();
+      },
+      createOrder: payPalCreateOrder,
+      onApprove: payPalOnApprove,
+      onCancel: () => setPaymentMessage("Payment window closed before completion."),
+      onError: (err) => {
+        console.error("PayPal error", err);
+        const msg =
+          err?.response?.data?.message ||
+          err?.message ||
+          "PayPal payment failed. Please try again.";
+        setPaymentMessage(msg);
+        showToast(msg, "error");
+      },
+    });
+
+    buttons.render(payPalContainerRef.current).catch((e) => {
+      console.error("PayPal buttons render failed", e);
+    });
+
+    return () => {
+      try {
+        buttons.close();
+      } catch (e) {
+        /* already closed */
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showPayPalButtons, candidatePlan?.planId, couponApplied]);
+
+
   const canSubmit = canShowPayment && terms && payStatus === "success";
 
   // paymentOverride lets the Razorpay success handler pass the just-received
@@ -1463,9 +1645,14 @@ function CandidateForm() {
           countryCode: form.mobile ? form.countryCode : null,
           termsAccepted: terms,
           planId: payInfo.planId,
+          // The server re-validates the coupon and the amount that was paid.
+          couponCode: couponApplied
+            ? couponCode.trim().toUpperCase()
+            : null,
           razorpayOrderId: payInfo.razorpayOrderId,
           razorpayPaymentId: payInfo.razorpayPaymentId,
           razorpaySignature: payInfo.razorpaySignature,
+          payPalOrderId: payInfo.payPalOrderId || "",
         });
 
         if (response.data.success) {
@@ -1495,6 +1682,7 @@ function CandidateForm() {
         razorpayOrderId: payInfo.razorpayOrderId,
         razorpayPaymentId: payInfo.razorpayPaymentId,
         razorpaySignature: payInfo.razorpaySignature,
+        payPalOrderId: payInfo.payPalOrderId || "",
         termsAccepted: terms,
       });
 
@@ -1713,11 +1901,11 @@ function CandidateForm() {
                   setCouponLoading(true);
                   setCouponMessage("");
 
-                  const meta = getCountryMeta(form.countryCode);
-
-                  const region = meta?.name
-                    ? meta.name.toLowerCase()
-                    : "india";
+                  // Coupons are matched against the plan's own pricing region.
+                  const region =
+                    candidatePlan.region ||
+                    (isPayPal ? visitor?.region : "in") ||
+                    "in";
 
                   const response = await validateCandidateCoupon({
                     code: couponCode.trim().toUpperCase(),
@@ -1792,7 +1980,7 @@ function CandidateForm() {
                 fontWeight: 600,
               }}
             >
-              Discount: INR {couponDiscount.toFixed(2)}
+              Discount: {payCurrency} {couponDiscount.toFixed(2)}
             </p>
           )}
         </Field>
@@ -1804,10 +1992,46 @@ function CandidateForm() {
             <Alert type="success">
               {registering
                 ? "Payment successful — creating your account..."
-                : `Payment successful for INR ${candidatePlan?.price || 100}. Your receipt will be sent to your registered email.`}
+                : `Payment successful for ${payCurrency} ${couponApplied && couponFinalAmount !== null ? couponFinalAmount.toFixed(2) : Number(candidatePlan?.price || 0).toFixed(2)}. Your receipt will be sent to your registered email.`}
             </Alert>
           ) : (
             <>
+              {!visitorLoaded ? (
+                <p style={{ fontSize: "var(--font-xs)", color: "var(--color-text-tertiary)" }}>
+                  Detecting your region…
+                </p>
+              ) : isPayPal ? (
+                <>
+                  <p style={{ fontSize: "var(--font-sm)", fontWeight: 600, marginBottom: 8 }}>
+                    Pay {payCurrency}{" "}
+                    {Number(
+                      couponApplied && couponFinalAmount !== null
+                        ? couponFinalAmount
+                        : candidatePlan?.price || 0
+                    ).toFixed(2)}{" "}
+                    with PayPal
+                  </p>
+                  {/* The PayPal SDK renders its own button here — it must be
+                      PayPal's button to open the popup. */}
+                  <div
+                    ref={payPalContainerRef}
+                    style={{
+                      opacity: loading ? 0.5 : 1,
+                      pointerEvents: loading ? "none" : "auto",
+                    }}
+                  />
+                  {!payPalReady && (
+                    <p style={{ fontSize: "var(--font-xs)", color: "var(--color-text-tertiary)" }}>
+                      Loading PayPal…
+                    </p>
+                  )}
+                  {!candidatePlan?.planId && !planLoading && (
+                    <p style={{ fontSize: "var(--font-xs)", color: "#A32D2D" }}>
+                      Membership isn&apos;t available in your region yet. Please contact support.
+                    </p>
+                  )}
+                </>
+              ) : (
               <Btn
                 variant="primary"
                 onClick={handlePay}
@@ -1825,6 +2049,7 @@ function CandidateForm() {
                     : (candidatePlan?.price || 100).toFixed(2)
                   } via Razorpay`}
               </Btn>
+              )}
               {!terms && (
                 <p
                   style={{
