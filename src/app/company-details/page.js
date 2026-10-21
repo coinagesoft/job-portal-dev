@@ -219,8 +219,42 @@ function CompanyDetailsContent() {
     companyInfo.isVerified ||
     companyInfo.gstRegistered ||
     companyInfo.hasPoeLicence ||
-    companyInfo.hasRpslLicence
+    companyInfo.hasRpslLicence ||
+    companyInfo.hasRegistrationCertificate ||
+    (Array.isArray(companyInfo.licences) && companyInfo.licences.length > 0)
   );
+
+  // Licence cards are decided by the backend from the company's registration:
+  //   Onshore + outside India -> POE Licence
+  //   Offshore                -> RPSL Licence / Registration Certificate
+  //   Onshore + India         -> none required (shown only if verified)
+  // Each entry: { code, label, status: "Verified" | "Pending" | "Not Available", verifiedWith }
+  const licenceItems = Array.isArray(companyInfo.licences)
+    ? companyInfo.licences.map((licence) => ({
+        icon: "updated",
+        label: licence.label,
+        value:
+          licence.status === "Verified"
+            ? licence.verifiedWith && licence.verifiedWith !== licence.label
+              ? `Verified (${licence.verifiedWith})`
+              : "Verified"
+            : licence.status === "Pending"
+              ? "Pending Verification"
+              : "Not Available",
+      }))
+    : // Older API responses without the `licences` list: keep the previous cards.
+      [
+        {
+          icon: "updated",
+          label: "POE Licence",
+          value: companyInfo.hasPoeLicence ? "Verified" : "Not Available",
+        },
+        {
+          icon: "updated",
+          label: "RPSL Licence",
+          value: companyInfo.hasRpslLicence ? "Verified" : "Not Available",
+        },
+      ];
 
   const overviewGroups = [
     {
@@ -296,20 +330,7 @@ function CompanyDetailsContent() {
             ? "Verified"
             : "Not Verified",
         },
-        {
-          icon: "updated",
-          label: "POE Licence",
-          value: companyInfo.hasPoeLicence
-            ? "Verified"
-            : "Not Available",
-        },
-        {
-          icon: "updated",
-          label: "RPSL Licence",
-          value: companyInfo.hasRpslLicence
-            ? "Verified"
-            : "Not Available",
-        },
+        ...licenceItems,
         {
           icon: "jobLevel",
           label: "Reviews",
@@ -670,7 +691,10 @@ function CompanyDetailsContent() {
                         companyInfo.isVerified ||
                         companyInfo.gstRegistered ||
                         companyInfo.hasPoeLicence ||
-                        companyInfo.hasRpslLicence) && (
+                        companyInfo.hasRpslLicence ||
+                        companyInfo.hasRegistrationCertificate ||
+                        (Array.isArray(companyInfo.licences) &&
+                          companyInfo.licences.length > 0)) && (
                           <>
                             {overviewGroups.map((group, groupIndex) => (
                               <div
