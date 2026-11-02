@@ -12,6 +12,7 @@ import CandidateSettingsSidebar from '@/components/CandidateSettingsSidebar'
 import { ToastProvider } from '@/components/Toast'
 import AuthInitializer from "@/components/AuthInitializer";
 import CandidateLocationSync from "@/components/CandidateLocationSync";
+import WowInit from "@/components/WowInit";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 export default function RootLayout({ children }) {
   return (
@@ -38,6 +39,7 @@ export default function RootLayout({ children }) {
       <body suppressHydrationWarning={true} className="d-flex flex-column min-vh-100">
         <Provider store={store}>
           <ToastProvider>
+            <WowInit />
             <AuthInitializer />
             <CandidateLocationSync />
             <AuthRouteGuard />
@@ -80,4 +82,3 @@ export default function RootLayout({ children }) {
     </html>
   )
 }
-

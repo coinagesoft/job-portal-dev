@@ -27,7 +27,7 @@
         animation: "fade"
     });
     /*------ Wow Active ----*/
-    new WOW().init();
+    // new WOW().init(); // Handled by WowInit in React
     //sidebar sticky
     if ($(".sticky-sidebar").length) {
         $(".sticky-sidebar").theiaStickySidebar();
