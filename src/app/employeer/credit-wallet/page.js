@@ -231,15 +231,25 @@ const EmployerCreditWalletPage = () => {
                       <div className="row align-items-center">
                         <div className="col-lg-8 col-md-12 col-sm-12">
                           <h4>
-                            {dashboard.remainingCredits > 0
-                              ? `${dashboard.remainingCredits} credits remaining`
-                              : "No credits remaining"}
+                            {dashboard.membershipExpired
+                              ? "Membership expired"
+                              : dashboard.remainingCredits > 0
+                                ? `${dashboard.remainingCredits} credits remaining`
+                                : "No credits remaining"}
                           </h4>
+                          {dashboard.membershipExpired && (
+                            <p className="font-sm color-text-paragraph mt-10">
+                              {dashboard.expiredCredits > 0
+                                ? `${dashboard.expiredCredits} unused credits have expired. `
+                                : ""}
+                              Renew your membership to get new credits.
+                            </p>
+                          )}
                           <p className="font-sm color-text-paragraph mt-10">
                             {dashboard.planName} — Expires{" "}
                             {formatDate(dashboard.planExpiryDate)}
                           </p>
-                          {dashboard.totalSubUsers > 0 && (
+                          {dashboard.totalSubUsers > 0 && !dashboard.membershipExpired && (
                             <p className="font-xs color-text-paragraph-2 mt-10 mb-0">
                               {dashboard.allocatedToSubUsers} allocated to sub-users
                               (still theirs to spend) ·{" "}

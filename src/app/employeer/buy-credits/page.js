@@ -59,6 +59,15 @@ const EmployerBuyCreditsPage = () => {
   // True once the recruiter's membership has ended. Credit packs can't be
   // bought then — the page offers membership plans to renew instead.
   const [membershipExpired, setMembershipExpired] = useState(false);
+  // Optional early renewal: the membership is still running but inside the
+  // renewal window the server allows. The recruiter can switch between credit
+  // packs and membership plans.
+  const [canRenewEarly, setCanRenewEarly] = useState(false);
+  const [membershipEndsAt, setMembershipEndsAt] = useState(null);
+  // True when the plan list on screen is membership plans (expired, or early
+  // renewal chosen) instead of credit packs.
+  const [showMemberships, setShowMemberships] = useState(false);
+  const renewEarlyRef = useRef(false);
   // Detected server-side from the visitor's public IP: { countryCode, countryName, region, currency, paymentGateway }
   const [visitor, setVisitor] = useState(null);
   const [paypalReady, setPaypalReady] = useState(false);
@@ -83,20 +92,34 @@ const EmployerBuyCreditsPage = () => {
       setVisitor(v);
 
       // Has the membership ended? Then only membership plans can be bought.
-      let expired = false;
+      // If we can't tell, stop and show the retry screen: quietly falling back
+      // to credit packs would let an expired recruiter pick a pack that the
+      // server then refuses.
+      let dash;
       try {
-        const dash = await getCreditWalletDashboard();
-        expired = !!dash?.membershipExpired;
+        dash = await getCreditWalletDashboard();
       } catch (e) {
         console.error(e);
+        setPlansError(
+          "We couldn't check your membership status. Please try again.",
+        );
+        return;
       }
+
+      const expired = !!dash?.membershipExpired;
+      const early = !!dash?.canRenewEarly;
+      const membershipsOnScreen = expired || (early && renewEarlyRef.current);
+
       setMembershipExpired(expired);
+      setCanRenewEarly(early);
+      setMembershipEndsAt(dash?.membershipExpiresAt || null);
+      setShowMemberships(membershipsOnScreen);
 
       // PayPal regions are exact backend codes ("us", "gb"...) so ask the server to filter.
       // Razorpay keeps the previous behaviour (all plans, India filtered client-side).
       const region = v.paymentGateway === "PayPal" ? v.region : undefined;
       let list;
-      if (expired) {
+      if (membershipsOnScreen) {
         const data = await getRecruiterMembershipPlans(region);
         const memberships = Array.isArray(data) ? data : data?.plans || [];
         // Same shape as a credit pack so the checkout below works unchanged.
@@ -126,6 +149,11 @@ const EmployerBuyCreditsPage = () => {
     } finally {
       setPlansLoading(false);
     }
+  };
+
+  const toggleRenewEarly = () => {
+    renewEarlyRef.current = !renewEarlyRef.current;
+    init();
   };
 
   useEffect(() => {
@@ -487,12 +515,14 @@ const EmployerBuyCreditsPage = () => {
               <div className="row align-items-center">
                 <div className="col-xl-8 col-lg-8">
                   <h3 className="mb-5">
-                    {membershipExpired ? "Renew Membership" : "Buy Credits"}
+                    {showMemberships ? "Renew Membership" : "Buy Credits"}
                   </h3>
                   <span className="font-sm color-text-paragraph-2">
                     {membershipExpired
                       ? "Your membership has expired. Renew it to get new credits and keep unlocking profiles."
-                      : "Choose a pack that fits your hiring volume"}
+                      : showMemberships
+                        ? "Renew early to keep your access without a gap."
+                        : "Choose a pack that fits your hiring volume"}
                   </span>
                 </div>
                 <div className="col-xl-4 col-lg-4 text-lg-end mt-sm-15">
@@ -511,6 +541,46 @@ const EmployerBuyCreditsPage = () => {
                 </div>
               </div>
             </div>
+
+            {/* Early renewal offer (only inside the renewal window) */}
+            {canRenewEarly && !membershipExpired && (
+              <div className="card-grid-2 hover-up cv-search-candidate-card mb-10">
+                <div className="card-block-info pt-15 pb-15">
+                  <div className="row align-items-center">
+                    <div className="col-md-9 col-sm-12">
+                      <p className="font-sm mb-0">
+                        Your membership ends on{" "}
+                        <strong>
+                          {membershipEndsAt
+                            ? new Date(membershipEndsAt).toLocaleDateString(
+                                "en-IN",
+                                {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                },
+                              )
+                            : ""}
+                        </strong>
+                        . You can renew now: the new term starts when the
+                        current one ends and your unused credits carry over.
+                      </p>
+                    </div>
+                    <div className="col-md-3 col-sm-12 text-md-end mt-sm-10">
+                      <button
+                        type="button"
+                        className="btn btn-border btn-sm"
+                        onClick={toggleRenewEarly}
+                      >
+                        {showMemberships
+                          ? "Back to credit packs"
+                          : "Renew membership"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Live wallet summary */}
             {wallet && (
@@ -536,6 +606,14 @@ const EmployerBuyCreditsPage = () => {
                             : wallet.creditBalance}
                         </strong>{" "}
                         total
+                        {wallet.membershipExpired &&
+                          wallet.expiredCredits > 0 && (
+                            <span className="color-text-paragraph-2">
+                              {" "}
+                              ({wallet.expiredCredits} expired — forfeited on
+                              renewal)
+                            </span>
+                          )}
                         {wallet.allocatedCredits > 0 && (
                           <span className="color-text-paragraph-2">
                             {" "}
@@ -546,7 +624,7 @@ const EmployerBuyCreditsPage = () => {
                     </div>
                     <div className="col-md-4 col-sm-12">
                       <p className="font-xs color-text-paragraph-2 mb-5">
-                        Plan Expires
+                        {wallet.membershipExpired ? "Plan Expired" : "Plan Expires"}
                       </p>
                       <p className="font-sm mb-0">
                         {new Date(wallet.packExpiresAt).toLocaleDateString(
@@ -567,7 +645,7 @@ const EmployerBuyCreditsPage = () => {
             {plans.length === 0 ? (
               <div className="card-grid-2 hover-up cv-search-candidate-card text-center mt-30 p-40">
                 <h4 className="mb-15">
-                  {membershipExpired ? "No membership plans available" : "No credit plans available"}
+                  {showMemberships ? "No membership plans available" : "No credit plans available"}
                 </h4>
                 <p className="font-md color-text-paragraph-2 mb-20">
                   {visitor?.countryName
@@ -579,12 +657,14 @@ const EmployerBuyCreditsPage = () => {
               <>
                 <div className="text-center mt-20 mb-10">
                   <h2 className="mb-15">
-                    {membershipExpired ? "Select A Membership Plan" : "Select A Credit Pack"}
+                    {showMemberships ? "Select A Membership Plan" : "Select A Credit Pack"}
                   </h2>
                   <p className="font-lg color-text-paragraph-2">
                     {membershipExpired
                       ? "Unused credits from your previous membership expire when you renew. Your new plan's credits are valid for the plan's full duration."
-                      : "Longer packs offer a lower per-credit rate. Top-ups are valid until your membership expires."}
+                      : showMemberships
+                        ? "Your new term starts when your current membership ends. Unused credits carry over and the new plan's credits are added on top."
+                        : "Longer packs offer a lower per-credit rate. Top-ups are valid until your membership expires."}
                   </p>
                 </div>
 
@@ -636,7 +716,7 @@ const EmployerBuyCreditsPage = () => {
                             </div>
                             <ul className="list-package-feature flex-grow-1 mb-30">
                               {/* <li>{pack.rateLabel}</li> */}
-                              {membershipExpired && pack.validityMonths > 0 && (
+                              {showMemberships && pack.validityMonths > 0 && (
                                 <li>
                                   Valid for {pack.validityMonths}{" "}
                                   {pack.validityMonths === 1 ? "month" : "months"}
@@ -655,7 +735,7 @@ const EmployerBuyCreditsPage = () => {
                               >
                                 {selected?.planId === pack.planId
                                   ? "✓ Selected"
-                                  : membershipExpired
+                                  : showMemberships
                                     ? "Choose Plan"
                                     : "Choose Pack"}
                               </button>
