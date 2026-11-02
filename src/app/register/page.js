@@ -5098,6 +5098,30 @@ function EmployerForm() {
                   </option>
                 ))}
               </select>
+
+              {/* Credits & validity included with the selected plan */}
+              {Number(recruiterPlan?.initialCredits) > 0 && (
+                <p
+                  style={{
+                    margin: "8px 0 0",
+                    fontSize: "var(--font-xs)",
+                    color: "var(--color-text-secondary)",
+                  }}
+                >
+                  Includes{" "}
+                  <b>{Number(recruiterPlan.initialCredits).toLocaleString()} credits</b>
+                  {Number(recruiterPlan.validityMonths) > 0 && (
+                    <>
+                      , valid for{" "}
+                      <b>
+                        {recruiterPlan.validityMonths}{" "}
+                        {Number(recruiterPlan.validityMonths) === 1 ? "month" : "months"}
+                      </b>
+                    </>
+                  )}
+                  .
+                </p>
+              )}
             </div>
           )}
 

@@ -6,6 +6,8 @@ import Script from "next/script";
 import {
   getWallet,
   getCreditPlans,
+  getCreditWalletDashboard,
+  getRecruiterMembershipPlans,
   createCreditPlanOrder,
   verifyCreditPlanPayment,
   createPayPalPlanOrder,
@@ -54,6 +56,9 @@ const EmployerBuyCreditsPage = () => {
   const [selected, setSelected] = useState(null);
   const [plansLoading, setPlansLoading] = useState(true);
   const [plansError, setPlansError] = useState(null);
+  // True once the recruiter's membership has ended. Credit packs can't be
+  // bought then — the page offers membership plans to renew instead.
+  const [membershipExpired, setMembershipExpired] = useState(false);
   // Detected server-side from the visitor's public IP: { countryCode, countryName, region, currency, paymentGateway }
   const [visitor, setVisitor] = useState(null);
   const [paypalReady, setPaypalReady] = useState(false);
@@ -77,10 +82,37 @@ const EmployerBuyCreditsPage = () => {
       if (!v) throw new Error("Could not detect your country.");
       setVisitor(v);
 
+      // Has the membership ended? Then only membership plans can be bought.
+      let expired = false;
+      try {
+        const dash = await getCreditWalletDashboard();
+        expired = !!dash?.membershipExpired;
+      } catch (e) {
+        console.error(e);
+      }
+      setMembershipExpired(expired);
+
       // PayPal regions are exact backend codes ("us", "gb"...) so ask the server to filter.
       // Razorpay keeps the previous behaviour (all plans, India filtered client-side).
-      const data = await getCreditPlans(v.paymentGateway === "PayPal" ? v.region : undefined);
-      const list = Array.isArray(data) ? data : data?.plans || [];
+      const region = v.paymentGateway === "PayPal" ? v.region : undefined;
+      let list;
+      if (expired) {
+        const data = await getRecruiterMembershipPlans(region);
+        const memberships = Array.isArray(data) ? data : data?.plans || [];
+        // Same shape as a credit pack so the checkout below works unchanged.
+        list = memberships.map((m) => ({
+          planId: m.planId,
+          planName: m.planName,
+          credits: m.initialCredits || 0,
+          validityMonths: m.validityMonths || 0,
+          price: m.price,
+          region: m.region,
+          isActive: m.isActive,
+        }));
+      } else {
+        const data = await getCreditPlans(region);
+        list = Array.isArray(data) ? data : data?.plans || [];
+      }
       const filteredList = filterPlansByRegion(list, v.region);
 
       setPlans(filteredList);
@@ -426,6 +458,7 @@ const EmployerBuyCreditsPage = () => {
                           onClick={() => {
                             setPaid(false);
                             setPaidPack(null);
+                            init();
                           }}
                         >
                           Buy More Credits
@@ -453,9 +486,13 @@ const EmployerBuyCreditsPage = () => {
             <div className="box-filters-job employer-cv-surface-card mb-10">
               <div className="row align-items-center">
                 <div className="col-xl-8 col-lg-8">
-                  <h3 className="mb-5">Buy Credits</h3>
+                  <h3 className="mb-5">
+                    {membershipExpired ? "Renew Membership" : "Buy Credits"}
+                  </h3>
                   <span className="font-sm color-text-paragraph-2">
-                    Choose a pack that fits your hiring volume
+                    {membershipExpired
+                      ? "Your membership has expired. Renew it to get new credits and keep unlocking profiles."
+                      : "Choose a pack that fits your hiring volume"}
                   </span>
                 </div>
                 <div className="col-xl-4 col-lg-4 text-lg-end mt-sm-15">
@@ -529,7 +566,9 @@ const EmployerBuyCreditsPage = () => {
 
             {plans.length === 0 ? (
               <div className="card-grid-2 hover-up cv-search-candidate-card text-center mt-30 p-40">
-                <h4 className="mb-15">No credit plans available</h4>
+                <h4 className="mb-15">
+                  {membershipExpired ? "No membership plans available" : "No credit plans available"}
+                </h4>
                 <p className="font-md color-text-paragraph-2 mb-20">
                   {visitor?.countryName
                     ? `There are no active credit plans available for your country/region (${visitor.countryName}).`
@@ -539,10 +578,13 @@ const EmployerBuyCreditsPage = () => {
             ) : (
               <>
                 <div className="text-center mt-20 mb-10">
-                  <h2 className="mb-15">Select A Credit Pack</h2>
+                  <h2 className="mb-15">
+                    {membershipExpired ? "Select A Membership Plan" : "Select A Credit Pack"}
+                  </h2>
                   <p className="font-lg color-text-paragraph-2">
-                    Longer packs offer a lower per-credit rate. Top-ups inherit your
-                    active package expiry date.
+                    {membershipExpired
+                      ? "Unused credits from your previous membership expire when you renew. Your new plan's credits are valid for the plan's full duration."
+                      : "Longer packs offer a lower per-credit rate. Top-ups are valid until your membership expires."}
                   </p>
                 </div>
 
@@ -594,6 +636,12 @@ const EmployerBuyCreditsPage = () => {
                             </div>
                             <ul className="list-package-feature flex-grow-1 mb-30">
                               {/* <li>{pack.rateLabel}</li> */}
+                              {membershipExpired && pack.validityMonths > 0 && (
+                                <li>
+                                  Valid for {pack.validityMonths}{" "}
+                                  {pack.validityMonths === 1 ? "month" : "months"}
+                                </li>
+                              )}
                               <li>{isPayPal ? "Invoice generated" : "GST - compliant invoice generated"}</li>
                               <li>Shared wallet with sub-users</li>
                               <li>Unlock profiles across bands</li>
@@ -607,7 +655,9 @@ const EmployerBuyCreditsPage = () => {
                               >
                                 {selected?.planId === pack.planId
                                   ? "✓ Selected"
-                                  : "Choose Pack"}
+                                  : membershipExpired
+                                    ? "Choose Plan"
+                                    : "Choose Pack"}
                               </button>
                             </div>
                           </div>

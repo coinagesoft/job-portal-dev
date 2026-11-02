@@ -135,6 +135,18 @@ export const getCreditPlans = async (region) => {
 };
 
 /**
+ * GET /api/plans/recruiter[?region=us]
+ * Active recruiter membership plans. Used to renew an expired membership.
+ */
+export const getRecruiterMembershipPlans = async (region) => {
+  const { data } = await api.get("/api/plans/recruiter", {
+    params: region ? { region } : undefined,
+  });
+
+  return data;
+};
+
+/**
  * POST /api/recruiter/plans/paypal/create-order
  * Outside India only. Returns { payPalOrderId, transactionId, currency, ... }
  */
