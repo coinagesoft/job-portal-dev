@@ -610,8 +610,11 @@ const EmployerBuyCreditsPage = () => {
                           wallet.expiredCredits > 0 && (
                             <span className="color-text-paragraph-2">
                               {" "}
-                              ({wallet.expiredCredits} expired — forfeited on
-                              renewal)
+                              ({wallet.expiredCredits} on hold — renew by{" "}
+                              {wallet.creditGraceEndsAt
+                                ? new Date(wallet.creditGraceEndsAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+                                : "the renewal deadline"}{" "}
+                              to keep them)
                             </span>
                           )}
                         {wallet.allocatedCredits > 0 && (
@@ -661,7 +664,7 @@ const EmployerBuyCreditsPage = () => {
                   </h2>
                   <p className="font-lg color-text-paragraph-2">
                     {membershipExpired
-                      ? "Unused credits from your previous membership expire when you renew. Your new plan's credits are valid for the plan's full duration."
+                      ? "Renew within 30 days of expiry and your unused credits are added to your new plan's credits. After 30 days they are lost. Your new plan's credits are valid for the plan's full duration."
                       : showMemberships
                         ? "Your new term starts when your current membership ends. Unused credits carry over and the new plan's credits are added on top."
                         : "Longer packs offer a lower per-credit rate. Top-ups are valid until your membership expires."}
@@ -709,11 +712,34 @@ const EmployerBuyCreditsPage = () => {
                               <span className="text-month">credits</span>
                             </div>
                             <div className="border-bottom mb-30">
-                              <p className="text-desc-package font-sm color-text-paragraph mb-30">
-                                {formatMoney(pack.price, currency)}
-                                {isPayPal ? "" : " + GST"}
-                              </p>
+                              {showMemberships &&
+                              pack.validityMonths > 0 &&
+                              Number(pack.price) > 0 ? (
+                                <>
+                                  {/* Monthly rate first, full payment underneath */}
+                                  <p
+                                    className="mb-5"
+                                    style={{ fontSize: 26, fontWeight: 800, color: "#122359", lineHeight: 1.2 }}
+                                  >
+                                    {formatMoney(Number(pack.price) / pack.validityMonths, currency)}
+                                    <span style={{ fontSize: 14, fontWeight: 700, color: "#1F9D6B" }}>
+                                      {" "}/ month
+                                    </span>
+                                  </p>
+                                  <p className="text-desc-package font-sm color-text-paragraph mb-30">
+                                    Pay {formatMoney(pack.price, currency)}
+                                    {isPayPal ? "" : " + GST"} once for {pack.validityMonths}{" "}
+                                    {pack.validityMonths === 1 ? "month" : "months"}
+                                  </p>
+                                </>
+                              ) : (
+                                <p className="text-desc-package font-sm color-text-paragraph mb-30">
+                                  {formatMoney(pack.price, currency)}
+                                  {isPayPal ? "" : " + GST"}
+                                </p>
+                              )}
                             </div>
+
                             <ul className="list-package-feature flex-grow-1 mb-30">
                               {/* <li>{pack.rateLabel}</li> */}
                               {showMemberships && pack.validityMonths > 0 && (

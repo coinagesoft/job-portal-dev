@@ -165,7 +165,9 @@ const EmployerCreditWalletPage = () => {
                 <div className="col-xl-5 col-lg-5 text-lg-end mt-sm-15">
                   {!isSubUser && (
                     <Link className="btn btn-default btn-sm mr-10 mb-5" href="/employeer/buy-credits">
-                      Buy more credits
+                      {dashboard?.membershipExpired
+                        ? "Renew membership"
+                        : "Buy more credits"}
                     </Link>
                   )}
                   <Link className="btn btn-border btn-sm mb-5" href="/employeer/invoices">
@@ -240,9 +242,8 @@ const EmployerCreditWalletPage = () => {
                           {dashboard.membershipExpired && (
                             <p className="font-sm color-text-paragraph mt-10">
                               {dashboard.expiredCredits > 0
-                                ? `${dashboard.expiredCredits} unused credits have expired. `
-                                : ""}
-                              Renew your membership to get new credits.
+                                ? `${dashboard.expiredCredits} unused credits are on hold and can't be used right now. Renew your membership by ${formatDate(dashboard.creditGraceEndsAt)} to get them back along with your new plan's credits; after that date they are lost. `
+                                : "Renew your membership to get new credits."}
                             </p>
                           )}
                           <p className="font-sm color-text-paragraph mt-10">

@@ -2377,14 +2377,9 @@ function EmployerForm() {
     try {
       setPlanLoading(true);
 
-      const meta = getCountryMeta(code);
       // PayPal visitors: the region comes from the server's IP lookup.
       // India (Razorpay): unchanged — region from the phone country.
-      const region = isPayPal
-        ? visitor.region
-        : meta?.name
-          ? meta.name.toLowerCase()
-          : "india";
+      const region = isPayPal ? visitor.region : "in";
 
       let response = await getRecruiterPlan(region);
       let list = response.data || [];
@@ -2444,11 +2439,9 @@ function EmployerForm() {
       setCouponDiscount(0);
       setCouponFinalAmount(null);
 
-      const meta = getCountryMeta(data.countryCode);
 
-      const region = meta?.name
-        ? meta.name.toLowerCase()
-        : "india";
+      // Razorpay (India) plans are stored under region "in" — not the country name.
+      const region = "in";
 
       const sessionId = localStorage.getItem("registrationSessionId");
 
@@ -3015,6 +3008,41 @@ function EmployerForm() {
     });
   };
 
+  // Money text for the coupon summary, e.g. ₹12,602 (or "USD 49.99").
+  const fmtMoney = (n) =>
+    `${currencyPrefix}${Number(n || 0).toLocaleString(
+      payCurrency === "INR" ? "en-IN" : "en-US",
+      { minimumFractionDigits: 0, maximumFractionDigits: 2 },
+    )}`;
+
+  // Take the coupon off again (also unlocks the plan cards).
+  const handleRemoveCoupon = () => {
+    if (paying || couponLoading) return;
+    setCouponCode("");
+    setCouponApplied(false);
+    setCouponMessage("");
+    setCouponDiscount(0);
+    setCouponFinalAmount(null);
+  };
+
+  // Pick a membership plan (card click / keyboard). Changing the plan
+  // resets any coupon that was applied to the previous one.
+  const handleSelectPlan = (planId) => {
+    if (paying || couponLoading || couponApplied) return;
+    if (planId === selectedPlanId) return;
+
+    setSelectedPlanId(planId);
+
+    const selectedPlan = recruiterPlans.find((plan) => plan.planId === planId);
+    setRecruiterPlan(selectedPlan || null);
+
+    setCouponCode("");
+    setCouponApplied(false);
+    setCouponMessage("");
+    setCouponDiscount(0);
+    setCouponFinalAmount(null);
+  };
+
   const isFreeWithCoupon = couponApplied && couponFinalAmount === 0;
   const showPayPalButtons =
     step === 5 &&
@@ -3081,8 +3109,7 @@ function EmployerForm() {
         return;
       }
 
-      const meta = getCountryMeta(data.countryCode);
-      const region = meta?.name ? meta.name.toLowerCase() : "india";
+      const region = "in"; // Razorpay (India) plans use region code "in"
       const sessionId = localStorage.getItem("registrationSessionId");
 
       // Uses the recruiter-specific order endpoint (resolves the active,
@@ -3183,10 +3210,7 @@ function EmployerForm() {
       const sessionId = localStorage.getItem("registrationSessionId");
       const payInfo = paymentOverride || paymentData;
 
-      const meta = getCountryMeta(data.countryCode);
-      const region = meta?.name
-        ? meta.name.toLowerCase()
-        : "india";
+      const region = "in"; // Razorpay (India) plans use region code "in"
 
       const response = await submitRegistration({
         sessionId,
@@ -5048,78 +5072,295 @@ function EmployerForm() {
 
           {/* ── Membership Plan ── */}
           {recruiterPlans.length > 0 && (
-            <div style={{ marginBottom: 14 }}>
+            <div style={{ marginBottom: 18 }}>
               <label
                 style={{
                   display: "block",
                   fontSize: "var(--font-xs)",
                   fontWeight: 600,
-                  marginBottom: 6,
+                  marginBottom: 10,
                   color: "var(--color-text-secondary)",
                 }}
               >
-                Membership Plan
+                Choose your membership plan
               </label>
 
-              <select
-                value={selectedPlanId}
-                disabled={paying || couponLoading || couponApplied}
-                onChange={(e) => {
-                  const planId = e.target.value;
-
-                  setSelectedPlanId(planId);
-
-                  const selectedPlan = recruiterPlans.find(
-                    (plan) => plan.planId === planId
-                  );
-
-                  setRecruiterPlan(selectedPlan || null);
-
-                  // Reset coupon when changing plan
-                  setCouponCode("");
-                  setCouponApplied(false);
-                  setCouponMessage("");
-                  setCouponDiscount(0);
-                  setCouponFinalAmount(null);
-                }}
+              <div
+                role="radiogroup"
+                aria-label="Membership plan"
                 style={{
-                  width: "100%",
-                  padding: "10px 12px",
-                  borderRadius: 8,
-                  border: "1px solid rgba(18,35,89,0.15)",
-                  background: "#fff",
-                  fontSize: "var(--font-sm)",
-                  color: "var(--color-text-primary)",
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
+                  gap: 14,
+                  paddingTop: 8,
                 }}
               >
-                {recruiterPlans.map((plan) => (
-                  <option key={plan.planId} value={plan.planId}>
-                    {plan.planName} — {payCurrency} {Number(plan.price).toFixed(2)}
-                  </option>
-                ))}
-              </select>
+                {recruiterPlans.map((plan) => {
+                  const isSelected = plan.planId === selectedPlanId;
+                  const locked = paying || couponLoading || couponApplied;
+                  const credits = Number(plan.initialCredits) || 0;
+                  const months = Number(plan.validityMonths) || 0;
+                  const features = Array.isArray(plan.features)
+                    ? plan.features.filter(Boolean)
+                    : [];
+                  const shownFeatures = features.slice(0, 4);
+                  const hiddenCount = features.length - shownFeatures.length;
+                  const priceText = Number(plan.price || 0).toLocaleString(
+                    payCurrency === "INR" ? "en-IN" : "en-US",
+                    { maximumFractionDigits: 2 },
+                  );
 
-              {/* Credits & validity included with the selected plan */}
-              {Number(recruiterPlan?.initialCredits) > 0 && (
+                  return (
+                    <div
+                      key={plan.planId}
+                      role="radio"
+                      aria-checked={isSelected}
+                      aria-disabled={locked}
+                      tabIndex={locked ? -1 : 0}
+                      onClick={() => handleSelectPlan(plan.planId)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleSelectPlan(plan.planId);
+                        }
+                      }}
+                      style={{
+                        position: "relative",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 12,
+                        padding: "20px 16px 16px",
+                        borderRadius: 14,
+                        border: `2px solid ${
+                          isSelected ? "#FF9800" : "rgba(18,35,89,0.12)"
+                        }`,
+                        background: isSelected ? "#FFF8EC" : "#fff",
+                        boxShadow: isSelected
+                          ? "0 8px 24px rgba(255,152,0,0.18)"
+                          : "0 1px 3px rgba(18,35,89,0.06)",
+                        opacity: locked && !isSelected ? 0.55 : 1,
+                        cursor: locked ? "default" : "pointer",
+                        transition: "all .18s ease",
+                        outline: "none",
+                      }}
+                    >
+                      {/* Name + radio indicator */}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 10,
+                        }}
+                      >
+                        <span
+                          aria-hidden="true"
+                          style={{
+                            flex: "0 0 auto",
+                            width: 20,
+                            height: 20,
+                            borderRadius: "50%",
+                            border: `2px solid ${
+                              isSelected ? "#FF9800" : "rgba(18,35,89,0.25)"
+                            }`,
+                            background: isSelected ? "#FF9800" : "#fff",
+                            color: "#fff",
+                            fontSize: 12,
+                            fontWeight: 700,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          {isSelected ? "✓" : ""}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: "var(--font-md, 16px)",
+                            fontWeight: 700,
+                            color: "#122359",
+                          }}
+                        >
+                          {plan.planName}
+                        </span>
+                      </div>
+
+                      {/* Price: monthly rate first, full payment underneath */}
+                      {months > 0 && Number(plan.price) > 0 ? (
+                        <div>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "baseline",
+                              gap: 6,
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: 32,
+                                fontWeight: 800,
+                                lineHeight: 1.1,
+                                color: "#122359",
+                              }}
+                            >
+                              {currencyPrefix}
+                              {(Number(plan.price) / months).toLocaleString(
+                                payCurrency === "INR" ? "en-IN" : "en-US",
+                                { maximumFractionDigits: 2 },
+                              )}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: "var(--font-sm)",
+                                fontWeight: 700,
+                                color: "#1F9D6B",
+                              }}
+                            >
+                              / month
+                            </span>
+                          </div>
+                          <div
+                            style={{
+                              marginTop: 6,
+                              fontSize: "var(--font-xs)",
+                              color: "var(--color-text-secondary)",
+                            }}
+                          >
+                            Pay{" "}
+                            <b style={{ color: "#122359" }}>
+                              {currencyPrefix}
+                              {priceText}
+                            </b>{" "}
+                            {plan.period || "one-time"} for {months}{" "}
+                            {months === 1 ? "month" : "months"}
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+                          <span
+                            style={{
+                              fontSize: 30,
+                              fontWeight: 800,
+                              lineHeight: 1.1,
+                              color: "#122359",
+                            }}
+                          >
+                            {currencyPrefix}
+                            {priceText}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: "var(--font-xs)",
+                              color: "var(--color-text-secondary)",
+                            }}
+                          >
+                            {plan.period || "one-time"}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Credits + validity */}
+                      {(credits > 0 || months > 0) && (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                          {credits > 0 && (
+                            <span
+                              style={{
+                                background: isSelected ? "#FFE8C2" : "#F1F4FA",
+                                color: "#122359",
+                                fontSize: 12,
+                                fontWeight: 600,
+                                padding: "5px 10px",
+                                borderRadius: 8,
+                              }}
+                            >
+                              {credits.toLocaleString()} credits
+                            </span>
+                          )}
+                          {months > 0 && (
+                            <span
+                              style={{
+                                background: isSelected ? "#FFE8C2" : "#F1F4FA",
+                                color: "#122359",
+                                fontSize: 12,
+                                fontWeight: 600,
+                                padding: "5px 10px",
+                                borderRadius: 8,
+                              }}
+                            >
+                              {months} {months === 1 ? "month" : "months"} validity
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Features */}
+                      {shownFeatures.length > 0 && (
+                        <ul
+                          style={{
+                            listStyle: "none",
+                            margin: 0,
+                            padding: 0,
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 6,
+                          }}
+                        >
+                          {shownFeatures.map((feature, i) => (
+                            <li
+                              key={i}
+                              style={{
+                                display: "flex",
+                                gap: 8,
+                                fontSize: "var(--font-xs)",
+                                color: "var(--color-text-primary)",
+                              }}
+                            >
+                              <span style={{ color: "#16A34A", fontWeight: 700 }}>✓</span>
+                              <span>{feature}</span>
+                            </li>
+                          ))}
+                          {hiddenCount > 0 && (
+                            <li
+                              style={{
+                                fontSize: "var(--font-xs)",
+                                color: "var(--color-text-secondary)",
+                                paddingLeft: 20,
+                              }}
+                            >
+                              +{hiddenCount} more
+                            </li>
+                          )}
+                        </ul>
+                      )}
+
+                      <span
+                        style={{
+                          marginTop: "auto",
+                          textAlign: "center",
+                          fontSize: "var(--font-xs)",
+                          fontWeight: 700,
+                          padding: "8px 10px",
+                          borderRadius: 8,
+                          background: isSelected ? "#FF9800" : "#F1F4FA",
+                          color: isSelected ? "#fff" : "#122359",
+                        }}
+                      >
+                        {isSelected ? "Selected" : "Select plan"}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {couponApplied && !paying && (
                 <p
                   style={{
-                    margin: "8px 0 0",
+                    margin: "10px 0 0",
                     fontSize: "var(--font-xs)",
                     color: "var(--color-text-secondary)",
                   }}
                 >
-                  Includes{" "}
-                  <b>{Number(recruiterPlan.initialCredits).toLocaleString()} credits</b>
-                  {Number(recruiterPlan.validityMonths) > 0 && (
-                    <>
-                      , valid for{" "}
-                      <b>
-                        {recruiterPlan.validityMonths}{" "}
-                        {Number(recruiterPlan.validityMonths) === 1 ? "month" : "months"}
-                      </b>
-                    </>
-                  )}
-                  .
+                  A coupon is applied to this plan. Remove the coupon below if
+                  you want to choose a different plan.
                 </p>
               )}
             </div>
@@ -5127,107 +5368,269 @@ function EmployerForm() {
 
           {/* ── Recruiter Coupon ── */}
           {payStatus !== "success" && (
-            <div style={{ marginBottom: 14 }}>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: "var(--font-xs)",
-                  fontWeight: 600,
-                  marginBottom: 6,
-                  color: "var(--color-text-secondary)",
-                }}
-              >
-                Coupon Code
-              </label>
-
+            <div
+              style={{
+                marginBottom: 16,
+                padding: 16,
+                borderRadius: 14,
+                border: `1px solid ${
+                  couponApplied ? "rgba(22,163,74,0.35)" : "rgba(18,35,89,0.12)"
+                }`,
+                background: couponApplied ? "#F4FBF6" : "#FAFBFE",
+                transition: "all .18s ease",
+              }}
+            >
+              {/* Title */}
               <div
                 style={{
                   display: "flex",
-                  gap: 8,
-                  width: "100%",
+                  alignItems: "center",
+                  gap: 10,
+                  marginBottom: couponApplied ? 12 : 12,
                 }}
               >
-                <Input
-                  placeholder="Enter coupon code"
-                  value={couponCode}
-                  disabled={couponApplied || couponLoading || paying}
-                  onChange={(e) => {
-                    setCouponCode(e.target.value.toUpperCase());
-                    setCouponApplied(false);
-                    setCouponMessage("");
-                    setCouponDiscount(0);
-                    setCouponFinalAmount(null);
-                  }}
+                <span
+                  aria-hidden="true"
                   style={{
-                    flex: 1,
-                    textTransform: "uppercase",
-                  }}
-                />
-
-                <Btn
-                  type="button"
-                  variant={couponApplied ? "success" : "primary"}
-                  disabled={
-                    couponLoading ||
-                    couponApplied ||
-                    paying ||
-                    !couponCode.trim() ||
-                    !selectedPlanId
-                  }
-                  onClick={handleApplyRecruiterCoupon}
-                  style={{
-                    minWidth: 100,
+                    flex: "0 0 auto",
+                    width: 32,
+                    height: 32,
+                    borderRadius: 10,
+                    background: couponApplied ? "#DCF3E3" : "#FFE8C2",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
                 >
-                  {couponLoading
-                    ? "Checking..."
-                    : couponApplied
-                      ? "Applied"
-                      : "Apply"}
-                </Btn>
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke={couponApplied ? "#16A34A" : "#E58A00"}
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z" />
+                    <circle cx="7.5" cy="7.5" r="1.2" />
+                  </svg>
+                </span>
+                <div>
+                  <div
+                    style={{
+                      fontSize: "var(--font-sm)",
+                      fontWeight: 700,
+                      color: "#122359",
+                    }}
+                  >
+                    {couponApplied ? "Coupon applied" : "Have a coupon code?"}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "var(--font-xs)",
+                      color: "var(--color-text-secondary)",
+                    }}
+                  >
+                    {couponApplied
+                      ? "Your discount is included in the total below."
+                      : "Enter it to see your discount before you pay."}
+                  </div>
+                </div>
               </div>
 
-              {/* Coupon message */}
-              {couponMessage && (
-                <p
-                  style={{
-                    fontSize: "var(--font-xs)",
-                    marginTop: 7,
-                    marginBottom: 0,
-                    color: couponApplied ? "#3B6D11" : "#A32D2D",
-                  }}
-                >
-                  {couponMessage}
-                </p>
-              )}
+              {!couponApplied ? (
+                <>
+                  <div style={{ display: "flex", gap: 8, width: "100%" }}>
+                    <Input
+                      placeholder="Enter coupon code"
+                      value={couponCode}
+                      error={!!couponMessage}
+                      disabled={couponLoading || paying}
+                      onChange={(e) => {
+                        setCouponCode(e.target.value.toUpperCase());
+                        setCouponApplied(false);
+                        setCouponMessage("");
+                        setCouponDiscount(0);
+                        setCouponFinalAmount(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (
+                          e.key === "Enter" &&
+                          couponCode.trim() &&
+                          selectedPlanId &&
+                          !couponLoading &&
+                          !paying
+                        ) {
+                          e.preventDefault();
+                          handleApplyRecruiterCoupon();
+                        }
+                      }}
+                      style={{
+                        flex: 1,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.06em",
+                        fontWeight: 600,
+                      }}
+                    />
 
-              {/* Discount amount */}
-              {couponApplied && couponDiscount > 0 && (
-                <p
-                  style={{
-                    fontSize: "var(--font-xs)",
-                    marginTop: 5,
-                    marginBottom: 0,
-                    color: "#3B6D11",
-                    fontWeight: 600,
-                  }}
-                >
-                  Discount: {payCurrency} {couponDiscount.toFixed(2)}
-                </p>
-              )}
+                    <Btn
+                      type="button"
+                      variant="primary"
+                      disabled={
+                        couponLoading ||
+                        paying ||
+                        !couponCode.trim() ||
+                        !selectedPlanId
+                      }
+                      onClick={handleApplyRecruiterCoupon}
+                      style={{ minWidth: 100 }}
+                    >
+                      {couponLoading ? "Checking..." : "Apply"}
+                    </Btn>
+                  </div>
 
-              {/* Final amount */}
-              {couponApplied && couponFinalAmount !== null && (
-                <p
-                  style={{
-                    fontSize: "var(--font-xs)",
-                    marginTop: 5,
-                    marginBottom: 0,
-                    fontWeight: 600,
-                  }}
-                >
-                  Final Amount: {payCurrency} {couponFinalAmount.toFixed(2)}
-                </p>
+                  {/* Error from a failed attempt */}
+                  {couponMessage && (
+                    <p
+                      role="alert"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        fontSize: "var(--font-xs)",
+                        margin: "10px 0 0",
+                        color: "#A32D2D",
+                        fontWeight: 500,
+                      }}
+                    >
+                      <span aria-hidden="true">⚠</span>
+                      {couponMessage}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* Applied coupon chip + remove */}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 10,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 8,
+                        background: "#fff",
+                        border: "1.5px dashed #16A34A",
+                        borderRadius: 10,
+                        padding: "7px 12px",
+                        fontSize: "var(--font-sm)",
+                        fontWeight: 700,
+                        letterSpacing: "0.08em",
+                        color: "#166534",
+                      }}
+                    >
+                      <span aria-hidden="true">✓</span>
+                      {couponCode}
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={handleRemoveCoupon}
+                      disabled={paying || couponLoading}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        padding: "6px 4px",
+                        fontSize: "var(--font-xs)",
+                        fontWeight: 700,
+                        color: "#A32D2D",
+                        cursor: paying || couponLoading ? "default" : "pointer",
+                        opacity: paying || couponLoading ? 0.5 : 1,
+                        textDecoration: "underline",
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+
+                  {/* Price breakdown */}
+                  <div
+                    style={{
+                      marginTop: 14,
+                      paddingTop: 12,
+                      borderTop: "1px solid rgba(18,35,89,0.1)",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 8,
+                      fontSize: "var(--font-sm)",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        color: "var(--color-text-secondary)",
+                      }}
+                    >
+                      <span>{recruiterPlan?.planName || "Plan"} price</span>
+                      <span>{fmtMoney(recruiterPlan?.price)}</span>
+                    </div>
+
+                    {couponDiscount > 0 && (
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          color: "#16A34A",
+                          fontWeight: 600,
+                        }}
+                      >
+                        <span>Coupon discount</span>
+                        <span>− {fmtMoney(couponDiscount)}</span>
+                      </div>
+                    )}
+
+                    {couponFinalAmount !== null && (
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "baseline",
+                          paddingTop: 10,
+                          borderTop: "1px solid rgba(18,35,89,0.1)",
+                          color: "#122359",
+                          fontWeight: 800,
+                        }}
+                      >
+                        <span>Total payable</span>
+                        <span style={{ fontSize: 20 }}>
+                          {Number(couponFinalAmount) === 0
+                            ? "Free"
+                            : fmtMoney(couponFinalAmount)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {couponMessage && (
+                    <p
+                      style={{
+                        fontSize: "var(--font-xs)",
+                        margin: "10px 0 0",
+                        color: "#3B6D11",
+                      }}
+                    >
+                      {couponMessage}
+                    </p>
+                  )}
+                </>
               )}
             </div>
           )}

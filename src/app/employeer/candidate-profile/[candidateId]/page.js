@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { useSelector } from "react-redux";
 import candidateProfileService from "@/services/recruiter/Candidateprofileservice.js";
 import { useToast } from "@/components/Toast";
 // import { getProfileCompletion } from "@/services/candidate/profileCompletionService";
@@ -50,6 +51,27 @@ const isCreditIssue = (err, result) => {
 const EmployerCandidateProfilePage = () => {
   const { candidateId } = useParams();
   const showToast = useToast();
+  const router = useRouter();
+  const isSubUser = useSelector((state) => state.auth.user?.isSubUser === true);
+
+  // The recruiter's membership validity has ended: tell them, and send the
+  // account owner to the membership plans page (the Buy Credits page shows
+  // only membership plans once the membership has expired). Sub-users can't
+  // buy anything, so they are asked to contact the owner instead.
+  const handleMembershipExpired = () => {
+    if (isSubUser) {
+      const text =
+        "Your company's membership validity has finished. Please ask the account owner to take a membership.";
+      setActionMessage({ type: "error", text });
+      showToast(text, "error");
+      return;
+    }
+    const text =
+      "Your validity has finished. Please take a membership to continue unlocking profiles.";
+    setActionMessage({ type: "error", text });
+    showToast(text, "error");
+    setTimeout(() => router.push("/employeer/buy-credits"), 1500);
+  };
 
   const [profile, setProfile] = useState(null);
   const [wallet, setWallet] = useState(null);
@@ -117,7 +139,9 @@ const EmployerCandidateProfilePage = () => {
     setActionMessage(null);
     try {
       const result = await candidateProfileService.unlockCandidate(candidateId);
-      if (result?.success) {
+      if (result?.code === "MEMBERSHIP_EXPIRED" || result?.membershipExpired) {
+        handleMembershipExpired();
+      } else if (result?.success) {
         const successText =
           result.message ||
           `Profile unlocked. ${result.creditsDeducted ?? 0} credit(s) used.`;
@@ -136,7 +160,10 @@ const EmployerCandidateProfilePage = () => {
         showToast(text, "error");
       }
     } catch (err) {
-      if (isCreditIssue(err, null)) {
+      const errData = err.response?.data;
+      if (errData?.code === "MEMBERSHIP_EXPIRED" || errData?.membershipExpired) {
+        handleMembershipExpired();
+      } else if (isCreditIssue(err, null)) {
         const text =
           err.response?.data?.message ||
           "Not enough credits to unlock this profile. Please top up your wallet.";
