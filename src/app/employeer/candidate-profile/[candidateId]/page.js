@@ -553,6 +553,18 @@ const EmployerCandidateProfilePage = () => {
 
                             <div className="visibility-item">
                               <div className="visibility-icon">
+                                <i className="fi-rr-dollar"></i>
+                              </div>
+                              <div>
+                                <span className="visibility-label">Expected Salary</span>
+                                <h6 className="visibility-value">
+                                  {fmtSalary(summary.preferredSalary) || "Not specified"}
+                                </h6>
+                              </div>
+                            </div>
+
+                            <div className="visibility-item">
+                              <div className="visibility-icon">
                                 <i className="fi-rr-marker"></i>
                               </div>
                               <div>
@@ -617,21 +629,6 @@ const EmployerCandidateProfilePage = () => {
                           </div>
 
                           <div className="visibility-card-body">
-                            <div className="visibility-item">
-                              <div className="visibility-icon">
-                                <i className="fi-rr-dollar"></i>
-                              </div>
-                              <div>
-                                <span className="visibility-label">Expected Salary</span>
-                                <h6 className="visibility-value">
-                                  {isUnlocked
-                                    ? fmtSalary(summary.preferredSalary) ||
-                                    "Not specified"
-                                    : "Hidden"}
-                                </h6>
-                              </div>
-                            </div>
-
                             <div className="visibility-item">
                               <div className="visibility-icon">
                                 <i className="fi-rr-document"></i>
