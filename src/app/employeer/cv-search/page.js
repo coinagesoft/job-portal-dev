@@ -874,7 +874,9 @@ const EmployerCvSearchPage = () => {
                                         href={`/employeer/candidate-profile/${candidate.candidateId}`}
                                         style={CANDIDATE_ACTION_BUTTON_STYLE}
                                       >
-                                        Unlock ({candidate.unlockCredits} Credits)
+                                        {candidate.unlockCredits > 0
+                                          ? `Unlock (${candidate.unlockCredits} Credits)`
+                                          : "Unlock"}
                                       </Link>
                                     )}
                                   </div>
