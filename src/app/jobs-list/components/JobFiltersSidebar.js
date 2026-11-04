@@ -248,156 +248,221 @@ const JobFiltersSidebar = ({ jobs = [], filters = {}, onFilterChange }) => {
     return result;
   }, [filterOptions, jobs]);
 
-  const filterBadgeStyle = {
-    background: '#fff4e6',
-    color: '#e68a00',
-    border: '1px solid #ffe3c2',
-  };
-
   return (
-    <div className="sidebar-shadow none-shadow mb-30 job-filters-sidebar" style={{ '--primary-navy': '#122359' }}>
-      {/* Force exactly one separator line per filter block, regardless of
-          any border/margin the theme's own global CSS puts on the list,
-          list items, or form-group wrapper. */}
+    <div className="mb-30 job-filters-sidebar">
       <style dangerouslySetInnerHTML={{ __html: `
-        .job-filters-sidebar .filter-block {
-          border-bottom: 1px solid var(--border-light, #eef0f5) !important;
-          padding-bottom: 12px !important;
-          margin-bottom: 12px !important;
+        .job-filters-sidebar {
+          --jf-navy: #122359;
+          --jf-orange: #ffa300;
+          --jf-text: #4f5e64;
+          --jf-muted: #8a97b3;
+          --jf-line: #eef0f5;
+          background: #fff;
+          border: 1px solid var(--jf-line);
+          border-radius: 12px;
+          padding: 6px 16px 8px;
+          font-family: inherit;
         }
-        .job-filters-sidebar .filter-block .form-group,
-        .job-filters-sidebar .filter-block .list-checkbox,
-        .job-filters-sidebar .filter-block .list-checkbox li {
-          border: none !important;
-          margin: 0 !important;
-          padding: 0 !important;
+        .job-filters-sidebar .jf-head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 12px 0;
+          border-bottom: 1px solid var(--jf-line);
         }
-        .job-filters-sidebar .filter-block .list-checkbox li {
-          padding: 6px 0 !important;
+        .job-filters-sidebar .jf-title {
+          margin: 0;
+          font-size: 13px;
+          font-weight: 700;
+          letter-spacing: 0.02em;
+          color: var(--jf-navy);
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .job-filters-sidebar .jf-reset {
+          font-size: 11px;
+          font-weight: 600;
+          color: var(--jf-orange);
+          text-decoration: none;
+          background: none;
+          border: none;
+          padding: 0;
+          cursor: pointer;
+        }
+        .job-filters-sidebar .jf-reset:hover { text-decoration: underline; }
+        .job-filters-sidebar .jf-badge {
+          min-width: 18px;
+          height: 18px;
+          padding: 0 6px;
+          border-radius: 9px;
+          background: #fff4e6;
+          color: #e68a00;
+          font-size: 10px;
+          font-weight: 700;
+          line-height: 18px;
+          text-align: center;
+        }
+        .job-filters-sidebar .jf-block { border-bottom: 1px solid var(--jf-line); }
+        .job-filters-sidebar .jf-block:last-child { border-bottom: none; }
+        .job-filters-sidebar .jf-toggle {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          padding: 10px 0;
+          background: none;
+          border: none;
+          cursor: pointer;
+          text-align: left;
+          font-size: 12.5px;
+          font-weight: 600;
+          color: var(--jf-navy);
+          transition: color 0.15s ease;
+        }
+        .job-filters-sidebar .jf-toggle:hover,
+        .job-filters-sidebar .jf-toggle.is-open { color: var(--jf-orange); }
+        .job-filters-sidebar .jf-toggle-label {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .job-filters-sidebar .jf-chevron {
+          width: 10px;
+          height: 10px;
+          flex-shrink: 0;
+          color: var(--jf-muted);
+          transition: transform 0.2s ease;
+        }
+        .job-filters-sidebar .jf-toggle.is-open .jf-chevron {
+          transform: rotate(180deg);
+          color: var(--jf-orange);
+        }
+        .job-filters-sidebar .jf-options {
+          list-style: none;
+          margin: 0 0 8px;
+          padding: 0 2px 0 0;
+          max-height: 190px;
+          overflow-y: auto;
+          overflow-x: hidden;
+          scrollbar-width: thin;
+          scrollbar-color: #dfe3ec transparent;
+        }
+        .job-filters-sidebar .jf-options::-webkit-scrollbar { width: 4px; }
+        .job-filters-sidebar .jf-options::-webkit-scrollbar-thumb {
+          background: #dfe3ec;
+          border-radius: 4px;
+        }
+        .job-filters-sidebar .jf-option {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          padding: 5px 0;
+          margin: 0;
+          border: none;
+        }
+        .job-filters-sidebar .jf-option label {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin: 0;
+          padding: 0;
+          cursor: pointer;
+          font-size: 12px;
+          font-weight: 500;
+          line-height: 1.3;
+          color: var(--jf-text);
+          min-width: 0;
+        }
+        .job-filters-sidebar .jf-option label span {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .job-filters-sidebar .jf-option input[type="checkbox"] {
+          width: 14px;
+          height: 14px;
+          margin: 0;
+          flex-shrink: 0;
+          cursor: pointer;
+          accent-color: var(--jf-orange);
+        }
+        .job-filters-sidebar .jf-option:hover label { color: var(--jf-navy); }
+        .job-filters-sidebar .jf-count {
+          font-size: 10.5px;
+          font-weight: 600;
+          color: var(--jf-muted);
+          background: #f5f7fa;
+          border-radius: 8px;
+          padding: 1px 7px;
+          flex-shrink: 0;
+        }
+        .job-filters-sidebar .jf-empty {
+          margin: 0 0 10px;
+          font-size: 11.5px;
+          color: var(--jf-muted);
         }
       `}} />
-      <div className="sidebar-filters">
-        <div
-          className="filter-block mb-30"
-          style={{
-            borderBottom: '1px solid var(--border-light, #e5e8f1)',
-            paddingBottom: 16,
-          }}
-        >
-          <h5
-            style={{
-              color: 'var(--text-dark)',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 0,
-            }}
-          >
-            <span>
-              Advance Filter
-              {totalSelected > 0 && (
-                <span className="number-item" style={{ ...filterBadgeStyle, padding: "5px 10px", borderRadius: "25%", marginLeft: 8 }}>
-                  {totalSelected}
-                </span>
-              )}
-            </span>
-            <span>
-              <a
-                className="link-reset"
-                href="#"
-                style={{
-                  color: 'var(--primary-blue, #1a56c4)',
-                  fontWeight: 500,
-                  fontSize: 14,
-                  textDecoration: 'none'
-                }}
-                onClick={handleReset}
-              >
-                Reset All
-              </a>
-            </span>
-          </h5>
-        </div>
 
-        {filterCategories.map((category) => {
-          const options = optionsWithCounts[category.type] || [];
-          const isOpen = openCategory === category.type;
-          const selectedCount = filters[category.type]?.length || 0;
-
-          return (
-            <div
-              key={category.type}
-              className="filter-block mb-20"
-            >
-              <h5
-                className="medium-heading"
-                style={{
-                  color: isOpen ? 'var(--primary-blue, #1a56c4)' : 'var(--text-dark)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: isOpen ? 12 : 0,
-                  transition: 'color 0.15s',
-                }}
-                onClick={() => toggleCategory(category.type)}
-              >
-                <span>
-                  {category.label}
-                  {selectedCount > 0 && (
-                    <span className="number-item" style={{ ...filterBadgeStyle, marginLeft: 8, padding: "5px 10px", borderRadius: "25% " }}>
-                      {selectedCount}
-                    </span>
-                  )}
-                </span>
-                <span
-                  style={{
-                    color: 'var(--primary-blue, #1a56c4)',
-                    transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                    transition: 'transform 0.2s ease',
-                    fontSize: 12,
-                  }}
-                >
-                  ▾
-                </span>
-              </h5>
-
-              {isOpen && (
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  {options.length === 0 ? (
-                    <p className="text-small color-text-paragraph-2" style={{ margin: 0 }}>
-                      No options available.
-                    </p>
-                  ) : (
-                    <ul className="list-checkbox" style={{
-                      maxHeight: 220, overflowY: "auto",
-                      overflowX: "hidden",
-                      margin: 0,
-                    }}>
-                      {options.map((option) => (
-                        <li key={`${category.type}-${option.label}`}>
-                          <label className="cb-container">
-                            <input
-                              type="checkbox"
-                              checked={safeIncludes(filters[category.type], option.label)}
-                              onChange={() => handleCheckbox(category.type, option.label)}
-                            />
-                            <span className="text-small">{formatLabel(option.label)}</span>
-                            <span className="checkmark"></span>
-                          </label>
-                          {option.count !== null && option.count !== undefined ? (
-                            <span className="number-item" style={filterBadgeStyle}>{option.count}</span>
-                          ) : null}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
+      <div className="jf-head">
+        <h5 className="jf-title">
+          Advance Filter
+          {totalSelected > 0 && <span className="jf-badge">{totalSelected}</span>}
+        </h5>
+        <button type="button" className="jf-reset" onClick={handleReset}>
+          Reset All
+        </button>
       </div>
+
+      {filterCategories.map((category) => {
+        const options = optionsWithCounts[category.type] || [];
+        const isOpen = openCategory === category.type;
+        const selectedCount = filters[category.type]?.length || 0;
+
+        return (
+          <div key={category.type} className="jf-block">
+            <button
+              type="button"
+              className={`jf-toggle ${isOpen ? "is-open" : ""}`}
+              onClick={() => toggleCategory(category.type)}
+              aria-expanded={isOpen}
+            >
+              <span className="jf-toggle-label">
+                {category.label}
+                {selectedCount > 0 && <span className="jf-badge">{selectedCount}</span>}
+              </span>
+              <svg className="jf-chevron" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                <path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+
+            {isOpen &&
+              (options.length === 0 ? (
+                <p className="jf-empty">No options available.</p>
+              ) : (
+                <ul className="jf-options">
+                  {options.map((option) => (
+                    <li key={`${category.type}-${option.label}`} className="jf-option">
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={safeIncludes(filters[category.type], option.label)}
+                          onChange={() => handleCheckbox(category.type, option.label)}
+                        />
+                        <span>{formatLabel(option.label)}</span>
+                      </label>
+                      {option.count !== null && option.count !== undefined ? (
+                        <span className="jf-count">{option.count}</span>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              ))}
+          </div>
+        );
+      })}
     </div>
   );
 };

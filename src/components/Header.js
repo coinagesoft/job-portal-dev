@@ -19,6 +19,10 @@ import {
 
 import styles from "./Header.module.css";
 
+// Static dummy avatars shown until the user uploads their own photo / logo.
+const DEFAULT_CANDIDATE_AVATAR = "/assets/imgs/page/candidates/candidate-profile.png";
+const DEFAULT_EMPLOYER_AVATAR = "/assets/imgs/page/company/company.png";
+
 const normalizePath = (value = "") => {
   const cleanValue = value.split("?")[0].split("#")[0];
 
@@ -71,6 +75,7 @@ const Header = () => {
 
   const [profileName, setProfileName] = useState("");
   const [profileImage, setProfileImage] = useState("");
+  const [profileImageFailed, setProfileImageFailed] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileRef = useRef(null);
 
@@ -123,6 +128,11 @@ const Header = () => {
   useEffect(() => {
     setProfileMenuOpen(false);
   }, [pathname]);
+
+  // A new photo url (e.g. right after an upload) gets a fresh chance to load.
+  useEffect(() => {
+    setProfileImageFailed(false);
+  }, [profileImage]);
 
   useEffect(() => {
     if (!role) {
@@ -316,11 +326,13 @@ const Header = () => {
           <img
             alt="Profile"
             src={
-              profileImage ||
-              (role === "employer"
-                ? "/assets/imgs/page/company/company.png"
-                : "/assets2/imgs/page/dashboard/profile.png")
+              profileImage && !profileImageFailed
+                ? profileImage
+                : role === "employer"
+                  ? DEFAULT_EMPLOYER_AVATAR
+                  : DEFAULT_CANDIDATE_AVATAR
             }
+            onError={() => setProfileImageFailed(true)}
             style={{ objectFit: "cover" }}
           />
 
@@ -425,7 +437,11 @@ const Header = () => {
                 className="d-flex"
                 href={role ? ROLE_DEFAULT_ROUTE[role] : "/"}
               >
-                <img alt="jobBox" src="/assets/imgs/template/jobhub-logo.svg" />
+                <img
+                  alt="jobBox"
+                  className={styles.headerLogoImg}
+                  src="/assets/imgs/template/jobhub-logo.svg"
+                />
               </Link>
             </div>
           </div>

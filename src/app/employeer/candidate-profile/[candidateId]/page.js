@@ -8,6 +8,31 @@ import { useToast } from "@/components/Toast";
 // import { getProfileCompletion } from "@/services/candidate/profileCompletionService";
 
 /* Format a DateOnly ("2015-06-01") or ISO date to "Jun 2015" */
+// Recruiter-facing availability. The candidate's "Available now" toggle is stored
+// as "Available" / "Not Available" (+ an optional "available in" period).
+const getAvailabilityInfo = (overview = {}) => {
+  const raw = String(overview.availabilityStatus || "").trim();
+  if (!raw) return null;
+  const key = raw.toLowerCase().replace(/[\s_-]/g, "");
+  const available = key === "available" || key === "availablenow";
+  const openToOpportunities = key === "opentoopportunities";
+  const positive = available || openToOpportunities;
+  return {
+    available: positive,
+    label: available
+      ? "Available now"
+      : openToOpportunities
+        ? "Open to opportunities"
+        : "Not available",
+    detail:
+      !positive && overview.availableIn
+        ? `Available in ${overview.availableIn}`
+        : "",
+    color: positive ? "#3b6d11" : "#c0392b",
+    bg: positive ? "#eaf3de" : "#fdecea",
+  };
+};
+
 const fmtMonthYear = (d) => {
   if (!d) return "";
   const dt = new Date(d);
@@ -271,6 +296,7 @@ const EmployerCandidateProfilePage = () => {
   // Safe destructure (all camelCase from API)
   // ---------------------------------------------
   const overview = profile.overview || {};
+  const availability = getAvailabilityInfo(overview);
   const relatedCandidates = profile.relatedCandidates || [];
   const summary = profile.summary || {};
   const skills = profile.skills || [];
@@ -336,9 +362,17 @@ const EmployerCandidateProfilePage = () => {
                   {summary.itiCertified && (
                     <span className="candidate-profile-tag">ITI Certified</span>
                   )}
-                  {overview.availabilityStatus && (
-                    <span className="candidate-profile-tag">
-                      {overview.availabilityStatus}
+                  {availability && (
+                    <span
+                      className="candidate-profile-tag"
+                      style={{
+                        background: availability.bg,
+                        color: availability.color,
+                        borderColor: availability.color,
+                      }}
+                    >
+                      {availability.label}
+                      {availability.detail ? ` · ${availability.detail}` : ""}
                     </span>
                   )}
                   {completionPct != null && (
@@ -584,9 +618,17 @@ const EmployerCandidateProfilePage = () => {
                               </div>
                               <div>
                                 <span className="visibility-label">Availability Status</span>
-                                <h6 className="visibility-value text-success">
-                                  {overview.availabilityStatus || "Not specified"}
+                                <h6
+                                  className="visibility-value"
+                                  style={{ color: availability?.color }}
+                                >
+                                  {availability?.label || "Not specified"}
                                 </h6>
+                                {availability?.detail && (
+                                  <small style={{ color: "#66789c" }}>
+                                    {availability.detail}
+                                  </small>
+                                )}
                               </div>
                             </div>
 

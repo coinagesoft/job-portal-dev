@@ -179,14 +179,6 @@ const createProfileHighlightTags = (candidate) => {
     });
   }
 
-  // Available
-  if (isCandidateAvailable(candidate)) {
-    tags.push({
-      label: "Ready to Join",
-      tone: "ready",
-    });
-  }
-
   // ITI
   if (candidate.isItiCertified) {
     tags.push({
@@ -761,6 +753,9 @@ const EmployerCvSearchPage = () => {
                                         }}
                                       >
                                         Not available
+                                        {candidate.availableIn
+                                          ? ` · Available in ${candidate.availableIn}`
+                                          : ""}
                                       </span>
                                     )}
                                   </div>

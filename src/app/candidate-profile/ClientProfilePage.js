@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 
 import {
   getAvailability,
-  // updateAvailability,
+  updateAvailability,
 } from "@/services/candidate/availabilityService";
 
 import {
@@ -453,7 +453,6 @@ const StepPersonal = ({
   data,
   onChange,
   onPhotoUpload,
-  onAvailabilityChange,
   errors = {},
 }) => {
   const [avatarPreview, setAvatarPreview] = useState(null);
@@ -954,124 +953,6 @@ onClick={() => {
             </p>
           )}
         </Field>
-      </div>
-      <div
-        style={{
-          padding: "16px 18px",
-          background: T.bg,
-          borderRadius: 10,
-          marginTop: 4,
-        }}
-      >
-        <div
-          style={{
-            fontSize: 12,
-            fontWeight: 700,
-            color: T.navy,
-            marginBottom: 12,
-            textTransform: "uppercase",
-            letterSpacing: "0.04em",
-          }}
-        >
-          Availability
-        </div>
-
-        {/* Available Now */}
-        <label
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            fontSize: 14,
-            color: T.navy,
-            fontWeight: 500,
-            cursor: "pointer",
-            marginBottom: 10,
-          }}
-        >
-          <input
-            type="radio"
-            name="availability"
-            checked={data.availableForWork === true}
-            onChange={() => {
-              onAvailabilityChange(true);
-            }}
-            style={{
-              width: 17,
-              height: 17,
-              cursor: "pointer",
-              accentColor: T.orange,
-            }}
-          />
-
-          Available now
-        </label>
-
-        {/* Not Available */}
-        <label
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            fontSize: 14,
-            color: T.navy,
-            fontWeight: 500,
-            cursor: "pointer",
-            marginBottom: 12,
-          }}
-        >
-          <input
-            type="radio"
-            name="availability"
-            checked={data.availableForWork === false}
-            onChange={() => {
-              onAvailabilityChange(false);
-            }}
-            style={{
-              width: 17,
-              height: 17,
-              cursor: "pointer",
-              accentColor: T.orange,
-            }}
-          />
-
-          Not available
-        </label>
-
-        {/* Available In dropdown */}
-        {!data.availableForWork && (
-          <div style={{ marginTop: 8 }}>
-            <label
-              style={{
-                display: "block",
-                fontSize: 12,
-                fontWeight: 700,
-                color: T.navy,
-                marginBottom: 6,
-                textTransform: "uppercase",
-                letterSpacing: "0.04em",
-              }}
-            >
-              When will you be available?
-              <span style={{ color: T.error, marginLeft: 3 }}>*</span>
-            </label>
-
-            <Sel
-              value={data.availableIn || ""}
-              onChange={(e) =>
-                onChange("availableIn", e.target.value)
-              }
-            >
-              <option value="">Select availability</option>
-
-              {AVAILABILITY_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </Sel>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -2763,8 +2644,122 @@ const CompletionSummary = ({
   );
 };
 
+// ─── Availability toggle (lives in the profile sidebar) ─────────────────────
+const AvailabilityToggle = ({
+  available,
+  availableIn,
+  onToggle,
+  onAvailableInChange,
+  bordered = true,
+}) => (
+  <div
+    style={{
+      padding: "12px 20px",
+      background: T.white,
+      borderBottom: bordered ? `1px solid ${T.border}` : "none",
+    }}
+  >
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 10,
+      }}
+    >
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: T.navy }}>
+          {available ? "Available now" : "Not available"}
+        </div>
+        <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
+          {available ? "Visible to employers" : "Hidden from employers"}
+        </div>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={!!available}
+        aria-label="Available now"
+        onClick={() => onToggle(!available)}
+        style={{
+          position: "relative",
+          width: 40,
+          height: 22,
+          borderRadius: 11,
+          border: "none",
+          padding: 0,
+          flexShrink: 0,
+          cursor: "pointer",
+          background: available ? T.orange : "#cfd6e4",
+          transition: "background .2s",
+        }}
+      >
+        <span
+          style={{
+            position: "absolute",
+            top: 2,
+            left: 2,
+            width: 18,
+            height: 18,
+            borderRadius: "50%",
+            background: T.white,
+            boxShadow: "0 1px 3px rgba(0,0,0,0.25)",
+            transform: available ? "translateX(18px)" : "translateX(0)",
+            transition: "transform .2s",
+          }}
+        />
+      </button>
+    </div>
+
+    {!available && (
+      <div style={{ marginTop: 10 }}>
+        <div
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            color: T.navy,
+            marginBottom: 5,
+          }}
+        >
+          When will you be available?
+          <span style={{ color: T.error, marginLeft: 3 }}>*</span>
+        </div>
+        <select
+          value={availableIn || ""}
+          onChange={(e) => onAvailableInChange(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "7px 10px",
+            fontSize: 12,
+            color: T.navy,
+            background: T.white,
+            border: `1px solid ${T.border}`,
+            borderRadius: 8,
+            outline: "none",
+          }}
+        >
+          <option value="">Select availability</option>
+          {AVAILABILITY_OPTIONS.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      </div>
+    )}
+  </div>
+);
+
 // ─── Profile Sidebar (progress overview) ─────────────────────────────────────
-const ProfileMini = ({ data, percent, currentStep, onJump, completedSteps }) => (
+const ProfileMini = ({
+  data,
+  percent,
+  currentStep,
+  onJump,
+  completedSteps,
+  onAvailabilityToggle,
+  onAvailableInChange,
+}) => (
   <div
     style={{
       background: T.white,
@@ -2850,6 +2845,16 @@ const ProfileMini = ({ data, percent, currentStep, onJump, completedSteps }) => 
         </div>
       </div>
     </div>
+
+    {/* Availability */}
+    {onAvailabilityToggle && (
+      <AvailabilityToggle
+        available={data.availableForWork}
+        availableIn={data.availableIn}
+        onToggle={onAvailabilityToggle}
+        onAvailableInChange={onAvailableInChange}
+      />
+    )}
 
     {/* Steps list */}
     <div style={{ padding: "12px 0" }}>
@@ -4211,12 +4216,44 @@ subTradeId: profile.subTradeId || null,
     }));
   }, []);
 
-  const handleAvailabilityChange = (checked) => {
+  const persistAvailability = async (available, availableIn) => {
+    try {
+      await updateAvailability({
+        availabilityStatus: available ? "Available" : "Not Available",
+        availableIn: available ? null : availableIn,
+      });
+      showToast("Availability updated", "success");
+      return true;
+    } catch (error) {
+      console.error("Failed to update availability", error);
+      showToast("Failed to update availability", "error");
+      return false;
+    }
+  };
+
+  // Toggle lives in the sidebar. "Available now" saves immediately; "Not
+  // available" waits until the candidate picks when they will be available.
+  const handleAvailabilityChange = async (checked) => {
+    const previous = {
+      availableForWork: profileData.availableForWork,
+      availableIn: profileData.availableIn,
+    };
+
     setProfileData((prev) => ({
       ...prev,
       availableForWork: checked,
       availableIn: checked ? "" : prev.availableIn,
     }));
+
+    if (checked) {
+      const saved = await persistAvailability(true, null);
+      if (!saved) setProfileData((prev) => ({ ...prev, ...previous }));
+    }
+  };
+
+  const handleAvailableInChange = async (value) => {
+    setProfileData((prev) => ({ ...prev, availableIn: value }));
+    if (value) await persistAvailability(false, value);
   };
 
   // Documents
@@ -4387,7 +4424,6 @@ subTradeId: profile.subTradeId || null,
             data={profileData}
             onChange={updateField}
             onPhotoUpload={uploadProfile}
-            onAvailabilityChange={handleAvailabilityChange}
             errors={errors}
           />
         );
@@ -4609,11 +4645,33 @@ subTradeId: profile.subTradeId || null,
                 currentStep={currentStep}
                 onJump={done ? null : (n) => setCurrentStep(n)}
                 completedSteps={completedSteps}
+                onAvailabilityToggle={handleAvailabilityChange}
+                onAvailableInChange={handleAvailableInChange}
               />
             </div>
 
             {/* Main form area */}
             <div className="col-lg-9 col-md-8 col-sm-12">
+              {/* Sidebar is hidden on small screens, so keep the toggle reachable */}
+              <div
+                className="d-md-none"
+                style={{
+                  background: T.white,
+                  border: `1px solid ${T.border}`,
+                  borderRadius: 12,
+                  overflow: "hidden",
+                  marginBottom: 16,
+                }}
+              >
+                <AvailabilityToggle
+                  available={profileData.availableForWork}
+                  availableIn={profileData.availableIn}
+                  onToggle={handleAvailabilityChange}
+                  onAvailableInChange={handleAvailableInChange}
+                  bordered={false}
+                />
+              </div>
+
               <div
                 style={{
                   background: T.white,

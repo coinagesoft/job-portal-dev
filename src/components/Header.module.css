@@ -227,3 +227,24 @@
 .profileDropdown.show {
   display: block;
 }
+/* Header logo — larger so it matches the rest of the site branding */
+.headerLogoImg {
+  height: 52px;
+  width: auto;
+  max-width: none;
+  display: block;
+}
+
+:global(.header .main-header .header-left .header-logo) {
+  min-width: 190px;
+}
+
+@media (max-width: 991px) {
+  .headerLogoImg {
+    height: 42px;
+  }
+
+  :global(.header .main-header .header-left .header-logo) {
+    min-width: 0;
+  }
+}
