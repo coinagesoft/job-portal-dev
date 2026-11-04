@@ -643,6 +643,20 @@ const EmployerCandidateProfilePage = () => {
                                 </h6>
                               </div>
                             </div>
+
+                            <div className="visibility-item">
+                              <div className="visibility-icon">
+                                <i className="fi-rr-id-badge"></i>
+                              </div>
+                              <div>
+                                <span className="visibility-label">Disability Status</span>
+                                <h6 className="visibility-value">
+                                  {summary.disabilityStatus
+                                    ? summary.disabilityNote || "Declared"
+                                    : "None declared"}
+                                </h6>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -673,6 +687,35 @@ const EmployerCandidateProfilePage = () => {
                           <div className="visibility-card-body">
                             <div className="visibility-item">
                               <div className="visibility-icon">
+                                <i className="fi-rr-phone-call"></i>
+                              </div>
+                              <div>
+                                <span className="visibility-label">Mobile</span>
+                                <h6 className="visibility-value">
+                                  {isUnlocked && candidateDetails
+                                    ? `${candidateDetails.countryCode || ""} ${candidateDetails.mobileNumber || ""}`.trim() ||
+                                      "Not provided"
+                                    : "+91 XXXXXXXXXX"}
+                                </h6>
+                              </div>
+                            </div>
+
+                            <div className="visibility-item">
+                              <div className="visibility-icon">
+                                <i className="fi-rr-envelope"></i>
+                              </div>
+                              <div>
+                                <span className="visibility-label">Email</span>
+                                <h6 className="visibility-value">
+                                  {isUnlocked
+                                    ? candidateDetails?.email || "Not provided"
+                                    : "Hidden"}
+                                </h6>
+                              </div>
+                            </div>
+
+                            <div className="visibility-item">
+                              <div className="visibility-icon">
                                 <i className="fi-rr-document"></i>
                               </div>
                               <div>
@@ -683,22 +726,6 @@ const EmployerCandidateProfilePage = () => {
                                     : cv?.canDownloadCv
                                       ? "Available"
                                       : "Unlock Required"}
-                                </h6>
-                              </div>
-                            </div>
-
-                            <div className="visibility-item">
-                              <div className="visibility-icon">
-                                <i className="fi-rr-id-badge"></i>
-                              </div>
-                              <div>
-                                <span className="visibility-label">Disability Status</span>
-                                <h6 className="visibility-value">
-                                  {isUnlocked
-                                    ? summary.disabilityStatus
-                                      ? summary.disabilityNote || "Declared"
-                                      : "None declared"
-                                    : "Protected"}
                                 </h6>
                               </div>
                             </div>
@@ -1259,10 +1286,16 @@ const EmployerCandidateProfilePage = () => {
 
                           <div className="col-lg-6 text-start text-md-end pr-60 col-md-6 col-sm-12">
                             <div className="pl-15 mb-15 mt-30">
-                              <span className="btn btn-grey-small mr-5">
+                              <span
+                                className="btn btn-grey-small mr-5"
+                                style={{ pointerEvents: "none", cursor: "default" }}
+                              >
                                 {item.isCurrent ? "Current" : "Past"}
                               </span>
-                              <span className="btn btn-grey-small mr-5">
+                              <span
+                                className="btn btn-grey-small mr-5"
+                                style={{ pointerEvents: "none", cursor: "default" }}
+                              >
                                 {fmtMonthYear(item.startDate)} -{" "}
                                 {item.isCurrent ? "Present" : fmtMonthYear(item.endDate)}
                               </span>
@@ -1280,18 +1313,6 @@ const EmployerCandidateProfilePage = () => {
                               {item.jobDescription}
                             </p>
                           )}
-
-                          <div className="card-2-bottom mt-20">
-                            <div className="row">
-                              <div className="col-lg-7 col-7">
-                                <span className="card-text-price">
-                                  Status:
-                                  <span className="text-success"> {item.isOffshore ? "Offshore" : "Onshore"}</span>
-                                </span>
-                              </div>
-                              <div className="col-lg-5 col-5 text-end"></div>
-                            </div>
-                          </div>
                         </div>
                       </div>
                     </div>
@@ -1351,39 +1372,6 @@ const EmployerCandidateProfilePage = () => {
                         </strong>
                       </div>
                     </li> */}
-                  </ul>
-                </div>
-
-                <div className="sidebar-list-job">
-                  <h6 className="mb-10">Contact &amp; CV Access</h6>
-                  <ul className="ul-disc">
-                    <li>
-                      Mobile:{" "}
-                      {isUnlocked && candidateDetails
-                        ? `${candidateDetails.countryCode || ""} ${candidateDetails.mobileNumber || ""}`.trim() ||
-                        "Not provided"
-                        : "+91 XXXXXXXXXX"}
-                    </li>
-                    <li>
-                      Email:{" "}
-                      {isUnlocked
-                        ? candidateDetails?.email || "Not provided"
-                        : "Hidden"}
-                    </li>
-                    <li>
-                      CV:{" "}
-                      {cvAvailable
-                        ? isUnlocked
-                          ? "Available for download"
-                          : "Available after unlock"
-                        : "Not generated yet"}
-                    </li>
-                    <li>
-                      Unlock expiry window:{" "}
-                      {unlockStatus.expiryDate
-                        ? fmtDate(unlockStatus.expiryDate)
-                        : "Not unlocked"}
-                    </li>
                   </ul>
                 </div>
               </div>

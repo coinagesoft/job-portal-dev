@@ -11,6 +11,7 @@ import {
   createCreditPlanOrder,
   verifyCreditPlanPayment,
   createPayPalPlanOrder,
+  validatePlanCoupon,
   capturePayPalPlanPayment,
 } from "@/services/recruiter/recruiterCreditWalletService";
 import { getVisitorPaymentRegion } from "@/services/candidate/visitorCountryService";
@@ -77,10 +78,78 @@ const EmployerBuyCreditsPage = () => {
   const isRazorpay = visitor?.paymentGateway === "Razorpay";
   const currency = visitor?.currency || "INR";
 
-  // GST (18%) applies to Razorpay / India only.
-  const gst = selected && !isPayPal ? selected.price * 0.18 : 0;
+  // Coupon (membership plans only). The discount comes off the price and
+  // GST is charged on what is left. The server re-validates all of this.
+  const [couponCode, setCouponCode] = useState("");
+  const [couponApplied, setCouponApplied] = useState(false);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponMessage, setCouponMessage] = useState("");
+  const [couponDiscount, setCouponDiscount] = useState(0);
 
-  const total = selected ? selected.price + gst : 0;
+  const clearCoupon = () => {
+    setCouponCode("");
+    setCouponApplied(false);
+    setCouponMessage("");
+    setCouponDiscount(0);
+  };
+
+  const activeCoupon =
+    showMemberships && couponApplied ? couponCode.trim().toUpperCase() : "";
+  const discount = activeCoupon
+    ? Math.min(couponDiscount, selected?.price || 0)
+    : 0;
+  const netPrice = selected ? selected.price - discount : 0;
+
+  // GST (18%) applies to Razorpay / India only.
+  const gst = selected && !isPayPal ? netPrice * 0.18 : 0;
+
+  const total = selected ? netPrice + gst : 0;
+
+  const handleApplyCoupon = async () => {
+    const code = couponCode.trim().toUpperCase();
+    if (!code) {
+      setCouponMessage("Please enter a coupon code.");
+      return;
+    }
+    if (!selected?.planId) {
+      setCouponMessage("Please select a plan first.");
+      return;
+    }
+
+    try {
+      setCouponLoading(true);
+      setCouponMessage("");
+      const result = await validatePlanCoupon(selected.planId, code);
+
+      if (!result?.isValid) {
+        setCouponApplied(false);
+        setCouponDiscount(0);
+        setCouponMessage(result?.message || "Invalid or expired coupon.");
+        return;
+      }
+
+      setCouponCode(code);
+      setCouponApplied(true);
+      setCouponDiscount(Number(result.discountAmount || 0));
+      setCouponMessage(result.message || "Coupon applied successfully.");
+    } catch (err) {
+      console.error("Coupon validation error:", err);
+      setCouponApplied(false);
+      setCouponDiscount(0);
+      setCouponMessage(
+        err?.response?.data?.message ||
+          "Unable to validate coupon. Please try again.",
+      );
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  // A coupon belongs to one plan — drop it when the plan or list changes.
+  useEffect(() => {
+    clearCoupon();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected?.planId, showMemberships]);
 
   const init = async () => {
     setPlansLoading(true);
@@ -108,7 +177,7 @@ const EmployerBuyCreditsPage = () => {
 
       const expired = !!dash?.membershipExpired;
       const early = !!dash?.canRenewEarly;
-      const membershipsOnScreen = expired || (early && renewEarlyRef.current);
+      const membershipsOnScreen = expired || renewEarlyRef.current;
 
       setMembershipExpired(expired);
       setCanRenewEarly(early);
@@ -157,6 +226,14 @@ const EmployerBuyCreditsPage = () => {
   };
 
   useEffect(() => {
+    // Opened from the wallet's "Subscription" tab: show membership plans.
+    if (
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("view") === "membership"
+    ) {
+      renewEarlyRef.current = true;
+    }
+
     getWallet()
       .then(setWallet)
       .catch((err) => {
@@ -197,7 +274,7 @@ const EmployerBuyCreditsPage = () => {
 
       createOrder: async () => {
         setPaying(true);
-        order = await createPayPalPlanOrder(pack.planId);
+        order = await createPayPalPlanOrder(pack.planId, activeCoupon);
 
         if (!order?.success || !order?.payPalOrderId) {
           throw new Error(order?.message || "Unable to create payment order.");
@@ -253,7 +330,7 @@ const EmployerBuyCreditsPage = () => {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPayPal, paypalReady, paid, plansLoading, selected?.planId, currency]);
+  }, [isPayPal, paypalReady, paid, plansLoading, selected?.planId, currency, activeCoupon, total]);
 
   if (plansLoading) {
     return (
@@ -303,7 +380,7 @@ const EmployerBuyCreditsPage = () => {
 
     try {
       // Create Razorpay order from backend
-      const order = await createCreditPlanOrder(selected.planId);
+      const order = await createCreditPlanOrder(selected.planId, activeCoupon);
 
       if (!order.success) {
         alert(order.message || "Unable to create payment order.");
@@ -543,7 +620,7 @@ const EmployerBuyCreditsPage = () => {
             </div>
 
             {/* Early renewal offer (only inside the renewal window) */}
-            {canRenewEarly && !membershipExpired && (
+            {(canRenewEarly || showMemberships) && !membershipExpired && (
               <div className="card-grid-2 hover-up cv-search-candidate-card mb-10">
                 <div className="card-block-info pt-15 pb-15">
                   <div className="row align-items-center">
@@ -779,6 +856,65 @@ const EmployerBuyCreditsPage = () => {
                     <div className="card-grid-2 hover-up cv-search-candidate-card">
                       <div className="card-block-info pt-20">
                         <h5 className="mb-15">Order Summary</h5>
+                        {showMemberships && (
+                          <div className="mb-20">
+                            <label className="font-sm color-text-paragraph mb-5 d-block">
+                              Coupon Code
+                            </label>
+                            <div style={{ display: "flex", gap: 8 }}>
+                              <input
+                                type="text"
+                                className="form-control"
+                                placeholder="Enter coupon code"
+                                value={couponCode}
+                                disabled={couponApplied || couponLoading || paying}
+                                style={{ flex: 1, textTransform: "uppercase" }}
+                                onChange={(e) => {
+                                  setCouponCode(e.target.value.toUpperCase());
+                                  setCouponApplied(false);
+                                  setCouponMessage("");
+                                  setCouponDiscount(0);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    if (!couponApplied) handleApplyCoupon();
+                                  }
+                                }}
+                              />
+                              {couponApplied ? (
+                                <button
+                                  type="button"
+                                  className="btn btn-border btn-sm"
+                                  disabled={paying}
+                                  onClick={clearCoupon}
+                                  style={{ minWidth: 90 }}
+                                >
+                                  Remove
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="btn btn-default btn-sm"
+                                  disabled={!couponCode.trim() || couponLoading || paying}
+                                  onClick={handleApplyCoupon}
+                                  style={{ minWidth: 90 }}
+                                >
+                                  {couponLoading ? "Checking..." : "Apply"}
+                                </button>
+                              )}
+                            </div>
+                            {couponMessage && (
+                              <p
+                                className="font-xs mb-0 mt-5"
+                                style={{ color: couponApplied ? "#3B6D11" : "#A32D2D" }}
+                              >
+                                {couponMessage}
+                              </p>
+                            )}
+                          </div>
+                        )}
+
                         <div className="d-flex justify-content-between mb-10">
                           <span className="font-sm color-text-paragraph">Pack</span>
                           <strong>
@@ -792,6 +928,16 @@ const EmployerBuyCreditsPage = () => {
                           </span>
                           <strong>{formatMoney(selected?.price || 0, currency)}</strong>
                         </div>
+                        {discount > 0 && (
+                          <div className="d-flex justify-content-between mb-10">
+                            <span className="font-sm" style={{ color: "#3B6D11" }}>
+                              Coupon ({activeCoupon})
+                            </span>
+                            <strong style={{ color: "#3B6D11" }}>
+                              − {formatMoney(discount, currency)}
+                            </strong>
+                          </div>
+                        )}
                         {!isPayPal && (
                           <div className="d-flex justify-content-between mb-10">
                             <span className="font-sm color-text-paragraph">

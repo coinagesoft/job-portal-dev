@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import {
   searchCandidates,
   getCvSearchDashboard,
@@ -242,6 +242,483 @@ const createProfileHighlightTags = (candidate) => {
     .slice(0, 6);
 };
 
+/* ───────────────────────── Search UI building blocks ───────────────────────── */
+
+
+/* ── Natural-language query parser (frontend only) ─────────────────────────
+   "experienced plumber in pune" ->
+     { keywords: ["plumber"], location: "Pune", minExperience: 3 }
+   Pulls out a location ("in/at/near/from <place>"), an experience level
+   ("experienced", "5 years", "fresher") and availability, and leaves the
+   remaining words as keyword chips. */
+const NL_STOPWORDS = new Set([
+  "a","an","the","with","and","for","of","who","is","are","need","needed",
+  "looking","want","wanted","require","required","hire","find","show","me",
+  "candidate","candidates","worker","workers","person","people","profile",
+  "profiles","cv","cvs","experience","experienced","years","year","yrs","yr",
+  "senior","expert","skilled","fresher","freshers","entry","level","available",
+  "immediately","now","good","best","top",
+]);
+const NL_LOCATION_RE = /\b(?:in|at|near|nearby|around|from|based in)\s+([a-z][a-z .'-]*?)(?=\s+(?:with|having|and|who|for|of)\b|$)/i;
+
+const toTitleCase = (text) =>
+  text.replace(/\b([a-z])/g, (m) => m.toUpperCase());
+
+const parseNaturalQuery = (raw, knownLocations = []) => {
+  const text = String(raw || "").trim();
+  const result = { keywords: [], location: "", experience: null, availability: "" };
+  if (!text) return result;
+
+  let rest = ` ${text.toLowerCase()} `;
+
+  // Location
+  const locMatch = rest.trim().match(NL_LOCATION_RE);
+  if (locMatch) {
+    const place = locMatch[1].trim();
+    const known = knownLocations.find(
+      (l) => l.trim().toLowerCase() === place,
+    );
+    result.location = known ?? toTitleCase(place);
+    rest = rest.replace(locMatch[0], " ");
+  }
+
+  // Experience
+  const yearsMatch = rest.match(/(\d+)\s*\+?\s*(?:years?|yrs?)\b(?:\s*(?:of)?\s*exp\w*)?/);
+  if (yearsMatch) {
+    result.experience = { min: Number(yearsMatch[1]), max: "" };
+    rest = rest.replace(yearsMatch[0], " ");
+  } else if (/\b(fresher|freshers|entry level|entry-level|beginner)\b/.test(rest)) {
+    result.experience = { min: 0, max: 1 };
+  } else if (/\b(experienced|senior|expert|skilled)\b/.test(rest)) {
+    result.experience = { min: 3, max: "" };
+  }
+
+  // Availability
+  if (/\bavailable\b/.test(rest)) result.availability = "Available";
+
+  // Remaining words -> keywords
+  const words = rest
+    .replace(/[^a-z0-9+#.\s-]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w && !NL_STOPWORDS.has(w) && !/^(in|at|near|from)$/.test(w));
+  if (words.length) result.keywords.push(words.join(" "));
+
+  return result;
+};
+
+const experienceLabel = (exp) =>
+  exp.max === "" ? `${exp.min}+ years` : `${exp.min} - ${exp.max} years`;
+
+const MAX_KEYWORDS = 10;
+
+const KEYWORD_SUGGESTIONS = [
+  "welder",
+  "electrician",
+  "driver",
+  "pipeline",
+  "iti certified",
+  "passport valid",
+  "mumbai",
+];
+
+const SORT_OPTIONS = [
+  { value: "KeywordMatch", label: "Best match" },
+  { value: "Newest", label: "Newest profiles" },
+  { value: "Experience", label: "Most experienced" },
+];
+
+const AVAILABILITY_OPTIONS = [
+  { value: "", label: "Any availability" },
+  { value: "Available", label: "Available now" },
+  { value: "Not Available", label: "Not available" },
+];
+
+const CREDENTIAL_TOGGLES = [
+  { key: "itiCertifiedOnly", label: "ITI certified" },
+  { key: "passportValidOnly", label: "Valid passport" },
+  { key: "kycVerifiedOnly", label: "KYC verified" },
+  { key: "unlockedProfilesOnly", label: "Unlocked profiles" },
+];
+
+// "welder, Pune ,iti certified" -> ["welder", "Pune", "iti certified"]
+const splitKeywords = (value) =>
+  String(value || "")
+    .split(",")
+    .map((term) => term.trim())
+    .filter(Boolean);
+
+// Adds the comma-separated terms in `raw` to `current`, skipping duplicates
+// (case-insensitive) and respecting the keyword limit.
+const mergeKeywords = (current, raw) => {
+  const seen = new Set(current.map((term) => term.toLowerCase()));
+  const next = [...current];
+
+  splitKeywords(raw).forEach((term) => {
+    const key = term.toLowerCase();
+    if (!seen.has(key) && next.length < MAX_KEYWORDS) {
+      seen.add(key);
+      next.push(term);
+    }
+  });
+
+  return next;
+};
+
+const iconProps = {
+  width: 18,
+  height: 18,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 1.8,
+  strokeLinecap: "round",
+  strokeLinejoin: "round",
+  "aria-hidden": true,
+};
+
+const IconBriefcase = () => (
+  <svg {...iconProps}>
+    <rect x="3" y="7" width="18" height="13" rx="2.5" />
+    <path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7" />
+    <path d="M3 13h18" />
+  </svg>
+);
+
+const IconSpark = () => (
+  <svg {...iconProps}>
+    <path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8L12 3z" />
+    <path d="M18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7.7-1.8z" />
+  </svg>
+);
+
+const IconSearch = () => (
+  <svg {...iconProps}>
+    <circle cx="11" cy="11" r="6.5" />
+    <path d="M20 20l-4-4" />
+  </svg>
+);
+
+const IconChevron = () => (
+  <svg {...iconProps} width={16} height={16} strokeWidth={2}>
+    <path d="M6 9l6 6 6-6" />
+  </svg>
+);
+
+const IconCheck = () => (
+  <svg {...iconProps} width={16} height={16} strokeWidth={2.2}>
+    <path d="M5 12.5l4.5 4.5L19 7.5" />
+  </svg>
+);
+
+const IconClose = () => (
+  <svg {...iconProps} width={12} height={12} strokeWidth={2.4}>
+    <path d="M6 6l12 12M18 6L6 18" />
+  </svg>
+);
+
+/* Themed replacement for the native <select>. Keyboard accessible:
+   Arrow keys / Home / End to move, Enter or Space to pick, Esc to close. */
+const FilterSelect = ({
+  value,
+  onChange,
+  options,
+  ariaLabel,
+  icon = null,
+  variant = "field", // "bar" (borderless, inside the hero bar) | "field" (bordered)
+  align = "left",
+}) => {
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(-1);
+  const rootRef = useRef(null);
+  const listRef = useRef(null);
+
+  const selectedIndex = options.findIndex(
+    (option) => String(option.value) === String(value ?? ""),
+  );
+  const selected = selectedIndex >= 0 ? options[selectedIndex] : options[0];
+  const isPlaceholder = !selected || selected.value === "";
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const handlePointerDown = (event) => {
+      if (!rootRef.current?.contains(event.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [open]);
+
+  useEffect(() => {
+    if (open && active >= 0) {
+      listRef.current?.children[active]?.scrollIntoView({ block: "nearest" });
+    }
+  }, [active, open]);
+
+  const openMenu = () => {
+    setActive(selectedIndex >= 0 ? selectedIndex : 0);
+    setOpen(true);
+  };
+
+  const choose = (option) => {
+    setOpen(false);
+    if (option && String(option.value) !== String(value ?? "")) {
+      onChange(option.value);
+    }
+  };
+
+  const handleKeyDown = (event) => {
+    if (!open) {
+      if (["ArrowDown", "ArrowUp", "Enter", " "].includes(event.key)) {
+        event.preventDefault();
+        openMenu();
+      }
+      return;
+    }
+
+    switch (event.key) {
+      case "Escape":
+        event.preventDefault();
+        setOpen(false);
+        break;
+      case "ArrowDown":
+        event.preventDefault();
+        setActive((i) => Math.min(options.length - 1, i + 1));
+        break;
+      case "ArrowUp":
+        event.preventDefault();
+        setActive((i) => Math.max(0, i - 1));
+        break;
+      case "Home":
+        event.preventDefault();
+        setActive(0);
+        break;
+      case "End":
+        event.preventDefault();
+        setActive(options.length - 1);
+        break;
+      case "Enter":
+      case " ":
+        event.preventDefault();
+        choose(options[active]);
+        break;
+      case "Tab":
+        setOpen(false);
+        break;
+      default:
+    }
+  };
+
+  return (
+    <div
+      ref={rootRef}
+      className={`cvs-select cvs-select--${variant}${open ? " is-open" : ""}${
+        isPlaceholder ? " is-placeholder" : ""
+      }`}
+    >
+      <button
+        type="button"
+        className="cvs-select-trigger"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={ariaLabel}
+        onClick={() => (open ? setOpen(false) : openMenu())}
+        onKeyDown={handleKeyDown}
+      >
+        {icon ? <span className="cvs-select-icon">{icon}</span> : null}
+        <span className="cvs-select-label">{selected?.label ?? ""}</span>
+        <span className="cvs-select-chevron">
+          <IconChevron />
+        </span>
+      </button>
+
+      {open && (
+        <ul
+          ref={listRef}
+          className={`cvs-menu${align === "right" ? " cvs-menu--right" : ""}`}
+          role="listbox"
+          aria-label={ariaLabel}
+        >
+          {options.length === 0 ? (
+            <li className="cvs-option cvs-option-muted">No options</li>
+          ) : (
+            options.map((option, index) => {
+              const isSelected = index === selectedIndex;
+              return (
+                <li
+                  key={`${option.value}-${index}`}
+                  role="option"
+                  aria-selected={isSelected}
+                  className={`cvs-option${index === active ? " is-active" : ""}${
+                    isSelected ? " is-selected" : ""
+                  }${option.value === "" ? " cvs-option-muted" : ""}`}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onMouseEnter={() => setActive(index)}
+                  onClick={() => choose(option)}
+                >
+                  <span>{option.label}</span>
+                  {isSelected ? (
+                    <span className="cvs-check">
+                      <IconCheck />
+                    </span>
+                  ) : null}
+                </li>
+              );
+            })
+          )}
+        </ul>
+      )}
+    </div>
+  );
+};
+
+/* Multi-keyword input: each term becomes a removable chip.
+   Enter or comma adds a term; Backspace on an empty box removes the last
+   one; Enter on an empty box runs the search. */
+const KeywordInput = ({
+  terms,
+  draft,
+  onDraftChange,
+  onAdd,
+  onRemove,
+  onSubmit,
+  suggestions,
+}) => {
+  const [focused, setFocused] = useState(false);
+  const [active, setActive] = useState(-1);
+  const rootRef = useRef(null);
+  const inputRef = useRef(null);
+
+  const query = draft.trim().toLowerCase();
+  const taken = new Set(terms.map((term) => term.toLowerCase()));
+  const visible = focused
+    ? suggestions
+        .filter(
+          (item) =>
+            !taken.has(item.toLowerCase()) &&
+            (!query || item.toLowerCase().includes(query)),
+        )
+        .slice(0, 6)
+    : [];
+
+  useEffect(() => {
+    const handlePointerDown = (event) => {
+      if (!rootRef.current?.contains(event.target)) setFocused(false);
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, []);
+
+  useEffect(() => setActive(-1), [draft]);
+
+  const handleKeyDown = (event) => {
+    if (event.key === "ArrowDown" && visible.length) {
+      event.preventDefault();
+      setActive((i) => (i + 1) % visible.length);
+    } else if (event.key === "ArrowUp" && visible.length) {
+      event.preventDefault();
+      setActive((i) => (i <= 0 ? visible.length - 1 : i - 1));
+    } else if (event.key === "Escape") {
+      setFocused(false);
+    } else if (event.key === "Enter") {
+      event.preventDefault();
+      if (active >= 0 && visible[active]) onAdd(visible[active]);
+      else if (draft.trim()) onAdd(draft);
+      else onSubmit();
+    } else if (event.key === "," && draft.trim()) {
+      event.preventDefault();
+      onAdd(draft);
+    } else if (event.key === "Backspace" && !draft && terms.length) {
+      onRemove(terms.length - 1);
+    }
+  };
+
+  const handlePaste = (event) => {
+    const text = event.clipboardData.getData("text");
+    if (/[,\n]/.test(text)) {
+      event.preventDefault();
+      onAdd(text.replace(/\n/g, ","));
+    }
+  };
+
+  const handleChange = (event) => {
+    const next = event.target.value;
+    setFocused(true);
+    if (next.includes(",")) onAdd(next);
+    else onDraftChange(next);
+  };
+
+  const placeholder = terms.length
+    ? terms.length >= MAX_KEYWORDS
+      ? "Keyword limit reached"
+      : "Add another keyword"
+    : "Trade, skill, name or location";
+
+  return (
+    <div className="cvs-keyword" ref={rootRef}>
+      <div
+        className="cvs-keyword-field"
+        onClick={() => inputRef.current?.focus()}
+      >
+        <span className="cvs-keyword-icon">
+          <IconSearch />
+        </span>
+
+        {terms.map((term, index) => (
+          <span className="cvs-chip" key={term.toLowerCase()}>
+            {term}
+            <button
+              type="button"
+              aria-label={`Remove ${term}`}
+              onClick={(event) => {
+                event.stopPropagation();
+                onRemove(index);
+              }}
+            >
+              <IconClose />
+            </button>
+          </span>
+        ))}
+
+        <input
+          ref={inputRef}
+          className="cvs-keyword-input"
+          type="text"
+          role="combobox"
+          aria-label="Search keywords"
+          aria-expanded={visible.length > 0}
+          autoComplete="off"
+          value={draft}
+          placeholder={placeholder}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
+          onFocus={() => setFocused(true)}
+        />
+      </div>
+
+      {visible.length > 0 && (
+        <ul className="cvs-suggest" role="listbox" aria-label="Suggestions">
+          {visible.map((item, index) => (
+            <li
+              key={item}
+              role="option"
+              aria-selected={index === active}
+              className={index === active ? "is-active" : ""}
+              onMouseDown={(e) => e.preventDefault()}
+              onMouseEnter={() => setActive(index)}
+              onClick={() => {
+                onAdd(item);
+                inputRef.current?.focus();
+              }}
+            >
+              {item}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+
 const EmployerCvSearchPage = () => {
   const [cvCandidates, setCvCandidates] = useState([]);
   const [totalCandidates, setTotalCandidates] = useState(0);
@@ -250,8 +727,11 @@ const EmployerCvSearchPage = () => {
   const [loading, setLoading] = useState(true);
   const isFirstMount = useRef(true);
   const [jobs, setJobs] = useState([]);
+  const [keywordDraft, setKeywordDraft] = useState("");
+  const [skillPool, setSkillPool] = useState([]);
   const [filters, setFilters] = useState({
-    keyword: "",
+    keyword: "", // comma-separated terms, e.g. "welder,pune"
+    keywordMatch: "any", // "any" | "all"
     tradeCategory: "",
     minExperience: "",
     maxExperience: "",
@@ -259,6 +739,8 @@ const EmployerCvSearchPage = () => {
     location: "",
     availabilityStatus: "",
     itiCertifiedOnly: false,
+    kycVerifiedOnly: false,
+    skill: "",
     passportValidOnly: false,
     unlockedProfilesOnly: false,
     sortBy: "KeywordMatch",
@@ -272,12 +754,18 @@ const EmployerCvSearchPage = () => {
   const resetFilters = () => {
     const defaultFilters = {
       keyword: "",
+      keywordMatch: "any",
       tradeCategory: "",
       minExperience: "",
       maxExperience: "",
+      experienceRange: "",
       location: "",
       availabilityStatus: "",
       itiCertifiedOnly: false,
+      kycVerifiedOnly: false,
+      skill: "",
+    kycVerifiedOnly: false,
+    skill: "",
       passportValidOnly: false,
       unlockedProfilesOnly: false,
       sortBy: "KeywordMatch",
@@ -286,6 +774,7 @@ const EmployerCvSearchPage = () => {
       jobId: "",
     };
 
+    setKeywordDraft("");
     setFilters(defaultFilters);
     loadCandidates(defaultFilters);
   };
@@ -339,6 +828,32 @@ const EmployerCvSearchPage = () => {
         totalCount = candidateList.length;
       }
 
+      // Remember every skill seen so the Skill filter keeps its options
+      // even after the list has been narrowed down.
+      setSkillPool((prev) => {
+        const seen = new Map(prev.map((x) => [x.toLowerCase(), x]));
+        candidateList.forEach((c) =>
+          (c.skills ?? []).forEach((sk) => {
+            const k = String(sk || "").trim();
+            if (k && !seen.has(k.toLowerCase())) seen.set(k.toLowerCase(), k);
+          }),
+        );
+        return [...seen.values()].sort((a, b) => a.localeCompare(b));
+      });
+
+      // Frontend-only filters
+      if (activeFilters.skill) {
+        const want = activeFilters.skill.toLowerCase();
+        candidateList = candidateList.filter((c) =>
+          (c.skills ?? []).some((sk) => String(sk).toLowerCase() === want),
+        );
+        totalCount = candidateList.length;
+      }
+      if (activeFilters.kycVerifiedOnly) {
+        candidateList = candidateList.filter((c) => c.isKycVerified);
+        totalCount = candidateList.length;
+      }
+
       setCvCandidates(candidateList);
       setTotalCandidates(totalCount);
     } catch (error) {
@@ -348,10 +863,36 @@ const EmployerCvSearchPage = () => {
     }
   };
 
+  // Turns typed text (e.g. "experienced plumber in pune") into updated
+  // filters: location / experience / availability go to their filters,
+  // everything else becomes keyword chips.
+  const buildFiltersFromInput = (base, raw) => {
+    const known = getUniqueLocations(filterOptions?.locations, cvCandidates);
+    const next = { ...base, pageNumber: 1 };
+    let keywords = splitKeywords(base.keyword);
+
+    splitKeywords(raw.includes(",") ? raw : raw.replace(/,/g, "")).forEach((part) => {
+      const parsed = parseNaturalQuery(part, known);
+      keywords = mergeKeywords(keywords, parsed.keywords.join(","));
+      if (parsed.location) next.location = parsed.location;
+      if (parsed.availability) next.availabilityStatus = parsed.availability;
+      if (parsed.experience) {
+        next.experienceRange = experienceLabel(parsed.experience);
+        next.minExperience = parsed.experience.min;
+        next.maxExperience = parsed.experience.max;
+      }
+    });
+
+    next.keyword = keywords.join(",");
+    return next;
+  };
+
   /* Run a brand-new search (filters changed) — always reset to page 1
      so the results the employer sees always start from the top. */
   const handleSearch = () => {
-    const next = { ...filters, pageNumber: 1 };
+    // Anything typed but not yet turned into a chip is included too.
+    const next = buildFiltersFromInput(filters, keywordDraft);
+    setKeywordDraft("");
     setFilters(next);
     loadCandidates(next);
   };
@@ -440,6 +981,87 @@ const EmployerCvSearchPage = () => {
     loadCandidates(next);
   };
 
+  const keywordTerms = splitKeywords(filters.keyword);
+
+  const addKeywords = (raw) => {
+    const next = buildFiltersFromInput(filters, raw);
+    setKeywordDraft("");
+    if (JSON.stringify(next) !== JSON.stringify({ ...filters, pageNumber: 1 })) {
+      setFilters(next);
+      loadCandidates(next);
+    }
+  };
+
+  const removeKeyword = (index) => {
+    updateFilterAndSearch({
+      keyword: keywordTerms.filter((_, i) => i !== index).join(","),
+    });
+  };
+
+  const keywordSuggestions = useMemo(() => {
+    const pool = [
+      ...KEYWORD_SUGGESTIONS,
+      ...(filterOptions?.tradeCategories ?? []),
+      ...(filterOptions?.locations ?? []),
+    ].filter((item) => typeof item === "string" && item.trim());
+    const seen = new Set();
+    return pool.filter((item) => {
+      const key = item.trim().toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [filterOptions]);
+
+  const hasActiveFilters = Boolean(
+    filters.keyword ||
+      filters.tradeCategory ||
+      filters.jobId ||
+      filters.experienceRange ||
+      filters.location ||
+      filters.availabilityStatus ||
+      filters.skill ||
+      filters.kycVerifiedOnly ||
+      filters.itiCertifiedOnly ||
+      filters.passportValidOnly ||
+      filters.unlockedProfilesOnly,
+  );
+
+  const tradeOptions = [
+    { value: "", label: "Any trade" },
+    ...(filterOptions?.tradeCategories ?? []).map((t) => ({ value: t, label: t })),
+  ];
+
+  const jobOptions = [
+    { value: "", label: "AI match: select job" },
+    ...jobs.map((job) => ({ value: job.jobId, label: job.jobTitle })),
+  ];
+
+  const experienceOptions = [
+    { value: "", label: "Any experience" },
+    ...EXPERIENCE_RANGES.map((r) => ({ value: r.label, label: r.label })),
+    ...(filters.experienceRange &&
+    !EXPERIENCE_RANGES.some((r) => r.label === filters.experienceRange)
+      ? [{ value: filters.experienceRange, label: filters.experienceRange }]
+      : []),
+  ];
+
+  const skillOptions = [
+    { value: "", label: "Any skill" },
+    ...[...skillPool, ...(filters.skill && !skillPool.includes(filters.skill) ? [filters.skill] : [])].map((sk) => ({
+      value: sk,
+      label: sk,
+    })),
+  ];
+
+  const locationOptions = [
+    { value: "", label: "Any location" },
+    ...getUniqueLocations(filterOptions?.locations, cvCandidates).map((loc) => ({
+      value: loc,
+      label: loc,
+    })),
+  ];
+
   // const handleReset = () => {
   //   const defaultFilters = {
   //     keyword: "",
@@ -478,134 +1100,98 @@ const EmployerCvSearchPage = () => {
               </div>
 
 <div className="form-find text-start mt-40" style={{ width: "100%" }}>
-  <form
-    onSubmit={(e) => {
-      e.preventDefault();
-      handleSearch();
-    }}
-    style={{
-      display: "flex",
-      alignItems: "center",
-      gap: "16px",
-      width: "100%",
-      flexWrap: "nowrap", 
-    }}
-  >
-    {/* Trade */}
-    <div style={{ flex: "1 1 100px", minWidth: "100px" }}>
-      <select
-        className="form-input select-active input-industry dashboard-select-arrow"
-        value={filters.tradeCategory}
-        onChange={(e) =>
-          updateFilterAndSearch({ tradeCategory: e.target.value })
-        }
-        style={{
-          width: "100%",
-          height: "50px",
-          borderRadius: "8px",
-        }}
-      >
-        <option value="">Any Trade</option>
-        {(filterOptions?.tradeCategories ?? []).map((tradeOption) => (
-          <option key={tradeOption} value={tradeOption}>
-            {tradeOption}
-          </option>
-        ))}
-      </select>
-    </div>
+                <form
+                  className="cvs-bar"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSearch();
+                  }}
+                >
+                  <div className="cvs-bar-cell cvs-bar-trade">
+                    <FilterSelect
+                      variant="bar"
+                      ariaLabel="Trade"
+                      icon={<IconBriefcase />}
+                      value={filters.tradeCategory}
+                      options={tradeOptions}
+                      onChange={(value) =>
+                        updateFilterAndSearch({ tradeCategory: value })
+                      }
+                    />
+                  </div>
 
-    {/* AI Match */}
-    <div style={{ flex: "1.2 1 120px", minWidth: "120px" }}>
-      <select
-        className="form-input select-active input-industry dashboard-select-arrow"
-        value={filters.jobId}
-        onChange={(e) => handleJobChange(e.target.value)}
-        style={{
-          width: "100%",
-          height: "50px",
-          borderRadius: "8px",
-        }}
-      >
-        <option value="">AI Match: Select Job</option>
-        {jobs.map((job) => (
-          <option key={job.jobId} value={job.jobId}>
-            {job.jobTitle}
-          </option>
-        ))}
-      </select>
-    </div>
+                  <div className="cvs-bar-cell cvs-bar-ai">
+                    <FilterSelect
+                      variant="bar"
+                      ariaLabel="AI match job"
+                      icon={<IconSpark />}
+                      value={filters.jobId}
+                      options={jobOptions}
+                      onChange={handleJobChange}
+                    />
+                  </div>
 
-    {/* Keyword */}
-    <div style={{ flex: "2 1 120px", minWidth: "120px" }}>
-     <input
-  className="form-input input-keysearch dashboard-search-text"
-  type="text"
-  value={filters.keyword}
-  onChange={(e) =>
-    setFilters({
-      ...filters,
-      keyword: e.target.value,
-    })
-  }
-  placeholder="Trade, Skill, Name, Location"
-  list="cv-keyword-suggestions"
-  style={{
-    width: "100%",
-    height: "50px",
-    borderRadius: "8px",
-     // Increase this
-  }}
-/>
+                  <div className="cvs-bar-cell cvs-bar-keyword">
+                    <KeywordInput
+                      terms={keywordTerms}
+                      draft={keywordDraft}
+                      onDraftChange={setKeywordDraft}
+                      onAdd={addKeywords}
+                      onRemove={removeKeyword}
+                      onSubmit={handleSearch}
+                      suggestions={keywordSuggestions}
+                    />
+                  </div>
 
-      <datalist id="cv-keyword-suggestions">
-        <option value="welder" />
-        <option value="electrician" />
-        <option value="driver" />
-        <option value="iti certified" />
-        <option value="passport valid" />
-        <option value="mumbai" />
-        <option value="pipeline" />
-      </datalist>
-    </div>
+                  <button
+                    type="submit"
+                    className="btn btn-default cvs-search-btn"
+                  >
+                    Search
+                  </button>
 
-    {/* Search */}
-    <button
-      className="btn btn-default btn-find font-sm"
-      type="submit"
-      style={{
-        height: "50px",
-        minWidth: "120px",
-        padding: "0 24px",
-        borderRadius: "8px",
-        whiteSpace: "nowrap",
-        flexShrink: 0,
-      }}
-    >
-      Search
-    </button>
+                  <button
+                    type="button"
+                    className="cvs-reset-btn"
+                    onClick={resetFilters}
+                  >
+                    Reset
+                  </button>
+                </form>
 
-    {/* Reset */}
-    <button
-      type="button"
-      onClick={resetFilters}
-      className="btn"
-      style={{
-        height: "50px",
-        minWidth: "90px",
-        padding: "0 20px",
-        borderRadius: "8px",
-        // border: "1px solid #d9d9d9",
-        background: "#fff",
-        color: "#6b7280",
-        cursor: "pointer",
-        whiteSpace: "nowrap",
-        flexShrink: 0,
-      }}
-    >
-      Reset
-    </button>
-  </form>
-</div>
+                {keywordTerms.length >= 2 ? (
+                <div className="cvs-hint">
+                    <>
+                      <span>Show candidates matching</span>
+                      <span
+                        className="cvs-seg"
+                        role="group"
+                        aria-label="Keyword match mode"
+                      >
+                        <button
+                          type="button"
+                          aria-pressed={filters.keywordMatch !== "all"}
+                          onClick={() =>
+                            updateFilterAndSearch({ keywordMatch: "any" })
+                          }
+                        >
+                          any
+                        </button>
+                        <button
+                          type="button"
+                          aria-pressed={filters.keywordMatch === "all"}
+                          onClick={() =>
+                            updateFilterAndSearch({ keywordMatch: "all" })
+                          }
+                        >
+                          all
+                        </button>
+                      </span>
+                      <span>of these keywords</span>
+                    </>
+                </div>
+                ) : null}
+              </div>
             </div>
           </div>
         </div>
@@ -627,19 +1213,21 @@ const EmployerCvSearchPage = () => {
                         job using skills, trade, experience, and location.
                       </p>
                     </div>
-                    {/* <div className="col-xl-5 col-lg-5 text-lg-end mt-sm-15">
-                      <div className="display-flex2">
-                        <div className="box-border mr-10">
-                          <span className="text-sortby">Credits:</span>
-                          <strong className="color-brand-1">
-                            {dashboard?.availableCredits}
-                          </strong>
-                        </div>
-                        <span className="btn btn-grey-small mr-5">A = 1cr</span>
-                        <span className="btn btn-grey-small mr-5">B = 2cr</span>
-                        <span className="btn btn-grey-small">C = 3cr</span>
+                    <div className="col-xl-5 col-lg-5 text-lg-end mt-sm-15">
+                      <div className="cvs-sort">
+                        <FilterSelect
+                          variant="field"
+                          align="right"
+                          ariaLabel="Sort candidates"
+                          value={filters.sortBy}
+                          options={SORT_OPTIONS}
+                          onChange={(value) =>
+                            updateFilterAndSearch({ sortBy: value })
+                          }
+                        />
                       </div>
-                    </div> */}
+                    </div>
+
                   </div>
 
                   {/* {activeFilterTags.length > 0 ? (
@@ -963,252 +1551,448 @@ const EmployerCvSearchPage = () => {
             </div>
 
             <div className="col-lg-3 col-md-12 col-sm-12 col-12">
-              <div className="sidebar-shadow none-shadow mb-30">
-                <div className="sidebar-filters">
-                  <form>
-                    <div className="filter-block head-border mb-30">
-                      <h5>
-                        Search Filters{" "}
-                        <button
-                          type="button"
-                          className="btn   mb-8"
-                          onClick={resetFilters}
-                        >
-                          Reset
-                        </button>
-                      </h5>
-                    </div>
-
-                    <div className="filter-block mb-20">
-                      <div className="form-group">
-                        <label className="mb-5">Keyword</label>
-                        <input
-                          className="form-control form-icons"
-                          type="text"
-                          name="q"
-                          value={filters.keyword}
-                          onChange={(e) =>
-                            setFilters({
-                              ...filters,
-                              keyword: e.target.value,
-                            })
-                          }
-                          placeholder="Trade, skill, name, location"
-                          list="cv-keyword-suggestions"
-                        />
-                        <p className="font-xs color-text-paragraph-2 mt-5 mb-0">
-                          Matches against role, skills, certifications, and
-                          location
-                        </p>
-                      </div>
-                    </div>
-
-  <div className="filter-block mb-20">
-  <div className="form-group">
-    <label className="mb-5">Trade category</label>
-    <select
-      className="form-control select-active trade-category-select"
-      value={filters.tradeCategory}
-      onChange={(e) => updateFilterAndSearch({ tradeCategory: e.target.value })}
-    >
-      <option value="" disabled hidden>
-        Select trade category
-      </option>
-      {(filterOptions?.tradeCategories ?? []).map((tradeOption) => (
-        <option key={tradeOption} value={tradeOption}>
-          {tradeOption}
-        </option>
-      ))}
-    </select>
-  </div>
-</div>
-                    <div className="filter-block mb-20">
-                      <div className="form-group">
-                        <label className="mb-5">Experience</label>
-                        <select
-                          className="form-control"
-                          value={filters.experienceRange}
-                          onChange={(e) => {
-                            const selected = EXPERIENCE_RANGES.find((r) => r.label === e.target.value);
-                            updateFilterAndSearch({
-                              experienceRange: e.target.value,
-                              minExperience: selected ? selected.min : "",
-                              maxExperience: selected ? selected.max : "",
-                            });
-                          }}
-                        >
-                          <option value="">Any experience</option>
-                          {EXPERIENCE_RANGES.map((r) => (
-                            <option key={r.label} value={r.label}>
-                              {r.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="filter-block mb-20">
-  <div className="form-group">
-    <label className="mb-5">Location</label>
-    <select
-      className="form-control select-active left-align-select"
-      value={filters.location}
-      onChange={(e) => updateFilterAndSearch({ location: e.target.value })}
-    >
-      <option value="" disabled hidden>
-        Select location
-      </option>
-      {getUniqueLocations(filterOptions?.locations, cvCandidates).map((loc) => (
-        <option key={loc} value={loc}>
-          {loc}
-        </option>
-      ))}
-    </select>
-  </div>
-</div>
-
-<div className="filter-block mb-20">
-  <div className="form-group">
-    <label className="mb-5">Availability</label>
-    <select
-      className="form-control select-active left-align-select"
-      value={filters.availabilityStatus}
-      onChange={(e) => updateFilterAndSearch({ availabilityStatus: e.target.value })}
-    >
-      <option value="">Any availability</option>
-      <option value="Available">Available now</option>
-      <option value="Not Available">Not available</option>
-    </select>
-  </div>
-</div>
-                    <div className="filter-block mb-20">
-                      <div className="form-group">
-                        <label className="mb-5">Certifications & Status</label>
-                        <ul className="list-checkbox">
-                          <li>
-                            <label className="cb-container">
-                              <input
-                                type="checkbox"
-                                name="iti"
-                                checked={filters.itiCertifiedOnly}
-                                onChange={(e) => updateFilterAndSearch({ itiCertifiedOnly: e.target.checked })}
-                              />
-                              <span className="text-small">ITI certified only</span>
-                              <span className="checkmark"></span>
-                            </label>
-                          </li>
-                          <li>
-                            <label className="cb-container">
-                              <input
-                                type="checkbox"
-                                name="passport"
-                                checked={filters.passportValidOnly}
-                                onChange={(e) => updateFilterAndSearch({ passportValidOnly: e.target.checked })}
-                              />
-                              <span className="text-small">Valid passport</span>
-                              <span className="checkmark"></span>
-                            </label>
-                          </li>
-                          <li>
-                            <label className="cb-container">
-                              <input
-                                type="checkbox"
-                                name="offshore"
-                                checked={filters.offshoreOnly}
-                                onChange={(e) => updateFilterAndSearch({ offshoreOnly: e.target.checked })}
-                              />
-                              <span className="text-small">Offshore experience</span>
-                              <span className="checkmark"></span>
-                            </label>
-                          </li>
-                          <li>
-                            <label className="cb-container">
-                              <input
-                                type="checkbox"
-                                name="unlocked"
-                                checked={filters.unlockedProfilesOnly}
-                                onChange={(e) => updateFilterAndSearch({ unlockedProfilesOnly: e.target.checked })}
-                              />
-                              <span className="text-small">Unlocked profiles only</span>
-                              <span className="checkmark"></span>
-                            </label>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-
-                 <div className="filter-block mb-30">
-  <div className="form-group">
-    <label className="mb-5">Sort by</label>
-    <select
-      className="form-control select-active left-align-select"
-      name="sort"
-      value={filters.sortBy}
-      onChange={(e) =>
-        setFilters({
-          ...filters,
-          sortBy: e.target.value,
-        })
-      }
-    >
-      <option value="KeywordMatch">AI match score</option>
-      <option value="Newest">Newest profile update</option>
-      <option value="Experience">Experience high to low</option>
-    </select>
-  </div>
-</div>
-                    <div className="filter-block mb-20">
-                      <button
-                        className="btn btn-default w-100 mb-10"
-                        type="button"
-                        onClick={handleSearch}
-                      >
-                        Search
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-border w-100"
-                        onClick={resetFilters}
-                      >
-                        Clear filters
-                      </button>
-                    </div>
-                  </form>
+              <aside className="cvs-side" aria-label="Filters">
+                <div className="cvs-side-head">
+                  <h5>Filters</h5>
+                  {hasActiveFilters ? (
+                    <button
+                      type="button"
+                      className="cvs-link-btn"
+                      onClick={resetFilters}
+                    >
+                      Clear all
+                    </button>
+                  ) : null}
                 </div>
-              </div>
+
+                <div className="cvs-field">
+                  <span className="cvs-field-label">Trade</span>
+                  <FilterSelect
+                    ariaLabel="Trade filter"
+                    value={filters.tradeCategory}
+                    options={tradeOptions}
+                    onChange={(value) =>
+                      updateFilterAndSearch({ tradeCategory: value })
+                    }
+                  />
+                </div>
+
+                <div className="cvs-field">
+                  <span className="cvs-field-label">Skill</span>
+                  <FilterSelect
+                    ariaLabel="Skill"
+                    value={filters.skill}
+                    options={skillOptions}
+                    onChange={(value) => updateFilterAndSearch({ skill: value })}
+                  />
+                </div>
+
+                <div className="cvs-field">
+                  <span className="cvs-field-label">Experience</span>
+                  <FilterSelect
+                    ariaLabel="Experience"
+                    value={filters.experienceRange}
+                    options={experienceOptions}
+                    onChange={(value) => {
+                      const range = EXPERIENCE_RANGES.find((r) => r.label === value);
+                      updateFilterAndSearch({
+                        experienceRange: value,
+                        minExperience: range ? range.min : "",
+                        maxExperience: range ? range.max : "",
+                      });
+                    }}
+                  />
+                </div>
+
+                <div className="cvs-field">
+                  <span className="cvs-field-label">Location</span>
+                  <FilterSelect
+                    ariaLabel="Location"
+                    value={filters.location}
+                    options={locationOptions}
+                    onChange={(value) => updateFilterAndSearch({ location: value })}
+                  />
+                </div>
+
+                <div className="cvs-field">
+                  <span className="cvs-field-label">Availability</span>
+                  <FilterSelect
+                    ariaLabel="Availability"
+                    value={filters.availabilityStatus}
+                    options={AVAILABILITY_OPTIONS}
+                    onChange={(value) =>
+                      updateFilterAndSearch({ availabilityStatus: value })
+                    }
+                  />
+                </div>
+
+                <div className="cvs-field">
+                  <span className="cvs-field-label">Credentials</span>
+                  <div className="cvs-toggles">
+                    {CREDENTIAL_TOGGLES.map(({ key, label }) => (
+                      <button
+                        key={key}
+                        type="button"
+                        className="cvs-toggle"
+                        aria-pressed={Boolean(filters[key])}
+                        onClick={() => updateFilterAndSearch({ [key]: !filters[key] })}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </aside>
             </div>
           </div>
         </div>
       </section>
 
       <style jsx global>{`
-        .sidebar-filters .form-control,
-        .sidebar-filters .form-input,
-        .sidebar-filters select,
-        .sidebar-filters input,
-        .form-find .form-input,
-        .form-find select,
-        .form-find input {
-          transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        /* ── Hero search bar ───────────────────────────── */
+        .cvs-bar {
+          display: flex;
+          align-items: center;
+          width: 100%;
+        }
+        .cvs-bar-cell {
+          position: relative;
+          display: flex;
+          align-items: center;
+        }
+        .cvs-bar-trade { flex: 0 0 172px; }
+        .cvs-bar-ai { flex: 0 0 224px; }
+        .cvs-bar-keyword { flex: 1 1 auto; min-width: 0; }
+        .cvs-bar-trade::after,
+        .cvs-bar-ai::after {
+          content: "";
+          position: absolute;
+          right: 0;
+          top: 50%;
+          height: 22px;
+          width: 1px;
+          background: #ffd98a;
+          transform: translateY(-50%);
+        }
+        .cvs-bar .cvs-search-btn {
+          flex-shrink: 0;
+          height: 50px;
+          min-width: 116px;
+          margin-left: 8px;
+          padding: 0 24px;
+          border-radius: 10px;
+          white-space: nowrap;
+        }
+        .cvs-reset-btn {
+          flex-shrink: 0;
+          height: 50px;
+          padding: 0 16px;
+          border: 0;
+          border-radius: 10px;
+          background: transparent;
+          color: #6b7683;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: color 0.15s ease;
+        }
+        .cvs-reset-btn:hover { color: #122359; }
+
+        .cvs-hint {
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 6px;
+          min-height: 28px;
+          padding: 8px 14px 2px;
+          font-size: 12.5px;
+          color: #6b7683;
+        }
+        .cvs-seg {
+          display: inline-flex;
+          padding: 2px;
+          border-radius: 999px;
+          background: #f3f4f8;
+        }
+        .cvs-seg button {
+          border: 0;
+          background: transparent;
+          padding: 2px 12px;
+          border-radius: 999px;
+          font-size: 12.5px;
+          font-weight: 600;
+          color: #6b7683;
+          cursor: pointer;
+        }
+        .cvs-seg button[aria-pressed="true"] {
+          background: #ffe9b8;
+          color: #122359;
         }
 
-        .sidebar-filters .form-control:focus,
-        .sidebar-filters .form-input:focus,
-        .sidebar-filters select:focus,
-        .sidebar-filters input:focus,
-        .form-find .form-input:focus,
-        .form-find select:focus,
-        .form-find input:focus {
-          border-color: #ffa300 !important;
-          box-shadow: 0 0 0 3px rgba(255, 163, 0, 0.15) !important;
+        /* ── Themed dropdown ───────────────────────────── */
+        .cvs-select { position: relative; width: 100%; }
+        .cvs-select-trigger {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          width: 100%;
+          text-align: left;
+          font: inherit;
+          font-size: 14px;
+          font-weight: 500;
+          color: #122359;
+          background: transparent;
+          border: 1px solid transparent;
+          cursor: pointer;
+          transition: background 0.15s ease, border-color 0.15s ease,
+            box-shadow 0.15s ease;
+        }
+        .cvs-select--bar .cvs-select-trigger {
+          height: 50px;
+          padding: 0 14px;
+          border-radius: 10px;
+        }
+        .cvs-select--bar .cvs-select-trigger:hover,
+        .cvs-select--bar.is-open .cvs-select-trigger { background: #fff8ea; }
+        .cvs-select--field .cvs-select-trigger {
+          height: 44px;
+          padding: 0 12px;
+          border-radius: 10px;
+          border-color: #e6e9f0;
+          background: #fff;
+        }
+        .cvs-select--field .cvs-select-trigger:hover { border-color: #ffc151; }
+        .cvs-select.is-open .cvs-select-trigger,
+        .cvs-select-trigger:focus-visible {
+          border-color: #ffa300;
+          box-shadow: 0 0 0 3px rgba(255, 163, 0, 0.15);
+          outline: none;
+        }
+        .cvs-select-icon { display: inline-flex; color: #ffa300; flex-shrink: 0; }
+        .cvs-select-label {
+          flex: 1 1 auto;
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .cvs-select.is-placeholder .cvs-select-label { color: #6b7683; }
+        .cvs-select-chevron {
+          display: inline-flex;
+          color: #94a3b8;
+          flex-shrink: 0;
+          transition: transform 0.18s ease;
+        }
+        .cvs-select.is-open .cvs-select-chevron { transform: rotate(180deg); }
+
+        .cvs-menu,
+        .cvs-suggest {
+          position: absolute;
+          top: calc(100% + 8px);
+          left: 0;
+          z-index: 60;
+          margin: 0;
+          padding: 6px;
+          list-style: none;
+          background: #fff;
+          border: 1px solid #f1e6cc;
+          border-radius: 12px;
+          box-shadow: 0 18px 40px rgba(18, 35, 89, 0.14);
+          animation: cvs-pop 0.14s ease-out;
+        }
+        .cvs-menu {
+          min-width: 100%;
+          width: max-content;
+          max-width: 320px;
+          max-height: 272px;
+          overflow-y: auto;
+          scrollbar-width: thin;
+          scrollbar-color: #ffd98a transparent;
+        }
+        .cvs-menu--right { left: auto; right: 0; }
+        .cvs-suggest { right: 0; }
+        @keyframes cvs-pop {
+          from { opacity: 0; transform: translateY(-4px); }
+          to { opacity: 1; transform: none; }
+        }
+        .cvs-option,
+        .cvs-suggest li {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          padding: 9px 12px;
+          border-radius: 8px;
+          font-size: 14px;
+          line-height: 1.35;
+          color: #122359;
+          cursor: pointer;
+        }
+        .cvs-option.is-active,
+        .cvs-suggest li.is-active { background: #fff6e0; }
+        .cvs-option.is-selected { font-weight: 600; }
+        .cvs-option-muted { color: #6b7683; }
+        .cvs-option.is-selected .cvs-check { display: inline-flex; color: #ffa300; }
+
+        /* ── Keyword chips ─────────────────────────────── */
+        .cvs-keyword { position: relative; width: 100%; }
+        .cvs-keyword-field {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 6px;
+          min-height: 50px;
+          padding: 7px 12px;
+          border: 1px solid transparent;
+          border-radius: 10px;
+          cursor: text;
+          transition: background 0.15s ease, border-color 0.15s ease,
+            box-shadow 0.15s ease;
+        }
+        .cvs-keyword-field:hover { background: #fff8ea; }
+        .cvs-keyword-field:focus-within {
+          background: #fff;
+          border-color: #ffa300;
+          box-shadow: 0 0 0 3px rgba(255, 163, 0, 0.15);
+        }
+        .cvs-keyword-icon { display: inline-flex; color: #94a3b8; }
+        .cvs-chip {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          height: 28px;
+          padding: 0 5px 0 11px;
+          border-radius: 999px;
+          background: #fff3d6;
+          border: 1px solid #ffe0a3;
+          color: #122359;
+          font-size: 13px;
+          font-weight: 600;
+          white-space: nowrap;
+        }
+        .cvs-chip button {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 18px;
+          height: 18px;
+          padding: 0;
+          border: 0;
+          border-radius: 50%;
+          background: transparent;
+          color: #7a5a14;
+          cursor: pointer;
+        }
+        .cvs-chip button:hover { background: #ffe0a3; color: #122359; }
+        .cvs-chip button:focus-visible {
+          outline: 2px solid #ffa300;
+          outline-offset: 1px;
+        }
+        .form-find .cvs-keyword-input {
+          flex: 1 1 140px;
+          width: auto;
+          min-width: 140px;
+          height: 30px;
+          padding: 0 !important;
+          border: 0 !important;
           outline: none !important;
+          box-shadow: none !important;
+          background: transparent !important;
+          font-size: 14px;
+          color: #122359;
+        }
+        .form-find .cvs-keyword-input:focus {
+          border: 0 !important;
+          box-shadow: none !important;
+        }
+        .cvs-keyword-input::placeholder { color: #6b7683; opacity: 1; }
+
+        /* ── Sidebar ───────────────────────────────────── */
+        .cvs-side { padding: 2px 0 0; }
+        .cvs-side-head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding-bottom: 14px;
+          margin-bottom: 20px;
+          border-bottom: 1px solid #ffe3a8;
+        }
+        .cvs-side-head h5 {
+          margin: 0;
+          font-size: 18px;
+          font-weight: 700;
+          color: #122359;
+        }
+        .cvs-link-btn {
+          padding: 0;
+          border: 0;
+          background: none;
+          font-size: 13px;
+          font-weight: 600;
+          color: #6b7683;
+          cursor: pointer;
+        }
+        .cvs-link-btn:hover { color: #122359; text-decoration: underline; }
+        .cvs-field { margin-bottom: 18px; }
+        .cvs-field-label {
+          display: block;
+          margin-bottom: 6px;
+          font-size: 13px;
+          font-weight: 600;
+          color: #4f5e64;
+        }
+        .cvs-toggles { display: flex; flex-wrap: wrap; gap: 8px; }
+        .cvs-toggle {
+          height: 34px;
+          padding: 0 14px;
+          border: 1px solid #e6e9f0;
+          border-radius: 999px;
+          background: #fff;
+          font-size: 13px;
+          font-weight: 600;
+          color: #4f5e64;
+          cursor: pointer;
+          transition: background 0.15s ease, border-color 0.15s ease;
+        }
+        .cvs-toggle:hover { border-color: #ffc151; }
+        .cvs-toggle[aria-pressed="true"] {
+          background: #fff0cc;
+          border-color: #ffa300;
+          color: #122359;
+        }
+        .cvs-toggle:focus-visible {
+          outline: none;
+          box-shadow: 0 0 0 3px rgba(255, 163, 0, 0.2);
         }
 
-        .sidebar-filters .cb-container input:checked ~ .checkmark {
-          background-color: #ffa300 !important;
-          border-color: #ffa300 !important;
+        /* ── Results header sort ───────────────────────── */
+        .cvs-sort { display: inline-block; width: 100%; max-width: 200px; text-align: left; }
+        .cvs-sort .cvs-select--field .cvs-select-trigger { height: 40px; }
+
+        @media (max-width: 991px) {
+          .cvs-bar { flex-wrap: wrap; gap: 8px; }
+          .cvs-bar-trade,
+          .cvs-bar-ai { flex: 1 1 calc(50% - 4px); }
+          .cvs-bar-trade::after,
+          .cvs-bar-ai::after { display: none; }
+          .cvs-bar-trade .cvs-select-trigger,
+          .cvs-bar-ai .cvs-select-trigger,
+          .cvs-bar-keyword .cvs-keyword-field { border-color: #e6e9f0; }
+          .cvs-bar-keyword { order: 3; flex: 1 1 100%; }
+          .cvs-bar .cvs-search-btn { order: 4; flex: 1 1 auto; margin-left: 0; }
+          .cvs-reset-btn { order: 5; }
+          .cvs-sort { max-width: none; }
+        }
+        @media (max-width: 575px) {
+          .cvs-bar-trade,
+          .cvs-bar-ai { flex-basis: 100%; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .cvs-menu, .cvs-suggest { animation: none; }
+          .cvs-select-chevron { transition: none; }
         }
       `}</style>
+
     </main>
   );
 };

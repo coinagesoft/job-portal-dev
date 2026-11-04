@@ -47,6 +47,7 @@ const TAB_ICONS = {
   },
   "credits-wallets": {
     "Credit Wallet": "fi-rr-wallet",
+    Subscription: "fi-rr-calendar",
     "Buy Credits": "fi-rr-shopping-cart",
     Invoices: "fi-rr-document",
   },

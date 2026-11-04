@@ -41,6 +41,7 @@ export const EMPLOYER_HEADER_TABS = [
     label: "Credits & Wallets",
     links: [
       { label: "Credit Wallet", href: "/employeer/credit-wallet" },
+      { label: "Subscription", href: "/employeer/subscription" },
       { label: "Buy Credits", href: "/employeer/buy-credits" },
       { label: "Invoices", href: "/employeer/invoices" },
     ],
@@ -98,6 +99,7 @@ export const ROUTE_PERMISSION_RULES = [
   { prefix: "/employeer/verification", hrManagerViewOnly: true },
   { prefix: "/employeer/sub-user", hrManagerViewOnly: true },
   { prefix: "/employeer/buy-credits", ownerOnly: true },
+  { prefix: "/employeer/subscription", ownerOnly: true },
   { prefix: "/employeer/invoices", ownerOnly: true },
   { prefix: "/employeer/settings", hrManagerViewOnly: true },
 ];

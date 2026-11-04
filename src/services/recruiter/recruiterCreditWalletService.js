@@ -105,9 +105,10 @@ export const getMyCreditBalance = async () => {
 /**
  * POST /api/recruiter/plans/create-order
  */
-export const createCreditPlanOrder = async (planId) => {
+export const createCreditPlanOrder = async (planId, couponCode) => {
   const { data } = await api.post("/api/recruiter/plans/create-order", {
     planId,
+    ...(couponCode ? { couponCode } : {}),
   });
 
   return data;
@@ -150,9 +151,10 @@ export const getRecruiterMembershipPlans = async (region) => {
  * POST /api/recruiter/plans/paypal/create-order
  * Outside India only. Returns { payPalOrderId, transactionId, currency, ... }
  */
-export const createPayPalPlanOrder = async (planId) => {
+export const createPayPalPlanOrder = async (planId, couponCode) => {
   const { data } = await api.post("/api/recruiter/plans/paypal/create-order", {
     planId,
+    ...(couponCode ? { couponCode } : {}),
   });
 
   return data;
@@ -165,4 +167,25 @@ export const createPayPalPlanOrder = async (planId) => {
 export const capturePayPalPlanPayment = async (payload) => {
   const { data } = await api.post("/api/recruiter/plans/paypal/capture", payload);
   return data;
+};
+
+/**
+ * POST /api/recruiter/plans/validate-coupon
+ * Body: { code, planId } — membership plans only.
+ * Returns { isValid, message, discountAmount, finalAmount, ... }.
+ * Invalid coupons come back as HTTP 400 with the same shape.
+ */
+export const validatePlanCoupon = async (planId, code) => {
+  try {
+    const { data } = await api.post("/api/recruiter/plans/validate-coupon", {
+      planId,
+      code,
+    });
+    return data;
+  } catch (err) {
+    if (err?.response?.data && typeof err.response.data === "object") {
+      return err.response.data;
+    }
+    throw err;
+  }
 };
