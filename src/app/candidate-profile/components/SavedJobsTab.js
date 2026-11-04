@@ -1,5 +1,6 @@
 'use client';
 
+import { resolveFileUrl } from "@/utils/fileUrl";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import ProfileJobCard from "./ProfileJobCard";
@@ -82,7 +83,7 @@ const SavedJobsTab = () => {
           return {
             id: job.savedJobId,
             jobId: job.jobId,
-            logo: matchedJob?.companyLogoUrl || "/assets2/imgs/brands/brand-1.png",
+            logo: resolveFileUrl(matchedJob?.companyLogoUrl) || "/assets2/imgs/brands/brand-1.png",
             company: job.companyName,
             employerId: job.employerId || matchedJob?.employerId || null,
             location:

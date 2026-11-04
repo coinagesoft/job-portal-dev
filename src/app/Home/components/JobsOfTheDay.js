@@ -1,5 +1,6 @@
 "use client";
 
+import { resolveFileUrl } from "@/utils/fileUrl";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { getAllJobs } from "@/services/candidate/allJobsService";
@@ -216,7 +217,7 @@ export default function JobsOfTheDay() {
                             : job.companyName || "";
                           const displayLogo = isConfidential
                             ? "/assets/imgs/brands/brand-1.png"
-                            : job.companyLogoUrl || "/assets/imgs/brands/brand-1.png";
+                            : resolveFileUrl(job.companyLogoUrl) || "/assets/imgs/brands/brand-1.png";
 
                           const displaySalary =
                             (job.salaryVisibility === "Hide Salary" || job.salaryVisibility === "Hide_Salary" || job.salaryDisplayOption === "Hide Salary" || job.salaryDisplayOption === "Hide_Salary")

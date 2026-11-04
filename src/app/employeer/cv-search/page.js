@@ -1,4 +1,5 @@
 "use client";
+import { resolveFileUrl } from "@/utils/fileUrl";
 import Link from "next/link";
 
 import { useEffect, useState, useRef, useMemo } from "react";
@@ -1280,7 +1281,7 @@ const EmployerCvSearchPage = () => {
                                 <div className="image-box">
                                   <img
                                     src={
-                                      candidate.profilePhotoUrl ||
+                                      resolveFileUrl(candidate.profilePhotoUrl) ||
                                       "/assets/imgs/page/candidates/candidate-profile.png"
                                     }
                                     style={{ width: '85px', height: '85px', borderRadius: "8px" }}

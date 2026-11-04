@@ -1,4 +1,5 @@
 'use client';
+import { resolveFileUrl } from "@/utils/fileUrl";
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 
@@ -95,7 +96,7 @@ const CompanySidebar = ({ job = {} }) => {
                 <img
                   alt="jobBox"
                   src={
-                    job.companyLogoUrl || "/assets/imgs/page/homepage1/img1.png"
+                    resolveFileUrl(job.companyLogoUrl) || "/assets/imgs/page/homepage1/img1.png"
                   }
                   style={{
                     width: "48px",
@@ -161,7 +162,7 @@ const CompanySidebar = ({ job = {} }) => {
                   src={
                     isConfidential
                       ? "/assets/imgs/page/job-single/industry.svg"
-                      : job.companyLogoUrl || "/assets/imgs/page/homepage1/img1.png"
+                      : resolveFileUrl(job.companyLogoUrl) || "/assets/imgs/page/homepage1/img1.png"
                   }
                   style={{
                     width: "48px",
@@ -243,7 +244,7 @@ const CompanySidebar = ({ job = {} }) => {
                       <Link href={`/job-details?jobId=${item.jobId}`}>
                         <img
                           src={
-                            item.companyLogoUrl ||
+                            resolveFileUrl(item.companyLogoUrl) ||
                             "/assets/imgs/page/homepage1/img1.png"
                           }
                           alt="jobBox"

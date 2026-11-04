@@ -1,4 +1,5 @@
 "use client";
+import { resolveFileUrl } from "@/utils/fileUrl";
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -323,7 +324,7 @@ const EmployerCandidateProfilePage = () => {
             <div className="image-compay">
               <img
                 src={
-                  overview.profilePhotoUrl ||
+                  resolveFileUrl(overview.profilePhotoUrl) ||
                   "/assets/imgs/page/candidates/candidate-profile.png"
                 }
                 alt="Candidate Profile"
@@ -1403,7 +1404,7 @@ const EmployerCandidateProfilePage = () => {
                         }}
                       >
                         <img
-                          src={rc.profilePhotoUrl || "/assets/imgs/page/homepage1/user3.png"}
+                          src={resolveFileUrl(rc.profilePhotoUrl) || "/assets/imgs/page/homepage1/user3.png"}
                           alt={rc.fullName}
                           style={{
                             width: "48px",

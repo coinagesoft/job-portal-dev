@@ -1,4 +1,5 @@
 "use client";
+import { resolveFileUrl } from "@/utils/fileUrl";
 import { getCandidateId } from "@/utils/authHelper";
 import { getProfileCompletion } from "@/services/candidate/profileCompletionService";
 import { State } from "country-state-city";
@@ -2927,10 +2928,7 @@ const createId = (prefix) =>
 const buildProfilePhotoUrl = (photoUrl) => {
   if (!photoUrl) return DEFAULT_PROFILE_PHOTO;
 
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
-  const absoluteUrl = photoUrl.startsWith("http")
-    ? photoUrl
-    : `${baseUrl}${photoUrl}`;
+  const absoluteUrl = resolveFileUrl(photoUrl);
   const separator = absoluteUrl.includes("?") ? "&" : "?";
 
   return `${absoluteUrl}${separator}t=${Date.now()}`;

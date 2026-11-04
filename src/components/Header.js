@@ -1,5 +1,6 @@
 "use client";
 
+import { resolveFileUrl } from "@/utils/fileUrl";
 import React, { useMemo, useState, useRef, useEffect } from "react";
 
 import Link from "next/link";
@@ -88,12 +89,9 @@ const Header = () => {
         const res = await getPersonalInfo();
         if (res?.data?.success && res?.data?.data) {
           setProfileName(res.data.data.fullName || "");
-          const baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
           const photoUrl = res.data.data.profilePhotoUrl || "";
           if (photoUrl) {
-            const absoluteUrl = photoUrl.startsWith("http")
-              ? photoUrl
-              : `${baseUrl}${photoUrl}`;
+            const absoluteUrl = resolveFileUrl(photoUrl);
             const separator = absoluteUrl.includes("?") ? "&" : "?";
             setProfileImage(`${absoluteUrl}${separator}t=${Date.now()}`);
           } else {
@@ -108,12 +106,9 @@ const Header = () => {
           setProfileName(
             data.legalName || data.companyDisplayName || data.tradeName || "",
           );
-          const baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
           const logoUrl = data.companyLogoUrl || "";
           if (logoUrl) {
-            const absoluteUrl = logoUrl.startsWith("http")
-              ? logoUrl
-              : `${baseUrl}${logoUrl}`;
+            const absoluteUrl = resolveFileUrl(logoUrl);
             const separator = absoluteUrl.includes("?") ? "&" : "?";
             setProfileImage(`${absoluteUrl}${separator}t=${Date.now()}`);
           } else {

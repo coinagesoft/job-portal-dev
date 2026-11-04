@@ -1,4 +1,5 @@
 'use client';
+import { resolveFileUrl } from "@/utils/fileUrl";
 import React from 'react';
 import Link from 'next/link';
 // import { featuredJobs } from '../data.js';
@@ -30,7 +31,7 @@ const FeaturedJobs = ({ similarJobs = [] }) => {
                         <span className="flash"></span>
                         <div className="image-box">
                           <img
-                            src={job.companyLogoUrl || "/assets/imgs/page/homepage1/user3.png"}
+                            src={resolveFileUrl(job.companyLogoUrl) || "/assets/imgs/page/homepage1/user3.png"}
                             alt={job.companyName}
                           />
                         </div>

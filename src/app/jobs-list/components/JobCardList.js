@@ -1,4 +1,5 @@
 "use client";
+import { resolveFileUrl } from "@/utils/fileUrl";
 import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -186,7 +187,7 @@ const JobCardList = ({ job, onApplyNow, viewMode = "list", isApplied = false }) 
                   src={
                     isConfidential
                       ? "/assets/imgs/page/job-single/industry.svg"
-                      : job.companyLogoUrl || "/assets/imgs/brands/brand-10.png"
+                      : resolveFileUrl(job.companyLogoUrl) || "/assets/imgs/brands/brand-10.png"
                   }
                   alt="jobBox"
                 />

@@ -1,4 +1,5 @@
 "use client";
+import { resolveFileUrl } from "@/utils/fileUrl";
 import React, { useState, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useToast } from "@/components/Toast";
@@ -1368,7 +1369,7 @@ export default function EmployerCompanyProfilePage() {
               >
                 <img
                   src={
-                    company?.companyLogoUrl ||
+                    resolveFileUrl(company?.companyLogoUrl) ||
                     "/assets/imgs/page/company/company.png"
                   }
                   alt={company?.displayName}

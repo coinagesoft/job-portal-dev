@@ -1,5 +1,6 @@
 'use client';
 
+import { resolveFileUrl } from "@/utils/fileUrl";
 import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -684,7 +685,7 @@ const ClientApplicationStatusPage = () => {
             description: item.salaryDisplay,
             recruiterNote: item.note || null,
             logo:
-              item.companyLogoUrl ||
+              resolveFileUrl(item.companyLogoUrl) ||
               "/assets/imgs/brands/brand-10.png",
           };
         });

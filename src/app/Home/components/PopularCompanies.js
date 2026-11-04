@@ -1,5 +1,6 @@
 "use client";
 
+import { resolveFileUrl } from "@/utils/fileUrl";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -242,7 +243,7 @@ export default function PopularCompanies() {
                       <div className="card-block-info pt-20 px-3 pb-3 text-center">
                         <div className="company-logo-wrap mx-auto mb-12">
                           <img
-                            src={company.companyLogoUrl || FALLBACK_LOGO}
+                            src={resolveFileUrl(company.companyLogoUrl) || FALLBACK_LOGO}
                             alt={company.companyName}
                             onError={(e) => {
                               e.currentTarget.onerror = null;

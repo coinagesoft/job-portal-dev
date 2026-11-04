@@ -1,4 +1,5 @@
 "use client";
+import { resolveFileUrl } from "@/utils/fileUrl";
 import Link from "next/link";
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -368,7 +369,7 @@ function CompanyDetailsContent() {
             {companyInfo.companyLogoUrl && (
               <div className="image-compay">
                 <img
-                  src={companyInfo.companyLogoUrl}
+                  src={resolveFileUrl(companyInfo.companyLogoUrl)}
                   alt={companyInfo.companyName}
                   style={{
                     width: "85px",
