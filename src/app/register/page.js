@@ -2032,23 +2032,23 @@ function CandidateForm() {
                   )}
                 </>
               ) : (
-              <Btn
-                variant="primary"
-                onClick={handlePay}
-                disabled={loading || !terms}
-                style={{
-                  width: "100%",
-                  padding: "11px 0",
-                  fontSize: "var(--font-sm)",
-                }}
-              >
-                {loading
-                  ? "Processing..."
-                  : `Pay INR ${couponApplied && couponFinalAmount !== null
-                    ? couponFinalAmount.toFixed(2)
-                    : (candidatePlan?.price || 100).toFixed(2)
-                  } via Razorpay`}
-              </Btn>
+                <Btn
+                  variant="primary"
+                  onClick={handlePay}
+                  disabled={loading || !terms}
+                  style={{
+                    width: "100%",
+                    padding: "11px 0",
+                    fontSize: "var(--font-sm)",
+                  }}
+                >
+                  {loading
+                    ? "Processing..."
+                    : `Pay INR ${couponApplied && couponFinalAmount !== null
+                      ? couponFinalAmount.toFixed(2)
+                      : (candidatePlan?.price || 100).toFixed(2)
+                    } via Razorpay`}
+                </Btn>
               )}
               {!terms && (
                 <p
@@ -5139,9 +5139,8 @@ function EmployerForm() {
                         gap: 12,
                         padding: "20px 16px 16px",
                         borderRadius: 14,
-                        border: `2px solid ${
-                          isSelected ? "#FF9800" : "rgba(18,35,89,0.12)"
-                        }`,
+                        border: `2px solid ${isSelected ? "#FF9800" : "rgba(18,35,89,0.12)"
+                          }`,
                         background: isSelected ? "#FFF8EC" : "#fff",
                         boxShadow: isSelected
                           ? "0 8px 24px rgba(255,152,0,0.18)"
@@ -5167,9 +5166,8 @@ function EmployerForm() {
                             width: 20,
                             height: 20,
                             borderRadius: "50%",
-                            border: `2px solid ${
-                              isSelected ? "#FF9800" : "rgba(18,35,89,0.25)"
-                            }`,
+                            border: `2px solid ${isSelected ? "#FF9800" : "rgba(18,35,89,0.25)"
+                              }`,
                             background: isSelected ? "#FF9800" : "#fff",
                             color: "#fff",
                             fontSize: 12,
@@ -5381,9 +5379,8 @@ function EmployerForm() {
                 marginBottom: 16,
                 padding: 16,
                 borderRadius: 14,
-                border: `1px solid ${
-                  couponApplied ? "rgba(22,163,74,0.35)" : "rgba(18,35,89,0.12)"
-                }`,
+                border: `1px solid ${couponApplied ? "rgba(22,163,74,0.35)" : "rgba(18,35,89,0.12)"
+                  }`,
                 background: couponApplied ? "#F4FBF6" : "#FAFBFE",
                 transition: "all .18s ease",
               }}
@@ -5692,23 +5689,23 @@ function EmployerForm() {
                   </>
                 )
               ) : (
-              <Btn
-                variant="primary"
-                onClick={handleEmployerPay}
-                disabled={paying || !termsAccepted || !selectedPlanId}
-                style={{
-                  width: "100%",
-                  padding: "11px 0",
-                  fontSize: "var(--font-sm)",
-                }}
-              >
-                {paying
-                  ? "Processing..."
-                  : `Pay INR ${couponApplied && couponFinalAmount !== null
-                    ? couponFinalAmount.toFixed(2)
-                    : recruiterPlan?.price || 150
-                  } via Razorpay`}
-              </Btn>
+                <Btn
+                  variant="primary"
+                  onClick={handleEmployerPay}
+                  disabled={paying || !termsAccepted || !selectedPlanId}
+                  style={{
+                    width: "100%",
+                    padding: "11px 0",
+                    fontSize: "var(--font-sm)",
+                  }}
+                >
+                  {paying
+                    ? "Processing..."
+                    : `Pay INR ${couponApplied && couponFinalAmount !== null
+                      ? couponFinalAmount.toFixed(2)
+                      : recruiterPlan?.price || 150
+                    } via Razorpay`}
+                </Btn>
               )}
 
               {!termsAccepted && (
