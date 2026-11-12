@@ -41,3 +41,21 @@ export const uploadProfilePhoto = (file) => {
     }
   );
 };
+
+// Disability status (checkbox + optional note on the Personal tab)
+// GET   /api/candidate/profile/disability/{candidateId}
+// PATCH /api/candidate/profile/disability?candidateId=...
+export const getDisability = () => {
+  const candidateId = getCandidateId();
+
+  return api.get(`/api/candidate/profile/disability/${candidateId}`);
+};
+
+export const updateDisability = (payload) => {
+  const candidateId = getCandidateId();
+
+  return api.patch(
+    `/api/candidate/profile/disability?candidateId=${candidateId}`,
+    payload
+  );
+};

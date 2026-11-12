@@ -2248,6 +2248,11 @@ function EmployerForm() {
   const router = useRouter();
   const showToast = useToast();
   const [step, setStep] = useState(1);
+
+  // Reset the page position whenever the user moves between registration steps.
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+  }, [step]);
   const [industriesList, setIndustriesList] = useState([]);
   const [recruiterPlans, setRecruiterPlans] = useState([]);
   const [selectedPlanId, setSelectedPlanId] = useState("");
@@ -3537,7 +3542,10 @@ function EmployerForm() {
         if (data.industry === "Other" && data.customIndustry.trim()) {
           try {
             await submitIndustrySuggestion({
-              field: "industry",
+              // Must match an allowed field on the registration endpoint
+              // ("industry" was rejected with a 400, so the suggestion never
+              // reached the admin inbox).
+              field: "RegistrationIndustry",
               suggestedName: data.customIndustry.trim(),
               note: "Suggested other Industry Type during registration",
               submittedByName: data.contactName || "Recruiter",

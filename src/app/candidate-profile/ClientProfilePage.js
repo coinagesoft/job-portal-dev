@@ -63,6 +63,8 @@ import {
   createPersonalInfo,
   updatePersonalInfo,
   uploadProfilePhoto,
+  getDisability,
+  updateDisability,
 } from "@/services/candidate/profileService";
 
 import api from "@/services/api";
@@ -808,6 +810,11 @@ const [showTradeOptions, setShowTradeOptions] = useState(false);
   onChange={(e) => {
     setTradeSearch(e.target.value);
     onChange("trade", e.target.value);
+    // Free-typed Job Title: drop the previously selected Trade Category /
+    // Sub-trade so a stale association is not sent back to the server.
+    // Picking a suggestion below sets the new category again.
+    onChange("tradeCategoryId", null);
+    onChange("subTradeId", null);
   }}
   onFocus={() => setShowTradeOptions(true)}
   onBlur={() => {
@@ -954,6 +961,55 @@ onClick={() => {
             </p>
           )}
         </Field>
+      </div>
+
+      {/* Disability status */}
+      <div style={{ marginTop: 8, marginBottom: 8 }}>
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            fontSize: 14,
+            color: T.text,
+            cursor: "pointer",
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={!!data.hasDisability}
+            onChange={(e) => {
+              const checked = e.target.checked;
+              onChange("hasDisability", checked);
+              // Note only applies while the box is ticked.
+              if (!checked) onChange("disabilityNote", "");
+            }}
+            style={{
+              width: 16,
+              height: 16,
+              accentColor: T.orange,
+              cursor: "pointer",
+            }}
+          />
+          I have a disability
+        </label>
+
+        {data.hasDisability && (
+          <div style={{ marginTop: 12 }}>
+            <Field
+              label="Disability details (optional)"
+              hint="Shown to employers who open your profile"
+            >
+              <Textarea
+                value={data.disabilityNote || ""}
+                onChange={(e) => onChange("disabilityNote", e.target.value)}
+                placeholder="e.g. Hearing impairment — no impact on my trade work"
+                maxLength={500}
+                rows={3}
+              />
+            </Field>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -3305,12 +3361,33 @@ subTradeId: profile.subTradeId || null,
     }
   }, [candidateId]);
 
+  // Disability status is stored separately from personal info on the
+  // backend, so it is loaded through its own endpoint.
+  const loadDisability = useCallback(async () => {
+    if (!candidateId) return;
+
+    try {
+      const response = await getDisability();
+
+      if (response.data?.success) {
+        setProfileData((prev) => ({
+          ...prev,
+          hasDisability: !!response.data.disabilityStatus,
+          disabilityNote: response.data.disabilityNote || "",
+        }));
+      }
+    } catch (error) {
+      console.error("Failed to load disability status", error);
+    }
+  }, [candidateId]);
+
   useEffect(() => {
     // console.log("API URL =", process.env.NEXT_PUBLIC_API_URL);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadPersonalInfo();
     loadAvailability();
-  }, [loadPersonalInfo, loadAvailability]);
+    loadDisability();
+  }, [loadPersonalInfo, loadAvailability, loadDisability]);
 
   //Update profile data to API
 
@@ -3398,6 +3475,15 @@ subTradeId: profile.subTradeId || null,
       }
 
       await updatePersonalInfo(currentPersonalInfo);
+
+      // Disability checkbox + note are saved via their own endpoint
+      // (the personal-info PUT does not carry them).
+      await updateDisability({
+        hasDisability: !!profileData.hasDisability,
+        disabilityNote: profileData.hasDisability
+          ? (profileData.disabilityNote || "").trim() || null
+          : null,
+      });
 
       showToast("Personal information updated successfully", "success");
 

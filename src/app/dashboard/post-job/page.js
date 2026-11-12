@@ -3507,6 +3507,26 @@ export default function DashboardPostJobPage() {
           "success"
         );
       } else if (type === "department") {
+        // Send the new Department to the admin Suggestions inbox. Previously
+        // this branch only updated local form state and showed a success
+        // toast, so nothing was ever saved for admin review. (The Step 1
+        // fallback submit does not fire either, because Department is set to
+        // the typed value here rather than "Other".)
+        const response = await submitJobSuggestion({
+          field: "Department",
+          suggestedName: value,
+          note: "Suggested new Department during job posting",
+          submittedByName: userName,
+          submittedByEmail: userEmail,
+        });
+
+        if (response?.success === false) {
+          throw new Error(
+            response?.message ||
+            "Failed to submit Department suggestion."
+          );
+        }
+
         setJobForm((prev) => ({
           ...prev,
           Department: value,
@@ -3514,7 +3534,7 @@ export default function DashboardPostJobPage() {
         }));
 
         showToast(
-          "Department added for this job.",
+          "Department added for this job and submitted for admin approval.",
           "success"
         );
       }
@@ -4162,7 +4182,7 @@ export default function DashboardPostJobPage() {
         if (isOtherValue(jobForm.IndustryType) && jobForm.IndustryTypeOther.trim()) {
           try {
             await submitIndustrySuggestion({
-              field: "industry",
+              field: "RegistrationIndustry",
               suggestedName: jobForm.IndustryTypeOther.trim(),
               note: "Suggested other Industry Type during job posting",
               submittedByName: userName,

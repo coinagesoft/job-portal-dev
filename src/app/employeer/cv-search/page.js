@@ -1321,6 +1321,15 @@ const EmployerCvSearchPage = () => {
                                       )}
                                   </div>
 
+                                  {Number(candidate.expectedSalary) > 0 && (
+                                    <div style={{ marginTop: "6px", fontSize: "13px", fontWeight: 600 }}>
+                                      <span style={{ color: "#6b7280", fontWeight: 500 }}>
+                                        Expected salary:{" "}
+                                      </span>
+                                      ₹{Number(candidate.expectedSalary).toLocaleString("en-IN")} / month
+                                    </div>
+                                  )}
+
                                   <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap", marginTop: "6px" }}>
                                     {isCandidateAvailable(candidate) ? (
                                       <span className="available-now-text" style={{ margin: 0 }}>
