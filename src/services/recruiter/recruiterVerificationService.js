@@ -40,7 +40,16 @@ export const uploadDocument = async (
 
     const formData = new FormData();
 
+    const isGuid = (v) =>
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(v));
+
     if (documentTypeId && documentTypeId !== "OTHER") {
+        // Backend expects a Guid; never send a code like "GST" / "PAN".
+        if (!isGuid(documentTypeId)) {
+            throw new Error(
+                `Invalid document type "${documentTypeId}". Document types have not loaded - please refresh and try again.`
+            );
+        }
         formData.append("DocumentTypeId", documentTypeId);
     }
     

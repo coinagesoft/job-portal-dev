@@ -2,6 +2,7 @@
 import { useState, useRef, Suspense, useEffect, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Script from "next/script";
+import Preloader from "@/app/Homepage/components/Preloader";
 import { useToast } from "@/components/Toast";
 import { Country, State, City } from "country-state-city";
 import {
@@ -2865,6 +2866,7 @@ function EmployerForm() {
   const [mandatoryDocuments, setMandatoryDocuments] = useState([]);
   const [optionalDocuments, setOptionalDocuments] = useState([]);
   const [loadingDocuments, setLoadingDocuments] = useState(false);
+  const [uploadingDocuments, setUploadingDocuments] = useState(false);
   const [selectedDocuments, setSelectedDocuments] = useState([]);
   const [additionalDocuments, setAdditionalDocuments] = useState([]);
   const handleEmployerSubmit = async () => {
@@ -4442,6 +4444,7 @@ function EmployerForm() {
           })),
       ];
 
+      setUploadingDocuments(true);
       const response = await uploadDocuments(
         documents,
         sessionId
@@ -4456,11 +4459,20 @@ function EmployerForm() {
         err?.response?.data?.message || "Document upload failed.",
         "error"
       );
+    } finally {
+      setUploadingDocuments(false);
     }
   };
 
   const renderStep4 = () => (
     <div style={{ minWidth: 0, maxWidth: "100%" }}>
+      {uploadingDocuments && (
+        <Preloader
+          isLoading={true}
+          message="Uploading Documents…"
+          subMessage="Please wait while your verification documents are being uploaded. This may take up to a minute or two."
+        />
+      )}
       <h3
         style={{
           fontSize: "var(--font-md)",
@@ -4828,19 +4840,25 @@ function EmployerForm() {
           marginTop: 8,
         }}
       >
-        <Btn variant="outline" onClick={() => setStep(3)}>
+        <Btn
+          variant="outline"
+          disabled={uploadingDocuments}
+          onClick={() => !uploadingDocuments && setStep(3)}
+        >
           ← Back
         </Btn>
 
         <div style={{ display: "flex", gap: 10 }}>
           <Btn
             variant="primary"
+            disabled={uploadingDocuments}
             onClick={() => {
+              if (uploadingDocuments) return;
               setAttempt4(true);
               handleStep4();
             }}
           >
-            Continue →
+            {uploadingDocuments ? "Uploading documents…" : "Continue →"}
           </Btn>
         </div>
       </div>

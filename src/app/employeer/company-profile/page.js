@@ -517,15 +517,32 @@ const RequiredDocumentsSection = ({
       });
     }
 
-    // Fallback if allDocumentTypes is not loaded or empty
-    const compulsoryTypes = ["GST", "PAN", "BUSINESS_REGISTRATION"];
-    return compulsoryTypes.map((type) => {
-      const existing = (documents || []).find((d) => d.documentType === type);
+    // Fallback: GST / PAN / Business Registration may not be flagged mandatory
+    // in the master table. Resolve their real GUIDs from the master list so we
+    // never send a code string like "GST" as DocumentTypeId (backend needs a Guid).
+    const compulsoryTypes = [
+      { code: "GST", label: "GST Certificate" },
+      { code: "PAN", label: "PAN Card" },
+      { code: "BUSINESS_REGISTRATION", label: "Business Registration" },
+    ];
+    const norm = (v) => String(v || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    return compulsoryTypes.map(({ code, label }) => {
+      const master = (allDocumentTypes || []).find(
+        (t) =>
+          norm(t.code) === norm(code) ||
+          norm(t.documentName) === norm(label) ||
+          norm(t.documentName).includes(norm(code))
+      );
+      const existing = (documents || []).find(
+        (d) =>
+          (master && d.documentTypeId === master.documentTypeId) ||
+          d.documentType === code
+      );
       return (
         existing || {
-          documentTypeId: type,
-          documentType: type,
-          documentName: type,
+          documentTypeId: master?.documentTypeId || null,
+          documentType: code,
+          documentName: master?.documentName || label,
           status: "Not Uploaded",
           uploadedAt: null,
           fileUrl: null,
