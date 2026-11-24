@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 import { saveJob } from "@/services/candidate/savedJobsService";
 import { useToast } from "@/components/Toast";
 import { useRouter } from 'next/navigation';
+import { getCandidateId } from "@/utils/authHelper";
 
 const JobDetailHero = ({
   job = {},
@@ -21,8 +22,11 @@ const JobDetailHero = ({
   const candidateId = useSelector((state) => state.auth.user?.userId);
 
   const handleApplyClick = () => {
-    if (!candidateId) {
-      router.push(`/Login?redirectTo=/job-details?jobId=${job.jobId}`);
+    const activeCandidateId = candidateId || getCandidateId();
+    if (!activeCandidateId) {
+      showToast("Please log in to apply for this job.", "info");
+      const targetUrl = job?.jobId ? `/job-details?jobId=${job.jobId}` : "/jobs-list";
+      router.push(`/Login?redirectTo=${encodeURIComponent(targetUrl)}`);
       return;
     }
     toggleModal();
@@ -54,7 +58,8 @@ const JobDetailHero = ({
         return;
       }
 
-      if (!candidateId) {
+      const activeCandidateId = candidateId || getCandidateId();
+      if (!activeCandidateId) {
         showToast(
           "Please log in as a candidate to save jobs.",
           "error"

@@ -9,6 +9,7 @@ import Pagination from './Pagination';
 import { getJobDetails } from "@/services/candidate/jobDetailsService";
 import { getMyApplications } from "@/services/candidate/myApplicationsService";
 import { useRouter } from 'next/navigation';
+import { useToast } from "@/components/Toast";
 import { resolveCountry } from '@/utils/locationResolver';
 import { getPersonalInfo } from '@/services/candidate/profileService';
 import { getSkills } from '@/services/candidate/skillsService';
@@ -171,6 +172,7 @@ const computeClientAiMatchPercentage = (job, candidateProfile) => {
 
 const JobList = ({ filters = {} }) => {
   const router = useRouter();
+  const showToast = useToast();
   const [currentPage, setCurrentPage] = useState(1);
   const [allJobs, setAllJobs] = useState([]);       // full unfiltered dataset, fetched once
   const [loading, setLoading] = useState(true);
@@ -302,7 +304,8 @@ const JobList = ({ filters = {} }) => {
   const openApplyModal = async (job) => {
     const candidateId = getCandidateId();
     if (!candidateId) {
-      router.push(`/Login?redirectTo=/jobs-list`);
+      showToast("Please log in to apply for this job.", "info");
+      router.push(`/Login?redirectTo=${encodeURIComponent("/jobs-list")}`);
       return;
     }
     try {

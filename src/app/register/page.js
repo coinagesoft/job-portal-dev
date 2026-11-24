@@ -3978,6 +3978,9 @@ function EmployerForm() {
                 fontSize: "var(--font-sm)",
                 color: "#3B6D11",
                 fontWeight: 600,
+                wordBreak: "break-all",
+                overflowWrap: "anywhere",
+                maxWidth: "100%",
               }}
             >
               ✓ {data.companyLogo.name}
@@ -4457,7 +4460,7 @@ function EmployerForm() {
   };
 
   const renderStep4 = () => (
-    <div>
+    <div style={{ minWidth: 0, maxWidth: "100%" }}>
       <h3
         style={{
           fontSize: "var(--font-md)",
@@ -4541,6 +4544,8 @@ function EmployerForm() {
           display: "grid",
           gap: 20,
           marginBottom: 20,
+          minWidth: 0,
+          maxWidth: "100%",
         }}
       >
         {loadingDocuments ? (
@@ -4573,11 +4578,12 @@ function EmployerForm() {
                     </label>
 
                     <input
-                      type="file"
-                      className="form-control"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      onChange={(e) =>
-                        handleDocumentSelect(
+                        type="file"
+                        className="form-control"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        style={{ maxWidth: "100%", boxSizing: "border-box" }}
+                        onChange={(e) =>
+                          handleDocumentSelect(
                           doc.documentTypeId,
                           e.target.files?.[0]
                         )
@@ -4585,16 +4591,19 @@ function EmployerForm() {
                     />
 
                     {selected && (
-                      <small
-                        style={{
-                          color: "#3B6D11",
-                          display: "block",
-                          marginTop: 6,
-                        }}
-                      >
-                        ✓ {selected.file.name}
-                      </small>
-                    )}
+                        <small
+                          style={{
+                            color: "#3B6D11",
+                            display: "block",
+                            marginTop: 6,
+                            wordBreak: "break-all",
+                            overflowWrap: "anywhere",
+                            maxWidth: "100%",
+                          }}
+                        >
+                          ✓ {selected.file.name}
+                        </small>
+                      )}
                   </div>
                 );
               })}
@@ -4679,6 +4688,7 @@ function EmployerForm() {
                         type="file"
                         className="form-control"
                         accept=".pdf,.jpg,.jpeg,.png"
+                        style={{ maxWidth: "100%", boxSizing: "border-box" }}
                         onChange={(e) =>
                           handleDocumentSelect(
                             doc.documentTypeId,
@@ -4693,6 +4703,9 @@ function EmployerForm() {
                             color: "#3B6D11",
                             display: "block",
                             marginTop: 6,
+                            wordBreak: "break-all",
+                            overflowWrap: "anywhere",
+                            maxWidth: "100%",
                           }}
                         >
                           ✓ {selected.file.name}
@@ -4739,6 +4752,8 @@ function EmployerForm() {
                       }
                       style={{
                         flex: 1,
+                        maxWidth: "100%",
+                        boxSizing: "border-box",
                         paddingRight: additionalDocuments.length > 1 ? 36 : undefined,
                       }}
                     />
@@ -4780,8 +4795,17 @@ function EmployerForm() {
                   </div>
 
                   {doc.file && (
-                    <div style={{ marginTop: 6 }}>
-                      <span style={{ fontSize: 13, color: "#555" }}>
+                    <div style={{ marginTop: 6, maxWidth: "100%" }}>
+                      <span
+                        style={{
+                          fontSize: 13,
+                          color: "#555",
+                          wordBreak: "break-all",
+                          overflowWrap: "anywhere",
+                          display: "block",
+                          maxWidth: "100%",
+                        }}
+                      >
                         {doc.file.name}
                       </span>
                     </div>
@@ -4831,6 +4855,9 @@ function EmployerForm() {
         borderRadius: 16,
         padding: "18px 20px",
         marginBottom: 16,
+        minWidth: 0,
+        maxWidth: "100%",
+        boxSizing: "border-box",
       }}
     >
       <div
@@ -4898,13 +4925,15 @@ function EmployerForm() {
       style={{
         display: "flex",
         justifyContent: "space-between",
+        alignItems: "flex-start",
         gap: 12,
         padding: "8px 0",
         borderBottom: "1px solid #f1f4fb",
         fontSize: "var(--font-sm)",
+        minWidth: 0,
       }}
     >
-      <span style={{ color: "#66789c" }}>{label}</span>
+      <span style={{ color: "#66789c", flexShrink: 0 }}>{label}</span>
       {val ? (
         <span
           style={{
@@ -4912,7 +4941,9 @@ function EmployerForm() {
             fontWeight: 600,
             color: "#122359",
             textAlign: "right",
-            maxWidth: "60%",
+            maxWidth: "65%",
+            wordBreak: "break-all",
+            overflowWrap: "anywhere",
           }}
         >
           {val}

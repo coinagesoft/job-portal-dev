@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useSelector } from 'react-redux';
 import JobDetailHero from './components/JobDetailHero';
 import JobOverview from './components/JobOverview';
 import JobContent from './components/JobContent';
@@ -12,6 +13,7 @@ import { mapApiJobToDetailedJob } from './data';
 import { getJobDetails } from '@/services/candidate/jobDetailsService';
 import { getMyApplications } from '@/services/candidate/myApplicationsService';
 import { getSavedJobs } from '@/services/candidate/savedJobsService';
+import { getCandidateId } from '@/utils/authHelper';
 import JobRequirements from './components/JobRequirements';
 
 const JobDetailsContent = () => {
@@ -23,12 +25,16 @@ const JobDetailsContent = () => {
   const [isApplied, setIsApplied] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
 
+  const authUser = useSelector((state) => state.auth.user);
+  const candidateId = authUser?.userId || getCandidateId();
+  const isCandidate = Boolean(candidateId && authUser?.role !== 'employer');
+
   // Single source of truth for "has this candidate applied", shared by the
   // Apply button in the hero AND the Apply button at the bottom of the page —
   // previously each tracked this separately, so one could say "Applied" while
   // the other still showed "Apply now".
   const checkApplied = useCallback(async () => {
-    if (!jobId) return;
+    if (!jobId || !isCandidate) return;
     try {
       const res = await getMyApplications();
       const ids = (res?.data?.applications || []).map((a) => a.jobId);
@@ -36,10 +42,10 @@ const JobDetailsContent = () => {
     } catch (error) {
       console.log('applied check skipped', error?.message || error);
     }
-  }, [jobId]);
+  }, [jobId, isCandidate]);
 
   const checkSaved = useCallback(async () => {
-    if (!jobId) return;
+    if (!jobId || !isCandidate) return;
     try {
       const res = await getSavedJobs();
       const list = res?.data?.savedJobs || [];
@@ -48,7 +54,7 @@ const JobDetailsContent = () => {
     } catch (error) {
       console.log('saved check skipped', error?.message || error);
     }
-  }, [jobId]);
+  }, [jobId, isCandidate]);
 
   useEffect(() => {
     const loadJobDetails = async () => {
@@ -80,9 +86,11 @@ const JobDetailsContent = () => {
     };
   
     loadJobDetails();
-    checkApplied();
-    checkSaved();
-  }, [jobId, checkApplied, checkSaved]);
+    if (isCandidate) {
+      checkApplied();
+      checkSaved();
+    }
+  }, [jobId, isCandidate, checkApplied, checkSaved]);
 
   if (loading) {
     return (
@@ -123,12 +131,12 @@ const JobDetailsContent = () => {
               <JobRequirements job={job} />
 
               <JobContent
-  job={job}
-  isApplied={isApplied}
-  onApplied={checkApplied}
-  isSaved={isSaved}
-  onSavedToggle={checkSaved}
-/>
+                job={job}
+                isApplied={isApplied}
+                onApplied={checkApplied}
+                isSaved={isSaved}
+                onSavedToggle={checkSaved}
+              />
             </div>
             <div className="col-lg-4 col-md-12 col-sm-12 col-12 pl-40 pl-lg-15 mt-lg-30">
               <CompanySidebar job={job} />
