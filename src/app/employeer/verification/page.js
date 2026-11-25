@@ -116,16 +116,22 @@ const EmployerVerificationPage = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Basic client-side guard (max 5 MB, pdf/jpg/png)
+    // Basic client-side guard (max 5 MB, PDF or image)
     const maxBytes = 5 * 1024 * 1024;
-    const okTypes = ["application/pdf", "image/jpeg", "image/png"];
+    const okExt = [".pdf", ".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp", ".tif", ".tiff", ".heic", ".heif"];
+    const lowerName = (file.name || "").toLowerCase();
+    const lowerType = (file.type || "").toLowerCase();
+    const typeOk =
+      okExt.some((ext) => lowerName.endsWith(ext)) ||
+      lowerType === "application/pdf" ||
+      lowerType.startsWith("image/");
     if (file.size > maxBytes) {
       setUploadMsg({ type: "error", text: "File exceeds 5 MB limit." });
       e.target.value = "";
       return;
     }
-    if (!okTypes.includes(file.type)) {
-      setUploadMsg({ type: "error", text: "Only PDF, JPG, or PNG allowed." });
+    if (!typeOk) {
+      setUploadMsg({ type: "error", text: "Only PDF or image files (JPG, PNG, WEBP, etc.) are allowed." });
       e.target.value = "";
       return;
     }
@@ -1170,7 +1176,7 @@ const EmployerVerificationPage = () => {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
+                  accept=".pdf,.jpg,.jpeg,.png,.webp,.gif,.bmp,.tif,.tiff,.heic,.heif,application/pdf,image/*"
                   style={{ display: "none" }}
                   onChange={handleFileSelected}
                 />

@@ -762,7 +762,7 @@ function useResendCooldown(seconds = 30) {
     const t = setInterval(() => setRemaining((r) => Math.max(0, r - 1)), 1000);
     return () => clearInterval(t);
   }, [remaining]);
-  return [remaining, () => setRemaining(seconds)];
+  return [remaining, () => setRemaining(seconds), () => setRemaining(0)];
 }
 
 // ── Mobile OTP block: country selector + number + boxed OTP entry ──────────
@@ -784,7 +784,13 @@ function MobileOtpField({
   const touched = digitsOnly.length > 0;
   const mobileValid = isValidMobile(mobile, countryCode);
   const showMobileError = touched && !verified && !mobileValid;
-  const [cooldown, startCooldown] = useResendCooldown(30);
+  const [cooldown, startCooldown, resetCooldown] = useResendCooldown(30);
+
+  // A different number/country is a fresh OTP request: clear the cooldown.
+  useEffect(() => {
+    resetCooldown();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mobile, countryCode]);
 
   const handleSend = () => {
     sent ? resendMobileOtp() : sendMobileOtp();
@@ -2637,11 +2643,19 @@ function EmployerForm() {
     try {
       const sessionId = localStorage.getItem("registrationSessionId");
 
-      const response = await resendMobileOtp(sessionId);
+      // Send using the number currently on screen (not whatever the server
+      // session last stored) so resend always works after a change.
+      const response = await sendMobileOtp(
+        {
+          mobileNumber: data.mobile.replace(/\D/g, ""),
+          countryCode: data.countryCode,
+        },
+        sessionId,
+      );
 
       showToast(response.data.message, "success");
     } catch (err) {
-      showToast(err.response?.data?.message, "error");
+      showToast(err.response?.data?.message || "Could not resend OTP. Please try again.", "error");
     }
   };
 
@@ -2666,7 +2680,7 @@ function EmployerForm() {
 
       showToast(response.data.message, "success");
     } catch (err) {
-      showToast(err.response?.data?.message, "error");
+      showToast(err.response?.data?.message || "Could not send OTP. Please try again.", "error");
     }
   };
   const verifyCorpEmailOtp = async () => {
@@ -3252,6 +3266,14 @@ function EmployerForm() {
 
   const handleDocumentSelect = (documentTypeId, file) => {
     if (!file) return;
+    if (!isAllowedDocFile(file)) {
+      alert("Please upload a PDF or an image (JPG, PNG, WEBP, etc.).");
+      return;
+    }
+    if (file.size > DOC_MAX_BYTES) {
+      alert("File exceeds the 5 MB limit.");
+      return;
+    }
 
     setSelectedDocuments((prev) => {
       const existing = prev.find(
@@ -3277,6 +3299,14 @@ function EmployerForm() {
   };
   const handleAdditionalDocument = (index, file) => {
     if (!file) return;
+    if (!isAllowedDocFile(file)) {
+      alert("Please upload a PDF or an image (JPG, PNG, WEBP, etc.).");
+      return;
+    }
+    if (file.size > DOC_MAX_BYTES) {
+      alert("File exceeds the 5 MB limit.");
+      return;
+    }
 
     setAdditionalDocuments((prev) =>
       prev.map((doc, i) =>
@@ -4091,11 +4121,15 @@ function EmployerForm() {
     try {
       const sessionId = localStorage.getItem("registrationSessionId");
 
-      const response = await resendEmailOtp(sessionId);
+      // Send to the email currently on screen (not the server session copy).
+      const response = await sendEmailOtp(
+        { companyEmail: data.corpEmail },
+        sessionId,
+      );
 
       showToast(response.data.message, "success");
     } catch (err) {
-      showToast(err.response?.data?.message, "error");
+      showToast(err.response?.data?.message || "Could not resend OTP. Please try again.", "error");
     }
   };
   // ── Step 3: Contact & OTP ─────────────────
@@ -4184,7 +4218,22 @@ function EmployerForm() {
             onChange={(e) => {
               const val = e.target.value;
               if (val && /^\d+$/.test(val.trim())) return;
-              set("corpEmail", val.trim());
+              const next = val.trim();
+              setData((p) =>
+                p.corpEmail === next
+                  ? p
+                  : {
+                      ...p,
+                      corpEmail: next,
+                      // new email => a fresh OTP must be sent for it
+                      corpEmailOtp: {
+                        ...p.corpEmailOtp,
+                        sent: false,
+                        verified: false,
+                        userVal: "",
+                      },
+                    },
+              );
             }}
             placeholder="Enter your official company email (e.g. hr@yourcompany.com)"
             style={{
@@ -4198,6 +4247,7 @@ function EmployerForm() {
           {data.corpEmail && corpEmailValid && (
             <div style={{ marginTop: 8 }}>
               <OtpBlock
+                key={data.corpEmail}
                 target="corporate email"
                 sent={data.corpEmailOtp.sent}
                 verified={data.corpEmailOtp.verified}
@@ -4220,9 +4270,29 @@ function EmployerForm() {
         <Field label="Mobile Number" required>
           <MobileOtpField
             countryCode={data.countryCode}
-            onCountryCodeChange={(v) => set("countryCode", v)}
+            onCountryCodeChange={(v) =>
+              setData((p) =>
+                p.countryCode === v
+                  ? p
+                  : {
+                      ...p,
+                      countryCode: v,
+                      mobileOtp: { ...p.mobileOtp, sent: false, verified: false, userVal: "" },
+                    },
+              )
+            }
             mobile={data.mobile}
-            onMobileChange={(v) => set("mobile", v)}
+            onMobileChange={(v) =>
+              setData((p) =>
+                p.mobile === v
+                  ? p
+                  : {
+                      ...p,
+                      mobile: v,
+                      mobileOtp: { ...p.mobileOtp, sent: false, verified: false, userVal: "" },
+                    },
+              )
+            }
             otp={data.mobileOtp}
             onOtpStateChange={(v) => setData((p) => ({ ...p, mobileOtp: v }))}
             sendMobileOtp={handleSendMobileOtp}
@@ -4592,7 +4662,7 @@ function EmployerForm() {
                     <input
                         type="file"
                         className="form-control"
-                        accept=".pdf,.jpg,.jpeg,.png"
+                        accept=".pdf,.jpg,.jpeg,.png,.webp,.gif,.bmp,.tif,.tiff,.heic,.heif,application/pdf,image/*"
                         style={{ maxWidth: "100%", boxSizing: "border-box" }}
                         onChange={(e) =>
                           handleDocumentSelect(
@@ -4699,7 +4769,7 @@ function EmployerForm() {
                       <input
                         type="file"
                         className="form-control"
-                        accept=".pdf,.jpg,.jpeg,.png"
+                        accept=".pdf,.jpg,.jpeg,.png,.webp,.gif,.bmp,.tif,.tiff,.heic,.heif,application/pdf,image/*"
                         style={{ maxWidth: "100%", boxSizing: "border-box" }}
                         onChange={(e) =>
                           handleDocumentSelect(
@@ -4758,7 +4828,7 @@ function EmployerForm() {
                     <input
                       type="file"
                       className="form-control"
-                      accept=".pdf,.jpg,.jpeg,.png"
+                      accept=".pdf,.jpg,.jpeg,.png,.webp,.gif,.bmp,.tif,.tiff,.heic,.heif,application/pdf,image/*"
                       onChange={(e) =>
                         handleAdditionalDocument(index, e.target.files?.[0])
                       }
@@ -6092,6 +6162,20 @@ function RegisterPageInner() {
     </main>
   );
 }
+
+// Employer documents: PDF and common image formats.
+const DOC_ALLOWED_EXT = [
+  ".pdf", ".jpg", ".jpeg", ".png", ".webp",
+  ".gif", ".bmp", ".tif", ".tiff", ".heic", ".heif",
+];
+const DOC_MAX_BYTES = 5 * 1024 * 1024;
+const isAllowedDocFile = (file) => {
+  if (!file) return false;
+  const name = (file.name || "").toLowerCase();
+  if (DOC_ALLOWED_EXT.some((ext) => name.endsWith(ext))) return true;
+  const type = (file.type || "").toLowerCase();
+  return type === "application/pdf" || type.startsWith("image/");
+};
 
 export default function RegisterPage() {
   return (

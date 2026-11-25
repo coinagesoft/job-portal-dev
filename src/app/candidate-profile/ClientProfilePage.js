@@ -3344,7 +3344,6 @@ subTradeId: profile.subTradeId || null,
           nationality: profile.nationality || "",
           salaryExpectation:
             profile.expectedSalary || profile.salaryExpectation || "",
-          availableIn: profile.availableIn || "",
           avatar: profile.profilePhotoUrl
             ? buildProfilePhotoUrl(profile.profilePhotoUrl)
             : DEFAULT_PROFILE_PHOTO,
@@ -4315,8 +4314,9 @@ subTradeId: profile.subTradeId || null,
     }
   };
 
-  // Toggle lives in the sidebar. "Available now" saves immediately; "Not
-  // available" waits until the candidate picks when they will be available.
+  // Toggle lives in the sidebar. Both states save immediately so employers
+  // always see the current status. For "Not available" the period dropdown
+  // appears afterwards and is saved separately once the candidate picks it.
   const handleAvailabilityChange = async (checked) => {
     const previous = {
       availableForWork: profileData.availableForWork,
@@ -4329,15 +4329,22 @@ subTradeId: profile.subTradeId || null,
       availableIn: checked ? "" : prev.availableIn,
     }));
 
-    if (checked) {
-      const saved = await persistAvailability(true, null);
-      if (!saved) setProfileData((prev) => ({ ...prev, ...previous }));
-    }
+    const saved = await persistAvailability(
+      checked,
+      checked ? null : previous.availableIn || null,
+    );
+    if (!saved) setProfileData((prev) => ({ ...prev, ...previous }));
   };
 
   const handleAvailableInChange = async (value) => {
+    const previousAvailableIn = profileData.availableIn;
     setProfileData((prev) => ({ ...prev, availableIn: value }));
-    if (value) await persistAvailability(false, value);
+    if (!value) return;
+
+    const saved = await persistAvailability(false, value);
+    if (!saved) {
+      setProfileData((prev) => ({ ...prev, availableIn: previousAvailableIn }));
+    }
   };
 
   // Documents
